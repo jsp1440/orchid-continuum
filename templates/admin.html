@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Admin Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="settings" class="me-2"></i>Admin Dashboard
+            </h1>
+            <p class="lead text-muted">Manage orchid database, uploads, and automation</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i data-feather="database" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.total_orchids }}</h3>
+                    <p class="mb-0">Total Orchids</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <i data-feather="clock" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.pending_uploads }}</h3>
+                    <p class="mb-0">Pending Uploads</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i data-feather="check-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.validated_orchids }}</h3>
+                    <p class="mb-0">Validated</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i data-feather="star" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.featured_orchids }}</h3>
+                    <p class="mb-0">Featured</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Cards -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="download" class="me-2"></i>Web Scraping
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Automatically scrape orchid information from external websites.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="triggerScraping('gary')">
+                            <i data-feather="globe" class="me-2"></i>Scrape Gary Yong Gee
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="triggerScraping('roberta')">
+                            <i data-feather="globe" class="me-2"></i>Scrape Roberta Fox
+                        </button>
+                    </div>
+                    <div id="scrapingStatus" class="mt-3" style="display: none;">
+                        <div class="alert alert-info" role="alert">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                <span>Scraping in progress...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="folder" class="me-2"></i>Google Drive Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Manage Google Drive folder structure and file organization.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-success" onclick="setupDriveFolders()">
+                            <i data-feather="folder-plus" class="me-2"></i>Setup Drive Folders
+                        </button>
+                        <button class="btn btn-outline-success" onclick="syncDriveFiles()">
+                            <i data-feather="refresh-cw" class="me-2"></i>Sync Drive Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Uploads -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="upload" class="me-2"></i>Recent Uploads
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_uploads %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Status</th>
+                                        <th>Size</th>
+                                        <th>Upload Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for upload in recent_uploads %}
+                                    <tr>
+                                        <td>{{ upload.original_filename }}</td>
+                                        <td>
+                                            {% if upload.processing_status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif upload.processing_status == 'processing' %}
+                                                <span class="badge bg-warning">Processing</span>
+                                            {% elif upload.processing_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ upload.processing_status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if upload.file_size %}
+                                                {{ "%.1f"|format(upload.file_size / 1024 / 1024) }} MB
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ upload.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if upload.orchid_id %}
+                                                <a href="{{ url_for('orchid_detail', id=upload.orchid_id) }}" class="btn btn-sm btn-outline-primary">
+                                                    View Orchid
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    No Orchid
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent uploads found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scraping Logs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>Recent Scraping Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_scrapes %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Source</th>
+                                        <th>Status</th>
+                                        <th>Items Found</th>
+                                        <th>Items Processed</th>
+                                        <th>Date</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for scrape in recent_scrapes %}
+                                    <tr>
+                                        <td>{{ scrape.source|replace('_', ' ')|title }}</td>
+                                        <td>
+                                            {% if scrape.status == 'success' %}
+                                                <span class="badge bg-success">Success</span>
+                                            {% elif scrape.status == 'error' %}
+                                                <span class="badge bg-danger">Error</span>
+                                            {% elif scrape.status == 'processing' %}
+                                                <span class="badge bg-warning">Processing</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ scrape.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ scrape.items_found or 0 }}</td>
+                                        <td>{{ scrape.items_processed or 0 }}</td>
+                                        <td>{{ scrape.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if scrape.error_message %}
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="{{ scrape.error_message }}">
+                                                    <i data-feather="alert-circle"></i>
+                                                </button>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No scraping activity found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function triggerScraping(source) {
+    const statusDiv = document.getElementById('scrapingStatus');
+    statusDiv.style.display = 'block';
+    
+    fetch(`/api/scrape/${source}`)
+        .then(response => response.json())
+        .then(data => {
+            statusDiv.innerHTML = `
+                <div class="alert alert-${data.error ? 'danger' : 'success'}" role="alert">
+                    ${data.error ? 'Error: ' + data.error : 'Scraping completed successfully!'}
+                    ${data.processed ? '<br>Processed: ' + data.processed + ' items' : ''}
+                </div>
+            `;
+            // Refresh page after 3 seconds
+            setTimeout(() => location.reload(), 3000);
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Error: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function setupDriveFolders() {
+    // This would call an API endpoint to setup Google Drive folders
+    alert('Google Drive folder setup would be triggered here. Implement the backend endpoint first.');
+}
+
+function syncDriveFiles() {
+    // This would call an API endpoint to sync files with Google Drive
+    alert('Google Drive sync would be triggered here. Implement the backend endpoint first.');
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

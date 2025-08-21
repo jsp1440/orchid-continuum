@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Search Orchids - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="search" class="me-2"></i>Search Orchids
+            </h1>
+            <p class="lead text-muted">Find orchids by name, characteristics, or cultural information</p>
+        </div>
+    </div>
+    
+    <!-- Advanced Search Form -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('search') }}">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i data-feather="search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="q" placeholder="Search orchids by name, genus, species, or description..." 
+                                   value="{{ query }}" autofocus>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i data-feather="search" class="me-2"></i>Search
+                        </button>
+                    </div>
+                </div>
+                
+                {% if query %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i data-feather="info" class="me-1"></i>
+                        Search includes orchid names, scientific names, descriptions, and cultural notes
+                    </small>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    {% if query %}
+        <!-- Search Results -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>Search Results for "{{ query }}"</h3>
+                    <span class="badge bg-primary fs-6">{{ orchids|length }} found</span>
+                </div>
+                <hr>
+            </div>
+        </div>
+        
+        {% if orchids %}
+            <div class="row g-4">
+                {% for orchid in orchids %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="row g-0 h-100">
+                            <div class="col-4">
+                                {% if orchid.image_url %}
+                                    <img src="{{ orchid.image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
+                                         style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;">
+                                {% else %}
+                                    <div class="h-100 w-100 bg-light d-flex align-items-center justify-content-center"
+                                         style="border-radius: 0.375rem 0 0 0.375rem;">
+                                        <i data-feather="image" class="text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <div class="card-body d-flex flex-column h-100">
+                                    <div>
+                                        <h6 class="card-title mb-1">{{ orchid.display_name }}</h6>
+                                        
+                                        {% if orchid.scientific_name %}
+                                            <p class="text-muted small fst-italic mb-2">{{ orchid.scientific_name }}</p>
+                                        {% endif %}
+                                        
+                                        <div class="row g-1 mb-2">
+                                            {% if orchid.genus %}
+                                                <div class="col-12">
+                                                    <span class="badge bg-secondary me-1">{{ orchid.genus }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if orchid.climate_preference %}
+                                                <div class="col-12 mt-1">
+                                                    <span class="badge bg-info">{{ orchid.climate_preference|title }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if orchid.ai_description %}
+                                            <p class="card-text small text-muted">{{ orchid.ai_description[:100] }}...</p>
+                                        {% elif orchid.cultural_notes %}
+                                            <p class="card-text small text-muted">{{ orchid.cultural_notes[:100] }}...</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-sm btn-primary">
+                                                View Details
+                                            </a>
+                                            <div class="d-flex align-items-center text-muted">
+                                                <i data-feather="eye" class="me-1" style="width: 14px; height: 14px;"></i>
+                                                <small>{{ orchid.view_count or 0 }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- No Results -->
+            <div class="text-center py-5">
+                <i data-feather="search" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                <h4 class="text-muted">No orchids found for "{{ query }}"</h4>
+                <p class="text-muted mb-4">Try different keywords or browse our gallery.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
+                        <i data-feather="grid" class="me-2"></i>Browse Gallery
+                    </a>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i data-feather="upload" class="me-2"></i>Upload Orchid
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Search Suggestions -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-4">Search Suggestions</h3>
+                
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-primary text-white">
+                            <div class="card-body text-center">
+                                <i data-feather="layers" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>By Genus</h5>
+                                <p class="mb-3">Search popular orchid genera</p>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="{{ url_for('search', q='Phalaenopsis') }}" class="btn btn-light btn-sm">Phalaenopsis</a>
+                                    <a href="{{ url_for('search', q='Cattleya') }}" class="btn btn-light btn-sm">Cattleya</a>
+                                    <a href="{{ url_for('search', q='Dendrobium') }}" class="btn btn-light btn-sm">Dendrobium</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-success text-white">
+                            <div class="card-body text-center">
+                                <i data-feather="thermometer" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>By Climate</h5>
+                                <p class="mb-3">Find orchids for your conditions</p>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="{{ url_for('search', q='cool growing') }}" class="btn btn-light btn-sm">Cool</a>
+                                    <a href="{{ url_for('search', q='intermediate') }}" class="btn btn-light btn-sm">Intermediate</a>
+                                    <a href="{{ url_for('search', q='warm growing') }}" class="btn btn-light btn-sm">Warm</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-info text-white">
+                            <div class="card-body text-center">
+                                <i data-feather="book-open" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>By Care Type</h5>
+                                <p class="mb-3">Search by growing requirements</p>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a href="{{ url_for('search', q='epiphytic') }}" class="btn btn-light btn-sm">Epiphytic</a>
+                                    <a href="{{ url_for('search', q='terrestrial') }}" class="btn btn-light btn-sm">Terrestrial</a>
+                                    <a href="{{ url_for('search', q='easy care') }}" class="btn btn-light btn-sm">Easy Care</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Tips -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="lightbulb" class="me-2"></i>Search Tips
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>What you can search for:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="me-2 text-success"></i>Scientific names (e.g., "Phalaenopsis amabilis")</li>
+                                    <li><i data-feather="check" class="me-2 text-success"></i>Common names (e.g., "Moth Orchid")</li>
+                                    <li><i data-feather="check" class="me-2 text-success"></i>Genus names (e.g., "Cattleya")</li>
+                                    <li><i data-feather="check" class="me-2 text-success"></i>Growth characteristics (e.g., "epiphytic")</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Search features:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="me-2 text-primary"></i>AI-generated descriptions included</li>
+                                    <li><i data-feather="check" class="me-2 text-primary"></i>Cultural information searchable</li>
+                                    <li><i data-feather="check" class="me-2 text-primary"></i>Partial word matching</li>
+                                    <li><i data-feather="check" class="me-2 text-primary"></i>Results ranked by popularity</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
