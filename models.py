@@ -199,6 +199,9 @@ class User(UserMixin, db.Model):
     last_name = db.Column(String(100))
     organization = db.Column(String(200))
     country = db.Column(String(100))
+    orchid_interests = db.Column(Text, nullable=True)  # User's orchid interests/specialties
+    experience_level = db.Column(String(50), default='beginner')  # beginner, intermediate, expert
+    bio = db.Column(Text, nullable=True)  # User bio
     
     # Statistics
     upload_count = db.Column(Integer, default=0)

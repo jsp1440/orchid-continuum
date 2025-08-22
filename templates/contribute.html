@@ -1,0 +1,316 @@
+{% extends "layout.html" %}
+{% set page_title = "Contribute Your Orchid to the Continuum" %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 text-light mb-3">
+                <i data-feather="heart" class="me-3 text-danger"></i>
+                Contribute Your Orchid to the Continuum
+            </h1>
+            <p class="lead text-muted">
+                Share your orchid photos and help build the world's most comprehensive orchid database
+            </p>
+        </div>
+    </div>
+
+    {% if not current_user.is_authenticated %}
+    <!-- Registration Prompt -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light border-primary">
+                <div class="card-header text-center">
+                    <h3 class="mb-0">
+                        <i data-feather="user-plus" class="me-2"></i>
+                        Join the Community First
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead mb-4">
+                        Create your free account to get your unique Orchid ID and track all your contributions
+                    </p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <i data-feather="user" class="mb-2 text-primary" style="width: 48px; height: 48px;"></i>
+                            <h6>Get Your Unique ID</h6>
+                            <small class="text-muted">Personal OU-ABC123 identifier for all your orchids</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i data-feather="bar-chart" class="mb-2 text-success" style="width: 48px; height: 48px;"></i>
+                            <h6>Track Your Impact</h6>
+                            <small class="text-muted">Dashboard showing your contributions and achievements</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i data-feather="award" class="mb-2 text-warning" style="width: 48px; height: 48px;"></i>
+                            <h6>Earn Recognition</h6>
+                            <small class="text-muted">Featured orchids and community achievements</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                            <i data-feather="user-plus" class="me-2"></i>
+                            Create Free Account
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-light">
+                            <i data-feather="log-in" class="me-2"></i>
+                            Already Have Account?
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Upload Option -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light border-secondary">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>
+                        Or Upload Without Account
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-3">
+                        You can still upload and get AI analysis, but won't be able to track your contributions long-term.
+                    </p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">
+                        <i data-feather="upload" class="me-2"></i>
+                        Quick Upload (No Account)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Logged In User - Direct Upload -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light border-success">
+                <div class="card-header text-center">
+                    <h3 class="mb-0">
+                        <i data-feather="user-check" class="me-2 text-success"></i>
+                        Welcome Back, {{ current_user.get_full_name() }}!
+                    </h3>
+                    <small class="text-muted">Your Orchid ID: <strong>{{ current_user.user_id }}</strong></small>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead mb-4">
+                        Ready to add another orchid to your collection? Let's analyze it!
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('upload') }}" class="btn btn-success btn-lg">
+                            <i data-feather="upload" class="me-2"></i>
+                            Upload New Orchid
+                        </a>
+                        <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-light">
+                            <i data-feather="layout" class="me-2"></i>
+                            View My Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Why Contribute Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-light mb-4 text-center">Why Your Contribution Matters</h2>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i data-feather="globe" class="me-3 text-primary" style="width: 48px; height: 48px;"></i>
+                        <h4>Build Global Knowledge</h4>
+                    </div>
+                    <p>
+                        Every orchid you contribute adds to humanity's understanding of orchid diversity, 
+                        distribution, and cultivation success around the world.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i data-feather="cpu" class="me-3 text-success" style="width: 48px; height: 48px;"></i>
+                        <h4>Improve AI Accuracy</h4>
+                    </div>
+                    <p>
+                        Your photos help train our AI systems to become more accurate, 
+                        benefiting the entire orchid community with better identifications.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i data-feather="users" class="me-3 text-info" style="width: 48px; height: 48px;"></i>
+                        <h4>Help Other Growers</h4>
+                    </div>
+                    <p>
+                        Share cultivation successes, flowering photos, and care insights 
+                        that help other enthusiasts grow their orchids successfully.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i data-feather="book" class="me-3 text-warning" style="width: 48px; height: 48px;"></i>
+                        <h4>Preserve Documentation</h4>
+                    </div>
+                    <p>
+                        Document rare species, unique variations, and breeding achievements 
+                        for future generations of orchid researchers and enthusiasts.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What Makes a Good Contribution -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-light mb-4 text-center">What Makes a Great Orchid Photo?</h2>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="camera" class="me-2 text-success"></i>
+                        Photography Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-success"></i>
+                            <strong>Good lighting:</strong> Natural light or bright LED, avoid harsh shadows
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-success"></i>
+                            <strong>Clear focus:</strong> Sharp details on flowers, especially the lip and column
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-success"></i>
+                            <strong>Multiple angles:</strong> Face-on, side view, and close-ups of unique features
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-success"></i>
+                            <strong>Clean background:</strong> Simple, uncluttered backgrounds work best
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-success"></i>
+                            <strong>Full flower:</strong> Include entire flower structure when possible
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="info" class="me-2 text-info"></i>
+                        Information to Include
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-info"></i>
+                            <strong>Known name:</strong> If you know the species or hybrid name
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-info"></i>
+                            <strong>Source:</strong> Where you got the orchid (nursery, trade, etc.)
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-info"></i>
+                            <strong>Growing conditions:</strong> Light, temperature, humidity setup
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-info"></i>
+                            <strong>Bloom timing:</strong> When and how often it flowers
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="check-circle" class="me-2 text-info"></i>
+                            <strong>Special notes:</strong> Fragrance, size, unique characteristics
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Impact -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-gradient text-white" style="background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);">
+                <div class="card-body text-center py-5">
+                    <h3 class="mb-3">Join Our Community of Contributors</h3>
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3">
+                            <h2 class="display-4">{{ total_orchids or '0' }}</h2>
+                            <p class="mb-0">Orchids Contributed</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h2 class="display-4">{{ total_genera or '0' }}</h2>
+                            <p class="mb-0">Genera Documented</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h2 class="display-4">5+</h2>
+                            <p class="mb-0">Database Sources</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h2 class="display-4">AI</h2>
+                            <p class="mb-0">Powered Analysis</p>
+                        </div>
+                    </div>
+                    <p class="lead mb-4">
+                        Your contribution becomes part of the most comprehensive orchid database ever created, 
+                        helping enthusiasts and researchers worldwide.
+                    </p>
+                    {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                        <i data-feather="user-plus" class="me-2"></i>
+                        Start Contributing Today
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('upload') }}" class="btn btn-light btn-lg">
+                        <i data-feather="upload" class="me-2"></i>
+                        Upload Your Next Orchid
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

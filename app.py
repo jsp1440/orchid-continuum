@@ -61,3 +61,4 @@ import routes
 import botanical_routes  # Import botanical database routes
 import botanical_analysis_route  # Additional botanical analysis integration
 import admin_system  # Administrative system with ultimate database control
+import user_registration  # User registration and profile system
