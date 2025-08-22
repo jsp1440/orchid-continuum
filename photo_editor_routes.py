@@ -187,7 +187,7 @@ def api_analyze_plant():
 @photo_editor_bp.route('/api/save', methods=['POST'])
 @login_required
 def api_save_image():
-    """API endpoint for saving edited images"""
+    """API endpoint for saving edited images with caption and sharing options"""
     try:
         data = request.get_json()
         session_id = data.get('session_id')
@@ -199,6 +199,58 @@ def api_save_image():
         
     except Exception as e:
         logger.error(f"Error saving image: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@photo_editor_bp.route('/api/generate-caption', methods=['POST'])
+@login_required
+def api_generate_caption():
+    """API endpoint for generating social media captions"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        include_analysis = data.get('include_analysis', False)
+        
+        session_data = photo_editor.editing_sessions.get(session_id)
+        if not session_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        from models import OrchidRecord
+        orchid = OrchidRecord.query.get(session_data['orchid_id'])
+        if not orchid:
+            return jsonify({'error': 'Orchid not found'}), 404
+        
+        caption = photo_editor.generate_social_caption(orchid, include_analysis)
+        
+        return jsonify({
+            'success': True,
+            'caption': caption,
+            'botanical_info': {
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'display_name': orchid.display_name
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating caption: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@photo_editor_bp.route('/api/create-captioned', methods=['POST'])
+@login_required
+def api_create_captioned():
+    """API endpoint for creating captioned images"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        caption_options = data.get('caption_options', {})
+        
+        result = photo_editor.create_captioned_image(session_id, caption_options)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error creating captioned image: {e}")
         return jsonify({'error': str(e)}), 500
 
 @photo_editor_bp.route('/api/session/<session_id>/status')
