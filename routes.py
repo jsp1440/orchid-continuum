@@ -18,6 +18,7 @@ from export_utils import export_orchid_data, get_export_filename
 from certificate_generator import generate_award_certificate, get_certificate_pdf
 from filename_parser import parse_orchid_filename
 from processing_routes import processing_bp
+from photo_editor_routes import photo_editor_bp
 import os
 import json
 import logging
@@ -27,8 +28,9 @@ from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
-# Register processing blueprint
+# Register blueprints
 app.register_blueprint(processing_bp)
+app.register_blueprint(photo_editor_bp)
 
 @app.route('/')
 def index():
