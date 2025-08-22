@@ -10,6 +10,9 @@ from google_drive_service import upload_to_drive, get_drive_file_url
 from utils import allowed_file, generate_filename, get_orchid_of_the_day
 from batch_upload import BatchUploadProcessor, validate_batch_limits
 from judging_standards import analyze_orchid_by_organization, get_available_organizations
+from enhanced_judging import analyze_orchid_with_genetics
+# from genetic_analysis import analyze_orchid_genetics, compare_hybrid_to_parents  # Temporarily disabled
+from rhs_integration import get_rhs_orchid_data, analyze_hybrid_parentage
 from export_utils import export_orchid_data, get_export_filename
 from certificate_generator import generate_award_certificate, get_certificate_pdf
 from filename_parser import parse_orchid_filename
@@ -25,27 +28,55 @@ logger = logging.getLogger(__name__)
 @app.route('/')
 def index():
     """Homepage with featured orchids and widgets"""
-    # Get orchid of the day
-    orchid_of_day = get_orchid_of_the_day()
+    try:
+        # Get orchid of the day
+        orchid_of_day = get_orchid_of_the_day()
+        
+        # Get recent uploads with error handling
+        recent_orchids = []
+        try:
+            recent_orchids = OrchidRecord.query.filter(
+                OrchidRecord.image_url.isnot(None)
+            ).order_by(OrchidRecord.created_at.desc()).limit(6).all()
+        except Exception as e:
+            logger.error(f"Error fetching recent orchids: {str(e)}")
+            db.session.rollback()
+        
+        # Get featured orchids with error handling
+        featured_orchids = []
+        try:
+            featured_orchids = OrchidRecord.query.filter_by(is_featured=True).limit(4).all()
+        except Exception as e:
+            logger.error(f"Error fetching featured orchids: {str(e)}")
+            db.session.rollback()
+        
+        # Stats with error handling
+        total_orchids = 0
+        total_genera = 0
+        try:
+            total_orchids = OrchidRecord.query.count()
+            total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).scalar() or 0
+        except Exception as e:
+            logger.error(f"Error fetching stats: {str(e)}")
+            db.session.rollback()
+        
+        return render_template('index.html',
+                             orchid_of_day=orchid_of_day,
+                             recent_orchids=recent_orchids,
+                             featured_orchids=featured_orchids,
+                             total_orchids=total_orchids,
+                             total_genera=total_genera)
     
-    # Get recent uploads
-    recent_orchids = OrchidRecord.query.filter(
-        OrchidRecord.image_url.isnot(None)
-    ).order_by(OrchidRecord.created_at.desc()).limit(6).all()
-    
-    # Get featured orchids
-    featured_orchids = OrchidRecord.query.filter_by(is_featured=True).limit(4).all()
-    
-    # Stats
-    total_orchids = OrchidRecord.query.count()
-    total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).scalar()
-    
-    return render_template('index.html',
-                         orchid_of_day=orchid_of_day,
-                         recent_orchids=recent_orchids,
-                         featured_orchids=featured_orchids,
-                         total_orchids=total_orchids,
-                         total_genera=total_genera)
+    except Exception as e:
+        logger.error(f"Homepage error: {str(e)}")
+        db.session.rollback()
+        # Return minimal homepage on error
+        return render_template('index.html',
+                             orchid_of_day=None,
+                             recent_orchids=[],
+                             featured_orchids=[],
+                             total_orchids=0,
+                             total_genera=0)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

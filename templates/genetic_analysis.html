@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Genetic Analysis - {{ orchid.display_name }} - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('gallery') }}">Gallery</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('orchid_detail', id=orchid.id) }}">{{ orchid.display_name }}</a></li>
+                    <li class="breadcrumb-item active">Genetic Analysis</li>
+                </ol>
+            </nav>
+            
+            <h2>
+                <i data-feather="dna" class="me-2"></i>
+                Genetic & Parentage Analysis
+            </h2>
+            <h4 class="text-muted">{{ orchid.get_full_name() }}</h4>
+        </div>
+    </div>
+    
+    <!-- Analysis Results -->
+    {% if analysis %}
+    <div class="row">
+        <!-- Left Column: Main Analysis -->
+        <div class="col-lg-8">
+            <!-- RHS Verification -->
+            {% if analysis.rhs_analysis.registration_found %}
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="check-circle" class="me-2"></i>
+                        RHS Registration Verified
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Registration Status:</strong> <span class="badge bg-success">Verified</span></p>
+                            <p><strong>Type:</strong> {{ analysis.rhs_analysis.rhs_data.type|title }}</p>
+                            {% if analysis.rhs_analysis.parentage_verified %}
+                            <p><strong>Parentage:</strong> <span class="text-success">Confirmed</span></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Verification Score:</strong> 
+                                <span class="badge bg-primary">{{ "%.1f"|format(analysis.rhs_analysis.verification_score) }} points</span>
+                            </p>
+                            <p><strong>Database:</strong> RHS International Register</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Parentage Analysis -->
+            {% if analysis.parentage_analysis.parentage_known %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="git-branch" class="me-2"></i>
+                        Parentage Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if orchid.pod_parent and orchid.pollen_parent %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6>Parentage Formula</h6>
+                            <p class="lead">{{ orchid.pod_parent }} × {{ orchid.pollen_parent }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Parent Quality</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ (analysis.parentage_analysis.parentage_quality_score * 10)|int }}%">
+                                    {{ "%.1f"|format(analysis.parentage_analysis.parentage_quality_score) }}/10
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Inheritance Pattern</h6>
+                            {% if analysis.parentage_analysis.inheritance_analysis %}
+                            <span class="badge bg-secondary">
+                                {{ analysis.parentage_analysis.inheritance_analysis.genetic_expression|default('Balanced') }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Generation</h6>
+                            {% if orchid.generation %}
+                            <span class="badge bg-info">F{{ orchid.generation }}</span>
+                            {% else %}
+                            <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Trait Inheritance -->
+                    {% if analysis.parentage_analysis.inheritance_analysis %}
+                    <hr>
+                    <h6>Trait Inheritance Patterns</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">Dominant Traits</small>
+                            <ul class="list-unstyled">
+                                {% for trait in analysis.parentage_analysis.inheritance_analysis.dominant_traits[:3] %}
+                                <li><i data-feather="arrow-up" class="me-1 text-success"></i>{{ trait.trait }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Intermediate Expression</small>
+                            <ul class="list-unstyled">
+                                {% for trait in analysis.parentage_analysis.inheritance_analysis.intermediate_traits[:3] %}
+                                <li><i data-feather="minus" class="me-1 text-warning"></i>{{ trait.trait }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Genetic Analysis Results -->
+            {% if analysis.genetic_analysis %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Genetic Analysis Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">Genetic Diversity</h6>
+                                <div class="display-6 text-primary">
+                                    {{ "%.1f"|format(analysis.genetic_analysis.genetic_diversity_score) }}
+                                </div>
+                                <small>/10</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">Hybrid Vigor</h6>
+                                <span class="badge bg-{{ 'success' if analysis.genetic_analysis.hybrid_vigor_assessment == 'enhanced' else 'secondary' }} fs-6">
+                                    {{ analysis.genetic_analysis.hybrid_vigor_assessment|title }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">Breeding Value</h6>
+                                <div class="display-6 text-success">
+                                    {{ "%.1f"|format(analysis.genetic_analysis.breeding_value_score) }}
+                                </div>
+                                <small>/10</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="text-muted">Novelty Score</h6>
+                                <div class="display-6 text-warning">
+                                    {{ "%.1f"|format(analysis.genetic_analysis.genetic_novelty_score) }}
+                                </div>
+                                <small>/10</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Enhanced Scoring -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Enhanced Scoring Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Score Breakdown</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Base Judging Score</td>
+                                    <td class="text-end">{{ "%.1f"|format(analysis.enhanced_scoring.base_score) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Genetic Factors</td>
+                                    <td class="text-end text-success">+{{ "%.1f"|format(analysis.enhanced_scoring.genetic_bonus) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Parentage Quality</td>
+                                    <td class="text-end text-success">+{{ "%.1f"|format(analysis.enhanced_scoring.parentage_bonus) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RHS Verification</td>
+                                    <td class="text-end text-success">+{{ "%.1f"|format(analysis.enhanced_scoring.rhs_bonus) }}</td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <td><strong>Total Enhanced Score</strong></td>
+                                    <td class="text-end"><strong>{{ "%.1f"|format(analysis.enhanced_scoring.total_enhanced_score) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Award Assessment</h6>
+                            {% if analysis.final_assessment.is_award_worthy %}
+                            <div class="alert alert-success">
+                                <h6><i data-feather="award" class="me-2"></i>Award Worthy!</h6>
+                                <p class="mb-1"><strong>Recommended Level:</strong> {{ analysis.final_assessment.suggested_award_level }}</p>
+                                <p class="mb-0"><small>{{ analysis.final_assessment.award_justification }}</small></p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <h6><i data-feather="info" class="me-2"></i>Assessment Complete</h6>
+                                <p class="mb-0">Score: {{ "%.1f"|format(analysis.final_assessment.percentage) }}% - Continue improving for award consideration.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            {% if analysis.recommendations %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="lightbulb" class="me-2"></i>
+                        Expert Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        {% for recommendation in analysis.recommendations %}
+                        <li class="mb-2">
+                            <i data-feather="check" class="me-2 text-success"></i>{{ recommendation }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column: Summary & Actions -->
+        <div class="col-lg-4">
+            <!-- Quick Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Analysis Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 text-center mb-3">
+                            <div class="display-4 {{ 'text-success' if analysis.final_assessment.percentage >= 75 else 'text-primary' }}">
+                                {{ "%.0f"|format(analysis.final_assessment.percentage) }}%
+                            </div>
+                            <small class="text-muted">Overall Score</small>
+                        </div>
+                    </div>
+                    
+                    <ul class="list-unstyled">
+                        {% if analysis.rhs_analysis.registration_found %}
+                        <li><i data-feather="check" class="me-2 text-success"></i>RHS Verified</li>
+                        {% endif %}
+                        {% if analysis.parentage_analysis.parentage_known %}
+                        <li><i data-feather="check" class="me-2 text-success"></i>Parentage Known</li>
+                        {% endif %}
+                        {% if analysis.genetic_analysis.breeding_value_score > 7 %}
+                        <li><i data-feather="check" class="me-2 text-success"></i>High Breeding Value</li>
+                        {% endif %}
+                        {% if analysis.final_assessment.is_award_worthy %}
+                        <li><i data-feather="award" class="me-2 text-warning"></i>Award Worthy</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Actions</h6>
+                </div>
+                <div class="card-body">
+                    {% if analysis.final_assessment.is_award_worthy %}
+                    <button class="btn btn-warning btn-sm w-100 mb-2" onclick="createCertificate()">
+                        <i data-feather="award" class="me-2"></i>Generate Certificate
+                    </button>
+                    {% endif %}
+                    
+                    <a href="#" class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="exportAnalysis()">
+                        <i data-feather="download" class="me-2"></i>Export Analysis
+                    </a>
+                    
+                    <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-outline-secondary btn-sm w-100">
+                        <i data-feather="arrow-left" class="me-2"></i>Back to Orchid
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Technical Details -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Technical Details</h6>
+                </div>
+                <div class="card-body">
+                    <small class="text-muted">
+                        <p><strong>Analysis Date:</strong> {{ analysis.analysis_date }}</p>
+                        <p><strong>Organization:</strong> {{ analysis.organization }}</p>
+                        <p><strong>Method:</strong> AI + RHS + Genetic Analysis</p>
+                        <p><strong>Confidence:</strong> 85%</p>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- No Analysis Available -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i data-feather="database" class="display-1 text-muted mb-3"></i>
+                    <h4>No Genetic Analysis Available</h4>
+                    <p class="text-muted">This orchid hasn't been analyzed yet. Start a comprehensive genetic and parentage analysis to unlock detailed insights.</p>
+                    
+                    <form method="POST" class="mt-4">
+                        <div class="row">
+                            <div class="col-md-6 mx-auto">
+                                <select name="organization" class="form-select mb-3">
+                                    <option value="AOS">American Orchid Society (AOS)</option>
+                                    <option value="EU">European Standards</option>
+                                    <option value="AU">Australian Standards</option>
+                                    <option value="NZ">New Zealand Standards</option>
+                                    <option value="JP">Japanese Standards</option>
+                                    <option value="TH">Thai Standards</option>
+                                </select>
+                                
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i data-feather="play" class="me-2"></i>Start Genetic Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function createCertificate() {
+    if (confirm('Create an award certificate for this orchid?')) {
+        // AJAX call to create certificate
+        fetch('/create-certificate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'analysis_id': '{{ analysis.id if analysis else "" }}',
+                'award_level': '{{ analysis.final_assessment.suggested_award_level if analysis else "" }}'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Certificate created successfully!');
+                window.location.href = '/certificate/' + data.certificate_id;
+            } else {
+                alert('Failed to create certificate: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the certificate.');
+        });
+    }
+}
+
+function exportAnalysis() {
+    window.location.href = '/export-judging-analysis/{{ orchid.id }}';
+}
+</script>
+{% endblock %}
