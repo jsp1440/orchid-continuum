@@ -35,7 +35,25 @@ db.init_app(app)
 with app.app_context():
     # Import models to ensure tables are created
     import models
-    db.create_all()
+    
+    # Initialize database
+    try:
+        db.create_all()
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Database creation error: {e}")
+    
+    # Initialize judging standards
+    try:
+        from judging_standards import initialize_judging_standards
+        initialize_judging_standards()
+        print("Judging standards initialized")
+    except Exception as e:
+        print(f"Judging standards initialization error: {e}")
+
+# Register authentication blueprint
+from auth_routes import auth_bp
+app.register_blueprint(auth_bp)
 
 # Import routes after app initialization
 import routes

@@ -1,6 +1,9 @@
 from app import db
 from datetime import datetime
-from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime
+from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, JSON
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 
 class OrchidTaxonomy(db.Model):
     """Master taxonomy table for orchid classification"""
@@ -23,6 +26,9 @@ class OrchidTaxonomy(db.Model):
 class OrchidRecord(db.Model):
     """Main orchid record with metadata"""
     id = db.Column(Integer, primary_key=True)
+    
+    # User and source tracking
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
     
     # Taxonomy relationship
     taxonomy_id = db.Column(Integer, db.ForeignKey('orchid_taxonomy.id'), nullable=True)
@@ -92,14 +98,52 @@ class ScrapingLog(db.Model):
 class UserUpload(db.Model):
     """Track user uploads and submissions"""
     id = db.Column(Integer, primary_key=True)
+    plant_id = db.Column(String(20), unique=True, nullable=False)  # Plant ID number
+    
+    # Relationships
     orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=True)
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    batch_id = db.Column(Integer, db.ForeignKey('batch_upload.id'), nullable=True)
+    
+    # File information
     original_filename = db.Column(String(300), nullable=False)
     uploaded_filename = db.Column(String(300), nullable=False)
     file_size = db.Column(Integer)
     mime_type = db.Column(String(100))
+    
+    # Parsed information from filename
+    parsed_genus = db.Column(String(100))
+    parsed_species = db.Column(String(100))
+    parsed_variety = db.Column(String(100))
+    filename_confidence = db.Column(Float)  # Confidence in filename parsing
+    
+    # User data
     user_notes = db.Column(Text)
+    location = db.Column(String(200))
+    growing_conditions = db.Column(Text)
+    
+    # Processing status
     processing_status = db.Column(String(20), default='pending')  # pending, processing, completed, failed
+    error_message = db.Column(Text)
+    
+    # Timestamps
     created_at = db.Column(DateTime, default=datetime.utcnow)
+    processed_at = db.Column(DateTime)
+    
+    def __init__(self, **kwargs):
+        super(UserUpload, self).__init__(**kwargs)
+        if not self.plant_id:
+            self.plant_id = self.generate_plant_id()
+    
+    def generate_plant_id(self):
+        """Generate unique plant ID"""
+        while True:
+            plant_id = 'P' + secrets.token_hex(4).upper()  # P + 8 chars
+            if not UserUpload.query.filter_by(plant_id=plant_id).first():
+                return plant_id
+    
+    def __repr__(self):
+        return f'<UserUpload {self.plant_id}: {self.original_filename}>'
 
 class WidgetConfig(db.Model):
     """Configuration for various widgets"""
@@ -108,3 +152,206 @@ class WidgetConfig(db.Model):
     config_data = db.Column(Text)  # JSON string with widget configuration
     is_active = db.Column(Boolean, default=True)
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class User(UserMixin, db.Model):
+    """User management system"""
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String(20), unique=True, nullable=False)  # Distinctive user ID
+    email = db.Column(String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(String(256))
+    is_admin = db.Column(Boolean, default=False)
+    
+    # User profile
+    first_name = db.Column(String(100))
+    last_name = db.Column(String(100))
+    organization = db.Column(String(200))
+    country = db.Column(String(100))
+    
+    # Statistics
+    upload_count = db.Column(Integer, default=0)
+    last_login = db.Column(DateTime)
+    
+    # Account status
+    account_active = db.Column(Boolean, default=True)
+    email_verified = db.Column(Boolean, default=False)
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    uploads = db.relationship('UserUpload', backref='user', lazy=True)
+    judgings = db.relationship('JudgingAnalysis', backref='user', lazy=True)
+    certificates = db.relationship('Certificate', backref='user', lazy=True)
+    
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        if not self.user_id:
+            self.user_id = self.generate_user_id()
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def generate_user_id(self):
+        """Generate a unique user ID"""
+        while True:
+            user_id = 'OU' + secrets.token_hex(4).upper()  # Orchid User + 8 chars
+            if not User.query.filter_by(user_id=user_id).first():
+                return user_id
+    
+    def get_full_name(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.email
+    
+    def __repr__(self):
+        return f'<User {self.user_id}: {self.email}>'
+
+class JudgingStandard(db.Model):
+    """Orchid judging standards from different organizations"""
+    id = db.Column(Integer, primary_key=True)
+    organization = db.Column(String(50), nullable=False)  # AOS, EU, AU, NZ, JP, TH
+    standard_name = db.Column(String(100), nullable=False)
+    category = db.Column(String(50), nullable=False)  # flower, plant, cultural
+    criteria_name = db.Column(String(100), nullable=False)
+    description = db.Column(Text)
+    max_points = db.Column(Integer, nullable=False)
+    weight_factor = db.Column(Float, default=1.0)
+    
+    # Detailed scoring guidance
+    scoring_guide = db.Column(Text)  # JSON with detailed scoring criteria
+    examples = db.Column(Text)  # JSON with example descriptions
+    
+    is_active = db.Column(Boolean, default=True)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<JudgingStandard {self.organization}: {self.criteria_name}>'
+
+class JudgingAnalysis(db.Model):
+    """AI analysis of orchids against judging standards"""
+    id = db.Column(Integer, primary_key=True)
+    
+    # Relationships
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    judging_standard_id = db.Column(Integer, db.ForeignKey('judging_standard.id'), nullable=False)
+    
+    # Analysis results
+    score = db.Column(Float)  # Score out of max_points
+    percentage = db.Column(Float)  # Percentage score
+    ai_comments = db.Column(Text)  # AI analysis comments
+    detailed_analysis = db.Column(Text)  # JSON with detailed breakdown
+    
+    # Awards and recognition
+    is_award_worthy = db.Column(Boolean, default=False)
+    suggested_award_level = db.Column(String(50))  # HCC, AM, FCC, etc.
+    award_justification = db.Column(Text)
+    
+    # Analysis metadata
+    analysis_date = db.Column(DateTime, default=datetime.utcnow)
+    ai_model_used = db.Column(String(50))
+    confidence_level = db.Column(Float)
+    
+    # Relationships
+    orchid = db.relationship('OrchidRecord', backref='judging_analyses')
+    judging_standard = db.relationship('JudgingStandard')
+    
+    def __repr__(self):
+        return f'<JudgingAnalysis {self.orchid_id}: {self.score}>'
+
+class Certificate(db.Model):
+    """Award certificates for orchids"""
+    id = db.Column(Integer, primary_key=True)
+    certificate_number = db.Column(String(50), unique=True, nullable=False)
+    
+    # Relationships
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
+    judging_analysis_id = db.Column(Integer, db.ForeignKey('judging_analysis.id'), nullable=True)
+    
+    # Certificate details
+    award_level = db.Column(String(50), nullable=False)  # HCC, AM, FCC, etc.
+    award_title = db.Column(String(200), nullable=False)
+    total_score = db.Column(Float)
+    judging_organization = db.Column(String(50))  # AOS, EU, etc.
+    
+    # Certificate content
+    citation_text = db.Column(Text)
+    technical_notes = db.Column(Text)
+    judge_comments = db.Column(Text)
+    
+    # File information
+    pdf_filename = db.Column(String(300))
+    is_generated = db.Column(Boolean, default=False)
+    
+    # Timestamps
+    issued_date = db.Column(DateTime, default=datetime.utcnow)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    orchid = db.relationship('OrchidRecord', backref='certificates')
+    judging_analysis = db.relationship('JudgingAnalysis')
+    
+    def __init__(self, **kwargs):
+        super(Certificate, self).__init__(**kwargs)
+        if not self.certificate_number:
+            self.certificate_number = self.generate_certificate_number()
+    
+    def generate_certificate_number(self):
+        """Generate unique certificate number"""
+        while True:
+            # Format: OC-YYYY-XXXXX (Orchid Continuum - Year - 5 digit number)
+            year = datetime.utcnow().year
+            number = secrets.randbelow(99999) + 1
+            cert_num = f"OC-{year}-{number:05d}"
+            if not Certificate.query.filter_by(certificate_number=cert_num).first():
+                return cert_num
+    
+    def __repr__(self):
+        return f'<Certificate {self.certificate_number}>'
+
+class BatchUpload(db.Model):
+    """Track batch upload sessions"""
+    id = db.Column(Integer, primary_key=True)
+    batch_id = db.Column(String(50), unique=True, nullable=False)
+    
+    # User and session info
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    session_id = db.Column(String(100))
+    
+    # Batch statistics
+    total_files = db.Column(Integer, default=0)
+    processed_files = db.Column(Integer, default=0)
+    successful_files = db.Column(Integer, default=0)
+    failed_files = db.Column(Integer, default=0)
+    
+    # Processing status
+    status = db.Column(String(20), default='pending')  # pending, processing, completed, failed
+    processing_log = db.Column(Text)  # JSON log of processing steps
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    completed_at = db.Column(DateTime)
+    
+    # Relationships
+    uploads = db.relationship('UserUpload', backref='batch', lazy=True)
+    
+    def __init__(self, **kwargs):
+        super(BatchUpload, self).__init__(**kwargs)
+        if not self.batch_id:
+            self.batch_id = self.generate_batch_id()
+    
+    def generate_batch_id(self):
+        """Generate unique batch ID"""
+        while True:
+            batch_id = 'B' + secrets.token_hex(6).upper()
+            if not BatchUpload.query.filter_by(batch_id=batch_id).first():
+                return batch_id
+    
+    def __repr__(self):
+        return f'<BatchUpload {self.batch_id}: {self.total_files} files>'

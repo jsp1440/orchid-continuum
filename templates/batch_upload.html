@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Upload - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i data-feather="upload-cloud" class="me-2"></i>Batch Upload Orchids
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i data-feather="info" class="me-2"></i>Filename Parsing</h6>
+                        <p class="mb-0">Name your files like <code>l.anceps.jpg</code> or <code>Cattleya warscewiczii.png</code> for automatic identification!</p>
+                    </div>
+                    
+                    <form method="POST" enctype="multipart/form-data" id="batchUploadForm">
+                        <div class="mb-3">
+                            <label for="files" class="form-label">Select Orchid Images</label>
+                            <input type="file" class="form-control" id="files" name="files[]" multiple 
+                                   accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff" required>
+                            <div class="form-text">
+                                Maximum 100 files, 50MB per file. Supported formats: JPG, PNG, GIF, BMP, TIFF
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Batch Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Growing conditions, collection information, etc."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="upload" class="me-2"></i>Start Batch Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Batch Upload Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i data-feather="check-circle" class="me-2 text-success"></i>Use descriptive filenames</li>
+                        <li><i data-feather="check-circle" class="me-2 text-success"></i>Include genus and species</li>
+                        <li><i data-feather="check-circle" class="me-2 text-success"></i>Use standard abbreviations</li>
+                        <li><i data-feather="check-circle" class="me-2 text-success"></i>High-quality images work best</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Common Abbreviations</h6>
+                    <small class="text-muted">
+                        <strong>C.</strong> = Cattleya<br>
+                        <strong>Den.</strong> = Dendrobium<br>
+                        <strong>Phal.</strong> = Phalaenopsis<br>
+                        <strong>Paph.</strong> = Paphiopedilum<br>
+                        <strong>L.</strong> = Laelia<br>
+                        <strong>Onc.</strong> = Oncidium
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('files').addEventListener('change', function() {
+    const files = this.files;
+    let totalSize = 0;
+    
+    for (let file of files) {
+        totalSize += file.size;
+    }
+    
+    const totalMB = (totalSize / (1024 * 1024)).toFixed(1);
+    
+    if (files.length > 100) {
+        alert('Too many files selected. Maximum is 100 files per batch.');
+        this.value = '';
+        return;
+    }
+    
+    if (totalSize > 500 * 1024 * 1024) {
+        alert(`Batch too large: ${totalMB}MB. Maximum is 500MB per batch.`);
+        this.value = '';
+        return;
+    }
+    
+    console.log(`Selected ${files.length} files (${totalMB}MB total)`);
+});
+</script>
+{% endblock %}
