@@ -1,16 +1,24 @@
-from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
+from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
-from models import OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig
+from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
+                   User, JudgingAnalysis, Certificate, BatchUpload)
 from orchid_ai import analyze_orchid_image, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
 from utils import allowed_file, generate_filename, get_orchid_of_the_day
+from batch_upload import BatchUploadProcessor, validate_batch_limits
+from judging_standards import analyze_orchid_by_organization, get_available_organizations
+from export_utils import export_orchid_data, get_export_filename
+from certificate_generator import generate_award_certificate, get_certificate_pdf
+from filename_parser import parse_orchid_filename
 import os
 import json
 import logging
 from datetime import datetime
 from sqlalchemy import or_, func
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +71,21 @@ def upload():
                 os.makedirs('temp', exist_ok=True)
                 file.save(temp_path)
                 
+                # Parse filename for orchid info
+                parsed_info = parse_orchid_filename(original_filename)
+                
                 # Create upload record
                 upload_record = UserUpload(
+                    user_id=current_user.id if current_user.is_authenticated else None,
                     original_filename=original_filename,
                     uploaded_filename=new_filename,
                     file_size=os.path.getsize(temp_path),
                     mime_type=file.content_type,
                     user_notes=request.form.get('notes', ''),
-                    processing_status='processing'
+                    processing_status='processing',
+                    parsed_genus=parsed_info.get('genus'),
+                    parsed_species=parsed_info.get('species'),
+                    filename_confidence=parsed_info.get('confidence', 0.0)
                 )
                 db.session.add(upload_record)
                 db.session.commit()
