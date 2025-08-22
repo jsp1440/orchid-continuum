@@ -33,6 +33,20 @@ class OrchidRecord(db.Model):
     # Taxonomy relationship
     taxonomy_id = db.Column(Integer, db.ForeignKey('orchid_taxonomy.id'), nullable=True)
     
+    # RHS and parentage information
+    rhs_registration_id = db.Column(String(100), nullable=True)
+    is_hybrid = db.Column(Boolean, default=False)
+    is_species = db.Column(Boolean, default=False)
+    grex_name = db.Column(String(200), nullable=True)
+    clone_name = db.Column(String(200), nullable=True)
+    pod_parent = db.Column(String(200), nullable=True)
+    pollen_parent = db.Column(String(200), nullable=True)
+    parentage_formula = db.Column(String(500), nullable=True)
+    generation = db.Column(Integer, nullable=True)
+    registration_date = db.Column(DateTime, nullable=True)
+    registrant = db.Column(String(200), nullable=True)
+    rhs_verification_status = db.Column(String(50), default='pending')  # verified, pending, not_found
+    
     # Basic information
     display_name = db.Column(String(200), nullable=False)
     scientific_name = db.Column(String(200), index=True)
@@ -81,6 +95,25 @@ class OrchidRecord(db.Model):
     created_at = db.Column(DateTime, default=datetime.utcnow)
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    def get_parentage_display(self):
+        """Get formatted parentage display"""
+        if self.pod_parent and self.pollen_parent:
+            return f"{self.pod_parent} × {self.pollen_parent}"
+        elif self.parentage_formula:
+            return self.parentage_formula
+        return None
+    
+    def get_full_name(self):
+        """Get full orchid name including clone if present"""
+        base_name = self.scientific_name or self.display_name
+        if self.clone_name:
+            return f"{base_name} '{self.clone_name}'"
+        return base_name
+    
+    def is_registered_hybrid(self):
+        """Check if this is a registered hybrid"""
+        return bool(self.rhs_registration_id or (self.pod_parent and self.pollen_parent))
+    
     def __repr__(self):
         return f'<OrchidRecord {self.display_name}>'
 
@@ -181,6 +214,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     uploads = db.relationship('UserUpload', backref='user', lazy=True)
+    orchid_records = db.relationship('OrchidRecord', backref='owner', lazy=True)
     judgings = db.relationship('JudgingAnalysis', backref='user', lazy=True)
     certificates = db.relationship('Certificate', backref='user', lazy=True)
     
