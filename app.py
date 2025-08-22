@@ -62,3 +62,11 @@ import botanical_routes  # Import botanical database routes
 import botanical_analysis_route  # Additional botanical analysis integration
 import admin_system  # Administrative system with ultimate database control
 import user_registration  # User registration and profile system
+
+# Register additional blueprints
+try:
+    from drive_importer import drive_import_bp
+    app.register_blueprint(drive_import_bp)
+    print("Google Drive import system initialized")
+except Exception as e:
+    print(f"Drive import initialization error: {e}")
