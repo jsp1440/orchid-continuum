@@ -17,6 +17,7 @@ from rhs_integration import get_rhs_orchid_data, analyze_hybrid_parentage
 from export_utils import export_orchid_data, get_export_filename
 from certificate_generator import generate_award_certificate, get_certificate_pdf
 from filename_parser import parse_orchid_filename
+from processing_routes import processing_bp
 import os
 import json
 import logging
@@ -25,6 +26,9 @@ from sqlalchemy import or_, func
 from io import BytesIO
 
 logger = logging.getLogger(__name__)
+
+# Register processing blueprint
+app.register_blueprint(processing_bp)
 
 @app.route('/')
 def index():
