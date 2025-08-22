@@ -60,3 +60,4 @@ app.register_blueprint(auth_bp)
 import routes
 import botanical_routes  # Import botanical database routes
 import botanical_analysis_route  # Additional botanical analysis integration
+import admin_system  # Administrative system with ultimate database control
