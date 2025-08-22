@@ -58,3 +58,5 @@ app.register_blueprint(auth_bp)
 
 # Import routes after app initialization
 import routes
+import botanical_routes  # Import botanical database routes
+import botanical_analysis_route  # Additional botanical analysis integration
