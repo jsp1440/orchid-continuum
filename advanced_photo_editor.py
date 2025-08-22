@@ -395,8 +395,189 @@ class AdvancedPhotoEditor:
             logger.error(f"Error analyzing plant features: {e}")
             return {'error': str(e)}
     
+    def generate_social_caption(self, orchid: 'OrchidRecord', include_analysis: bool = False) -> str:
+        """Generate social media caption with botanical information"""
+        try:
+            caption_parts = []
+            
+            # Plant identification
+            if orchid.scientific_name:
+                caption_parts.append(f"🌺 {orchid.scientific_name}")
+            elif orchid.display_name:
+                caption_parts.append(f"🌺 {orchid.display_name}")
+            else:
+                caption_parts.append("🌺 Beautiful Orchid")
+            
+            # Botanical classification
+            botanical_info = []
+            if orchid.genus:
+                botanical_info.append(f"Genus: {orchid.genus}")
+            if orchid.species:
+                botanical_info.append(f"Species: {orchid.species}")
+            
+            # Determine if hybrid or intergeneric
+            if orchid.scientific_name:
+                if 'x' in orchid.scientific_name.lower() or '×' in orchid.scientific_name:
+                    if orchid.genus and len(orchid.scientific_name.split()) > 1:
+                        # Check if it's intergeneric (multiple genus names)
+                        genus_parts = orchid.scientific_name.split()
+                        if any('x' in part.lower() or '×' in part for part in genus_parts[:2]):
+                            botanical_info.append("Type: Intergeneric Hybrid")
+                        else:
+                            botanical_info.append("Type: Hybrid")
+                    else:
+                        botanical_info.append("Type: Hybrid")
+                else:
+                    botanical_info.append("Type: Species")
+            
+            if botanical_info:
+                caption_parts.append(" | ".join(botanical_info))
+            
+            # Add analysis info if available and requested
+            if include_analysis and orchid.ai_description:
+                description = orchid.ai_description[:100] + "..." if len(orchid.ai_description) > 100 else orchid.ai_description
+                caption_parts.append(f"\n📝 {description}")
+            
+            # Add hashtags
+            hashtags = ["#Orchids", "#OrchidPhotography", "#Botanica", "#FlowerPhotography", "#PlantLovers"]
+            if orchid.genus:
+                hashtags.append(f"#{orchid.genus.replace(' ', '')}")
+            
+            caption_parts.append(" ".join(hashtags))
+            
+            # Add branding and copyright
+            caption_parts.append("\n📸 Enhanced with AI photo editing")
+            caption_parts.append("🔬 Orchid Continuum project, Copyright 2025")
+            
+            return "\n\n".join(caption_parts)
+            
+        except Exception as e:
+            logger.error(f"Error generating social caption: {e}")
+            return f"🌺 Beautiful orchid enhanced with professional photo editing\n\n#Orchids #OrchidPhotography #Botanica\n\n📸 Enhanced with AI photo editing\n🔬 Orchid Continuum project, Copyright 2025"
+    
+    def create_captioned_image(self, session_id: str, caption_options: Dict[str, Any]) -> Dict[str, Any]:
+        """Create image with integrated caption overlay"""
+        try:
+            session = self.editing_sessions.get(session_id)
+            if not session:
+                return {'error': 'Invalid session'}
+            
+            orchid = OrchidRecord.query.get(session['orchid_id'])
+            image = Image.open(session['current_path'])
+            
+            # Caption settings
+            add_caption_overlay = caption_options.get('add_overlay', False)
+            caption_position = caption_options.get('position', 'bottom')
+            caption_style = caption_options.get('style', 'classic')
+            
+            if add_caption_overlay:
+                # Create caption text
+                caption_text = self._generate_image_caption(orchid, caption_style)
+                
+                # Add caption overlay to image
+                captioned_image = self._add_caption_overlay(image, caption_text, caption_position, caption_style)
+            else:
+                captioned_image = image
+            
+            # Save captioned image
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            captioned_filename = f"captioned_{session_id}_{timestamp}.jpg"
+            captioned_path = os.path.join(self.temp_dir, captioned_filename)
+            captioned_image.save(captioned_path, 'JPEG', quality=95)
+            
+            # Generate social media caption
+            social_caption = self.generate_social_caption(orchid, include_analysis=caption_options.get('include_analysis', False))
+            
+            return {
+                'success': True,
+                'captioned_image_path': captioned_path,
+                'social_caption': social_caption,
+                'image_data': self._image_to_base64(captioned_image)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error creating captioned image: {e}")
+            return {'error': str(e)}
+    
+    def _generate_image_caption(self, orchid: 'OrchidRecord', style: str = 'classic') -> str:
+        """Generate caption text for image overlay"""
+        if style == 'minimal':
+            return f"{orchid.scientific_name or orchid.display_name or 'Orchid'}\nOrchid Continuum © 2025"
+        elif style == 'detailed':
+            caption = f"{orchid.scientific_name or orchid.display_name or 'Beautiful Orchid'}\n"
+            if orchid.genus:
+                caption += f"Genus: {orchid.genus}"
+                if orchid.species:
+                    caption += f" | Species: {orchid.species}"
+                caption += "\n"
+            caption += "Orchid Continuum project © 2025"
+            return caption
+        else:  # classic
+            return f"{orchid.scientific_name or orchid.display_name or 'Orchid'}\nOrchid Continuum © 2025"
+    
+    def _add_caption_overlay(self, image: Image.Image, caption_text: str, position: str, style: str) -> Image.Image:
+        """Add caption overlay to image"""
+        try:
+            # Create a copy of the image
+            captioned_image = image.copy()
+            draw = ImageDraw.Draw(captioned_image)
+            
+            # Calculate text size and position
+            img_width, img_height = captioned_image.size
+            
+            try:
+                # Try to use a better font if available
+                font_size = max(24, img_width // 30)
+                # For now, use default font
+                font = None
+            except:
+                font = None
+            
+            # Calculate text dimensions
+            text_lines = caption_text.split('\n')
+            line_height = 30 if font is None else font.getsize('A')[1] + 5
+            text_height = len(text_lines) * line_height
+            max_line_width = max([len(line) * 12 for line in text_lines])  # Approximate width
+            
+            # Position the text
+            if position == 'bottom':
+                y = img_height - text_height - 20
+            elif position == 'top':
+                y = 20
+            else:  # center
+                y = (img_height - text_height) // 2
+            
+            x = 20
+            
+            # Draw background rectangle
+            padding = 15
+            bg_coords = [
+                x - padding,
+                y - padding,
+                x + max_line_width + padding,
+                y + text_height + padding
+            ]
+            
+            # Semi-transparent black background
+            overlay = Image.new('RGBA', captioned_image.size, (0, 0, 0, 0))
+            overlay_draw = ImageDraw.Draw(overlay)
+            overlay_draw.rectangle(bg_coords, fill=(0, 0, 0, 128))
+            captioned_image = Image.alpha_composite(captioned_image.convert('RGBA'), overlay).convert('RGB')
+            draw = ImageDraw.Draw(captioned_image)
+            
+            # Draw text lines
+            for i, line in enumerate(text_lines):
+                line_y = y + (i * line_height)
+                draw.text((x, line_y), line, fill='white', font=font)
+            
+            return captioned_image
+            
+        except Exception as e:
+            logger.error(f"Error adding caption overlay: {e}")
+            return image
+
     def save_edited_image(self, session_id: str, save_options: Dict[str, Any]) -> Dict[str, Any]:
-        """Save edited image with various options"""
+        """Save edited image with various options including captions and social sharing"""
         try:
             session = self.editing_sessions.get(session_id)
             if not session:
@@ -444,6 +625,16 @@ class AdvancedPhotoEditor:
                 'size': os.path.getsize(edited_path)
             })
             
+            # Generate social media caption
+            social_caption = self.generate_social_caption(orchid, include_analysis=save_options.get('include_analysis', False))
+            
+            # Create captioned version if requested
+            captioned_results = {}
+            if save_options.get('create_captioned', False):
+                caption_result = self.create_captioned_image(session_id, save_options.get('caption_options', {}))
+                if caption_result.get('success'):
+                    captioned_results = caption_result
+            
             # Update orchid record with edited version info
             enhancement_data = json.loads(orchid.enhancement_data or '{}')
             if 'edited_versions' not in enhancement_data:
@@ -458,6 +649,8 @@ class AdvancedPhotoEditor:
                 'edit_history': session['edit_history'],
                 'filters_applied': session['filters_applied'],
                 'analysis_data': session.get('analysis_data', {}),
+                'social_caption': social_caption,
+                'captioned_version': captioned_results.get('captioned_image_path') is not None,
                 'created_at': datetime.now().isoformat()
             }
             
@@ -475,6 +668,14 @@ class AdvancedPhotoEditor:
             return {
                 'success': True,
                 'saved_files': results,
+                'social_caption': social_caption,
+                'captioned_image': captioned_results.get('captioned_image_path'),
+                'social_sharing_data': {
+                    'caption': social_caption,
+                    'hashtags': ['Orchids', 'OrchidPhotography', 'Botanica', 'FlowerPhotography', 'PlantLovers'],
+                    'image_url': drive_url,
+                    'project_credit': 'Orchid Continuum project, Copyright 2025'
+                },
                 'session_summary': {
                     'operations_performed': len(session['edit_history']),
                     'filters_applied': session['filters_applied'],
