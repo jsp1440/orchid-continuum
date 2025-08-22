@@ -327,13 +327,50 @@
                         <!-- Caption preview will appear here -->
                     </div>
                 </div>
+                
+                <!-- Usage Rights & Waivers -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Usage Rights & Permissions</h6>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantEducationalUse">
+                            <label class="form-check-label" for="grantEducationalUse">
+                                <strong>Educational Use Waiver:</strong> I grant Orchid Continuum permission to use this photo for educational purposes including presentations, research publications, and teaching materials.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantResearchUse">
+                            <label class="form-check-label" for="grantResearchUse">
+                                <strong>Research Use Waiver:</strong> I grant Orchid Continuum permission to use this photo for scientific research, botanical studies, and conservation efforts.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantDatabaseUse">
+                            <label class="form-check-label" for="grantDatabaseUse">
+                                <strong>Database Use Waiver:</strong> I grant Orchid Continuum permission to include this photo in the public database and use it for AI training to improve orchid identification systems.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="retainAttribution">
+                            <label class="form-check-label" for="retainAttribution">
+                                <strong>Attribution Required:</strong> I require proper attribution when this photo is used (photographer credit and Orchid Continuum source).
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="mt-3">
                     <h6>Preview & Share</h6>
                     <div class="bg-light p-3 rounded">
                         <small class="text-muted">
-                            Your edited photo will be saved with botanical information including plant name, 
-                            genus, species, and hybrid status. All images are tagged with "Orchid Continuum 
-                            project, Copyright 2025" for proper attribution.
+                            <strong>Rights & Attribution:</strong> Your edited photo will be saved with botanical information and 
+                            proper attribution. Usage permissions above determine how the Orchid Continuum project can use 
+                            your shared photos for educational and research purposes while respecting your rights as the photographer.
+                            <br><br>
+                            <strong>Copyright Notice:</strong> All images are tagged with "Orchid Continuum project, Copyright 2025" 
+                            and your selected usage permissions are recorded with the photo.
                         </small>
                     </div>
                 </div>
@@ -395,7 +432,13 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <small class="text-muted me-auto">All shares include proper attribution: "Orchid Continuum project, Copyright 2025"</small>
+                <div class="me-auto">
+                    <small class="text-muted">All shares include proper attribution: "Orchid Continuum project, Copyright 2025"</small>
+                    <br>
+                    <small class="text-success" id="permissionsStatus">
+                        <!-- Usage permissions status will appear here -->
+                    </small>
+                </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -626,6 +669,13 @@ function saveEditedImage() {
             style: document.getElementById('captionStyle').value,
             position: document.getElementById('captionPosition').value,
             add_overlay: document.getElementById('createCaptioned').checked
+        },
+        usage_waivers: {
+            educational_use: document.getElementById('grantEducationalUse').checked,
+            research_use: document.getElementById('grantResearchUse').checked,
+            database_use: document.getElementById('grantDatabaseUse').checked,
+            attribution_required: document.getElementById('retainAttribution').checked,
+            waiver_timestamp: new Date().toISOString()
         }
     };
     
@@ -649,6 +699,9 @@ function saveEditedImage() {
             window.currentImageUrl = data.social_sharing_data?.image_url;
             
             bootstrap.Modal.getInstance(document.getElementById('saveOptionsModal')).hide();
+            
+            // Store usage permissions for sharing
+            window.currentUsagePermissions = data.usage_permissions;
             
             // Show sharing modal if social caption was generated
             if (data.social_caption && document.getElementById('generateSocialCaption').checked) {
@@ -700,8 +753,38 @@ function showSocialSharing() {
         regenerateCaption();
     }
     
+    // Update permissions status
+    updatePermissionsStatus();
+    
     const modal = new bootstrap.Modal(document.getElementById('socialSharingModal'));
     modal.show();
+}
+
+function updatePermissionsStatus() {
+    const permissions = window.currentUsagePermissions || {};
+    const statusEl = document.getElementById('permissionsStatus');
+    
+    if (!permissions || Object.keys(permissions).length === 0) {
+        statusEl.innerHTML = '<i data-feather="alert-circle" style="width: 12px; height: 12px;"></i> No usage permissions granted - personal use only';
+        statusEl.className = 'text-warning';
+        return;
+    }
+    
+    const grants = [];
+    if (permissions.educational_use) grants.push('Educational');
+    if (permissions.research_use) grants.push('Research'); 
+    if (permissions.database_use) grants.push('Database');
+    
+    if (grants.length > 0) {
+        statusEl.innerHTML = `<i data-feather="check-circle" style="width: 12px; height: 12px;"></i> Permissions granted: ${grants.join(', ')} use`;
+        statusEl.className = 'text-success';
+    } else {
+        statusEl.innerHTML = '<i data-feather="alert-circle" style="width: 12px; height: 12px;"></i> No usage permissions granted';
+        statusEl.className = 'text-warning';
+    }
+    
+    // Refresh icons
+    feather.replace();
 }
 
 function shareToFacebook() {
