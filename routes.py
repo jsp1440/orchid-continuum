@@ -12,6 +12,7 @@ from batch_upload import BatchUploadProcessor, validate_batch_limits
 from judging_standards import analyze_orchid_by_organization, get_available_organizations
 from enhanced_judging import analyze_orchid_with_genetics
 # from genetic_analysis import analyze_orchid_genetics, compare_hybrid_to_parents  # Temporarily disabled
+from enhanced_metadata_analyzer import analyze_orchid_with_botanical_databases
 from rhs_integration import get_rhs_orchid_data, analyze_hybrid_parentage
 from export_utils import export_orchid_data, get_export_filename
 from certificate_generator import generate_award_certificate, get_certificate_pdf
