@@ -253,6 +253,18 @@ def api_create_captioned():
         logger.error(f"Error creating captioned image: {e}")
         return jsonify({'error': str(e)}), 500
 
+@photo_editor_bp.route('/api/check-permissions/<int:orchid_id>/<usage_type>')
+@login_required
+def api_check_permissions(orchid_id, usage_type):
+    """API endpoint for checking usage permissions"""
+    try:
+        result = photo_editor.check_usage_permissions(orchid_id, usage_type)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error checking permissions: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @photo_editor_bp.route('/api/session/<session_id>/status')
 @login_required
 def api_session_status(session_id):

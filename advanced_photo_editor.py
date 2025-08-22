@@ -628,6 +628,14 @@ class AdvancedPhotoEditor:
             # Generate social media caption
             social_caption = self.generate_social_caption(orchid, include_analysis=save_options.get('include_analysis', False))
             
+            # Process usage waivers
+            usage_waivers = save_options.get('usage_waivers', {})
+            if usage_waivers:
+                # Add waiver information to social caption if permissions granted
+                waiver_text = self._generate_waiver_text(usage_waivers)
+                if waiver_text:
+                    social_caption += f"\n\n{waiver_text}"
+            
             # Create captioned version if requested
             captioned_results = {}
             if save_options.get('create_captioned', False):
@@ -651,6 +659,8 @@ class AdvancedPhotoEditor:
                 'analysis_data': session.get('analysis_data', {}),
                 'social_caption': social_caption,
                 'captioned_version': captioned_results.get('captioned_image_path') is not None,
+                'usage_waivers': usage_waivers,
+                'waiver_granted_at': datetime.now().isoformat() if usage_waivers else None,
                 'created_at': datetime.now().isoformat()
             }
             
@@ -670,16 +680,19 @@ class AdvancedPhotoEditor:
                 'saved_files': results,
                 'social_caption': social_caption,
                 'captioned_image': captioned_results.get('captioned_image_path'),
+                'usage_permissions': usage_waivers,
                 'social_sharing_data': {
                     'caption': social_caption,
                     'hashtags': ['Orchids', 'OrchidPhotography', 'Botanica', 'FlowerPhotography', 'PlantLovers'],
                     'image_url': drive_url,
-                    'project_credit': 'Orchid Continuum project, Copyright 2025'
+                    'project_credit': 'Orchid Continuum project, Copyright 2025',
+                    'usage_permissions': usage_waivers
                 },
                 'session_summary': {
                     'operations_performed': len(session['edit_history']),
                     'filters_applied': session['filters_applied'],
-                    'analysis_completed': 'analysis_data' in session
+                    'analysis_completed': 'analysis_data' in session,
+                    'waivers_granted': bool(usage_waivers)
                 }
             }
             
@@ -796,6 +809,59 @@ class AdvancedPhotoEditor:
             
         except Exception as e:
             logger.error(f"Error creating export package: {e}")
+            return {'error': str(e)}
+    
+    def _generate_waiver_text(self, waivers: Dict[str, Any]) -> str:
+        """Generate waiver text for social media sharing"""
+        waiver_parts = []
+        
+        if waivers.get('educational_use'):
+            waiver_parts.append("✅ Available for educational use")
+        if waivers.get('research_use'):
+            waiver_parts.append("✅ Available for research purposes")
+        if waivers.get('database_use'):
+            waiver_parts.append("✅ Contributing to orchid identification database")
+        if waivers.get('attribution_required'):
+            waiver_parts.append("📝 Attribution required for reuse")
+        
+        if waiver_parts:
+            return "📋 Usage Permissions:\n" + "\n".join(waiver_parts)
+        return ""
+    
+    def check_usage_permissions(self, orchid_id: int, requested_use: str) -> Dict[str, Any]:
+        """Check if an orchid photo has permission for specific usage"""
+        try:
+            orchid = OrchidRecord.query.get(orchid_id)
+            if not orchid or not orchid.enhancement_data:
+                return {'error': 'No permissions data available'}
+            
+            enhancement_data = json.loads(orchid.enhancement_data)
+            edited_versions = enhancement_data.get('edited_versions', [])
+            
+            # Check latest version with waivers
+            for version in reversed(edited_versions):
+                waivers = version.get('usage_waivers', {})
+                if waivers:
+                    permission_granted = False
+                    if requested_use == 'educational' and waivers.get('educational_use'):
+                        permission_granted = True
+                    elif requested_use == 'research' and waivers.get('research_use'):
+                        permission_granted = True
+                    elif requested_use == 'database' and waivers.get('database_use'):
+                        permission_granted = True
+                    
+                    return {
+                        'success': True,
+                        'permission_granted': permission_granted,
+                        'attribution_required': waivers.get('attribution_required', False),
+                        'waiver_date': version.get('waiver_granted_at'),
+                        'all_permissions': waivers
+                    }
+            
+            return {'error': 'No usage waivers found'}
+            
+        except Exception as e:
+            logger.error(f"Error checking usage permissions: {e}")
             return {'error': str(e)}
 
 # Initialize the photo editor
