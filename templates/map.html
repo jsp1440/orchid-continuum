@@ -603,7 +603,193 @@ document.addEventListener('DOMContentLoaded', function() {
         syncFilters(mobileClimateFilter, desktopClimateFilter);
     }
     
+    // Add API integration for real data
+    async function initializeMapWithRealData() {
+        try {
+            console.log('Loading real orchid data...');
+            
+            // Load filter options first
+            const filtersResponse = await fetch('/api/orchids-filters');
+            if (filtersResponse.ok) {
+                const filters = await filtersResponse.json();
+                console.log('Loaded filters:', filters);
+                
+                // Populate genus filters with real data
+                const genusSelects = [
+                    document.getElementById('filter-genus'),
+                    document.getElementById('mobile-filter-genus')
+                ].filter(el => el);
+                
+                genusSelects.forEach(select => {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">All Genera</option>';
+                    filters.genera.forEach(genus => {
+                        const option = new Option(genus, genus);
+                        if (genus === currentValue) option.selected = true;
+                        select.add(option);
+                    });
+                });
+            }
+            
+            // Load orchid map data
+            await loadRealOrchidData();
+            
+            // Load database statistics
+            const statsResponse = await fetch('/api/database-statistics');
+            if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                console.log('Loaded stats:', stats);
+                updateDatabaseStatistics(stats);
+            }
+            
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            showError('Failed to load map data. Please try refreshing the page.');
+        }
+    }
+    
+    async function loadRealOrchidData() {
+        try {
+            // Get current filter values
+            const genusFilter = document.getElementById('filter-genus')?.value || 
+                              document.getElementById('mobile-filter-genus')?.value || '';
+            const climateFilter = document.getElementById('filter-climate')?.value || 
+                                document.getElementById('mobile-filter-climate')?.value || '';
+            
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (genusFilter) params.append('genus', genusFilter);
+            if (climateFilter) params.append('climate', climateFilter);
+            
+            console.log('Loading orchids with filters:', { genusFilter, climateFilter });
+            
+            const response = await fetch(`/api/orchids-map-data?${params}`);
+            if (!response.ok) throw new Error('Failed to fetch orchid data');
+            
+            const data = await response.json();
+            console.log('Loaded orchid data:', data);
+            
+            // Clear existing markers
+            if (window.markerClusterGroup) {
+                map.removeLayer(window.markerClusterGroup);
+            }
+            
+            // Create new marker cluster group
+            window.markerClusterGroup = L.markerClusterGroup({
+                chunkedLoading: true,
+                chunkInterval: 200,
+                chunkDelay: 50,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true
+            });
+            
+            // Add markers for each orchid
+            data.orchids.forEach(orchid => {
+                if (orchid.lat && orchid.lng) {
+                    const marker = L.marker([orchid.lat, orchid.lng]);
+                    
+                    // Create popup content
+                    const popupContent = `
+                        <div class="orchid-popup">
+                            <h6>${orchid.name}</h6>
+                            ${orchid.scientific_name ? `<p class="small text-muted mb-1"><em>${orchid.scientific_name}</em></p>` : ''}
+                            ${orchid.image_url ? `<img src="${orchid.image_url}" class="img-fluid mb-2" style="max-width: 200px; border-radius: 4px;" onerror="this.style.display='none'">` : ''}
+                            <div class="small">
+                                ${orchid.region ? `<p class="mb-1"><strong>Region:</strong> ${orchid.region}</p>` : ''}
+                                ${orchid.climate ? `<p class="mb-1"><strong>Climate:</strong> ${orchid.climate}</p>` : ''}
+                                ${orchid.growth_habit ? `<p class="mb-1"><strong>Growth:</strong> ${orchid.growth_habit}</p>` : ''}
+                                ${orchid.description ? `<p class="mb-1">${orchid.description}</p>` : ''}
+                            </div>
+                            <a href="/orchid/${orchid.id}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent, {
+                        maxWidth: 250,
+                        className: 'custom-popup'
+                    });
+                    
+                    window.markerClusterGroup.addLayer(marker);
+                }
+            });
+            
+            // Add cluster group to map
+            map.addLayer(window.markerClusterGroup);
+            
+            // Update counters
+            updateVisibleCount(data.orchids.length);
+            
+            // Fit map to markers if we have data
+            if (data.orchids.length > 0) {
+                const group = new L.featureGroup(window.markerClusterGroup.getLayers());
+                if (group.getBounds().isValid()) {
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error loading orchid data:', error);
+            showError('Failed to load orchid locations.');
+        }
+    }
+    
+    // Override existing event listeners to use real data
+    function setupRealDataEventListeners() {
+        const filterElements = [
+            'filter-genus', 'mobile-filter-genus',
+            'filter-climate', 'mobile-filter-climate'
+        ];
+        
+        filterElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => {
+                    // Sync filter values between desktop and mobile
+                    if (id.includes('genus')) {
+                        const otherGenusFilter = id.includes('mobile') ? 
+                            document.getElementById('filter-genus') : 
+                            document.getElementById('mobile-filter-genus');
+                        if (otherGenusFilter) otherGenusFilter.value = element.value;
+                    }
+                    
+                    if (id.includes('climate')) {
+                        const otherClimateFilter = id.includes('mobile') ? 
+                            document.getElementById('filter-climate') : 
+                            document.getElementById('mobile-filter-climate');
+                        if (otherClimateFilter) otherClimateFilter.value = element.value;
+                    }
+                    
+                    // Reload data with new filters
+                    loadRealOrchidData();
+                });
+            }
+        });
+        
+        // Reset view buttons
+        const resetButtons = ['reset-view', 'mobile-reset-view'];
+        resetButtons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.addEventListener('click', () => {
+                    if (window.markerClusterGroup && window.markerClusterGroup.getLayers().length > 0) {
+                        const group = new L.featureGroup(window.markerClusterGroup.getLayers());
+                        if (group.getBounds().isValid()) {
+                            map.fitBounds(group.getBounds().pad(0.1));
+                        }
+                    } else {
+                        map.setView([20, 0], 2);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Initialize with real data
     setupEventListeners();
+    setupRealDataEventListeners();
+    initializeMapWithRealData();
 });
 </script>
 
