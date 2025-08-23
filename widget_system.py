@@ -22,7 +22,8 @@ class OrchidWidgetSystem:
             'comparison': 'Orchid Comparison Widget',
             'identifier': 'Orchid Identifier Widget',
             'citation': 'Citation Generator Widget',
-            'featured': 'Featured Orchid Widget'
+            'featured': 'Featured Orchid Widget',
+            'mission': 'Mission & Support Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -35,6 +36,8 @@ class OrchidWidgetSystem:
             return self._get_featured_data(**kwargs)
         elif widget_type == 'comparison':
             return self._get_comparison_data(**kwargs)
+        elif widget_type == 'mission':
+            return self._get_mission_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -141,6 +144,26 @@ class OrchidWidgetSystem:
                     'image_url': orchid.image_url
                 } for orchid in recent_orchids
             ]
+        }
+    
+    def _get_mission_data(self, **kwargs):
+        """Get data for mission widget"""
+        total_orchids = OrchidRecord.query.count()
+        total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).filter(
+            OrchidRecord.genus.isnot(None)
+        ).scalar()
+        
+        return {
+            'stats': {
+                'total_orchids': total_orchids,
+                'total_genera': total_genera,
+                'features_count': 6  # Number of active features
+            },
+            'mission': {
+                'title': 'The Orchid Continuum Project',
+                'description': 'A visionary, AI-integrated digital ecosystem for orchid conservation and education',
+                'status': 'Active Development'
+            }
         }
 
 # Initialize widget system
