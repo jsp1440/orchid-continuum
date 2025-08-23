@@ -35,22 +35,37 @@ The system uses a dual-model approach:
 - Extracts detailed metadata including scientific names, characteristics, and growing conditions
 - Confidence scoring for identification accuracy
 
-### 2. Automated Web Scraping
+### 2. Advanced Comparison and Analysis System
+- AI-powered EXIF metadata extraction (date, location, time from photos)
+- Comprehensive biodiversity and phenotypic tagging system
+- Geographic origin analysis with continent/climate zone detection
+- Multi-criteria filtering by genus, species, growth habit, geographic region
+- Side-by-side orchid comparison with taxonomic and phenotypic similarity analysis
+- Temporal relationship analysis between photographs
+
+### 3. Citation and Research Attribution System
+- Proper academic citation formats for World Orchids database (Hassler, 2025)
+- BibTeX export functionality for research papers
+- Research attribution guidelines for educational and academic use
+- Citation generator with custom access dates
+- Multiple export formats (BibTeX, text files)
+
+### 4. Automated Web Scraping
 - Configurable scrapers for orchid websites (Gary Yong Gee, Roberta Fox)
 - Content extraction and metadata normalization
 - Logging system for tracking scraping activities
 
-### 3. File Upload and Management
+### 5. File Upload and Management
 - Secure file upload with validation and size limits
 - Automatic filename generation with timestamps and UUIDs
 - Google Drive integration for cloud storage
 
-### 4. Search and Gallery Systems
+### 6. Search and Gallery Systems
 - Advanced search functionality across multiple fields
 - Filterable gallery with pagination
 - Featured orchid system and "Orchid of the Day" widget
 
-### 5. Admin Dashboard
+### 7. Admin Dashboard
 - Upload validation and moderation
 - Database statistics and management
 - Scraping log monitoring
@@ -110,4 +125,21 @@ The system uses a dual-model approach:
 - Logging system for monitoring and debugging
 - Modular scraper architecture for adding new data sources
 
-The system is designed to be self-contained yet extensible, with clear separation between data ingestion, processing, and presentation layers. The AI integration provides intelligent metadata extraction while maintaining human oversight through the admin dashboard.
+### Recent Major Updates (August 2025)
+
+#### Advanced Comparison Interface
+- Implemented comprehensive orchid comparison system with AI-enhanced analysis
+- Added EXIF metadata extraction for photo date, time, and location data
+- Created biodiversity tagging system for phenotypic trait classification
+- Built geographic origin analysis with automated continent/climate detection
+- Developed side-by-side comparison tools with similarity metrics
+
+#### Research Attribution System
+- Integrated proper citation formats for World Orchids database (Hassler, 2025)
+- Created comprehensive research attribution guidelines
+- Added BibTeX export functionality for academic papers
+- Implemented citation generator with custom access date formatting
+- Built export system for multiple citation formats
+
+#### System Architecture
+The system is designed to be self-contained yet extensible, with clear separation between data ingestion, processing, and presentation layers. The AI integration provides intelligent metadata extraction while maintaining human oversight through the admin dashboard. The comparison and citation systems add research-grade functionality for academic and educational use.

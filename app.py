@@ -77,3 +77,10 @@ try:
     print("Orchid comparison system initialized")
 except Exception as e:
     print(f"Comparison system initialization error: {e}")
+
+try:
+    from citation_system import citation_bp
+    app.register_blueprint(citation_bp)
+    print("Citation and attribution system initialized")
+except Exception as e:
+    print(f"Citation system initialization error: {e}")
