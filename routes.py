@@ -596,6 +596,93 @@ def api_orchid_of_day():
         })
     return jsonify({'error': 'No orchid found'}), 404
 
+@app.route('/api/orchids-map-data')
+def api_orchids_map_data():
+    """API endpoint for orchid map data with filtering"""
+    try:
+        # Get filter parameters
+        genus_filter = request.args.get('genus', '').strip()
+        climate_filter = request.args.get('climate', '').strip()
+        
+        # Build query
+        query = OrchidRecord.query.filter(
+            OrchidRecord.validation_status == 'validated'
+        )
+        
+        # Apply filters
+        if genus_filter:
+            query = query.filter(OrchidRecord.genus == genus_filter)
+        
+        if climate_filter:
+            query = query.filter(OrchidRecord.climate_preference == climate_filter)
+        
+        orchids = query.all()
+        
+        # Convert to map data format
+        map_data = []
+        for orchid in orchids:
+            # Get location data using existing function
+            location_data = _get_approximate_location(orchid.region, orchid.native_habitat)
+            
+            if location_data and 'lat' in location_data and 'lng' in location_data:  # Only include orchids with location data
+                map_data.append({
+                    'id': orchid.id,
+                    'name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'genus': orchid.genus,
+                    'region': orchid.region,
+                    'climate': orchid.climate_preference,
+                    'growth_habit': orchid.growth_habit,
+                    'image_url': orchid.image_url,
+                    'lat': location_data.get('lat'),
+                    'lng': location_data.get('lng'),
+                    'description': orchid.ai_description[:200] + '...' if orchid.ai_description and len(orchid.ai_description) > 200 else orchid.ai_description
+                })
+        
+        return jsonify({
+            'orchids': map_data,
+            'total': len(map_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching map data: {str(e)}")
+        return jsonify({'error': 'Failed to fetch map data'}), 500
+
+@app.route('/api/orchids-filters')
+def api_orchids_filters():
+    """API endpoint for available filter options"""
+    try:
+        # Get unique genera
+        genera_query = db.session.query(OrchidRecord.genus).filter(
+            OrchidRecord.genus.isnot(None),
+            OrchidRecord.validation_status == 'validated'
+        ).distinct()
+        genera = [g[0] for g in genera_query if g[0]]
+        
+        # Get unique climate preferences
+        climate_query = db.session.query(OrchidRecord.climate_preference).filter(
+            OrchidRecord.climate_preference.isnot(None),
+            OrchidRecord.validation_status == 'validated'
+        ).distinct()
+        climates = [c[0] for c in climate_query if c[0]]
+        
+        # Get unique growth habits
+        habit_query = db.session.query(OrchidRecord.growth_habit).filter(
+            OrchidRecord.growth_habit.isnot(None),
+            OrchidRecord.validation_status == 'validated'
+        ).distinct()
+        growth_habits = [h[0] for h in habit_query if h[0]]
+        
+        return jsonify({
+            'genera': sorted(genera),
+            'climates': sorted(climates),
+            'growth_habits': sorted(growth_habits)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching filter options: {str(e)}")
+        return jsonify({'error': 'Failed to fetch filter options'}), 500
+
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     """User feedback submission form"""
