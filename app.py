@@ -56,6 +56,10 @@ with app.app_context():
 from auth_routes import auth_bp
 app.register_blueprint(auth_bp)
 
+# Register user weather blueprint
+from user_weather_routes import user_weather_bp
+app.register_blueprint(user_weather_bp)
+
 # Import routes after app initialization
 import routes
 import botanical_routes  # Import botanical database routes

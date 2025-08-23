@@ -531,6 +531,7 @@ class UserLocation(db.Model):
     city = db.Column(db.String(100))
     state_province = db.Column(db.String(100))
     country = db.Column(db.String(100))
+    zip_code = db.Column(db.String(20))  # ZIP/postal code for location
     timezone = db.Column(db.String(50))
     
     # Growing environment details

@@ -421,3 +421,42 @@ def get_coordinates_from_location(location_name: str) -> Optional[Tuple[float, f
     except Exception as e:
         logger.error(f"Error geocoding location {location_name}: {str(e)}")
         return None
+
+def get_coordinates_from_zip_code(zip_code: str, country: str = "US") -> Optional[dict]:
+    """Get coordinates and location details from ZIP code"""
+    try:
+        # Format ZIP code search query
+        search_query = f"{zip_code}"
+        if country and country.upper() != "US":
+            search_query = f"{zip_code}, {country}"
+        
+        # Use Open-Meteo's geocoding API
+        geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
+        params = {
+            "name": search_query,
+            "count": 1,
+            "language": "en",
+            "format": "json"
+        }
+        
+        response = requests.get(geocoding_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('results') and len(data['results']) > 0:
+            result = data['results'][0]
+            return {
+                'latitude': result['latitude'],
+                'longitude': result['longitude'],
+                'city': result.get('name', ''),
+                'state_province': result.get('admin1', ''),
+                'country': result.get('country', ''),
+                'timezone': result.get('timezone', ''),
+                'name': f"{result.get('name', '')}, {result.get('admin1', '')}"
+            }
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error geocoding ZIP code {zip_code}: {str(e)}")
+        return None
