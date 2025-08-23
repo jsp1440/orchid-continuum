@@ -4,10 +4,11 @@ Creates embeddable widgets for external website integration
 """
 
 from flask import Blueprint, render_template, request, jsonify, Response
-from models import OrchidRecord, db
+from models import OrchidRecord, UserLocation, UserOrchidCollection, db
 from sqlalchemy import func, or_
 import json
 from datetime import datetime
+from weather_service import WeatherService
 
 # Create blueprint for widget system
 widget_bp = Blueprint('widgets', __name__, url_prefix='/widgets')
@@ -24,7 +25,8 @@ class OrchidWidgetSystem:
             'citation': 'Citation Generator Widget',
             'featured': 'Featured Orchid Widget',
             'mission': 'Mission & Support Widget',
-            'map': 'World Map Widget'
+            'map': 'World Map Widget',
+            'weather': 'Orchid Weather Comparison Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -41,6 +43,8 @@ class OrchidWidgetSystem:
             return self._get_mission_data(**kwargs)
         elif widget_type == 'map':
             return self._get_map_data(**kwargs)
+        elif widget_type == 'weather':
+            return self._get_weather_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -182,6 +186,95 @@ class OrchidWidgetSystem:
             'max_zoom': kwargs.get('max_zoom', 10),
             'initial_zoom': kwargs.get('initial_zoom', 2)
         }
+    
+    def _get_weather_data(self, **kwargs):
+        """Get orchid weather comparison data for widget"""
+        import uuid
+        
+        # Get user ID if provided (for user-specific collections)
+        user_id = kwargs.get('user_id')
+        location = kwargs.get('location', 'auto')  # auto-detect or specific location
+        
+        # Get user's orchid collection if user_id provided
+        if user_id:
+            user_collections = UserOrchidCollection.query.filter_by(
+                user_id=user_id,
+                is_active=True,
+                show_in_widget=True
+            ).order_by(UserOrchidCollection.widget_priority.asc()).limit(4).all()
+            
+            orchids_to_show = []
+            for collection in user_collections:
+                if collection.orchid:
+                    orchids_to_show.append(collection.orchid)
+        else:
+            # For public widget, get diverse orchids with good climate data
+            orchids_to_show = OrchidRecord.query.filter(
+                OrchidRecord.climate_preference.isnot(None),
+                OrchidRecord.region.isnot(None),
+                OrchidRecord.image_url.isnot(None)
+            ).order_by(OrchidRecord.view_count.desc()).limit(6).all()
+        
+        # Climate comparison data with more detailed native habitat info
+        climate_mappings = {
+            'cool': {
+                'temp_range': '10-20°C',
+                'humidity': '60-80%', 
+                'color': '#4CAF50',
+                'optimal_temp_min': 10,
+                'optimal_temp_max': 20,
+                'optimal_humidity_min': 60,
+                'optimal_humidity_max': 80
+            },
+            'intermediate': {
+                'temp_range': '18-28°C',
+                'humidity': '50-70%',
+                'color': '#2196F3',
+                'optimal_temp_min': 18,
+                'optimal_temp_max': 28,
+                'optimal_humidity_min': 50,
+                'optimal_humidity_max': 70
+            },
+            'warm': {
+                'temp_range': '20-35°C',
+                'humidity': '60-85%',
+                'color': '#FF9800',
+                'optimal_temp_min': 20,
+                'optimal_temp_max': 35,
+                'optimal_humidity_min': 60,
+                'optimal_humidity_max': 85
+            }
+        }
+        
+        widget_data = {
+            'widget_id': str(uuid.uuid4())[:8],
+            'location_mode': location,
+            'user_id': user_id,
+            'orchids': [
+                {
+                    'id': orchid.id,
+                    'display_name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'image_url': orchid.image_url,
+                    'region': orchid.region or 'Tropical',
+                    'climate_preference': orchid.climate_preference or 'intermediate',
+                    'climate_data': climate_mappings.get(orchid.climate_preference or 'intermediate', climate_mappings['intermediate']),
+                    'temperature_range': orchid.temperature_range,
+                    'light_requirements': orchid.light_requirements or 'Bright indirect',
+                    'growth_habit': orchid.growth_habit or 'epiphytic'
+                } for orchid in orchids_to_show
+            ],
+            'climate_mappings': climate_mappings,
+            'widget_config': {
+                'width': '280px',
+                'max_orchids': 3,
+                'show_forecast': True,
+                'show_care_advice': True,
+                'auto_location': True
+            }
+        }
+        
+        return widget_data
 
 # Initialize widget system
 widget_system = OrchidWidgetSystem()

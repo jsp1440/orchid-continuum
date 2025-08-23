@@ -220,6 +220,8 @@ class User(UserMixin, db.Model):
     orchid_records = db.relationship('OrchidRecord', backref='owner', lazy=True)
     judgings = db.relationship('JudgingAnalysis', backref='user', lazy=True)
     certificates = db.relationship('Certificate', backref='user', lazy=True)
+    locations = db.relationship('UserLocation', backref='user', lazy=True)
+    collections = db.relationship('UserOrchidCollection', backref='user', lazy=True)
     
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -601,3 +603,36 @@ class UserFeedback(db.Model):
     
     def __repr__(self):
         return f'<UserFeedback {self.id}: {self.feedback_type} - {self.subject}>'
+
+class UserOrchidCollection(db.Model):
+    """User's personal orchid collection for weather widget"""
+    __tablename__ = 'user_orchid_collections'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    orchid_id = db.Column(db.Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    
+    # Collection details
+    collection_name = db.Column(db.String(100))  # User's name for this orchid
+    acquisition_date = db.Column(db.Date)
+    source = db.Column(db.String(200))  # Where they got it
+    notes = db.Column(db.Text)  # User's growing notes
+    
+    # Growing status
+    is_active = db.Column(db.Boolean, default=True)  # Still growing it
+    is_primary = db.Column(db.Boolean, default=False)  # Featured in widget
+    flowering_history = db.Column(db.Text)  # JSON of flowering dates
+    
+    # Widget preferences
+    show_in_widget = db.Column(db.Boolean, default=True)
+    widget_priority = db.Column(db.Integer, default=1)  # 1=highest priority
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    orchid = db.relationship('OrchidRecord', backref='user_collections')
+    
+    def __repr__(self):
+        return f'<UserOrchidCollection {self.user_id}: {self.orchid_id}>'
