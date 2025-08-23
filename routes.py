@@ -23,7 +23,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, and_
 from io import BytesIO
 
 logger = logging.getLogger(__name__)
@@ -251,6 +251,130 @@ def search():
 def world_map():
     """Interactive world map showing orchid locations"""
     return render_template('map.html')
+
+def get_database_statistics():
+    """Calculate comprehensive database statistics"""
+    try:
+        # Basic counts
+        total_orchids = OrchidRecord.query.count()
+        total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).scalar() or 0
+        
+        # Species count
+        species_count = OrchidRecord.query.filter(
+            OrchidRecord.is_species == True
+        ).count()
+        
+        # Hybrid count
+        hybrid_count = OrchidRecord.query.filter(
+            OrchidRecord.is_hybrid == True
+        ).count()
+        
+        # Intergeneric count (hybrids with different genera in parentage)
+        intergeneric_count = 0
+        try:
+            # Check for records with different genera in parentage
+            intergenerics = OrchidRecord.query.filter(
+                and_(
+                    OrchidRecord.is_hybrid == True,
+                    or_(
+                        OrchidRecord.pod_parent.isnot(None),
+                        OrchidRecord.pollen_parent.isnot(None),
+                        OrchidRecord.parentage_formula.isnot(None)
+                    )
+                )
+            ).all()
+            
+            for orchid in intergenerics:
+                if is_intergeneric_hybrid(orchid):
+                    intergeneric_count += 1
+                    
+        except Exception as e:
+            logger.error(f"Error calculating intergeneric count: {str(e)}")
+        
+        return {
+            'total_orchids': total_orchids,
+            'genera': total_genera,
+            'species': species_count,
+            'hybrids': hybrid_count,
+            'intergenerics': intergeneric_count
+        }
+    except Exception as e:
+        logger.error(f"Error calculating database statistics: {str(e)}")
+        return {
+            'total_orchids': 0,
+            'genera': 0,
+            'species': 0,
+            'hybrids': 0,
+            'intergenerics': 0
+        }
+
+def is_intergeneric_hybrid(orchid):
+    """Check if an orchid is an intergeneric hybrid"""
+    try:
+        # Check if parents have different genera
+        if orchid.pod_parent and orchid.pollen_parent:
+            pod_genus = extract_genus_from_name(orchid.pod_parent)
+            pollen_genus = extract_genus_from_name(orchid.pollen_parent)
+            
+            if pod_genus and pollen_genus and pod_genus != pollen_genus:
+                return True
+        
+        # Check parentage formula for genus crosses (e.g., "Cattleya × Laelia")
+        if orchid.parentage_formula:
+            formula = orchid.parentage_formula.lower()
+            # Look for genus names separated by × or x
+            if '×' in formula or ' x ' in formula:
+                # Extract genera from the formula
+                genera_in_formula = extract_genera_from_formula(formula)
+                if len(set(genera_in_formula)) > 1:
+                    return True
+        
+        # Check scientific name for intergeneric notation (usually starts with ×)
+        if orchid.scientific_name and orchid.scientific_name.startswith('×'):
+            return True
+            
+        return False
+    except Exception:
+        return False
+
+def extract_genus_from_name(name):
+    """Extract genus from a plant name"""
+    if not name:
+        return None
+    
+    # Take the first word as genus
+    parts = name.strip().split()
+    if parts:
+        genus = parts[0].replace('×', '').strip()
+        return genus.capitalize()
+    return None
+
+def extract_genera_from_formula(formula):
+    """Extract all genus names from a parentage formula"""
+    import re
+    # Find genus names (capitalized words at the start of names)
+    genera = []
+    words = re.findall(r'\b[A-Z][a-z]+', formula)
+    for word in words:
+        if len(word) > 2 and word not in ['var', 'Ver', 'Var']:  # Skip common abbreviations
+            genera.append(word)
+    return genera
+
+@app.route('/api/database-statistics')
+def api_database_statistics():
+    """API endpoint for database statistics"""
+    try:
+        stats = get_database_statistics()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error fetching database statistics: {str(e)}")
+        return jsonify({
+            'total_orchids': 0,
+            'genera': 0,
+            'species': 0,
+            'hybrids': 0,
+            'intergenerics': 0
+        }), 500
 
 @app.route('/api/orchid-locations')
 def orchid_locations_api():
