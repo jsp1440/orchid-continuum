@@ -23,7 +23,8 @@ class OrchidWidgetSystem:
             'identifier': 'Orchid Identifier Widget',
             'citation': 'Citation Generator Widget',
             'featured': 'Featured Orchid Widget',
-            'mission': 'Mission & Support Widget'
+            'mission': 'Mission & Support Widget',
+            'map': 'World Map Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -38,6 +39,8 @@ class OrchidWidgetSystem:
             return self._get_comparison_data(**kwargs)
         elif widget_type == 'mission':
             return self._get_mission_data(**kwargs)
+        elif widget_type == 'map':
+            return self._get_map_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -164,6 +167,20 @@ class OrchidWidgetSystem:
                 'description': 'A visionary, AI-integrated digital ecosystem for orchid conservation and education',
                 'status': 'Active Development'
             }
+        }
+    
+    def _get_map_data(self, **kwargs):
+        """Get map widget configuration data"""
+        import uuid
+        return {
+            'widget_id': str(uuid.uuid4())[:8],  # Short unique ID for widget instances
+            'api_base_url': kwargs.get('api_base_url', '/api'),
+            'full_map_url': kwargs.get('full_map_url', '/map'),
+            'base_url': kwargs.get('base_url', ''),
+            'map_height': kwargs.get('height', '400px'),
+            'enable_clustering': kwargs.get('clustering', True),
+            'max_zoom': kwargs.get('max_zoom', 10),
+            'initial_zoom': kwargs.get('initial_zoom', 2)
         }
 
 # Initialize widget system
