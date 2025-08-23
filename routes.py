@@ -860,3 +860,40 @@ def admin_run_scraping():
     except Exception as e:
         logger.error(f"Error running scraping: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/drive-photo/<file_id>')
+def get_drive_photo(file_id):
+    """Proxy Google Drive photos for display"""
+    try:
+        # Construct Google Drive image URL
+        drive_url = f'https://drive.google.com/uc?export=view&id={file_id}'
+        
+        # Get the image
+        response = requests.get(drive_url, timeout=10)
+        if response.status_code == 200:
+            return response.content, 200, {'Content-Type': response.headers.get('Content-Type', 'image/jpeg')}
+        else:
+            # Return placeholder if image not accessible
+            return redirect('/static/images/orchid_placeholder.jpg')
+            
+    except Exception as e:
+        logger.error(f"Error loading Drive photo {file_id}: {e}")
+        return redirect('/static/images/orchid_placeholder.jpg')
+
+@app.route('/admin/import-sheets-data', methods=['POST'])
+def admin_import_sheets_data():
+    """Import data from Five Cities Orchid Society Google Sheets"""
+    try:
+        from google_sheets_importer import GoogleSheetsImporter
+        
+        sheet_id = '1103vQ_D00Qio5W7PllFeRaFoFAzr7jd8ivOo79sdfgs'
+        importer = GoogleSheetsImporter(sheet_id)
+        
+        # Import limited records for testing
+        result = importer.import_all_records(max_records=100)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error importing sheets data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
