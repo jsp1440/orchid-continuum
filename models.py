@@ -436,6 +436,152 @@ class BatchUpload(db.Model):
     def __repr__(self):
         return f'<BatchUpload {self.batch_id}: {self.total_files} files>'
 
+class WeatherData(db.Model):
+    """Weather data for orchid growing correlation analysis"""
+    __tablename__ = 'weather_data'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Location information
+    location_name = db.Column(db.String(200))  # City, State/Province, Country
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    
+    # Weather measurements
+    temperature = db.Column(db.Float)  # Celsius
+    temperature_min = db.Column(db.Float)  # Daily minimum
+    temperature_max = db.Column(db.Float)  # Daily maximum
+    humidity = db.Column(db.Float)  # Percentage
+    precipitation = db.Column(db.Float)  # mm
+    wind_speed = db.Column(db.Float)  # km/h
+    wind_direction = db.Column(db.Float)  # degrees
+    pressure = db.Column(db.Float)  # hPa
+    cloud_cover = db.Column(db.Float)  # Percentage
+    uv_index = db.Column(db.Float)
+    
+    # Calculated metrics for orchids
+    vpd = db.Column(db.Float)  # Vapor Pressure Deficit
+    heat_index = db.Column(db.Float)
+    growing_degree_days = db.Column(db.Float)
+    
+    # Weather description
+    weather_code = db.Column(db.Integer)  # WMO weather code
+    description = db.Column(db.String(100))
+    
+    # Data metadata
+    recorded_at = db.Column(db.DateTime, nullable=False)  # When weather occurred
+    data_source = db.Column(db.String(50), default='open-meteo')
+    is_forecast = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def get_weather_description(self):
+        """Convert WMO weather code to description"""
+        weather_codes = {
+            0: 'Clear sky',
+            1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+            45: 'Fog', 48: 'Depositing rime fog',
+            51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+            56: 'Light freezing drizzle', 57: 'Dense freezing drizzle',
+            61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+            66: 'Light freezing rain', 67: 'Heavy freezing rain',
+            71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow',
+            77: 'Snow grains',
+            80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+            85: 'Slight snow showers', 86: 'Heavy snow showers',
+            95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail'
+        }
+        return weather_codes.get(self.weather_code, 'Unknown')
+    
+    def calculate_vpd(self):
+        """Calculate Vapor Pressure Deficit - important for orchid health"""
+        if self.temperature is not None and self.humidity is not None:
+            # Saturated vapor pressure (kPa)
+            svp = 0.6108 * (2.71828 ** (17.27 * self.temperature / (self.temperature + 237.3)))
+            # Actual vapor pressure
+            avp = svp * (self.humidity / 100)
+            # VPD
+            self.vpd = svp - avp
+            return self.vpd
+        return None
+    
+    def is_orchid_friendly(self):
+        """Assess if conditions are good for orchids"""
+        conditions = {
+            'temperature_ok': 15 <= (self.temperature or 0) <= 30,
+            'humidity_ok': (self.humidity or 0) >= 50,
+            'low_wind': (self.wind_speed or 0) < 30,
+            'no_extreme_weather': self.weather_code not in [61, 63, 65, 95, 96, 99] if self.weather_code else True
+        }
+        return all(conditions.values())
+    
+    def __repr__(self):
+        return f'<WeatherData {self.location_name} at {self.recorded_at}>'
+
+class UserLocation(db.Model):
+    """User locations for weather tracking"""
+    __tablename__ = 'user_locations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Location details
+    name = db.Column(db.String(200), nullable=False)  # User-friendly name
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    city = db.Column(db.String(100))
+    state_province = db.Column(db.String(100))
+    country = db.Column(db.String(100))
+    timezone = db.Column(db.String(50))
+    
+    # Growing environment details
+    growing_type = db.Column(db.String(50))  # greenhouse, indoor, outdoor, shade_house
+    microclimate_notes = db.Column(db.Text)
+    
+    # Settings
+    is_primary = db.Column(db.Boolean, default=False)
+    track_weather = db.Column(db.Boolean, default=True)
+    alert_preferences = db.Column(db.Text)  # JSON with alert settings
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<UserLocation {self.name}>'
+
+class WeatherAlert(db.Model):
+    """Weather alerts for orchid care"""
+    __tablename__ = 'weather_alerts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    location_id = db.Column(db.Integer, db.ForeignKey('user_locations.id'), nullable=False)
+    
+    # Alert details
+    alert_type = db.Column(db.String(50), nullable=False)  # temperature, humidity, frost, storm, etc.
+    severity = db.Column(db.String(20))  # low, medium, high, critical
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    
+    # Alert triggers
+    trigger_conditions = db.Column(db.Text)  # JSON with trigger conditions
+    orchid_care_advice = db.Column(db.Text)
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    is_acknowledged = db.Column(db.Boolean, default=False)
+    acknowledged_at = db.Column(db.DateTime)
+    
+    # Timestamps
+    triggered_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+    
+    # Relationships
+    location = db.relationship('UserLocation', backref='weather_alerts')
+    
+    def __repr__(self):
+        return f'<WeatherAlert {self.alert_type}: {self.title}>'
+
 class UserFeedback(db.Model):
     __tablename__ = 'user_feedback'
     

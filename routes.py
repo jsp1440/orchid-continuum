@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
-                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback)
+                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert)
 from orchid_ai import analyze_orchid_image, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
@@ -19,11 +19,12 @@ from certificate_generator import generate_award_certificate, get_certificate_pd
 from filename_parser import parse_orchid_filename
 from processing_routes import processing_bp
 from photo_editor_routes import photo_editor_bp
+from weather_service import WeatherService, get_coordinates_from_location
 import os
 import json
 import logging
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_
 from io import BytesIO
 
@@ -565,6 +566,337 @@ def trigger_scrape(source):
     except Exception as e:
         logger.error(f"Scraping error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/weather')
+def weather_dashboard():
+    """Weather dashboard for orchid growing conditions"""
+    try:
+        # Get user locations
+        locations = UserLocation.query.filter_by(track_weather=True).all()
+        
+        # Get recent weather data
+        recent_weather = WeatherData.query.filter(
+            WeatherData.recorded_at >= datetime.utcnow() - timedelta(days=7),
+            WeatherData.is_forecast == False
+        ).order_by(WeatherData.recorded_at.desc()).limit(50).all()
+        
+        # Get active weather alerts
+        active_alerts = WeatherAlert.query.filter(
+            WeatherAlert.is_active == True,
+            WeatherAlert.expires_at > datetime.utcnow()
+        ).order_by(WeatherAlert.triggered_at.desc()).all()
+        
+        # Get forecast data
+        forecast_data = WeatherData.query.filter(
+            WeatherData.is_forecast == True,
+            WeatherData.recorded_at >= datetime.utcnow()
+        ).order_by(WeatherData.recorded_at.asc()).limit(14).all()
+        
+        return render_template('weather/dashboard.html',
+                             locations=locations,
+                             recent_weather=recent_weather,
+                             active_alerts=active_alerts,
+                             forecast_data=forecast_data)
+        
+    except Exception as e:
+        logger.error(f"Error loading weather dashboard: {str(e)}")
+        flash('Error loading weather dashboard', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/weather/location/add', methods=['GET', 'POST'])
+def add_weather_location():
+    """Add a new weather tracking location"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json() if request.is_json else request.form
+            
+            location_name = data.get('name')
+            city = data.get('city')
+            state_province = data.get('state_province', '')
+            country = data.get('country', '')
+            growing_type = data.get('growing_type', 'outdoor')
+            
+            # Try to get coordinates
+            full_location = f"{city}, {state_province}, {country}".strip(', ')
+            coordinates = get_coordinates_from_location(full_location)
+            
+            if not coordinates:
+                return jsonify({'error': 'Could not find coordinates for this location'}), 400
+            
+            latitude, longitude = coordinates
+            
+            # Create new location
+            location = UserLocation(
+                name=location_name,
+                city=city,
+                state_province=state_province,
+                country=country,
+                latitude=latitude,
+                longitude=longitude,
+                growing_type=growing_type,
+                track_weather=True
+            )
+            
+            db.session.add(location)
+            db.session.commit()
+            
+            # Fetch initial weather data
+            WeatherService.get_current_weather(latitude, longitude, location_name)
+            
+            if request.is_json:
+                return jsonify({'success': True, 'location_id': location.id})
+            else:
+                flash(f'Added weather tracking for {location_name}', 'success')
+                return redirect(url_for('weather_dashboard'))
+                
+        except Exception as e:
+            logger.error(f"Error adding weather location: {str(e)}")
+            if request.is_json:
+                return jsonify({'error': str(e)}), 500
+            else:
+                flash('Error adding location', 'error')
+                return redirect(url_for('weather_dashboard'))
+    
+    return render_template('weather/add_location.html')
+
+@app.route('/weather/current/<int:location_id>')
+def get_current_weather(location_id):
+    """Get current weather for a specific location"""
+    try:
+        location = UserLocation.query.get_or_404(location_id)
+        
+        # Fetch fresh weather data
+        weather = WeatherService.get_current_weather(
+            location.latitude, 
+            location.longitude, 
+            location.name
+        )
+        
+        if not weather:
+            return jsonify({'error': 'Could not fetch weather data'}), 500
+        
+        # Check for alerts
+        alerts = WeatherService.check_orchid_weather_alerts(location)
+        
+        # Get growing conditions summary
+        conditions = WeatherService.get_growing_conditions_summary(location, 7)
+        
+        return jsonify({
+            'weather': {
+                'temperature': weather.temperature,
+                'humidity': weather.humidity,
+                'pressure': weather.pressure,
+                'wind_speed': weather.wind_speed,
+                'description': weather.description,
+                'vpd': weather.vpd,
+                'orchid_friendly': weather.is_orchid_friendly(),
+                'recorded_at': weather.recorded_at.isoformat()
+            },
+            'alerts': [
+                {
+                    'type': alert.alert_type,
+                    'severity': alert.severity,
+                    'title': alert.title,
+                    'message': alert.message,
+                    'advice': alert.orchid_care_advice
+                } for alert in alerts
+            ],
+            'conditions': conditions
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching current weather: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/weather/historical/<int:location_id>')
+def get_historical_weather(location_id):
+    """Get historical weather data for analysis"""
+    try:
+        location = UserLocation.query.get_or_404(location_id)
+        days = request.args.get('days', 30, type=int)
+        
+        # Get existing historical data
+        existing_data = WeatherData.query.filter(
+            WeatherData.latitude == location.latitude,
+            WeatherData.longitude == location.longitude,
+            WeatherData.recorded_at >= datetime.utcnow() - timedelta(days=days),
+            WeatherData.is_forecast == False
+        ).order_by(WeatherData.recorded_at.desc()).all()
+        
+        # If we have less than expected, fetch more
+        if len(existing_data) < days * 0.8:  # Allow for some missing days
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=days)
+            
+            new_data = WeatherService.get_historical_weather(
+                location.latitude,
+                location.longitude,
+                start_date,
+                end_date,
+                location.name
+            )
+            
+            # Refresh query after fetching new data
+            existing_data = WeatherData.query.filter(
+                WeatherData.latitude == location.latitude,
+                WeatherData.longitude == location.longitude,
+                WeatherData.recorded_at >= start_date,
+                WeatherData.is_forecast == False
+            ).order_by(WeatherData.recorded_at.desc()).all()
+        
+        # Format data for charts
+        chart_data = []
+        for weather in existing_data:
+            chart_data.append({
+                'date': weather.recorded_at.strftime('%Y-%m-%d'),
+                'temperature': weather.temperature,
+                'temperature_min': weather.temperature_min,
+                'temperature_max': weather.temperature_max,
+                'humidity': weather.humidity,
+                'precipitation': weather.precipitation,
+                'vpd': weather.vpd,
+                'orchid_friendly': weather.is_orchid_friendly()
+            })
+        
+        return jsonify({
+            'data': chart_data,
+            'summary': WeatherService.get_growing_conditions_summary(location, days)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching historical weather: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/weather/forecast/<int:location_id>')
+def get_weather_forecast(location_id):
+    """Get weather forecast for planning"""
+    try:
+        location = UserLocation.query.get_or_404(location_id)
+        days = request.args.get('days', 7, type=int)
+        
+        # Fetch fresh forecast
+        forecast = WeatherService.get_weather_forecast(
+            location.latitude,
+            location.longitude,
+            days,
+            location.name
+        )
+        
+        forecast_data = []
+        for weather in forecast:
+            forecast_data.append({
+                'date': weather.recorded_at.strftime('%Y-%m-%d'),
+                'temperature_min': weather.temperature_min,
+                'temperature_max': weather.temperature_max,
+                'humidity': weather.humidity,
+                'precipitation': weather.precipitation,
+                'description': weather.description,
+                'weather_code': weather.weather_code,
+                'orchid_friendly': weather.is_orchid_friendly()
+            })
+        
+        return jsonify({'forecast': forecast_data})
+        
+    except Exception as e:
+        logger.error(f"Error fetching weather forecast: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/weather/alerts')
+def weather_alerts():
+    """Display weather alerts for orchid care"""
+    try:
+        # Get all active alerts
+        alerts = WeatherAlert.query.filter(
+            WeatherAlert.is_active == True,
+            WeatherAlert.expires_at > datetime.utcnow()
+        ).order_by(WeatherAlert.severity.desc(), WeatherAlert.triggered_at.desc()).all()
+        
+        return render_template('weather/alerts.html', alerts=alerts)
+        
+    except Exception as e:
+        logger.error(f"Error loading weather alerts: {str(e)}")
+        flash('Error loading weather alerts', 'error')
+        return redirect(url_for('weather_dashboard'))
+
+@app.route('/weather/alert/<int:alert_id>/acknowledge', methods=['POST'])
+def acknowledge_alert(alert_id):
+    """Acknowledge a weather alert"""
+    try:
+        alert = WeatherAlert.query.get_or_404(alert_id)
+        alert.is_acknowledged = True
+        alert.acknowledged_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        if request.is_json:
+            return jsonify({'success': True})
+        else:
+            flash('Alert acknowledged', 'success')
+            return redirect(url_for('weather_alerts'))
+            
+    except Exception as e:
+        logger.error(f"Error acknowledging alert: {str(e)}")
+        if request.is_json:
+            return jsonify({'error': str(e)}), 500
+        else:
+            flash('Error acknowledging alert', 'error')
+            return redirect(url_for('weather_alerts'))
+
+@app.route('/weather/orchid-correlation')
+def weather_orchid_correlation():
+    """Analyze correlation between weather and orchid performance"""
+    try:
+        # Get orchids with recent activity or photos
+        recent_orchids = OrchidRecord.query.filter(
+            OrchidRecord.created_at >= datetime.utcnow() - timedelta(days=90)
+        ).all()
+        
+        # Get weather data for the same period
+        recent_weather = WeatherData.query.filter(
+            WeatherData.recorded_at >= datetime.utcnow() - timedelta(days=90),
+            WeatherData.is_forecast == False
+        ).all()
+        
+        # Group weather by location
+        weather_by_location = {}
+        for weather in recent_weather:
+            key = f"{weather.latitude},{weather.longitude}"
+            if key not in weather_by_location:
+                weather_by_location[key] = []
+            weather_by_location[key].append(weather)
+        
+        # Analyze correlations
+        correlations = {
+            'temperature_trends': [],
+            'humidity_patterns': [],
+            'vpd_analysis': [],
+            'orchid_friendly_days': 0,
+            'recommendations': []
+        }
+        
+        # Calculate orchid-friendly days
+        orchid_friendly_count = sum(1 for w in recent_weather if w.is_orchid_friendly())
+        correlations['orchid_friendly_days'] = orchid_friendly_count
+        
+        # Add basic recommendations
+        if recent_weather:
+            avg_temp = sum(w.temperature for w in recent_weather if w.temperature) / len([w for w in recent_weather if w.temperature])
+            avg_humidity = sum(w.humidity for w in recent_weather if w.humidity) / len([w for w in recent_weather if w.humidity])
+            
+            if avg_temp < 18:
+                correlations['recommendations'].append("Temperatures below optimal range - consider supplemental heating")
+            if avg_humidity < 50:
+                correlations['recommendations'].append("Humidity below optimal range - increase humidity for better orchid health")
+        
+        return render_template('weather/correlation.html',
+                             recent_orchids=recent_orchids,
+                             weather_data=recent_weather,
+                             correlations=correlations)
+        
+    except Exception as e:
+        logger.error(f"Error analyzing weather-orchid correlation: {str(e)}")
+        flash('Error analyzing correlations', 'error')
+        return redirect(url_for('weather_dashboard'))
 
 @app.route('/api/validate/<int:orchid_id>', methods=['POST'])
 def validate_orchid(orchid_id):
