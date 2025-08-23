@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
-                   User, JudgingAnalysis, Certificate, BatchUpload)
+                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback)
 from orchid_ai import analyze_orchid_image, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
@@ -595,6 +595,114 @@ def api_orchid_of_day():
             'cultural_notes': orchid.cultural_notes
         })
     return jsonify({'error': 'No orchid found'}), 404
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    """User feedback submission form"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            name = request.form.get('name', '').strip()
+            email = request.form.get('email', '').strip()
+            feedback_type = request.form.get('feedback_type', '').strip()
+            subject = request.form.get('subject', '').strip()
+            message = request.form.get('message', '').strip()
+            
+            # Basic validation
+            if not all([name, email, feedback_type, subject, message]):
+                flash('Please fill in all required fields.', 'error')
+                return render_template('feedback.html')
+            
+            # Create feedback record
+            feedback_record = UserFeedback(
+                name=name,
+                email=email,
+                feedback_type=feedback_type,
+                subject=subject,
+                message=message,
+                page_url=request.referrer or request.url,
+                browser_info=request.headers.get('User-Agent', '')
+            )
+            
+            db.session.add(feedback_record)
+            db.session.commit()
+            
+            flash(f'Thank you for your {feedback_type.replace("_", " ")}! We\'ll review it and get back to you if needed.', 'success')
+            return redirect(url_for('feedback'))
+            
+        except Exception as e:
+            logger.error(f"Error submitting feedback: {str(e)}")
+            flash('There was an error submitting your feedback. Please try again.', 'error')
+            db.session.rollback()
+    
+    return render_template('feedback.html')
+
+@app.route('/admin/feedback')
+def admin_feedback():
+    """Admin view for managing feedback"""
+    if not current_user.is_authenticated or not hasattr(current_user, 'is_admin') or not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('index'))
+    
+    # Get feedback with pagination
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', 'all')
+    type_filter = request.args.get('type', 'all')
+    
+    query = UserFeedback.query
+    
+    if status_filter != 'all':
+        query = query.filter(UserFeedback.status == status_filter)
+    
+    if type_filter != 'all':
+        query = query.filter(UserFeedback.feedback_type == type_filter)
+    
+    feedback_items = query.order_by(UserFeedback.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    # Get summary statistics
+    total_feedback = UserFeedback.query.count()
+    new_feedback = UserFeedback.query.filter(UserFeedback.status == 'new').count()
+    bug_reports = UserFeedback.query.filter(UserFeedback.feedback_type == 'bug_report').count()
+    feature_requests = UserFeedback.query.filter(UserFeedback.feedback_type == 'feature_request').count()
+    
+    return render_template('admin/feedback.html', 
+                         feedback_items=feedback_items,
+                         total_feedback=total_feedback,
+                         new_feedback=new_feedback,
+                         bug_reports=bug_reports,
+                         feature_requests=feature_requests,
+                         status_filter=status_filter,
+                         type_filter=type_filter)
+
+@app.route('/admin/feedback/<int:feedback_id>/update', methods=['POST'])
+def update_feedback_status(feedback_id):
+    """Update feedback status and admin notes"""
+    if not current_user.is_authenticated or not hasattr(current_user, 'is_admin') or not current_user.is_admin:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    feedback_item = UserFeedback.query.get_or_404(feedback_id)
+    
+    try:
+        new_status = request.json.get('status')
+        admin_notes = request.json.get('admin_notes', '')
+        
+        if new_status:
+            feedback_item.status = new_status
+        
+        if admin_notes:
+            feedback_item.admin_notes = admin_notes
+        
+        feedback_item.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Feedback updated successfully'})
+        
+    except Exception as e:
+        logger.error(f"Error updating feedback: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update feedback'}), 500
 
 @app.errorhandler(404)
 def not_found_error(error):

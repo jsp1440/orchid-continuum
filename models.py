@@ -435,3 +435,22 @@ class BatchUpload(db.Model):
     
     def __repr__(self):
         return f'<BatchUpload {self.batch_id}: {self.total_files} files>'
+
+class UserFeedback(db.Model):
+    __tablename__ = 'user_feedback'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    feedback_type = db.Column(db.String(50), nullable=False)  # 'bug_report', 'feature_request', 'general_feedback'
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    page_url = db.Column(db.String(500))  # URL where feedback was submitted from
+    browser_info = db.Column(db.String(500))  # User agent string
+    status = db.Column(db.String(20), default='new')  # 'new', 'reviewed', 'resolved', 'closed'
+    admin_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<UserFeedback {self.id}: {self.feedback_type} - {self.subject}>'
