@@ -1,8 +1,8 @@
-# Orchid Continuum AI Project
+# Five Cities Orchid Society - Digital Platform Project
 
 ## Overview
 
-The Orchid Continuum is an AI-enhanced orchid database and management system that consolidates orchid photos and metadata from multiple sources. It provides automated data ingestion, AI-powered orchid identification, and real-time web widgets for orchid enthusiasts and researchers.
+This is the digital platform project for the Five Cities Orchid Society - an AI-enhanced orchid database and community management system that consolidates orchid photos and metadata from multiple sources for integration into the society's main website. It provides automated data ingestion, AI-powered orchid identification, and real-time web widgets for orchid enthusiasts and researchers.
 
 ## User Preferences
 
