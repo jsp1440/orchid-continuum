@@ -38,16 +38,42 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="col-lg-6 text-center">
+            <div class="col-lg-6 text-center mt-4 mt-lg-0">
                 {% if orchid_of_day and orchid_of_day.image_url %}
-                <div class="position-relative">
-                    <img src="{{ orchid_of_day.image_url }}" 
-                         alt="Orchid of the Day" 
-                         class="img-fluid rounded-3 shadow-lg"
-                         style="max-height: 400px; width: auto;">
-                    <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-3 rounded-bottom-3">
-                        <h6 class="mb-1">Orchid of the Day</h6>
-                        <small>{{ orchid_of_day.display_name or orchid_of_day.scientific_name }}</small>
+                <div class="orchid-of-day-container mx-auto" style="max-width: 450px;">
+                    <div class="position-relative mb-3">
+                        <img src="{{ orchid_of_day.image_url }}" 
+                             alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                             class="img-fluid rounded-3 shadow-lg"
+                             style="max-height: 350px; width: 100%; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <span class="badge bg-warning text-dark fw-bold px-3 py-2">
+                                <i data-feather="star" style="width: 16px; height: 16px;" class="me-1"></i>
+                                Today's Feature
+                            </span>
+                        </div>
+                    </div>
+                    <div class="bg-dark bg-opacity-90 text-white p-4 rounded-3 shadow">
+                        <h5 class="text-warning mb-2">
+                            <i data-feather="flower" style="width: 20px; height: 20px;" class="me-2"></i>
+                            Orchid of the Day
+                        </h5>
+                        <h6 class="text-light mb-2">{{ orchid_of_day.display_name or orchid_of_day.scientific_name }}</h6>
+                        {% if orchid_of_day.genus %}
+                        <p class="text-light-50 small mb-2">
+                            <strong>Genus:</strong> {{ orchid_of_day.genus }}
+                            {% if orchid_of_day.species %} | <strong>Species:</strong> {{ orchid_of_day.species }}{% endif %}
+                        </p>
+                        {% endif %}
+                        {% if orchid_of_day.climate_preference %}
+                        <p class="text-light-50 small mb-2">
+                            <strong>Climate:</strong> {{ orchid_of_day.climate_preference.title() }} growing conditions
+                        </p>
+                        {% endif %}
+                        <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning btn-sm">
+                            <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
+                            View Details
+                        </a>
                     </div>
                 </div>
                 {% else %}
