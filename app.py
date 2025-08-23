@@ -84,3 +84,10 @@ try:
     print("Citation and attribution system initialized")
 except Exception as e:
     print(f"Citation system initialization error: {e}")
+
+try:
+    from widget_system import widget_bp
+    app.register_blueprint(widget_bp)
+    print("Widget system for external integration initialized")
+except Exception as e:
+    print(f"Widget system initialization error: {e}")
