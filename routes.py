@@ -22,6 +22,7 @@ from photo_editor_routes import photo_editor_bp
 import os
 import json
 import logging
+import requests
 from datetime import datetime
 from sqlalchemy import or_, func, and_
 from io import BytesIO
