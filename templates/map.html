@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}World Map - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Global Orchid Distribution Map
+                    </h4>
+                    <p class="text-muted mb-0">Interactive satellite map showing orchid locations and geographic distribution</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Map container -->
+                    <div id="orchid-map" style="height: 600px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map controls and info panel -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Map Controls</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="filter-genus" class="form-label">Filter by Genus:</label>
+                                <select id="filter-genus" class="form-select">
+                                    <option value="">All Genera</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="filter-climate" class="form-label">Filter by Climate:</label>
+                                <select id="filter-climate" class="form-select">
+                                    <option value="">All Climates</option>
+                                    <option value="cool">Cool</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="warm">Warm</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button id="reset-view" class="btn btn-outline-secondary me-2">
+                                <i data-feather="home" class="me-1"></i>Reset View
+                            </button>
+                            <button id="cluster-toggle" class="btn btn-outline-primary">
+                                <i data-feather="layers" class="me-1"></i>Toggle Clustering
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Map Statistics</h5>
+                    <div id="map-stats">
+                        <p class="mb-2">
+                            <i data-feather="map-pin" class="me-2"></i>
+                            <span id="total-locations">Loading...</span> locations shown
+                        </p>
+                        <p class="mb-2">
+                            <i data-feather="eye" class="me-2"></i>
+                            <span id="visible-locations">0</span> currently visible
+                        </p>
+                        <div id="current-filters" class="mt-2">
+                            <!-- Dynamic filter display -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Selected orchid details -->
+            <div id="orchid-details" class="card mt-3" style="display: none;">
+                <div class="card-body">
+                    <h5>Selected Orchid</h5>
+                    <div id="orchid-info">
+                        <!-- Populated dynamically when marker is clicked -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the map
+    const map = L.map('orchid-map').setView([0, 0], 2);
+    
+    // Satellite base layer (ESRI World Imagery)
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles © Esri — Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+        maxZoom: 18
+    });
+    
+    // Street map layer
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    });
+    
+    // Terrain layer
+    const terrainLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles © Esri — Source: US National Park Service',
+        maxZoom: 8
+    });
+    
+    // Add satellite layer as default
+    satelliteLayer.addTo(map);
+    
+    // Layer control
+    const baseLayers = {
+        "Satellite": satelliteLayer,
+        "Street": streetLayer,
+        "Terrain": terrainLayer
+    };
+    L.control.layers(baseLayers).addTo(map);
+    
+    // Marker cluster group
+    let markerClusterGroup = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 50
+    });
+    map.addLayer(markerClusterGroup);
+    
+    let allLocations = [];
+    let orchidMarkers = [];
+    let clusteringEnabled = true;
+    
+    // Custom orchid icon
+    const orchidIcon = L.divIcon({
+        className: 'orchid-marker',
+        html: '<i class="fas fa-flower" style="color: #e91e63; font-size: 16px; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);"></i>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -10]
+    });
+    
+    // Load orchid location data
+    fetch('/api/orchid-locations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                allLocations = data.locations;
+                updateMapMarkers();
+                updateStats();
+                populateFilterOptions();
+                
+                // Fit map to show all markers
+                if (allLocations.length > 0) {
+                    const group = new L.featureGroup(orchidMarkers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            } else {
+                console.error('Failed to load orchid locations:', data.error);
+                showError('Failed to load orchid location data');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching orchid locations:', error);
+            showError('Network error while loading orchid data');
+        });
+    
+    function updateMapMarkers() {
+        // Clear existing markers
+        markerClusterGroup.clearLayers();
+        orchidMarkers = [];
+        
+        // Get filter values
+        const genusFilter = document.getElementById('filter-genus').value;
+        const climateFilter = document.getElementById('filter-climate').value;
+        
+        // Filter locations
+        let filteredLocations = allLocations.filter(location => {
+            if (genusFilter && location.genus !== genusFilter) return false;
+            if (climateFilter && location.climate !== climateFilter) return false;
+            return true;
+        });
+        
+        // Add markers for filtered locations
+        filteredLocations.forEach(location => {
+            const marker = L.marker([location.lat, location.lng], {
+                icon: orchidIcon
+            });
+            
+            // Create popup content
+            const popupContent = `
+                <div class="orchid-popup">
+                    <h6>${location.name}</h6>
+                    ${location.scientific_name ? `<p class="small text-muted mb-1"><em>${location.scientific_name}</em></p>` : ''}
+                    ${location.image_url ? `<img src="${location.image_url}" class="img-fluid mb-2" style="max-width: 200px; border-radius: 4px;">` : ''}
+                    <div class="small">
+                        ${location.region ? `<p class="mb-1"><strong>Region:</strong> ${location.region}</p>` : ''}
+                        ${location.climate ? `<p class="mb-1"><strong>Climate:</strong> ${location.climate}</p>` : ''}
+                        ${location.growth_habit ? `<p class="mb-1"><strong>Growth:</strong> ${location.growth_habit}</p>` : ''}
+                        ${location.bloom_time ? `<p class="mb-1"><strong>Bloom Time:</strong> ${location.bloom_time}</p>` : ''}
+                    </div>
+                    <a href="/orchid/${location.id}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            
+            // Click handler for details panel
+            marker.on('click', function() {
+                showOrchidDetails(location);
+            });
+            
+            orchidMarkers.push(marker);
+            
+            if (clusteringEnabled) {
+                markerClusterGroup.addLayer(marker);
+            } else {
+                marker.addTo(map);
+            }
+        });
+        
+        updateVisibleCount(filteredLocations.length);
+    }
+    
+    function populateFilterOptions() {
+        const genera = [...new Set(allLocations.map(l => l.genus).filter(g => g))].sort();
+        const genusSelect = document.getElementById('filter-genus');
+        genusSelect.innerHTML = '<option value="">All Genera</option>';
+        genera.forEach(genus => {
+            genusSelect.innerHTML += `<option value="${genus}">${genus}</option>`;
+        });
+    }
+    
+    function updateStats() {
+        document.getElementById('total-locations').textContent = allLocations.length;
+    }
+    
+    function updateVisibleCount(count) {
+        document.getElementById('visible-locations').textContent = count;
+    }
+    
+    function showOrchidDetails(orchid) {
+        const detailsPanel = document.getElementById('orchid-details');
+        const infoDiv = document.getElementById('orchid-info');
+        
+        infoDiv.innerHTML = `
+            <div class="text-center mb-3">
+                ${orchid.image_url ? `<img src="${orchid.image_url}" class="img-fluid" style="max-width: 100%; border-radius: 8px;">` : ''}
+            </div>
+            <h6>${orchid.name}</h6>
+            ${orchid.scientific_name ? `<p class="text-muted mb-2"><em>${orchid.scientific_name}</em></p>` : ''}
+            <div class="small">
+                ${orchid.region ? `<p><strong>Region:</strong> ${orchid.region}</p>` : ''}
+                ${orchid.habitat ? `<p><strong>Habitat:</strong> ${orchid.habitat}</p>` : ''}
+                ${orchid.climate ? `<p><strong>Climate Preference:</strong> ${orchid.climate}</p>` : ''}
+                ${orchid.growth_habit ? `<p><strong>Growth Habit:</strong> ${orchid.growth_habit}</p>` : ''}
+                ${orchid.bloom_time ? `<p><strong>Bloom Time:</strong> ${orchid.bloom_time}</p>` : ''}
+            </div>
+            <a href="/orchid/${orchid.id}" class="btn btn-primary btn-sm w-100">View Full Details</a>
+        `;
+        
+        detailsPanel.style.display = 'block';
+    }
+    
+    function showError(message) {
+        const mapDiv = document.getElementById('orchid-map');
+        mapDiv.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100">
+                <div class="text-center text-muted">
+                    <i data-feather="alert-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+        feather.replace();
+    }
+    
+    // Event listeners
+    document.getElementById('filter-genus').addEventListener('change', updateMapMarkers);
+    document.getElementById('filter-climate').addEventListener('change', updateMapMarkers);
+    
+    document.getElementById('reset-view').addEventListener('click', function() {
+        if (orchidMarkers.length > 0) {
+            const group = new L.featureGroup(orchidMarkers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        } else {
+            map.setView([0, 0], 2);
+        }
+    });
+    
+    document.getElementById('cluster-toggle').addEventListener('click', function() {
+        clusteringEnabled = !clusteringEnabled;
+        this.textContent = clusteringEnabled ? 'Disable Clustering' : 'Enable Clustering';
+        updateMapMarkers();
+    });
+});
+</script>
+
+<style>
+.orchid-marker {
+    background: none;
+    border: none;
+}
+
+.orchid-popup {
+    font-size: 14px;
+}
+
+.orchid-popup h6 {
+    margin-bottom: 8px;
+    color: #e91e63;
+}
+
+.leaflet-popup-content-wrapper {
+    background: #2b3035;
+    color: #ffffff;
+}
+
+.leaflet-popup-tip {
+    background: #2b3035;
+}
+
+#map-stats {
+    font-size: 14px;
+}
+</style>
+{% endblock %}

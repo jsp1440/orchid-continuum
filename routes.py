@@ -247,6 +247,139 @@ def search():
     
     return render_template('search.html', orchids=orchids, query=query_text)
 
+@app.route('/map')
+def world_map():
+    """Interactive world map showing orchid locations"""
+    return render_template('map.html')
+
+@app.route('/api/orchid-locations')
+def orchid_locations_api():
+    """API endpoint to get orchid location data for the map"""
+    try:
+        # Get all orchids with geographic data
+        orchids = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.region.isnot(None),
+                OrchidRecord.native_habitat.isnot(None)
+            )
+        ).all()
+        
+        locations = []
+        for orchid in orchids:
+            location_data = {}
+            
+            # Try to extract coordinates from AI extracted metadata if available
+            if orchid.ai_extracted_metadata:
+                try:
+                    metadata = json.loads(orchid.ai_extracted_metadata) if isinstance(orchid.ai_extracted_metadata, str) else orchid.ai_extracted_metadata
+                    if metadata and 'location' in metadata:
+                        location_info = metadata['location']
+                        if 'latitude' in location_info and 'longitude' in location_info:
+                            location_data['lat'] = float(location_info['latitude'])
+                            location_data['lng'] = float(location_info['longitude'])
+                except (json.JSONDecodeError, KeyError, ValueError, TypeError):
+                    pass
+            
+            # If no coordinates from metadata, try to derive approximate location from region/habitat
+            if 'lat' not in location_data:
+                location_data.update(_get_approximate_location(orchid.region, orchid.native_habitat))
+            
+            # Only include orchids with valid location data
+            if 'lat' in location_data and 'lng' in location_data:
+                location_data.update({
+                    'id': orchid.id,
+                    'name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'region': orchid.region,
+                    'habitat': orchid.native_habitat,
+                    'image_url': orchid.image_url,
+                    'climate': orchid.climate_preference,
+                    'growth_habit': orchid.growth_habit,
+                    'bloom_time': orchid.bloom_time
+                })
+                locations.append(location_data)
+        
+        return jsonify({
+            'success': True,
+            'locations': locations,
+            'total_count': len(locations)
+        })
+    
+    except Exception as e:
+        logger.error(f"Error fetching orchid locations: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch orchid locations',
+            'locations': [],
+            'total_count': 0
+        })
+
+def _get_approximate_location(region, habitat):
+    """Get approximate coordinates based on region/habitat text"""
+    # Simple mapping of common regions to approximate coordinates
+    region_coordinates = {
+        # Asia
+        'thailand': {'lat': 15.87, 'lng': 100.99},
+        'malaysia': {'lat': 4.21, 'lng': 101.97},
+        'singapore': {'lat': 1.35, 'lng': 103.82},
+        'indonesia': {'lat': -0.79, 'lng': 113.92},
+        'philippines': {'lat': 12.88, 'lng': 121.77},
+        'vietnam': {'lat': 14.06, 'lng': 108.28},
+        'laos': {'lat': 19.85, 'lng': 102.50},
+        'cambodia': {'lat': 12.57, 'lng': 104.99},
+        'myanmar': {'lat': 21.92, 'lng': 95.96},
+        'china': {'lat': 35.86, 'lng': 104.20},
+        'india': {'lat': 20.59, 'lng': 78.96},
+        'japan': {'lat': 36.20, 'lng': 138.25},
+        'south korea': {'lat': 35.91, 'lng': 127.77},
+        
+        # Americas
+        'ecuador': {'lat': -1.83, 'lng': -78.18},
+        'colombia': {'lat': 4.57, 'lng': -74.30},
+        'peru': {'lat': -9.19, 'lng': -75.02},
+        'brazil': {'lat': -14.24, 'lng': -51.93},
+        'costa rica': {'lat': 9.75, 'lng': -83.75},
+        'guatemala': {'lat': 15.78, 'lng': -90.23},
+        'mexico': {'lat': 23.63, 'lng': -102.55},
+        'panama': {'lat': 8.54, 'lng': -80.78},
+        'venezuela': {'lat': 6.42, 'lng': -66.58},
+        'bolivia': {'lat': -16.29, 'lng': -63.59},
+        
+        # Africa  
+        'madagascar': {'lat': -18.77, 'lng': 46.87},
+        'south africa': {'lat': -30.56, 'lng': 22.94},
+        'kenya': {'lat': -0.02, 'lng': 37.91},
+        'tanzania': {'lat': -6.37, 'lng': 34.89},
+        'cameroon': {'lat': 7.37, 'lng': 12.35},
+        
+        # Oceania
+        'australia': {'lat': -25.27, 'lng': 133.78},
+        'new zealand': {'lat': -40.90, 'lng': 174.89},
+        'new guinea': {'lat': -5.32, 'lng': 141.00},
+        'papua new guinea': {'lat': -6.31, 'lng': 143.96},
+        
+        # Europe
+        'mediterranean': {'lat': 40.00, 'lng': 18.00}
+    }
+    
+    # Check region first
+    if region:
+        region_lower = region.lower()
+        for key, coords in region_coordinates.items():
+            if key in region_lower:
+                return coords
+    
+    # Check habitat text
+    if habitat:
+        habitat_lower = habitat.lower()
+        for key, coords in region_coordinates.items():
+            if key in habitat_lower:
+                return coords
+    
+    return {}
+
 @app.route('/orchid/<int:id>')
 def orchid_detail(id):
     """Display detailed orchid information"""
