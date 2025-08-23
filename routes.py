@@ -265,6 +265,11 @@ def orchid_detail(id):
     
     return render_template('orchid_detail.html', orchid=orchid, related_orchids=related_orchids)
 
+@app.route('/mission')
+def mission():
+    """Display mission statement and support information"""
+    return render_template('mission.html')
+
 @app.route('/admin')
 def admin():
     """Admin interface for batch operations"""
