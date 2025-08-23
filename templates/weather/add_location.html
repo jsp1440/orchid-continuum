@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Add Weather Location - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="map-pin" class="me-2"></i>Add Weather Location
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Track weather conditions for your orchid growing locations to get insights and alerts.
+                    </p>
+                    
+                    <form method="POST" id="locationForm">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Location Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="e.g., My Greenhouse, Indoor Growing Area" required>
+                            <div class="form-text">Give this location a memorable name</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" 
+                                       placeholder="San Francisco" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state_province" class="form-label">State/Province</label>
+                                <input type="text" class="form-control" id="state_province" name="state_province" 
+                                       placeholder="CA">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="country" class="form-label">Country</label>
+                            <input type="text" class="form-control" id="country" name="country" 
+                                   placeholder="USA" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="growing_type" class="form-label">Growing Environment</label>
+                            <select class="form-select" id="growing_type" name="growing_type">
+                                <option value="outdoor">Outdoor</option>
+                                <option value="greenhouse">Greenhouse</option>
+                                <option value="indoor">Indoor</option>
+                                <option value="shade_house">Shade House</option>
+                                <option value="conservatory">Conservatory</option>
+                            </select>
+                            <div class="form-text">This helps provide more relevant weather advice</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('weather_dashboard') }}" class="btn btn-outline-secondary">
+                                <i data-feather="arrow-left" class="me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i data-feather="plus" class="me-2"></i>Add Location
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Example Locations -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="info" class="me-2"></i>Example Locations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Popular Growing Regions</h6>
+                            <ul class="list-unstyled small">
+                                <li>• San Francisco, CA, USA</li>
+                                <li>• Miami, FL, USA</li>
+                                <li>• Vancouver, BC, Canada</li>
+                                <li>• London, England, UK</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Tropical Orchid Regions</h6>
+                            <ul class="list-unstyled small">
+                                <li>• Singapore</li>
+                                <li>• Bangkok, Thailand</li>
+                                <li>• Medellín, Colombia</li>
+                                <li>• Brisbane, QLD, Australia</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('locationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            // Success - redirect to weather dashboard
+            window.location.href = "{{ url_for('weather_dashboard') }}";
+        } else {
+            return response.text().then(text => {
+                throw new Error(text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding location. Please check your input and try again.');
+        
+        // Reset button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Auto-capitalize first letter of inputs
+['name', 'city', 'state_province', 'country'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+    });
+});
+</script>
+{% endblock %}
