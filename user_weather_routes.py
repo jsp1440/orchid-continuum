@@ -6,7 +6,7 @@ Handles user ZIP code input and personalized weather display
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from app import db
-from models import UserLocation, WeatherData, WeatherAlert
+from models import UserLocation, WeatherData, WeatherAlert, UserOrchidCollection, OrchidRecord
 from weather_service import WeatherService, get_coordinates_from_zip_code
 from datetime import datetime, timedelta
 import logging
@@ -208,3 +208,226 @@ def zip_lookup():
         return jsonify(location_data)
     else:
         return jsonify({'error': 'Location not found'}), 404
+
+# Weather Widget API Endpoints
+@user_weather_bp.route('/api/weather/current')
+def api_current_weather():
+    """API endpoint for current weather (for widgets)"""
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    
+    if lat is None or lon is None:
+        return jsonify({'error': 'Latitude and longitude required'}), 400
+    
+    try:
+        weather = WeatherService.get_current_weather(lat, lon)
+        if weather:
+            return jsonify({
+                'temperature': weather.temperature,
+                'humidity': weather.humidity,
+                'wind_speed': weather.wind_speed,
+                'wind_direction': weather.wind_direction,
+                'pressure': weather.pressure,
+                'weather_code': weather.weather_code,
+                'description': weather.description,
+                'temperature_max': weather.temperature_max,
+                'temperature_min': weather.temperature_min,
+                'vpd': weather.vpd,
+                'recorded_at': weather.recorded_at.isoformat()
+            })
+        else:
+            return jsonify({'error': 'Unable to fetch weather data'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in weather API: {str(e)}")
+        return jsonify({'error': 'Weather service unavailable'}), 500
+
+@user_weather_bp.route('/api/weather/forecast')
+def api_weather_forecast():
+    """API endpoint for weather forecast (for widgets)"""
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    days = request.args.get('days', 5, type=int)
+    
+    if lat is None or lon is None:
+        return jsonify({'error': 'Latitude and longitude required'}), 400
+    
+    try:
+        forecast = WeatherService.get_weather_forecast(lat, lon, days)
+        if forecast:
+            return jsonify([{
+                'date': day.recorded_at.isoformat(),
+                'temperature_max': day.temperature_max,
+                'temperature_min': day.temperature_min,
+                'humidity': day.humidity,
+                'precipitation': day.precipitation,
+                'weather_code': day.weather_code,
+                'description': day.description
+            } for day in forecast])
+        else:
+            return jsonify({'error': 'Unable to fetch forecast data'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in forecast API: {str(e)}")
+        return jsonify({'error': 'Forecast service unavailable'}), 500
+
+@user_weather_bp.route('/api/weather/zip/<zip_code>')
+def api_weather_by_zip(zip_code):
+    """API endpoint for weather by ZIP code (for widgets)"""
+    country = request.args.get('country', 'US')
+    
+    # Get coordinates from ZIP
+    location_data = get_coordinates_from_zip_code(zip_code, country)
+    if not location_data:
+        return jsonify({'error': 'ZIP code not found'}), 404
+    
+    try:
+        # Get current weather
+        weather = WeatherService.get_current_weather(
+            location_data['latitude'], 
+            location_data['longitude'], 
+            location_data['name']
+        )
+        
+        if weather:
+            response_data = {
+                'location': location_data,
+                'weather': {
+                    'temperature': weather.temperature,
+                    'humidity': weather.humidity,
+                    'wind_speed': weather.wind_speed,
+                    'pressure': weather.pressure,
+                    'weather_code': weather.weather_code,
+                    'description': weather.description,
+                    'temperature_max': weather.temperature_max,
+                    'temperature_min': weather.temperature_min,
+                    'vpd': weather.vpd
+                }
+            }
+            return jsonify(response_data)
+        else:
+            return jsonify({'error': 'Unable to fetch weather data'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in ZIP weather API: {str(e)}")
+        return jsonify({'error': 'Weather service unavailable'}), 500
+
+# User Orchid Collection Management for Weather Widget
+@user_weather_bp.route('/api/user-orchids')
+@login_required
+def api_user_orchids():
+    """Get user's orchid collection for weather widget"""
+    try:
+        # Get user's collections
+        collections = UserOrchidCollection.query.filter_by(
+            user_id=current_user.id,
+            is_active=True,
+            show_in_widget=True
+        ).order_by(UserOrchidCollection.widget_priority.asc()).all()
+        
+        if not collections:
+            # If no collections, suggest some popular orchids
+            suggested_orchids = OrchidRecord.query.filter(
+                OrchidRecord.climate_preference.isnot(None),
+                OrchidRecord.image_url.isnot(None)
+            ).order_by(OrchidRecord.view_count.desc()).limit(3).all()
+            
+            return jsonify({
+                'user_orchids': [],
+                'suggested_orchids': [{
+                    'id': orchid.id,
+                    'display_name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'image_url': orchid.image_url,
+                    'region': orchid.region,
+                    'climate_preference': orchid.climate_preference
+                } for orchid in suggested_orchids]
+            })
+        
+        user_orchids = []
+        for collection in collections:
+            orchid = collection.orchid
+            if orchid:
+                user_orchids.append({
+                    'collection_id': collection.id,
+                    'id': orchid.id,
+                    'display_name': collection.collection_name or orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'image_url': orchid.image_url,
+                    'region': orchid.region,
+                    'climate_preference': orchid.climate_preference,
+                    'temperature_range': orchid.temperature_range,
+                    'is_primary': collection.is_primary,
+                    'notes': collection.notes
+                })
+        
+        return jsonify({'user_orchids': user_orchids})
+        
+    except Exception as e:
+        logger.error(f"Error getting user orchids: {str(e)}")
+        return jsonify({'error': 'Unable to load orchid collection'}), 500
+
+@user_weather_bp.route('/collections')
+@login_required
+def orchid_collections():
+    """Manage user's orchid collection for weather widget"""
+    collections = UserOrchidCollection.query.filter_by(
+        user_id=current_user.id,
+        is_active=True
+    ).order_by(UserOrchidCollection.widget_priority.asc()).all()
+    
+    # Get available orchids to add to collection
+    available_orchids = OrchidRecord.query.filter(
+        OrchidRecord.climate_preference.isnot(None),
+        OrchidRecord.image_url.isnot(None)
+    ).order_by(OrchidRecord.display_name.asc()).limit(50).all()
+    
+    return render_template('weather/orchid_collections.html',
+                         collections=collections,
+                         available_orchids=available_orchids)
+
+@user_weather_bp.route('/collections/add', methods=['POST'])
+@login_required
+def add_orchid_to_collection():
+    """Add an orchid to user's collection"""
+    orchid_id = request.form.get('orchid_id', type=int)
+    collection_name = request.form.get('collection_name', '').strip()
+    notes = request.form.get('notes', '').strip()
+    
+    if not orchid_id:
+        flash('Please select an orchid to add.', 'error')
+        return redirect(url_for('user_weather.orchid_collections'))
+    
+    # Check if already in collection
+    existing = UserOrchidCollection.query.filter_by(
+        user_id=current_user.id,
+        orchid_id=orchid_id
+    ).first()
+    
+    if existing:
+        flash('This orchid is already in your collection.', 'warning')
+        return redirect(url_for('user_weather.orchid_collections'))
+    
+    # Get orchid details
+    orchid = OrchidRecord.query.get_or_404(orchid_id)
+    
+    # Create collection entry
+    collection = UserOrchidCollection(
+        user_id=current_user.id,
+        orchid_id=orchid_id,
+        collection_name=collection_name or orchid.display_name,
+        notes=notes,
+        is_primary=UserOrchidCollection.query.filter_by(user_id=current_user.id).count() == 0,
+        widget_priority=UserOrchidCollection.query.filter_by(user_id=current_user.id).count() + 1
+    )
+    
+    try:
+        db.session.add(collection)
+        db.session.commit()
+        flash(f'Added {orchid.display_name} to your collection!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding orchid to collection: {str(e)}")
+        flash('Error adding orchid to collection.', 'error')
+    
+    return redirect(url_for('user_weather.orchid_collections'))
