@@ -70,3 +70,10 @@ try:
     print("Google Drive import system initialized")
 except Exception as e:
     print(f"Drive import initialization error: {e}")
+
+try:
+    from orchid_comparison_system import comparison_bp
+    app.register_blueprint(comparison_bp)
+    print("Orchid comparison system initialized")
+except Exception as e:
+    print(f"Comparison system initialization error: {e}")
