@@ -799,3 +799,64 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
+
+@app.route('/admin/data-import')
+def admin_data_import():
+    """Data import management interface"""
+    # Get database statistics
+    stats = {}
+    try:
+        stats['total_orchids'] = db.session.query(func.count(OrchidRecord.id)).scalar() or 0
+        stats['validated_orchids'] = db.session.query(func.count(OrchidRecord.id)).filter_by(validation_status='validated').scalar() or 0
+        
+        # Data source breakdown
+        stats['by_source'] = {}
+        sources = ['upload', 'scrape_gary', 'scrape_roberta', 'legacy', 'drive_import']
+        for source in sources:
+            count = db.session.query(func.count(OrchidRecord.id)).filter_by(ingestion_source=source).scalar() or 0
+            stats['by_source'][source] = count
+            
+    except Exception as e:
+        logger.error(f"Error fetching data import stats: {str(e)}")
+        db.session.rollback()
+        stats = {
+            'total_orchids': 0,
+            'validated_orchids': 0,
+            'by_source': {}
+        }
+    
+    return render_template('admin_data_import.html', stats=stats)
+
+@app.route('/admin/run-scraping', methods=['POST'])
+def admin_run_scraping():
+    """Trigger web scraping to collect orchid data"""
+    try:
+        data = request.get_json()
+        source = data.get('source', 'all')
+        
+        results = {'success': True, 'new_records': 0, 'errors': 0}
+        
+        # Import and run scrapers
+        try:
+            from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
+            
+            if source in ['all', 'gary']:
+                gary_results = scrape_gary_yong_gee()
+                results['new_records'] += gary_results.get('processed', 0)
+                results['errors'] += gary_results.get('errors', 0)
+                
+            if source in ['all', 'roberta']:
+                roberta_results = scrape_roberta_fox()
+                results['new_records'] += roberta_results.get('processed', 0)
+                results['errors'] += roberta_results.get('errors', 0)
+                
+        except ImportError as e:
+            return jsonify({'success': False, 'error': f'Scraping modules not available: {e}'}), 500
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Scraping failed: {e}'}), 500
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.error(f"Error running scraping: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
