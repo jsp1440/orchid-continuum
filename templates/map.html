@@ -3,26 +3,85 @@
 {% block title %}World Map - Orchid Continuum{% endblock %}
 
 {% block content %}
-<div class="container-fluid my-4">
-    <div class="row">
+<!-- Mobile-optimized layout -->
+<div class="container-fluid px-2 py-3">
+    <div class="row g-2">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">
-                        <i data-feather="globe" class="me-2"></i>Global Orchid Distribution Map
-                    </h4>
-                    <p class="text-muted mb-0">Interactive satellite map showing orchid locations and geographic distribution</p>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pb-2">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between">
+                        <div>
+                            <h4 class="mb-1 fs-5">
+                                <i data-feather="globe" class="me-2"></i>Global Orchid Map
+                            </h4>
+                            <p class="text-muted mb-0 small d-none d-sm-block">
+                                Interactive satellite map showing orchid locations worldwide
+                            </p>
+                        </div>
+                        <!-- Mobile-friendly toggle for controls -->
+                        <button id="mobile-controls-toggle" class="btn btn-outline-primary btn-sm d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobile-controls">
+                            <i data-feather="sliders" class="me-1"></i>Filters
+                        </button>
+                    </div>
                 </div>
+                
+                <!-- Mobile controls (collapsible) -->
+                <div id="mobile-controls" class="collapse d-md-none">
+                    <div class="card-body border-bottom py-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <select id="mobile-filter-genus" class="form-select form-select-sm">
+                                    <option value="">All Genera</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select id="mobile-filter-climate" class="form-select form-select-sm">
+                                    <option value="">All Climates</option>
+                                    <option value="cool">Cool</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="warm">Warm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-6">
+                                <button id="mobile-reset-view" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i data-feather="home" class="me-1"></i>Reset
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button id="mobile-cluster-toggle" class="btn btn-outline-primary btn-sm w-100">
+                                    <i data-feather="layers" class="me-1"></i>Cluster
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="card-body p-0">
-                    <!-- Map container -->
-                    <div id="orchid-map" style="height: 600px; width: 100%;"></div>
+                    <!-- Responsive map container -->
+                    <div id="orchid-map" class="mobile-map-container"></div>
+                </div>
+                
+                <!-- Mobile stats bar -->
+                <div class="card-footer bg-transparent border-0 py-2 d-md-none">
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span>
+                            <i data-feather="map-pin" style="width: 14px; height: 14px;" class="me-1"></i>
+                            <span id="mobile-total-locations">0</span> locations
+                        </span>
+                        <span>
+                            <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
+                            <span id="mobile-visible-locations">0</span> visible
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Map controls and info panel -->
-    <div class="row mt-4">
+    <!-- Desktop controls and info panel -->
+    <div class="row mt-3 d-none d-md-flex">
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-body">
@@ -92,6 +151,24 @@
             </div>
         </div>
     </div>
+    
+    <!-- Mobile orchid details modal -->
+    <div class="modal fade d-md-none" id="mobile-orchid-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Orchid Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="mobile-orchid-info">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <a id="mobile-orchid-link" href="#" class="btn btn-primary btn-sm w-100">View Full Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Leaflet CSS -->
@@ -105,8 +182,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the map
-    const map = L.map('orchid-map').setView([0, 0], 2);
+    // Initialize the map with mobile-optimized settings
+    const isMobile = window.innerWidth < 768;
+    const map = L.map('orchid-map', {
+        zoomControl: !isMobile, // Hide zoom control on mobile
+        doubleClickZoom: true,
+        scrollWheelZoom: !isMobile, // Disable scroll zoom on mobile for better UX
+        touchZoom: true,
+        dragging: true,
+        tap: true,
+        tapTolerance: 15
+    }).setView([0, 0], isMobile ? 1 : 2);
     
     // Satellite base layer (ESRI World Imagery)
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -137,10 +223,14 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     L.control.layers(baseLayers).addTo(map);
     
-    // Marker cluster group
+    // Marker cluster group with mobile optimization
     let markerClusterGroup = L.markerClusterGroup({
         chunkedLoading: true,
-        maxClusterRadius: 50
+        maxClusterRadius: isMobile ? 80 : 50,
+        disableClusteringAtZoom: isMobile ? 6 : 8,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: !isMobile,
+        zoomToBoundsOnClick: true
     });
     map.addLayer(markerClusterGroup);
     
@@ -148,13 +238,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let orchidMarkers = [];
     let clusteringEnabled = true;
     
-    // Custom orchid icon
+    // Custom orchid icon (mobile-optimized)
+    const iconSize = isMobile ? 24 : 20;
     const orchidIcon = L.divIcon({
         className: 'orchid-marker',
-        html: '<i class="fas fa-flower" style="color: #e91e63; font-size: 16px; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);"></i>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        popupAnchor: [0, -10]
+        html: `<div class="orchid-pin">
+            <div class="orchid-pin-inner"></div>
+        </div>`,
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [iconSize/2, iconSize/2],
+        popupAnchor: [0, -(iconSize/2)]
     });
     
     // Load orchid location data
@@ -188,8 +281,10 @@ document.addEventListener('DOMContentLoaded', function() {
         orchidMarkers = [];
         
         // Get filter values
-        const genusFilter = document.getElementById('filter-genus').value;
-        const climateFilter = document.getElementById('filter-climate').value;
+        const genusFilter = document.getElementById('filter-genus')?.value || 
+                           document.getElementById('mobile-filter-genus')?.value || '';
+        const climateFilter = document.getElementById('filter-climate')?.value || 
+                             document.getElementById('mobile-filter-climate')?.value || '';
         
         // Filter locations
         let filteredLocations = allLocations.filter(location => {
@@ -204,23 +299,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: orchidIcon
             });
             
-            // Create popup content
-            const popupContent = `
-                <div class="orchid-popup">
-                    <h6>${location.name}</h6>
-                    ${location.scientific_name ? `<p class="small text-muted mb-1"><em>${location.scientific_name}</em></p>` : ''}
-                    ${location.image_url ? `<img src="${location.image_url}" class="img-fluid mb-2" style="max-width: 200px; border-radius: 4px;">` : ''}
-                    <div class="small">
-                        ${location.region ? `<p class="mb-1"><strong>Region:</strong> ${location.region}</p>` : ''}
-                        ${location.climate ? `<p class="mb-1"><strong>Climate:</strong> ${location.climate}</p>` : ''}
-                        ${location.growth_habit ? `<p class="mb-1"><strong>Growth:</strong> ${location.growth_habit}</p>` : ''}
-                        ${location.bloom_time ? `<p class="mb-1"><strong>Bloom Time:</strong> ${location.bloom_time}</p>` : ''}
+            // Create mobile-optimized popup content
+            if (isMobile) {
+                // On mobile, use modal instead of popup for better UX
+                marker.on('click', function() {
+                    showMobileOrchidModal(location);
+                });
+            } else {
+                // Desktop popup
+                const popupContent = `
+                    <div class="orchid-popup">
+                        <h6>${location.name}</h6>
+                        ${location.scientific_name ? `<p class="small text-muted mb-1"><em>${location.scientific_name}</em></p>` : ''}
+                        ${location.image_url ? `<img src="${location.image_url}" class="img-fluid mb-2" style="max-width: 200px; border-radius: 4px;">` : ''}
+                        <div class="small">
+                            ${location.region ? `<p class="mb-1"><strong>Region:</strong> ${location.region}</p>` : ''}
+                            ${location.climate ? `<p class="mb-1"><strong>Climate:</strong> ${location.climate}</p>` : ''}
+                            ${location.growth_habit ? `<p class="mb-1"><strong>Growth:</strong> ${location.growth_habit}</p>` : ''}
+                            ${location.bloom_time ? `<p class="mb-1"><strong>Bloom Time:</strong> ${location.bloom_time}</p>` : ''}
+                        </div>
+                        <a href="/orchid/${location.id}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
                     </div>
-                    <a href="/orchid/${location.id}" class="btn btn-sm btn-outline-primary mt-2">View Details</a>
-                </div>
-            `;
-            
-            marker.bindPopup(popupContent);
+                `;
+                marker.bindPopup(popupContent, {
+                    maxWidth: 250,
+                    className: 'custom-popup'
+                });
+            }
             
             // Click handler for details panel
             marker.on('click', function() {
@@ -241,42 +346,82 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function populateFilterOptions() {
         const genera = [...new Set(allLocations.map(l => l.genus).filter(g => g))].sort();
-        const genusSelect = document.getElementById('filter-genus');
-        genusSelect.innerHTML = '<option value="">All Genera</option>';
-        genera.forEach(genus => {
-            genusSelect.innerHTML += `<option value="${genus}">${genus}</option>`;
+        const genusSelects = [
+            document.getElementById('filter-genus'),
+            document.getElementById('mobile-filter-genus')
+        ].filter(el => el);
+        
+        genusSelects.forEach(genusSelect => {
+            genusSelect.innerHTML = '<option value="">All Genera</option>';
+            genera.forEach(genus => {
+                genusSelect.innerHTML += `<option value="${genus}">${genus}</option>`;
+            });
         });
     }
     
     function updateStats() {
         document.getElementById('total-locations').textContent = allLocations.length;
+        // Update mobile counters
+        const mobileTotal = document.getElementById('mobile-total-locations');
+        if (mobileTotal) mobileTotal.textContent = allLocations.length;
     }
     
     function updateVisibleCount(count) {
         document.getElementById('visible-locations').textContent = count;
+        // Update mobile counters
+        const mobileVisible = document.getElementById('mobile-visible-locations');
+        if (mobileVisible) mobileVisible.textContent = count;
     }
     
     function showOrchidDetails(orchid) {
-        const detailsPanel = document.getElementById('orchid-details');
-        const infoDiv = document.getElementById('orchid-info');
+        if (isMobile) {
+            showMobileOrchidModal(orchid);
+        } else {
+            const detailsPanel = document.getElementById('orchid-details');
+            const infoDiv = document.getElementById('orchid-info');
+            
+            infoDiv.innerHTML = `
+                <div class="text-center mb-3">
+                    ${orchid.image_url ? `<img src="${orchid.image_url}" class="img-fluid" style="max-width: 100%; border-radius: 8px;">` : ''}
+                </div>
+                <h6>${orchid.name}</h6>
+                ${orchid.scientific_name ? `<p class="text-muted mb-2"><em>${orchid.scientific_name}</em></p>` : ''}
+                <div class="small">
+                    ${orchid.region ? `<p><strong>Region:</strong> ${orchid.region}</p>` : ''}
+                    ${orchid.habitat ? `<p><strong>Habitat:</strong> ${orchid.habitat}</p>` : ''}
+                    ${orchid.climate ? `<p><strong>Climate Preference:</strong> ${orchid.climate}</p>` : ''}
+                    ${orchid.growth_habit ? `<p><strong>Growth Habit:</strong> ${orchid.growth_habit}</p>` : ''}
+                    ${orchid.bloom_time ? `<p><strong>Bloom Time:</strong> ${orchid.bloom_time}</p>` : ''}
+                </div>
+                <a href="/orchid/${orchid.id}" class="btn btn-primary btn-sm w-100">View Full Details</a>
+            `;
+            
+            detailsPanel.style.display = 'block';
+        }
+    }
+    
+    function showMobileOrchidModal(orchid) {
+        const modal = new bootstrap.Modal(document.getElementById('mobile-orchid-modal'));
+        const infoDiv = document.getElementById('mobile-orchid-info');
+        const linkButton = document.getElementById('mobile-orchid-link');
         
         infoDiv.innerHTML = `
             <div class="text-center mb-3">
                 ${orchid.image_url ? `<img src="${orchid.image_url}" class="img-fluid" style="max-width: 100%; border-radius: 8px;">` : ''}
             </div>
-            <h6>${orchid.name}</h6>
+            <h6 class="mb-2">${orchid.name}</h6>
             ${orchid.scientific_name ? `<p class="text-muted mb-2"><em>${orchid.scientific_name}</em></p>` : ''}
             <div class="small">
-                ${orchid.region ? `<p><strong>Region:</strong> ${orchid.region}</p>` : ''}
-                ${orchid.habitat ? `<p><strong>Habitat:</strong> ${orchid.habitat}</p>` : ''}
-                ${orchid.climate ? `<p><strong>Climate Preference:</strong> ${orchid.climate}</p>` : ''}
-                ${orchid.growth_habit ? `<p><strong>Growth Habit:</strong> ${orchid.growth_habit}</p>` : ''}
-                ${orchid.bloom_time ? `<p><strong>Bloom Time:</strong> ${orchid.bloom_time}</p>` : ''}
+                ${orchid.region ? `<p class="mb-1"><strong>Region:</strong> ${orchid.region}</p>` : ''}
+                ${orchid.habitat ? `<p class="mb-1"><strong>Habitat:</strong> ${orchid.habitat}</p>` : ''}
+                ${orchid.climate ? `<p class="mb-1"><strong>Climate:</strong> ${orchid.climate}</p>` : ''}
+                ${orchid.growth_habit ? `<p class="mb-1"><strong>Growth Habit:</strong> ${orchid.growth_habit}</p>` : ''}
+                ${orchid.bloom_time ? `<p class="mb-1"><strong>Bloom Time:</strong> ${orchid.bloom_time}</p>` : ''}
             </div>
-            <a href="/orchid/${orchid.id}" class="btn btn-primary btn-sm w-100">View Full Details</a>
         `;
         
-        detailsPanel.style.display = 'block';
+        linkButton.href = `/orchid/${orchid.id}`;
+        modal.show();
     }
     
     function showError(message) {
@@ -292,53 +437,228 @@ document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     }
     
-    // Event listeners
-    document.getElementById('filter-genus').addEventListener('change', updateMapMarkers);
-    document.getElementById('filter-climate').addEventListener('change', updateMapMarkers);
-    
-    document.getElementById('reset-view').addEventListener('click', function() {
-        if (orchidMarkers.length > 0) {
-            const group = new L.featureGroup(orchidMarkers);
-            map.fitBounds(group.getBounds().pad(0.1));
-        } else {
-            map.setView([0, 0], 2);
+    // Event listeners for both desktop and mobile
+    function setupEventListeners() {
+        // Desktop controls
+        const desktopGenusFilter = document.getElementById('filter-genus');
+        const desktopClimateFilter = document.getElementById('filter-climate');
+        const desktopResetBtn = document.getElementById('reset-view');
+        const desktopClusterBtn = document.getElementById('cluster-toggle');
+        
+        // Mobile controls
+        const mobileGenusFilter = document.getElementById('mobile-filter-genus');
+        const mobileClimateFilter = document.getElementById('mobile-filter-climate');
+        const mobileResetBtn = document.getElementById('mobile-reset-view');
+        const mobileClusterBtn = document.getElementById('mobile-cluster-toggle');
+        
+        function handleFilterChange() {
+            updateMapMarkers();
         }
-    });
+        
+        function handleResetView() {
+            if (orchidMarkers.length > 0) {
+                const group = new L.featureGroup(orchidMarkers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            } else {
+                map.setView([0, 0], isMobile ? 1 : 2);
+            }
+        }
+        
+        function handleClusterToggle(btn) {
+            clusteringEnabled = !clusteringEnabled;
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.setAttribute('data-feather', clusteringEnabled ? 'layers' : 'grid');
+                feather.replace();
+            }
+            updateMapMarkers();
+        }
+        
+        // Desktop event listeners
+        if (desktopGenusFilter) desktopGenusFilter.addEventListener('change', handleFilterChange);
+        if (desktopClimateFilter) desktopClimateFilter.addEventListener('change', handleFilterChange);
+        if (desktopResetBtn) desktopResetBtn.addEventListener('click', handleResetView);
+        if (desktopClusterBtn) desktopClusterBtn.addEventListener('click', () => handleClusterToggle(desktopClusterBtn));
+        
+        // Mobile event listeners
+        if (mobileGenusFilter) mobileGenusFilter.addEventListener('change', handleFilterChange);
+        if (mobileClimateFilter) mobileClimateFilter.addEventListener('change', handleFilterChange);
+        if (mobileResetBtn) mobileResetBtn.addEventListener('click', handleResetView);
+        if (mobileClusterBtn) mobileClusterBtn.addEventListener('click', () => handleClusterToggle(mobileClusterBtn));
+        
+        // Sync mobile and desktop filters
+        function syncFilters(sourceFilter, targetFilter) {
+            if (sourceFilter && targetFilter) {
+                sourceFilter.addEventListener('change', function() {
+                    targetFilter.value = this.value;
+                });
+            }
+        }
+        
+        syncFilters(desktopGenusFilter, mobileGenusFilter);
+        syncFilters(mobileGenusFilter, desktopGenusFilter);
+        syncFilters(desktopClimateFilter, mobileClimateFilter);
+        syncFilters(mobileClimateFilter, desktopClimateFilter);
+    }
     
-    document.getElementById('cluster-toggle').addEventListener('click', function() {
-        clusteringEnabled = !clusteringEnabled;
-        this.textContent = clusteringEnabled ? 'Disable Clustering' : 'Enable Clustering';
-        updateMapMarkers();
-    });
+    setupEventListeners();
 });
 </script>
 
 <style>
+/* Mobile-optimized map styles */
+.mobile-map-container {
+    height: 70vh;
+    min-height: 400px;
+    max-height: 600px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .mobile-map-container {
+        height: 600px;
+    }
+}
+
+/* Custom orchid marker styles */
 .orchid-marker {
     background: none;
     border: none;
 }
 
+.orchid-pin {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e91e63, #ad1457);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(233, 30, 99, 0.3);
+    position: relative;
+    cursor: pointer;
+}
+
+.orchid-pin-inner {
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.orchid-pin:hover {
+    transform: rotate(-45deg) scale(1.1);
+    box-shadow: 0 3px 12px rgba(233, 30, 99, 0.5);
+}
+
+/* Popup styles */
 .orchid-popup {
     font-size: 14px;
+    max-width: 250px;
 }
 
 .orchid-popup h6 {
     margin-bottom: 8px;
     color: #e91e63;
+    font-size: 16px;
 }
 
-.leaflet-popup-content-wrapper {
+.custom-popup .leaflet-popup-content-wrapper {
     background: #2b3035;
     color: #ffffff;
+    border-radius: 8px;
 }
 
-.leaflet-popup-tip {
+.custom-popup .leaflet-popup-tip {
     background: #2b3035;
 }
 
+/* Mobile controls */
+#mobile-controls-toggle {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* Map stats */
 #map-stats {
     font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    
+    .card-header h4 {
+        font-size: 1.1rem;
+    }
+    
+    .mobile-map-container {
+        height: 60vh;
+        min-height: 350px;
+    }
+}
+
+/* Touch-friendly controls */
+@media (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+    }
+    
+    .form-select {
+        min-height: 44px;
+    }
+}
+
+/* Leaflet mobile optimizations */
+.leaflet-control-container {
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .leaflet-control-zoom {
+        display: none;
+    }
+    
+    .leaflet-control-layers {
+        font-size: 12px;
+    }
+    
+    .leaflet-popup-content {
+        margin: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Cluster styles for mobile */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    border-radius: 50%;
+    border: 2px solid rgba(233, 30, 99, 0.6);
+}
+
+@media (max-width: 768px) {
+    .marker-cluster-small {
+        width: 35px;
+        height: 35px;
+        font-size: 11px;
+    }
+    
+    .marker-cluster-medium {
+        width: 45px;
+        height: 45px;
+        font-size: 12px;
+    }
+    
+    .marker-cluster-large {
+        width: 55px;
+        height: 55px;
+        font-size: 13px;
+    }
 }
 </style>
 {% endblock %}
