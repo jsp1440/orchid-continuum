@@ -1,5 +1,5 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, JSON
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -246,6 +246,49 @@ class User(UserMixin, db.Model):
     
     def __repr__(self):
         return f'<User {self.user_id}: {self.email}>'
+
+
+class PasswordResetToken(db.Model):
+    """Password reset tokens for secure account recovery"""
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
+    token = db.Column(String(100), unique=True, nullable=False)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    expires_at = db.Column(DateTime, nullable=False)
+    used = db.Column(Boolean, default=False)
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('password_reset_tokens', lazy=True))
+    
+    def __init__(self, user_id, expires_in_hours=24):
+        self.user_id = user_id
+        self.token = secrets.token_urlsafe(32)
+        self.created_at = datetime.utcnow()
+        self.expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
+    
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at
+    
+    def is_valid(self):
+        return not self.used and not self.is_expired()
+    
+    def mark_as_used(self):
+        self.used = True
+    
+    @staticmethod
+    def cleanup_expired_tokens():
+        """Remove expired tokens from database"""
+        expired = PasswordResetToken.query.filter(
+            PasswordResetToken.expires_at < datetime.utcnow()
+        ).all()
+        
+        for token in expired:
+            db.session.delete(token)
+        
+        return len(expired)
+    
+    def __repr__(self):
+        return f'<PasswordResetToken for User {self.user_id}>'
 
 class JudgingStandard(db.Model):
     """Orchid judging standards from different organizations"""

@@ -8,7 +8,8 @@ import os
 from datetime import datetime
 
 from app import app, db
-from models import User, UserUpload, OrchidRecord
+from models import User, UserUpload, OrchidRecord, PasswordResetToken
+from email_service import email_service
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -272,6 +273,92 @@ def make_admin(user_id):
         'success': True,
         'message': f'User {user.email} is now an administrator'
     })
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email:
+            flash('Please provide your email address.', 'error')
+            return render_template('auth/forgot_password.html')
+        
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Clean up any existing reset tokens for this user
+            existing_tokens = PasswordResetToken.query.filter_by(user_id=user.id).all()
+            for token in existing_tokens:
+                db.session.delete(token)
+            
+            # Create new reset token
+            reset_token = PasswordResetToken(user.id)
+            db.session.add(reset_token)
+            db.session.commit()
+            
+            # Send email with reset link
+            try:
+                email_sent = email_service.send_password_reset_email(user, reset_token)
+                if email_sent:
+                    flash(f'Password reset instructions have been sent to {email}. Please check your email and follow the instructions.', 'success')
+                else:
+                    flash('Failed to send password reset email. Please try again later.', 'error')
+            except Exception as e:
+                flash('Failed to send password reset email. Please try again later.', 'error')
+        else:
+            # For security, show same message even if email doesn't exist
+            flash(f'Password reset instructions have been sent to {email}. Please check your email and follow the instructions.', 'success')
+        
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/forgot_password.html')
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with valid token"""
+    # Find the reset token
+    reset_token = PasswordResetToken.query.filter_by(token=token).first()
+    
+    if not reset_token or not reset_token.is_valid():
+        flash('Invalid or expired password reset link. Please request a new one.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Validate passwords
+        if not password:
+            flash('Password is required.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        # Update user password
+        user = reset_token.user
+        user.set_password(password)
+        
+        # Mark token as used
+        reset_token.mark_as_used()
+        
+        try:
+            db.session.commit()
+            flash('Your password has been successfully reset. You can now log in with your new password.', 'success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Failed to reset password. Please try again.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+    
+    return render_template('auth/reset_password.html', token=token, user_email=reset_token.user.email)
 
 # Helper functions for templates
 @app.context_processor
