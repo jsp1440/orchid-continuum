@@ -33,6 +33,13 @@
             <div class="map-stats">
                 <span id="widget-location-count-{{ widget_data.widget_id }}">0</span> locations
             </div>
+            <div class="database-stats mt-1">
+                <div class="small">
+                    <span id="widget-genera-count-{{ widget_data.widget_id }}">-</span> genera •
+                    <span id="widget-species-count-{{ widget_data.widget_id }}">-</span> species •
+                    <span id="widget-hybrids-count-{{ widget_data.widget_id }}">-</span> hybrids
+                </div>
+            </div>
         </div>
     </div>
     
@@ -147,6 +154,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<div class="d-flex align-items-center justify-content-center h-100 text-muted">' +
                 '<div class="text-center"><i class="fas fa-exclamation-triangle mb-2"></i><br>Map data unavailable</div>' +
                 '</div>';
+        });
+    
+    // Load database statistics for widget
+    const statsUrl = '{{ widget_data.api_base_url or "/api" }}/database-statistics';
+    fetch(statsUrl)
+        .then(response => response.json())
+        .then(stats => {
+            updateWidgetStatistics(stats);
+        })
+        .catch(error => {
+            console.error('Error loading widget statistics:', error);
         });
     
     function updateWidgetMarkers() {

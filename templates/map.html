@@ -65,15 +65,34 @@
                 
                 <!-- Mobile stats bar -->
                 <div class="card-footer bg-transparent border-0 py-2 d-md-none">
-                    <div class="d-flex justify-content-between align-items-center small text-muted">
-                        <span>
-                            <i data-feather="map-pin" style="width: 14px; height: 14px;" class="me-1"></i>
-                            <span id="mobile-total-locations">0</span> locations
-                        </span>
-                        <span>
-                            <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
-                            <span id="mobile-visible-locations">0</span> visible
-                        </span>
+                    <div class="row g-2 small text-muted">
+                        <div class="col-6">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    <i data-feather="map-pin" style="width: 14px; height: 14px;" class="me-1"></i>
+                                    <span id="mobile-total-locations">0</span> locations
+                                </span>
+                                <span>
+                                    <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
+                                    <span id="mobile-visible-locations">0</span> visible
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex justify-content-between">
+                                <span>Genera: <span id="mobile-stat-genera">-</span></span>
+                                <span>Species: <span id="mobile-stat-species">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-2 small text-muted mt-1">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span>Hybrids: <span id="mobile-stat-hybrids">-</span></span>
+                                <span>Intergenerics: <span id="mobile-stat-intergenerics">-</span></span>
+                                <span>Total: <span id="mobile-stat-total">-</span></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -135,6 +154,48 @@
                         </p>
                         <div id="current-filters" class="mt-2">
                             <!-- Dynamic filter display -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Statistics -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>
+                        <i data-feather="database" class="me-2"></i>Database Statistics
+                    </h5>
+                    <div id="database-stats">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="stat-item text-center p-2 bg-light rounded">
+                                    <div class="stat-number h6 mb-1" id="stat-genera">-</div>
+                                    <div class="stat-label small text-muted">Genera</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-item text-center p-2 bg-light rounded">
+                                    <div class="stat-number h6 mb-1" id="stat-species">-</div>
+                                    <div class="stat-label small text-muted">Species</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-item text-center p-2 bg-light rounded">
+                                    <div class="stat-number h6 mb-1" id="stat-hybrids">-</div>
+                                    <div class="stat-label small text-muted">Hybrids</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-item text-center p-2 bg-light rounded">
+                                    <div class="stat-number h6 mb-1" id="stat-intergenerics">-</div>
+                                    <div class="stat-label small text-muted">Intergenerics</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">
+                                Total: <span id="stat-total">-</span> orchid records
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -275,6 +336,16 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Network error while loading orchid data');
         });
     
+    // Load database statistics
+    fetch('/api/database-statistics')
+        .then(response => response.json())
+        .then(stats => {
+            updateDatabaseStatistics(stats);
+        })
+        .catch(error => {
+            console.error('Error loading database statistics:', error);
+        });
+    
     function updateMapMarkers() {
         // Clear existing markers
         markerClusterGroup.clearLayers();
@@ -364,6 +435,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update mobile counters
         const mobileTotal = document.getElementById('mobile-total-locations');
         if (mobileTotal) mobileTotal.textContent = allLocations.length;
+    }
+    
+    function updateDatabaseStatistics(stats) {
+        // Update desktop database statistics display
+        document.getElementById('stat-genera').textContent = stats.genera || 0;
+        document.getElementById('stat-species').textContent = stats.species || 0;
+        document.getElementById('stat-hybrids').textContent = stats.hybrids || 0;
+        document.getElementById('stat-intergenerics').textContent = stats.intergenerics || 0;
+        document.getElementById('stat-total').textContent = stats.total_orchids || 0;
+        
+        // Update mobile statistics
+        const mobileElements = [
+            'mobile-stat-genera',
+            'mobile-stat-species', 
+            'mobile-stat-hybrids',
+            'mobile-stat-intergenerics',
+            'mobile-stat-total'
+        ];
+        
+        const values = [
+            stats.genera || 0,
+            stats.species || 0,
+            stats.hybrids || 0, 
+            stats.intergenerics || 0,
+            stats.total_orchids || 0
+        ];
+        
+        mobileElements.forEach((elementId, index) => {
+            const element = document.getElementById(elementId);
+            if (element) element.textContent = values[index];
+        });
     }
     
     function updateVisibleCount(count) {
