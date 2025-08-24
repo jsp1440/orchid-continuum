@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ country.name }} - Orchid Atlas{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Hero Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1 class="display-5 mb-3">
+                                <i data-feather="map" class="me-3"></i>{{ country.name }}
+                            </h1>
+                            <p class="lead mb-0">
+                                Explore the rich orchid diversity of {{ country.name }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="bg-white bg-opacity-20 rounded p-3">
+                                <h3 class="mb-1">{{ country.stats.total_species }}</h3>
+                                <small>Orchid Records</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 bg-light text-center">
+                <div class="card-body">
+                    <h2 class="text-primary">{{ country.stats.genera_count }}</h2>
+                    <h6 class="text-muted">Genera</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-light text-center">
+                <div class="card-body">
+                    <h2 class="text-success">{{ country.stats.species_count }}</h2>
+                    <h6 class="text-muted">Species</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-light text-center">
+                <div class="card-body">
+                    <h2 class="text-info">{{ country.stats.total_species }}</h2>
+                    <h6 class="text-muted">Total Records</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Country Map Preview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="map-pin" class="me-2"></i>{{ country.name }} Orchid Distribution
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div style="height: 400px; background: linear-gradient(135deg, #28a745, #20c997); position: relative;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                            <h3>🗺️ {{ country.name }} Map</h3>
+                            <p>Interactive distribution map</p>
+                            <div class="mt-3">
+                                <div class="badge bg-light text-dark me-2">{{ country.stats.total_species }} Records</div>
+                                <div class="badge bg-light text-dark me-2">{{ country.stats.genera_count }} Genera</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Genera -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Most Common Genera
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if country.top_genera %}
+                        {% for genus in country.top_genera[:8] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">{{ genus.genus }}</span>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-3" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-primary" 
+                                         style="width: {{ (genus.count / country.top_genera[0].count * 100)|round }}%"></div>
+                                </div>
+                                <span class="badge bg-primary">{{ genus.count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No genus data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="calendar" class="me-2"></i>Peak Months
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <div class="badge bg-success me-1">Mar</div>
+                            <div class="badge bg-success me-1">Apr</div>
+                            <div class="badge bg-warning me-1">May</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="badge bg-warning me-1">Jun</div>
+                            <div class="badge bg-info me-1">Jul</div>
+                            <div class="badge bg-info me-1">Aug</div>
+                        </div>
+                        <small class="text-muted">Best flowering periods</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="mountain" class="me-2"></i>Elevation Range
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-primary">0 - 4,000m</h4>
+                    <small class="text-muted">Sea level to high mountains</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Explore All Button -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="/atlas?country={{ country.code }}" class="btn btn-primary btn-lg">
+                <i data-feather="compass" class="me-2"></i>Explore All {{ country.name }} Orchids
+            </a>
+        </div>
+    </div>
+    
+    <!-- Conservation Note -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0">
+                <div class="d-flex align-items-center">
+                    <i data-feather="shield" class="me-3" style="width: 24px; height: 24px;"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">Conservation Note</h6>
+                        <p class="mb-0">
+                            Many orchid species in {{ country.name }} face conservation challenges. 
+                            Support local conservation efforts and practice sustainable orchid appreciation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}
