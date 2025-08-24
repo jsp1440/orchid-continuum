@@ -1249,3 +1249,11 @@ try:
     logger.info("AI Widget Builder registered successfully")
 except ImportError as e:
     logger.warning(f"AI Widget Builder not available: {e}")
+
+# Register media migration system
+try:
+    from media_migration_system import migration_bp
+    app.register_blueprint(migration_bp)
+    logger.info("Media Migration System registered successfully")
+except ImportError as e:
+    logger.warning(f"Media Migration System not available: {e}")
