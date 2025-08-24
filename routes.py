@@ -21,6 +21,7 @@ from processing_routes import processing_bp
 from photo_editor_routes import photo_editor_bp
 from weather_service import WeatherService, get_coordinates_from_location
 from orchid_atlas import atlas_bp
+from darwin_core_exporter import DarwinCoreExporter
 import os
 import json
 import logging
@@ -1696,3 +1697,85 @@ def fcos_merchandise():
 def fcos_main():
     """Main FCOS page redirects to additional information"""
     return redirect(url_for('fcos_additional_info'))
+
+# ============================================================================
+# DARWIN CORE EXPORT ROUTES - GBIF Integration
+# ============================================================================
+
+@app.route('/export/darwin_core')
+def export_darwin_core():
+    """Export orchid data as Darwin Core Archive for GBIF publishing"""
+    try:
+        logger.info("Starting Darwin Core Archive export...")
+        
+        exporter = DarwinCoreExporter()
+        archive_file = exporter.export_to_dwc_archive()
+        
+        # Generate download filename with timestamp
+        download_name = f'orchid_atlas_dwc_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+        
+        logger.info(f"Darwin Core Archive ready for download: {download_name}")
+        
+        return send_file(
+            archive_file,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error creating Darwin Core Archive: {e}")
+        flash('Error creating Darwin Core export. Please try again.', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/export/darwin_core/preview')
+def preview_darwin_core():
+    """Preview Darwin Core mapping without downloading"""
+    try:
+        exporter = DarwinCoreExporter()
+        
+        # Get sample records for preview
+        sample_records = OrchidRecord.query.limit(5).all()
+        mapped_samples = []
+        
+        for record in sample_records:
+            mapped_record = exporter.map_orchid_to_dwc(record)
+            mapped_samples.append({
+                'original': {
+                    'id': record.id,
+                    'display_name': record.display_name,
+                    'scientific_name': record.scientific_name,
+                    'genus': record.genus,
+                    'species': record.species,
+                    'region': record.region,
+                    'photographer': record.photographer
+                },
+                'darwin_core': mapped_record
+            })
+        
+        # Get total counts
+        total_records = OrchidRecord.query.count()
+        records_with_coords = OrchidRecord.query.filter(
+            OrchidRecord.region.like('%Lat:%')
+        ).count()
+        records_with_images = OrchidRecord.query.filter(
+            OrchidRecord.image_url.isnot(None)
+        ).count()
+        
+        export_stats = {
+            'total_records': total_records,
+            'records_with_coordinates': records_with_coords,
+            'records_with_images': records_with_images,
+            'coordinate_percentage': round((records_with_coords / total_records * 100) if total_records > 0 else 0, 1),
+            'image_percentage': round((records_with_images / total_records * 100) if total_records > 0 else 0, 1)
+        }
+        
+        return render_template('admin/darwin_core_preview.html',
+                             mapped_samples=mapped_samples,
+                             export_stats=export_stats,
+                             dwc_fields=exporter.dwc_fields)
+        
+    except Exception as e:
+        logger.error(f"Error generating Darwin Core preview: {e}")
+        flash('Error generating preview. Please try again.', 'error')
+        return redirect(url_for('admin_dashboard'))
