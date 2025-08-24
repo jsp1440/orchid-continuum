@@ -1196,19 +1196,30 @@ def admin_run_scraping():
 
 @app.route('/api/drive-photo/<file_id>')
 def get_drive_photo(file_id):
-    """Proxy Google Drive photos for display"""
+    """Proxy Google Drive photos for display - PRODUCTION READY"""
     try:
         # Construct Google Drive image URL
         drive_url = f'https://drive.google.com/uc?export=view&id={file_id}'
         
-        # Get the image
-        response = requests.get(drive_url, timeout=10)
+        # Get the image with optimized settings
+        response = requests.get(drive_url, timeout=15, stream=True)
         if response.status_code == 200:
-            return response.content, 200, {'Content-Type': response.headers.get('Content-Type', 'image/jpeg')}
+            # Add caching headers for better performance
+            headers = {
+                'Content-Type': response.headers.get('Content-Type', 'image/jpeg'),
+                'Cache-Control': 'public, max-age=3600',  # Cache for 1 hour
+                'ETag': f'drive-{file_id}',
+                'X-Image-Source': 'Google Drive'
+            }
+            return response.content, 200, headers
         else:
             # Return placeholder if image not accessible
+            logger.warning(f"Drive photo {file_id} returned {response.status_code}")
             return redirect('/static/images/orchid_placeholder.jpg')
             
+    except requests.Timeout:
+        logger.warning(f"Drive photo {file_id} timed out - serving placeholder")
+        return redirect('/static/images/orchid_placeholder.jpg')
     except Exception as e:
         logger.error(f"Error loading Drive photo {file_id}: {e}")
         return redirect('/static/images/orchid_placeholder.jpg')
