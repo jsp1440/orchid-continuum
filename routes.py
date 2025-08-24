@@ -1257,3 +1257,48 @@ try:
     logger.info("Media Migration System registered successfully")
 except ImportError as e:
     logger.warning(f"Media Migration System not available: {e}")
+
+# ============================================================================
+# FCOS PAGES ROUTES - Structured content from Five Cities Orchid Society
+# ============================================================================
+
+@app.route('/fcos/top-10-orchid-tips')
+def fcos_top_10_tips():
+    """Top 10 orchid growing tips from FCOS experts"""
+    return render_template('fcos_pages/top_10_orchid_tips.html')
+
+@app.route('/fcos/guest-information')
+def fcos_guest_info():
+    """Information for visitors and newcomers to FCOS"""
+    return render_template('fcos_pages/guest_information.html')
+
+@app.route('/fcos/orchid-fest-2025')
+def fcos_orchid_fest():
+    """Complete OrchidFest 2025 event information"""
+    return render_template('fcos_pages/orchid_fest_2025.html')
+
+@app.route('/fcos/member-benefits')
+def fcos_member_benefits():
+    """Benefits of FCOS membership"""
+    return render_template('fcos_pages/member_benefits.html')
+
+@app.route('/fcos/how-to-join')
+def fcos_how_to_join():
+    """How to join Five Cities Orchid Society"""
+    return render_template('fcos_pages/how_to_join.html')
+
+@app.route('/fcos/additional-information')
+def fcos_additional_info():
+    """Additional comprehensive FCOS information"""
+    return render_template('fcos_pages/additional_fcos_information.html')
+
+@app.route('/fcos/merchandise')
+def fcos_merchandise():
+    """FCOS merchandise store and products"""
+    return render_template('fcos_pages/fcos_merchandise.html')
+
+# FCOS main redirect for convenience
+@app.route('/fcos')
+def fcos_main():
+    """Main FCOS page redirects to additional information"""
+    return redirect(url_for('fcos_additional_info'))
