@@ -1241,3 +1241,11 @@ def admin_import_sheets_data():
     except Exception as e:
         logger.error(f"Error importing sheets data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Register AI widget builder blueprint  
+try:
+    from ai_widget_builder import ai_widget_bp
+    app.register_blueprint(ai_widget_bp)
+    logger.info("AI Widget Builder registered successfully")
+except ImportError as e:
+    logger.warning(f"AI Widget Builder not available: {e}")
