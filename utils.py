@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, date
 import random
 from models import OrchidRecord
+from sqlalchemy import or_, and_
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,26 +22,49 @@ def generate_filename(original_filename):
     return f"orchid_{timestamp}_{unique_id}{file_ext}"
 
 def get_orchid_of_the_day():
-    """Get the orchid of the day based on date and available orchids"""
+    """Get the orchid of the day based on date and available orchids with real images"""
     try:
         # Use current date as seed for consistent daily selection
         today = date.today()
         seed = int(today.strftime("%Y%m%d"))
         random.seed(seed)
         
-        # Get all orchids with images
+        # Get all orchids with REAL images (excluding placeholders)
         orchids = OrchidRecord.query.filter(
-            OrchidRecord.image_url.isnot(None),
+            or_(
+                # Google Drive photos
+                OrchidRecord.google_drive_id.isnot(None),
+                # Real image URLs (not placeholders)
+                and_(
+                    OrchidRecord.image_url.isnot(None),
+                    OrchidRecord.image_url != '/static/images/orchid_placeholder.svg',
+                    OrchidRecord.image_url.notlike('%placeholder%')
+                )
+            ),
             OrchidRecord.validation_status != 'rejected'
         ).all()
         
-        if orchids:
+        # Filter for orchids with proper names (not just "Unknown Orchid")
+        named_orchids = [o for o in orchids if o.display_name and o.display_name != 'Unknown Orchid']
+        
+        # Use named orchids if available, otherwise fall back to any with images
+        candidate_orchids = named_orchids if named_orchids else orchids
+        
+        if candidate_orchids:
             # Select orchid based on seeded random
-            selected_orchid = random.choice(orchids)
-            logger.info(f"Selected orchid of the day: {selected_orchid.display_name}")
+            selected_orchid = random.choice(candidate_orchids)
+            
+            # Ensure the selected orchid has a working image URL
+            if selected_orchid.google_drive_id:
+                # Update image_url to use the drive API if it's not already set correctly
+                expected_url = f"/api/drive-photo/{selected_orchid.google_drive_id}"
+                if selected_orchid.image_url != expected_url:
+                    selected_orchid.image_url = expected_url
+            
+            logger.info(f"Selected orchid of the day: {selected_orchid.display_name} (ID: {selected_orchid.id})")
             return selected_orchid
         else:
-            logger.warning("No orchids available for orchid of the day")
+            logger.warning("No orchids with real images available for orchid of the day")
             return None
             
     except Exception as e:
