@@ -113,10 +113,10 @@ class ComprehensiveOrchidScraper:
         print(f"✅ Found {len(genera_urls)} genera to process")
         print()
         
-        # Now scrape each genus
-        for i, genus_url in enumerate(genera_urls[:50]):  # Limit for initial test
+        # Now scrape each genus - FULL PRODUCTION MODE
+        for i, genus_url in enumerate(genera_urls):  # Process ALL genera - no limits!
             genus_name = genus_url.split('/')[-1]
-            print(f"📸 Processing genus {i+1}/{min(50, len(genera_urls))}: {genus_name}")
+            print(f"📸 Processing genus {i+1}/{len(genera_urls)}: {genus_name}")
             
             try:
                 genus_results = self.scrape_gary_genus_page(genus_url, genus_name)

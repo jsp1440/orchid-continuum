@@ -92,9 +92,9 @@ class RonParsonsOrchidScraper:
             
             print(f"   Found {len(album_links)} albums")
             
-            # Process first few albums for testing
-            for i, album_url in enumerate(album_links[:5]):  # Limit for testing
-                print(f"   📖 Processing album {i+1}/5...")
+            # Process ALL albums - FULL PRODUCTION MODE
+            for i, album_url in enumerate(album_links):  # Process ALL albums - no limits!
+                print(f"   📖 Processing album {i+1}/{len(album_links)}...")
                 
                 album_results = self.scrape_flickr_album(album_url)
                 results['processed'] += album_results['processed']
@@ -139,8 +139,8 @@ class RonParsonsOrchidScraper:
             
             print(f"     Album: {album_title[:50]}... ({len(photo_links)} photos)")
             
-            # Process photos from album (limit for testing)
-            for photo_url in photo_links[:10]:  # Limit for testing
+            # Process ALL photos from album - FULL PRODUCTION MODE
+            for photo_url in photo_links:  # Process ALL photos - no limits!
                 photo_data = self.scrape_flickr_photo(photo_url, album_title)
                 
                 if photo_data and self.save_ron_parsons_orchid(photo_data):
@@ -183,8 +183,8 @@ class RonParsonsOrchidScraper:
             
             print(f"   Found {len(photo_links)} recent photos")
             
-            # Process recent photos (limit for testing)
-            for photo_url in photo_links[:20]:  # Limit for testing
+            # Process ALL recent photos - FULL PRODUCTION MODE
+            for photo_url in photo_links:  # Process ALL photos - no limits!
                 photo_data = self.scrape_flickr_photo(photo_url, "Photostream")
                 
                 if photo_data and self.save_ron_parsons_orchid(photo_data):
