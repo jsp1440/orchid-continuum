@@ -58,6 +58,33 @@ def test_gary_scraper():
     except Exception as e:
         return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
 
+@app.route('/analyze_all_photos')
+def analyze_all_photos():
+    """Analyze all orchid photos for names and metadata"""
+    try:
+        from photo_analysis_system import PhotoAnalysisSystem
+        
+        analyzer = PhotoAnalysisSystem()
+        
+        print("🔍 Starting comprehensive photo analysis...")
+        results = analyzer.run_comprehensive_analysis()
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>🔍 Photo Analysis Results</h2>
+        <p><strong>Photos Analyzed:</strong> {results['analyzed']}</p>
+        <p><strong>Names Improved:</strong> {results['improved_names']}</p>
+        <p><strong>Metadata Extracted:</strong> {results['extracted_metadata']}</p>
+        <p><strong>AI Analyzed:</strong> {results['ai_analyzed']}</p>
+        <p><strong>Errors:</strong> {results['errors']}</p>
+        <p><strong>Analysis:</strong> Filename parsing, AI vision, EXIF extraction</p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Analysis Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
 @app.route('/test_international_scrapers')
 def test_international_scrapers():
     """Test comprehensive international orchid scrapers"""
