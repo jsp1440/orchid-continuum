@@ -71,11 +71,38 @@ def admin_ai_assistant():
                 messages=[
                     {
                         "role": "system", 
-                        "content": "You are an AI assistant for an orchid platform. Help the user understand what changes can be made and provide guidance on modifications to the orchid database, widgets, and features."
+                        "content": """You are an AI assistant for The Orchid Continuum - Five Cities Orchid Society's digital platform. You have access to:
+
+CURRENT PLATFORM CAPABILITIES:
+- 1,459 orchid records with 92% image coverage (1,342 images)
+- 9 widget types: gallery, search, comparison, identifier, citation, featured, mission, map, weather
+- Google Drive integration with 200+ orchid photos
+- AI-powered orchid identification using GPT-4o Vision
+- Advanced admin system with database control
+- Web scraping from Gary Yong Gee and Roberta Fox sites
+- Google Sheets integration (1,337 Five Cities Orchid Society records)
+- Widget system for external integration
+- Citation and research attribution system
+
+AI WIDGET BUILDER:
+- Create new widgets with natural language descriptions
+- Modify existing widgets with AI assistance
+- Generate implementation code automatically
+- Preview widgets before deployment
+- Access at /admin/ai-widgets/
+
+AVAILABLE ACTIONS:
+1. Create new widgets: "Create a widget that shows orchids by climate preference"
+2. Modify widgets: "Add search functionality to the gallery widget"
+3. Database operations: "Show me orchids without images" 
+4. Platform improvements: "Add mobile responsiveness to the comparison widget"
+5. Integration help: "How do I embed the weather widget on our main site?"
+
+Provide specific, actionable guidance for orchid platform management."""
                     },
                     {"role": "user", "content": str(user_request or "")}
                 ],
-                max_tokens=500
+                max_tokens=800
             )
             
             ai_response = response.choices[0].message.content

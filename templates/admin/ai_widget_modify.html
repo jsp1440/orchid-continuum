@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+{% set page_title = "Modify Widget with AI - Admin" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="edit" class="me-2"></i>
+                    Modify {{ widget_info.name }}
+                </h1>
+                <div class="btn-group">
+                    <a href="/widgets/embed/{{ widget_type }}" target="_blank" class="btn btn-info">
+                        <i data-feather="eye" class="me-1"></i>Preview Current
+                    </a>
+                    <a href="{{ url_for('ai_widgets.ai_widget_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Widget Info -->
+        <div class="col-lg-4">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Widget</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ widget_info.name }}</h6>
+                    <p class="text-muted">{{ widget_info.description }}</p>
+                    
+                    <h6 class="mt-3">Customizable Fields:</h6>
+                    <div class="mb-3">
+                        {% for field in widget_info.customizable_fields %}
+                        <span class="badge bg-secondary me-1 mb-1">{{ field }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="/widgets/embed/{{ widget_type }}" target="_blank" 
+                           class="btn btn-outline-info">
+                            <i data-feather="external-link" class="me-1"></i>View Live Widget
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick AI Suggestions -->
+            <div class="card bg-secondary text-light mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>Quick AI Suggestions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="fillModification('Add mobile responsiveness improvements')">
+                            📱 Mobile Improvements
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="fillModification('Add dark mode toggle')">
+                            🌙 Dark Mode Support
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="fillModification('Improve accessibility with ARIA labels and keyboard navigation')">
+                            ♿ Accessibility Features
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="fillModification('Add loading animations and smooth transitions')">
+                            ✨ Animation Effects
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="fillModification('Optimize performance and reduce loading time')">
+                            ⚡ Performance Boost
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modification Form -->
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="cpu" class="me-2"></i>AI Widget Modifier
+                    </h5>
+                    <p class="text-muted mb-0">Describe the changes you want to make</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="modifications" class="form-label">Modification Request</label>
+                            <textarea class="form-control form-control-lg" 
+                                    id="modifications" 
+                                    name="modifications" 
+                                    rows="8" 
+                                    placeholder="Examples:&#10;&#10;• Add a filter to show only orchids from cool climates&#10;&#10;• Change the layout to show 4 orchids per row instead of 3&#10;&#10;• Add hover effects that show more detailed information&#10;&#10;• Include a share button for social media&#10;&#10;• Add search functionality within the widget&#10;&#10;• Change the color scheme to match our brand colors (#4a7c59)&#10;&#10;• Add a configuration panel for users to customize the widget&#10;&#10;• Include weather information alongside orchid data"
+                                    required></textarea>
+                            <div class="form-text">Be specific about what you want to change, add, or improve</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i data-feather="zap" class="me-2"></i>Generate Modifications
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-success btn-lg" onclick="getAISuggestions()">
+                                        <i data-feather="lightbulb" class="me-2"></i>Get AI Suggestions
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillModification(text) {
+    document.getElementById('modifications').value = text;
+}
+
+function getAISuggestions() {
+    // Show loading state
+    const button = event.target;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="me-2"></i>Getting AI Suggestions...';
+    button.disabled = true;
+    
+    fetch(`/admin/ai-widgets/suggestions/{{ widget_type }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Fill the textarea with AI suggestions
+                document.getElementById('modifications').value = `AI Suggestions for {{ widget_info.name }}:\n\n${data.suggestions}`;
+            } else {
+                alert('Error getting AI suggestions: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Network error: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            feather.replace();
+        });
+}
+
+// Auto-expand textarea
+document.getElementById('modifications').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+});
+</script>
+{% endblock %}
