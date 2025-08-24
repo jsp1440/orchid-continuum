@@ -121,7 +121,7 @@ def get_atlas_records():
             'hybrid_flag': ' x ' in (record.scientific_name or '') or ' × ' in (record.scientific_name or ''),
             'country': extract_country_from_region(record.region),
             'image_url': record.image_url,
-            'thumbnail_url': record.thumbnail_url,
+            'thumbnail_url': record.image_url,  # Use same image for thumbnail
             'photographer_name': record.photographer,
             'attribution': f'© {record.photographer}' if record.photographer else None,
             'license': 'CC BY-NC',  # Default license
