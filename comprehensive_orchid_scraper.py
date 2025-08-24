@@ -269,7 +269,7 @@ class ComprehensiveOrchidScraper:
                 genus=genus,
                 species=species,
                 ingestion_source='gary_yong_gee_comprehensive',
-                image_source=orchid_data.get('image_url'),
+                image_url=orchid_data.get('image_url'),
                 cultural_notes=cultural_info,
                 created_at=datetime.now(),
                 updated_at=datetime.now()
@@ -436,8 +436,10 @@ class ComprehensiveOrchidScraper:
                 scientific_name=orchid_data['name'],
                 genus=genus,
                 species=species,
+                photographer=orchid_data.get('photographer'),
                 ingestion_source='roberta_fox_comprehensive',
-                image_source=orchid_data['image_url'],
+                image_url=orchid_data.get('image_url'),
+                image_source=orchid_data.get('group'),
                 cultural_notes=cultural_info,
                 created_at=datetime.now(),
                 updated_at=datetime.now()
