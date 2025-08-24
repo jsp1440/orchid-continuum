@@ -58,8 +58,10 @@ class EnhancedOrchidOfDay:
             return None
     
     def _select_featured_orchid(self):
-        """Select orchid with rich metadata for featuring"""
+        """Select orchid with rich metadata and proper taxonomic names for featuring"""
         try:
+            from orchid_name_utils import orchid_name_utils
+            
             # Use date-based seeding for consistency
             today = date.today()
             seed = int(today.strftime("%Y%m%d"))
@@ -86,21 +88,37 @@ class EnhancedOrchidOfDay:
                 OrchidRecord.validation_status != 'rejected'
             ).all()
             
-            # Filter for orchids with substantive descriptions (longer AI descriptions)
+            # Filter for orchids with valid taxonomic names
+            valid_taxonomic_orchids = []
+            for orchid in rich_orchids:
+                # Expand the name and check if it's taxonomically valid
+                expanded_name = orchid_name_utils.expand_orchid_name(orchid.display_name or "")
+                
+                if orchid_name_utils.is_valid_taxonomic_name(expanded_name):
+                    # Update the orchid's display name to expanded version
+                    orchid.expanded_display_name = expanded_name
+                    valid_taxonomic_orchids.append(orchid)
+            
+            # Further filter for orchids with substantive descriptions
             substantial_orchids = [
-                o for o in rich_orchids 
+                o for o in valid_taxonomic_orchids 
                 if o.ai_description and len(o.ai_description) > 50
             ]
             
-            # Use substantial orchids if available, otherwise fall back
-            candidate_orchids = substantial_orchids if substantial_orchids else rich_orchids
+            # Use substantial orchids if available, otherwise fall back to valid taxonomic ones
+            candidate_orchids = substantial_orchids if substantial_orchids else valid_taxonomic_orchids
             
             if candidate_orchids:
                 selected = random.choice(candidate_orchids)
-                logger.info(f"Enhanced orchid of day selected: {selected.display_name} (ID: {selected.id})")
+                
+                # Ensure expanded name is available
+                if not hasattr(selected, 'expanded_display_name'):
+                    selected.expanded_display_name = orchid_name_utils.expand_orchid_name(selected.display_name or "")
+                
+                logger.info(f"Enhanced orchid of day selected: {selected.expanded_display_name} (ID: {selected.id})")
                 return selected
             
-            logger.warning("No orchids with rich metadata found for enhanced feature")
+            logger.warning("No orchids with valid taxonomic names found for enhanced feature")
             return None
             
         except Exception as e:
