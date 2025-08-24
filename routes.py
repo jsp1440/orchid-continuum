@@ -216,6 +216,19 @@ app.register_blueprint(photo_editor_bp)
 from advanced_gallery_routes import advanced_gallery_bp
 app.register_blueprint(advanced_gallery_bp, url_prefix='/advanced_gallery')
 
+# Start the orchid record scheduler
+from scheduler import start_orchid_scheduler, get_scheduler_status
+start_orchid_scheduler()
+
+@app.route('/admin/scheduler-status')
+def scheduler_status():
+    """Display scheduler status and controls"""
+    try:
+        status = get_scheduler_status()
+        return render_template('admin/scheduler_status.html', status=status)
+    except Exception as e:
+        return f"<h2>Scheduler Status Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
 @app.route('/')
 def index():
     """Homepage with enhanced orchid of the day and advanced features"""

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduler Status - Admin{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i data-feather="clock" class="me-2"></i>Orchid Record Scheduler</h2>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-2"></i>Back to Admin
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduler Status Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Running Status -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if status.running %}
+                            <i data-feather="play-circle" class="text-success" style="width: 48px; height: 48px;"></i>
+                        {% else %}
+                            <i data-feather="pause-circle" class="text-danger" style="width: 48px; height: 48px;"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title">Status</h5>
+                    <p class="card-text">
+                        {% if status.running %}
+                            <span class="badge bg-success fs-6">Running</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6">Stopped</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Count -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i data-feather="refresh-cw" class="text-primary" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    <h5 class="card-title">Updates</h5>
+                    <p class="card-text">
+                        <span class="h4 text-primary">{{ status.update_count }}</span><br>
+                        <small class="text-muted">Total cycles</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last Update -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i data-feather="calendar" class="text-info" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    <h5 class="card-title">Last Update</h5>
+                    <p class="card-text">
+                        {% if status.last_update %}
+                            <small class="text-muted">{{ status.last_update[:19] }}</small>
+                        {% else %}
+                            <small class="text-muted">Never</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Update -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i data-feather="clock" class="text-warning" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    <h5 class="card-title">Next Update</h5>
+                    <p class="card-text">
+                        {% if status.next_update %}
+                            <small class="text-muted">{{ status.next_update[:19] }}</small>
+                        {% else %}
+                            <small class="text-muted">Unknown</small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="list" class="me-2"></i>Scheduled Tasks
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Frequency</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <strong>Orchid Record Update</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">Every 15 minutes</span>
+                                    </td>
+                                    <td>
+                                        Runs scrapers, updates geographic data, refreshes metadata
+                                    </td>
+                                    <td>
+                                        {% if status.running %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>Metadata Refresh</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">Every hour</span>
+                                    </td>
+                                    <td>
+                                        Updates view counts, validation statuses, featured orchids
+                                    </td>
+                                    <td>
+                                        {% if status.running %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>Maintenance Tasks</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">Every 6 hours</span>
+                                    </td>
+                                    <td>
+                                        Database cleanup, statistics updates, view refresh
+                                    </td>
+                                    <td>
+                                        {% if status.running %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>Full Database Refresh</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">Daily at 3:00 AM</span>
+                                    </td>
+                                    <td>
+                                        Complete scraper run, name expansion, cache refresh
+                                    </td>
+                                    <td>
+                                        {% if status.running %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-Refresh Notice -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i data-feather="info" class="me-2"></i>
+                <strong>Automatic Updates:</strong> The scheduler automatically updates orchid records every 15 minutes, ensuring fresh data from international orchid databases and maintaining accurate geographic and taxonomic information.
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Status (JavaScript Auto-refresh) -->
+    <script>
+        // Auto-refresh page every 30 seconds to show live status
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+        
+        // Show countdown until next refresh
+        let countdown = 30;
+        const countdownElement = document.createElement('small');
+        countdownElement.className = 'text-muted position-fixed bottom-0 end-0 me-3 mb-3 bg-light p-2 rounded';
+        countdownElement.innerHTML = `Page refreshes in ${countdown}s`;
+        document.body.appendChild(countdownElement);
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            countdownElement.innerHTML = `Page refreshes in ${countdown}s`;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    </script>
+</div>
+{% endblock %}
