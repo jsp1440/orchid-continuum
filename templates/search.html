@@ -66,9 +66,11 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="row g-0 h-100">
                             <div class="col-4">
-                                {% if orchid.image_url %}
-                                    <img src="{{ orchid.image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
-                                         style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;">
+                                {% if orchid.image_url or orchid.google_drive_id %}
+                                    {% set image_url = '/api/drive-photo/' + orchid.google_drive_id if orchid.google_drive_id else orchid.image_url %}
+                                    <img src="{{ image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
+                                         style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;"
+                                         onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';">
                                 {% else %}
                                     <div class="h-100 w-100 bg-light d-flex align-items-center justify-content-center"
                                          style="border-radius: 0.375rem 0 0 0.375rem;">
