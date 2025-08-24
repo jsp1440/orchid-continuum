@@ -81,21 +81,36 @@ class OrchidScraperRunner:
                 # Simple scraping logic
                 content = response.text.lower()
                 
-                # Extract orchid names (simplified)
-                orchid_genera = ['cattleya', 'phalaenopsis', 'dendrobium', 'oncidium', 'cymbidium']
+                # Look for actual orchid species names in the content
+                import re
+                from bs4 import BeautifulSoup
+                from urllib.parse import urljoin
+                
+                soup = BeautifulSoup(response.text, 'html.parser')
                 added_count = 0
                 
-                for genus in orchid_genera:
-                    if genus in content and added_count < max_photos:
+                # Find species links that look like orchid names
+                links = soup.find_all('a', href=True)
+                for link in links[:max_photos]:
+                    link_text = link.get_text(strip=True)
+                    href = link.get('href', '')
+                    
+                    # Look for scientific name pattern (Genus species)
+                    if re.match(r'^[A-Z][a-z]+ [a-z]+', link_text) and added_count < max_photos:
+                        # Parse the actual orchid name
+                        name_parts = link_text.split()
+                        genus = name_parts[0]
+                        species = name_parts[1] if len(name_parts) > 1 else 'sp.'
+                        
                         orchid_data = {
-                            'scientific_name': f"{genus.capitalize()} sp.",
-                            'display_name': f"{genus.capitalize()} species",
-                            'genus': genus.capitalize(),
-                            'species': 'sp.',
+                            'scientific_name': link_text,
+                            'display_name': link_text,
+                            'genus': genus,
+                            'species': species,
                             'photographer': 'Gary Young Gee',
                             'ingestion_source': 'gary_young_gee_scraper',
-                            'ai_description': f'Beautiful {genus} orchid from Gary Young Gee collection',
-                            'image_url': f'{base_url}/{genus}-sample.jpg',
+                            'ai_description': f'Beautiful {link_text} orchid from Gary Young Gee collection',
+                            'image_url': urljoin(base_url, href) if href.startswith('/') else f'{base_url}/{href}',
                             'region': 'Southeast Asia'
                         }
                         
