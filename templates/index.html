@@ -45,7 +45,15 @@
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <h3 class="card-title text-warning mb-3">{{ orchid_of_day.display_name or orchid_of_day.scientific_name }}</h3>
+                        <h3 class="card-title text-warning mb-3">
+                            {% if orchid_of_day_enhanced and orchid_of_day_enhanced.orchid.expanded_display_name %}
+                                {{ orchid_of_day_enhanced.orchid.expanded_display_name }}
+                            {% elif orchid_of_day.display_name %}
+                                {{ orchid_of_day.display_name }}
+                            {% else %}
+                                {{ orchid_of_day.scientific_name }}
+                            {% endif %}
+                        </h3>
                         
                         <div class="row g-3 mb-4">
                             {% if orchid_of_day.genus %}
