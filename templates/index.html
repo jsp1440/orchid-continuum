@@ -1,22 +1,104 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Orchid of the Day - Above the Fold Feature -->
+{% if orchid_of_day and orchid_of_day.image_url %}
+<div class="orchid-of-day-hero py-5 mb-4" style="background: linear-gradient(135deg, #4a7c59 0%, #6fa16c 100%);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-12 text-center mb-4">
+                <h1 class="display-4 text-white fw-bold mb-2">
+                    <i data-feather="star" class="me-3" style="width: 48px; height: 48px; color: #ffc107;"></i>
+                    ORCHID OF THE DAY
+                </h1>
+                <p class="h5 text-light mb-0" style="opacity: 0.9;">
+                    Five Cities Orchid Society Daily Feature
+                </p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <div class="card bg-dark text-white border-0 shadow-lg">
+                    <div class="position-relative">
+                        <img src="{{ orchid_of_day.image_url }}" 
+                             alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                             class="card-img-top"
+                             style="height: 400px; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <span class="badge bg-warning text-dark fw-bold px-3 py-2 fs-6">
+                                <i data-feather="calendar" style="width: 16px; height: 16px;" class="me-1"></i>
+                                {{ moment().format('MMMM D, YYYY') }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <h3 class="card-title text-warning mb-3">{{ orchid_of_day.display_name or orchid_of_day.scientific_name }}</h3>
+                        
+                        <div class="row g-3 mb-4">
+                            {% if orchid_of_day.genus %}
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="tag" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
+                                    <span><strong>Genus:</strong> {{ orchid_of_day.genus }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if orchid_of_day.species %}
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="layers" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
+                                    <span><strong>Species:</strong> {{ orchid_of_day.species }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if orchid_of_day.region %}
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="map-pin" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
+                                    <span><strong>Origin:</strong> {{ orchid_of_day.region.title() }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if orchid_of_day.climate_preference %}
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="thermometer" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
+                                    <span><strong>Climate:</strong> {{ orchid_of_day.climate_preference.title() }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning btn-lg px-4">
+                                <i data-feather="eye" class="me-2"></i>
+                                Explore This Orchid
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Hero Section -->
 <div class="hero-section bg-gradient text-white py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
+        <div class="row align-items-center text-center">
+            <div class="col-12">
                 <h1 class="display-3 fw-bold mb-3">
                     The Orchid Continuum
                 </h1>
                 <p class="h5 text-light mb-4" style="opacity: 0.9;">
                     A Project of the Five Cities Orchid Society
                 </p>
-                <p class="lead mb-4">
+                <p class="lead mb-4 mx-auto" style="max-width: 600px;">
                     Enhanced digital tools for orchid society members. 
                     Discover, identify, and share knowledge with comprehensive orchid database and AI-powered analysis.
                 </p>
-                <div class="d-flex gap-3">
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
                     {% if not current_user.is_authenticated %}
                     <a href="{{ url_for('upload') }}" class="btn btn-light btn-lg">
                         <i data-feather="upload" class="me-2"></i>
@@ -37,52 +119,6 @@
                     </a>
                     {% endif %}
                 </div>
-            </div>
-            <div class="col-lg-6 text-center mt-4 mt-lg-0">
-                {% if orchid_of_day and orchid_of_day.image_url %}
-                <div class="orchid-of-day-container mx-auto" style="max-width: 450px;">
-                    <div class="position-relative mb-3">
-                        <img src="{{ orchid_of_day.image_url }}" 
-                             alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
-                             class="img-fluid rounded-3 shadow-lg"
-                             style="max-height: 350px; width: 100%; object-fit: cover;">
-                        <div class="position-absolute top-0 end-0 m-3">
-                            <span class="badge bg-warning text-dark fw-bold px-3 py-2">
-                                <i data-feather="star" style="width: 16px; height: 16px;" class="me-1"></i>
-                                Today's Feature
-                            </span>
-                        </div>
-                    </div>
-                    <div class="bg-dark bg-opacity-90 text-white p-4 rounded-3 shadow">
-                        <h5 class="text-warning mb-2">
-                            <i data-feather="flower" style="width: 20px; height: 20px;" class="me-2"></i>
-                            Orchid of the Day
-                        </h5>
-                        <h6 class="text-light mb-2">{{ orchid_of_day.display_name or orchid_of_day.scientific_name }}</h6>
-                        {% if orchid_of_day.genus %}
-                        <p class="text-light-50 small mb-2">
-                            <strong>Genus:</strong> {{ orchid_of_day.genus }}
-                            {% if orchid_of_day.species %} | <strong>Species:</strong> {{ orchid_of_day.species }}{% endif %}
-                        </p>
-                        {% endif %}
-                        {% if orchid_of_day.climate_preference %}
-                        <p class="text-light-50 small mb-2">
-                            <strong>Climate:</strong> {{ orchid_of_day.climate_preference.title() }} growing conditions
-                        </p>
-                        {% endif %}
-                        <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning btn-sm">
-                            <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
-                            View Details
-                        </a>
-                    </div>
-                </div>
-                {% else %}
-                <div class="text-center p-5">
-                    <i data-feather="flower" style="width: 120px; height: 120px; opacity: 0.7;"></i>
-                    <h5 class="mt-3">Discover Amazing Orchids</h5>
-                    <p>Join our community to explore thousands of orchid species</p>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
