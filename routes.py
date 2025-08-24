@@ -30,6 +30,131 @@ from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
+@app.route('/test_gary_scraper')
+def test_gary_scraper():
+    """Test Gary Yong Gee scraper with limited scope"""
+    try:
+        from comprehensive_orchid_scraper import ComprehensiveOrchidScraper
+        
+        scraper = ComprehensiveOrchidScraper()
+        
+        # Test with just one genus for verification
+        print("🧪 Testing Gary Yong Gee scraper with single genus...")
+        test_url = "https://orchids.yonggee.name/genera/aa"
+        
+        genus_results = scraper.scrape_gary_genus_page(test_url, "aa")
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>Gary Yong Gee Scraper Test Results</h2>
+        <p><strong>Test URL:</strong> {test_url}</p>
+        <p><strong>Processed:</strong> {genus_results['processed']}</p>
+        <p><strong>Errors:</strong> {genus_results['errors']}</p>
+        <p><strong>Skipped:</strong> {genus_results['skipped']}</p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
+@app.route('/test_ron_parsons')
+def test_ron_parsons():
+    """Test Ron Parsons Flickr scraper"""
+    try:
+        from ron_parsons_scraper import RonParsonsOrchidScraper
+        
+        scraper = RonParsonsOrchidScraper()
+        
+        print("🌸 Testing Ron Parsons scraper...")
+        results = scraper.scrape_flickr_photostream()
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>🌸 Ron Parsons Scraper Test Results</h2>
+        <p><strong>Target:</strong> 118,952+ photos from world's leading orchid photographer</p>
+        <p><strong>Processed:</strong> {results['processed']}</p>
+        <p><strong>Errors:</strong> {results['errors']}</p>
+        <p><strong>Skipped:</strong> {results['skipped']}</p>
+        <p><strong>Source:</strong> Flickr photostream</p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
+@app.route('/test_iospe')
+def test_iospe():
+    """Test IOSPE scraper"""
+    try:
+        from comprehensive_orchid_scraper import ComprehensiveOrchidScraper
+        
+        scraper = ComprehensiveOrchidScraper()
+        
+        print("🌍 Testing IOSPE scraper...")
+        results = scraper.scrape_iospe_comprehensive()
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>🌍 IOSPE Scraper Test Results</h2>
+        <p><strong>Target:</strong> 25,996+ species from world's largest orchid database</p>
+        <p><strong>Processed:</strong> {results['processed']}</p>
+        <p><strong>Errors:</strong> {results['errors']}</p>
+        <p><strong>Skipped:</strong> {results['skipped']}</p>
+        <p><strong>Source:</strong> orchidspecies.com</p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
+@app.route('/test_filename_parser')
+def test_filename_parser():
+    """Test enhanced filename parser"""
+    try:
+        from filename_parser import parse_orchid_filename, analyze_filename_for_orchid_name
+        
+        # Test filenames
+        test_files = [
+            "Cattleya_warscewiczii_alba.jpg",
+            "phal_amabilis_var_rosenstromii.jpg", 
+            "Dendrobium-nobile-cooksonii.JPG",
+            "Ron_Parsons_Masdevallia_veitchiana_2024.jpg",
+            "DSC_Oncidium_sphacelatum_Ecuador.jpg"
+        ]
+        
+        results = []
+        for filename in test_files:
+            parsed = parse_orchid_filename(filename)
+            analysis = analyze_filename_for_orchid_name(filename)
+            
+            results.append({
+                'filename': filename,
+                'parsed': parsed,
+                'analysis': analysis
+            })
+        
+        html = "<h2>🧠 Filename Parser Test Results</h2>"
+        for result in results:
+            html += f"""
+            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                <h3>{result['filename']}</h3>
+                <p><strong>Genus:</strong> {result['parsed'].get('genus', 'None')}</p>
+                <p><strong>Species:</strong> {result['parsed'].get('species', 'None')}</p>
+                <p><strong>Full Name:</strong> {result['analysis'].get('full_parsed_name', 'None')}</p>
+                <p><strong>Confidence:</strong> {result['analysis'].get('confidence', 0.0):.2f}</p>
+                <p><strong>Method:</strong> {result['analysis'].get('parsing_method', 'None')}</p>
+            </div>
+            """
+        
+        html += '<p><a href="/admin">Back to Admin</a></p>'
+        return html
+        
+    except Exception as e:
+        return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
 # Register blueprints
 app.register_blueprint(processing_bp)
 app.register_blueprint(photo_editor_bp)

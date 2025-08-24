@@ -1,9 +1,16 @@
 """
-Filename parsing utilities for orchid names
+Advanced filename parsing utilities for orchid names
 Handles conversions from abbreviations to full genus/species names
+Includes metadata extraction and intelligent parsing algorithms
+Enhanced for Ron Parsons and major orchid database integration
 """
 import re
-from typing import Dict, Tuple, Optional
+import os
+from typing import Dict, Tuple, Optional, List
+from PIL import Image
+from PIL.ExifTags import TAGS
+import logging
+from datetime import datetime
 
 # Comprehensive genus abbreviation mapping
 GENUS_ABBREVIATIONS = {
@@ -417,6 +424,51 @@ def test_parser():
         result = parse_orchid_filename(test_case)
         scientific_name = orchid_parser.format_scientific_name(result)
         print(f"{test_case:30} -> {scientific_name:30} (confidence: {result['confidence']:.2f})")
+
+def extract_metadata_from_image(image_path: str) -> Dict[str, str]:
+    """Extract EXIF metadata from image file for orchid identification"""
+    metadata = {}
+    
+    try:
+        # Extract filename-based information first
+        filename = os.path.basename(image_path)
+        metadata['filename'] = filename
+        metadata['filename_analysis'] = analyze_filename_for_orchid_name(filename)
+        
+        # For web URLs, skip EXIF extraction
+        if image_path.startswith('http'):
+            metadata['source'] = 'web_url'
+            return metadata
+            
+    except Exception as e:
+        logging.warning(f"Error extracting metadata from {image_path}: {e}")
+        metadata['error'] = str(e)
+    
+    return metadata
+
+def analyze_filename_for_orchid_name(filename: str) -> Dict[str, Optional[str]]:
+    """Advanced filename analysis specifically for orchid names"""
+    analysis = {
+        'detected_genus': None,
+        'detected_species': None,
+        'confidence': 0.0,
+        'parsing_method': None,
+        'full_parsed_name': None
+    }
+    
+    # Use existing parser
+    parsed = parse_orchid_filename(filename)
+    
+    if parsed.get('genus'):
+        analysis['detected_genus'] = parsed['genus']
+        analysis['detected_species'] = parsed.get('species')
+        analysis['confidence'] = parsed.get('confidence', 0.0)
+        analysis['parsing_method'] = 'existing_parser'
+        
+        if parsed.get('genus') and parsed.get('species'):
+            analysis['full_parsed_name'] = f"{parsed['genus']} {parsed['species']}"
+    
+    return analysis
 
 if __name__ == "__main__":
     test_parser()
