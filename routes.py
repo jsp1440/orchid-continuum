@@ -20,6 +20,7 @@ from filename_parser import parse_orchid_filename
 from processing_routes import processing_bp
 from photo_editor_routes import photo_editor_bp
 from weather_service import WeatherService, get_coordinates_from_location
+from orchid_atlas import atlas_bp
 import os
 import json
 import logging
@@ -29,6 +30,9 @@ from sqlalchemy import or_, func, and_
 from io import BytesIO
 
 logger = logging.getLogger(__name__)
+
+# Register the Atlas blueprint
+app.register_blueprint(atlas_bp)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
