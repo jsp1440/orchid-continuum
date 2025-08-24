@@ -1,0 +1,55 @@
+# Orchid Atlas + Gallery — One-Page Spec
+**Date:** 2025-08-24
+
+## Goal
+Map-first exploration of orchid photos and records with synchronized gallery, supporting country features, elevation/time filters, and exports. Must scale from 4k → 100k+ records.
+
+## Data (ingest fields)
+Use schema in `Orchid_Atlas_Schema.csv`. Required: photo_id, orchid_id, scientific_name, genus, image_url, country. Strongly recommended: lat/lng, date_observed, elevation_m, hybrid_flag, photographer attribution, license.
+
+## Core UI
+- Split view: **Map (left)** + **Gallery (right)**; top bar shows active filters as chips.
+- Country feature: search/pick a country → auto-zoom + preload stats (species count, endemics, peaks).
+- Bi-directional selection: map ↔ gallery ↔ detail drawer.
+
+## Filters (combinable)
+Country/admin1, free-draw polygon, visible map extent; month/year/date range; elevation slider; genus/species/hybrid; native_status; traits (flower_color, fragrance, growth_habit); ecology (pollinator, mycorrhiza); provenance (photographer, license, source).
+Saved filter combos (named).
+
+## Map behaviors
+- Vector basemap (Mapbox GL or equivalent); **token proxy server-side**.
+- Clustering, heatmap toggle, elevation band overlay.
+- Time slider animates phenology.
+- Uncertainty rings when geoprecision_m > 1000.
+- Marker click opens **Detail Drawer**.
+
+## Detail Drawer
+Large image + scientific_name (+ hybrid parentage if known), photographer/attribution/license, place (country→admin1→locality), coords, elevation, observed date/month, native_status, growth_habit, pollinator, fragrance, flower_color, conservation, mycorrhiza. Buttons: View in Gallery, Copy citation, Report issue.
+
+## Gallery
+Virtualized grid; sort: newest/oldest/elev/alpha/photographer; hover preview; bulk select → CSV/GeoJSON export.
+
+## Country pages
+`/country/:iso_a2` with hero map, quick stats (species, endemics, common genera, peak months, elevation histogram), "Explore All" to Atlas with filters preset.
+
+## Performance
+Server-side paging; minimal field projection; DB indexes on: country, admin1, genus, hybrid_flag, month_observed, year_observed, elevation_m, photographer_id, license, (lat,lng) via spatial index. Debounced filter/map events. Image CDN; responsive srcsets.
+
+## Accessibility
+Keyboard nav, ARIA labels, high-contrast mode, tooltips for scientific terms, metric/imperial elevation toggle.
+
+## Integrity & Licensing
+Facts only; unknown shown as “—”. Distinguish cultivated vs native. Always show attribution/license; enforce export limits by license.
+
+## Security
+Hide API keys; server token proxy; rate-limit exports; audit admin edits.
+
+## Admin
+Bulk import (CSV/GeoJSON) with validation report; duplicate merge; coordinate/elevation correction; recompute month/year from date; normalize country codes.
+
+## Acceptance Tests (high level)
+1. **Country/Elevation/Time**: Ecuador + elevation >1500m + May–July → map/galleries sync; counts match API.
+2. **Hybrid trait subset**: Sarcochilus hybrids in NSW, <500m, Oct–Dec → correct filter + results.
+3. **Phenology animation**: time slider scrubs months; markers update smoothly (<400ms debounce).
+4. **Export**: bbox selection + CSV/GeoJSON export respects license and returns only filtered records.
+5. **A11y**: full keyboard traversal; screen reader announces filter changes.
