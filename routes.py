@@ -58,6 +58,32 @@ def test_gary_scraper():
     except Exception as e:
         return f"<h2>Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
 
+@app.route('/test_international_scrapers')
+def test_international_scrapers():
+    """Test comprehensive international orchid scrapers"""
+    try:
+        from international_orchid_scraper import InternationalOrchidScraper
+        
+        scraper = InternationalOrchidScraper()
+        
+        print("🌍 Testing international orchid scrapers...")
+        results = scraper.run_comprehensive_international_collection()
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>🌍 International Orchid Collection Results</h2>
+        <p><strong>Total Processed:</strong> {results['total_processed']}</p>
+        <p><strong>New Countries:</strong> {len(results['new_countries'])}</p>
+        <p><strong>New Genera:</strong> {len(results['new_genera'])}</p>
+        <p><strong>Errors:</strong> {results['errors']}</p>
+        <p><strong>Sources:</strong> Internet Orchid Species, Singapore Botanic, Australian, European, South American</p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>International Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
 @app.route('/test_ron_parsons')
 def test_ron_parsons():
     """Test Ron Parsons Flickr scraper"""
