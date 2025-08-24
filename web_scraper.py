@@ -28,7 +28,8 @@ def scrape_gary_yong_gee():
     """
     Scrape orchid information from Gary Yong Gee's website
     """
-    base_url = "https://yonggee.name"
+    base_url = "https://orchids.yonggee.name"
+    species_url = "https://orchids.yonggee.name/species"  # Direct species page
     results = {'processed': 0, 'errors': 0, 'skipped': 0}
     
     try:
@@ -56,8 +57,18 @@ def scrape_gary_yong_gee():
             href = link['href']
             link_text = link.get_text().lower()
             
-            # Look for orchid-related keywords in links
-            if any(keyword in link_text for keyword in ['orchid', 'species', 'genus', 'flower']):
+            # More comprehensive orchid keyword search
+            orchid_keywords = ['orchid', 'species', 'genus', 'flower', 'dendrobium', 'phalaenopsis', 
+                              'cattleya', 'vanda', 'oncidium', 'cymbidium', 'paphiopedilum', 'botanical']
+            
+            if any(keyword in link_text for keyword in orchid_keywords) or any(keyword in href.lower() for keyword in orchid_keywords):
+                full_url = urljoin(base_url, href)
+                orchid_links.append(full_url)
+        
+        # Also check for image galleries and species pages
+        for link in soup.find_all('a', href=True):
+            href = link['href']
+            if any(path in href.lower() for path in ['gallery', 'species', 'photo', 'image', 'collection']):
                 full_url = urljoin(base_url, href)
                 orchid_links.append(full_url)
         
@@ -139,7 +150,7 @@ def scrape_roberta_fox():
     """
     Scrape orchid information from Roberta Fox's website
     """
-    base_url = "https://southcoastorchidsociety.com/bio_RobertaFox.html"
+    base_url = "https://rlfox.tripod.com/index1.html"
     results = {'processed': 0, 'errors': 0, 'skipped': 0}
     
     try:
