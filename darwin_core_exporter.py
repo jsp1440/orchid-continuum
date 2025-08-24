@@ -14,6 +14,7 @@ class DarwinCoreExporter:
     """Export Orchid Atlas data to Darwin Core Archive format"""
     
     def __init__(self):
+        # Exact field order from user specification
         self.dwc_fields = [
             'occurrenceID', 'basisOfRecord', 'scientificName', 'scientificNameAuthorship',
             'taxonRank', 'kingdom', 'family', 'genus', 'specificEpithet', 'infraspecificEpithet',
@@ -21,7 +22,8 @@ class DarwinCoreExporter:
             'decimalLatitude', 'decimalLongitude', 'coordinateUncertaintyInMeters',
             'country', 'countryCode', 'stateProvince', 'county', 'locality', 'elevation',
             'elevationUnit', 'habitat', 'associatedTaxa', 'occurrenceRemarks',
-            'catalogNumber', 'institutionCode', 'collectionCode', 'license', 'rightsHolder'
+            'catalogNumber', 'institutionCode', 'collectionCode', 'license', 'rightsHolder',
+            'datasetName', 'references'
         ]
         
     def export_to_dwc_archive(self, output_dir="darwin_core_export"):
@@ -178,7 +180,9 @@ class DarwinCoreExporter:
             'institutionCode': "FCOS",
             'collectionCode': orchid.ingestion_source or '',
             'license': "CC-BY-NC",
-            'rightsHolder': "Five Cities Orchid Society"
+            'rightsHolder': "Five Cities Orchid Society",
+            'datasetName': "Five Cities Orchid Society Collection Database",
+            'references': "https://atlas.fivecitiescalifornia.org"
         }
     
     def parse_country_from_region(self, region):
