@@ -70,7 +70,7 @@ class OrchidScraperRunner:
         """Scrape Gary Young Gee orchids"""
         logger.info("🌿 Starting Gary Young Gee scraper...")
         
-        base_url = "http://garyyonggee.com/orchids"
+        base_url = "https://orchids.yonggee.name"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
