@@ -393,13 +393,30 @@ def index():
             stats = get_homepage_statistics()
         except Exception as e:
             logger.error(f"Error loading statistics: {e}")
-            stats = {
-                'total_orchids': 4164,
-                'total_genera': 396,
-                'total_species': 2053,
-                'photos_available': 1337,
-                'genus_breakdown': []
-            }
+            # Get live counts as fallback
+            try:
+                total_orchids = db.session.query(func.count(OrchidRecord.id)).scalar()
+                total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).filter(OrchidRecord.genus.isnot(None)).scalar()
+                photos_count = db.session.query(func.count(OrchidRecord.id)).filter(
+                    OrchidRecord.image_url.isnot(None),
+                    OrchidRecord.image_url != '',
+                    ~OrchidRecord.image_url.like('%placeholder%')
+                ).scalar()
+                stats = {
+                    'total_orchids': total_orchids or 4164,
+                    'total_genera': total_genera or 396, 
+                    'total_species': 2053,
+                    'photos_available': photos_count or 1337,
+                    'genus_breakdown': []
+                }
+            except:
+                stats = {
+                    'total_orchids': 4164,
+                    'total_genera': 396,
+                    'total_species': 2053,
+                    'photos_available': 1337,
+                    'genus_breakdown': []
+                }
         
         return render_template('index.html',
                              orchid_of_day=orchid_of_day,
@@ -411,14 +428,29 @@ def index():
     except Exception as e:
         logger.error(f"Homepage error: {str(e)}")
         db.session.rollback()
-        # Return minimal homepage on error
-        fallback_stats = {
-            'total_orchids': 4164,
-            'total_genera': 396,
-            'total_species': 2053,
-            'photos_available': 1337,
-            'genus_breakdown': []
-        }
+        # Return minimal homepage on error with live counts if possible
+        try:
+            total_orchids = db.session.query(func.count(OrchidRecord.id)).scalar()
+            photos_count = db.session.query(func.count(OrchidRecord.id)).filter(
+                OrchidRecord.image_url.isnot(None),
+                OrchidRecord.image_url != '',
+                ~OrchidRecord.image_url.like('%placeholder%')
+            ).scalar()
+            fallback_stats = {
+                'total_orchids': total_orchids or 4164,
+                'total_genera': 396,
+                'total_species': 2053,
+                'photos_available': photos_count or 1337,
+                'genus_breakdown': []
+            }
+        except:
+            fallback_stats = {
+                'total_orchids': 4164,
+                'total_genera': 396,
+                'total_species': 2053,
+                'photos_available': 1337,
+                'genus_breakdown': []
+            }
         return render_template('index.html',
                              orchid_of_day=None,
                              orchid_of_day_enhanced=None,
