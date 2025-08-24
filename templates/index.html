@@ -502,3 +502,118 @@
     </div>
 </div>
 {% endblock %}
+
+<script>
+// Auto-updating statistics counters
+function updateStatistics() {
+    fetch('/api/live-stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update main statistics
+            if (data.total_orchids) {
+                const totalElement = document.querySelector('h3.text-primary');
+                if (totalElement) {
+                    const currentValue = parseInt(totalElement.textContent.replace(/,/g, ''));
+                    const newValue = data.total_orchids;
+                    if (newValue !== currentValue) {
+                        animateCounter(totalElement, currentValue, newValue);
+                    }
+                }
+            }
+            
+            if (data.photos_available) {
+                const photosElement = document.querySelector('h3.text-warning');
+                if (photosElement) {
+                    const currentValue = parseInt(photosElement.textContent.replace(/,/g, ''));
+                    const newValue = data.photos_available;
+                    if (newValue !== currentValue) {
+                        animateCounter(photosElement, currentValue, newValue);
+                    }
+                }
+            }
+            
+            if (data.total_genera) {
+                const generaElement = document.querySelector('h3.text-success');
+                if (generaElement) {
+                    const currentValue = parseInt(generaElement.textContent.replace(/,/g, ''));
+                    const newValue = data.total_genera;
+                    if (newValue !== currentValue) {
+                        animateCounter(generaElement, currentValue, newValue);
+                    }
+                }
+            }
+            
+            if (data.total_species) {
+                const speciesElement = document.querySelector('h3.text-info');
+                if (speciesElement) {
+                    const currentValue = parseInt(speciesElement.textContent.replace(/,/g, ''));
+                    const newValue = data.total_species;
+                    if (newValue !== currentValue) {
+                        animateCounter(speciesElement, currentValue, newValue);
+                    }
+                }
+            }
+            
+            // Add last updated indicator
+            if (data.last_updated) {
+                let updateIndicator = document.getElementById('stats-update-indicator');
+                if (!updateIndicator) {
+                    updateIndicator = document.createElement('small');
+                    updateIndicator.id = 'stats-update-indicator';
+                    updateIndicator.className = 'text-muted d-block mt-2';
+                    updateIndicator.style.textAlign = 'center';
+                    
+                    const statsSection = document.querySelector('.container .row .col-12.text-center');
+                    if (statsSection) {
+                        statsSection.appendChild(updateIndicator);
+                    }
+                }
+                updateIndicator.innerHTML = `<i data-feather="clock" style="width: 12px; height: 12px;"></i> Last updated: ${data.last_updated}`;
+                
+                // Re-initialize feather icons for new clock icon
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+            
+            console.log('📊 Statistics updated:', data.last_updated);
+        })
+        .catch(error => {
+            console.warn('Statistics update failed:', error);
+        });
+}
+
+// Animate counter changes with smooth counting
+function animateCounter(element, start, end) {
+    const duration = 1000; // 1 second
+    const startTime = performance.now();
+    
+    function updateCount(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const currentValue = Math.round(start + (end - start) * easeOut);
+        
+        element.textContent = currentValue.toLocaleString();
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCount);
+        }
+    }
+    
+    requestAnimationFrame(updateCount);
+}
+
+// Initialize auto-updating
+document.addEventListener('DOMContentLoaded', function() {
+    // Update immediately on page load
+    setTimeout(updateStatistics, 2000);
+    
+    // Update every 30 seconds
+    setInterval(updateStatistics, 30000);
+    
+    console.log('🚀 Auto-updating statistics initialized - updates every 30 seconds');
+});
+</script>

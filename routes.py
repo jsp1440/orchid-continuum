@@ -712,6 +712,41 @@ def api_database_statistics():
             'intergenerics': 0
         }), 500
 
+@app.route('/api/live-stats')
+def api_live_statistics():
+    """API endpoint for real-time live statistics with auto-update support"""
+    try:
+        from orchid_statistics import get_homepage_statistics
+        from datetime import datetime
+        
+        stats = get_homepage_statistics()
+        
+        # Add auto-update metadata
+        stats['last_updated'] = datetime.now().strftime('%H:%M:%S')
+        stats['timestamp'] = datetime.now().isoformat()
+        
+        # Force refresh from database for most current counts
+        current_count = db.session.query(func.count(OrchidRecord.id)).scalar()
+        photos_count = db.session.query(func.count(OrchidRecord.id)).filter(
+            OrchidRecord.google_drive_id.isnot(None)
+        ).scalar()
+        
+        # Override with live counts
+        stats['total_orchids'] = current_count or stats.get('total_orchids', 4164)
+        stats['photos_available'] = photos_count or stats.get('photos_available', 1337)
+        
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error loading live statistics: {e}")
+        return jsonify({
+            'total_orchids': 4164,
+            'total_genera': 396,
+            'total_species': 2053,
+            'photos_available': 1337,
+            'last_updated': 'Error',
+            'error': 'Statistics temporarily unavailable'
+        }), 500
+
 @app.route('/api/orchid-locations')
 def orchid_locations_api():
     """API endpoint to get orchid location data for the map"""
