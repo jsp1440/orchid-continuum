@@ -291,12 +291,16 @@ def parse_atlas_filters(args):
 
 def get_source_display_name(source):
     """Convert internal source names to user-friendly display names"""
+    if not source:
+        return 'Unknown Source'
+    
     source_map = {
         'google_sheets_import': 'Five Cities Orchid Society Collection',
         'ron_parsons_flickr': 'Ron Parsons Photography (Flickr)',
         'roberta_fox_comprehensive': 'Roberta Fox Collection',
         'world_collection_import': 'World Orchid Database',
-        'upload': 'User Upload'
+        'upload': 'User Upload',
+        '': 'Five Cities Orchid Society Collection'
     }
     return source_map.get(source, source.replace('_', ' ').title())
 
