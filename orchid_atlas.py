@@ -66,10 +66,26 @@ def get_atlas_records():
         query = query.filter(OrchidRecord.region.ilike(f'%{filters["country"]}%'))
     
     if filters.get('genus'):
-        query = query.filter(OrchidRecord.genus == filters['genus'])
+        # Use flexible matching for genus search
+        search_term = filters['genus']
+        query = query.filter(
+            or_(
+                OrchidRecord.genus.ilike(f'%{search_term}%'),
+                OrchidRecord.scientific_name.ilike(f'%{search_term}%'),
+                OrchidRecord.display_name.ilike(f'%{search_term}%')
+            )
+        )
     
     if filters.get('species'):
-        query = query.filter(OrchidRecord.species == filters['species'])
+        # Use flexible matching for species search
+        search_term = filters['species']
+        query = query.filter(
+            or_(
+                OrchidRecord.species.ilike(f'%{search_term}%'),
+                OrchidRecord.scientific_name.ilike(f'%{search_term}%'),
+                OrchidRecord.display_name.ilike(f'%{search_term}%')
+            )
+        )
     
     if filters.get('hybrid_flag') is not None:
         # For now, check if scientific name contains 'x' or hybrid indicators
