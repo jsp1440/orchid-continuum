@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid World Maps - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Maps Header -->
+    <div class="bg-gradient text-white py-4 mb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-2">
+                        <i data-feather="globe" class="me-3"></i>Orchid World Maps
+                    </h1>
+                    <p class="lead mb-0">
+                        Interactive topological maps showing global orchid distributions, biogeographic regions, and species density patterns
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="badge bg-light text-dark fs-6 px-3 py-2">
+                        <i data-feather="map-pin" class="me-2"></i>4,173+ Orchid Records Mapped
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Controls -->
+    <div class="bg-dark py-3">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-light active" id="worldMapBtn">
+                            <i data-feather="globe" class="me-1"></i>World Distribution
+                        </button>
+                        <button type="button" class="btn btn-outline-light" id="densityMapBtn">
+                            <i data-feather="activity" class="me-1"></i>Species Density
+                        </button>
+                        <button type="button" class="btn btn-outline-light" id="bioregionBtn">
+                            <i data-feather="layers" class="me-1"></i>Biogeographic Regions
+                        </button>
+                        <button type="button" class="btn btn-outline-light" id="topoMapBtn">
+                            <i data-feather="mountain" class="me-1"></i>Topographical
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-warning btn-sm" id="refreshMapBtn">
+                            <i data-feather="refresh-cw" class="me-1"></i>Refresh Data
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" id="fullscreenBtn">
+                            <i data-feather="maximize" class="me-1"></i>Fullscreen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="mapLoading" class="text-center py-5 bg-light">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading map...</span>
+        </div>
+        <p class="mt-3 text-muted">Loading interactive orchid distribution map...</p>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="orchidMapContainer" style="height: 80vh; width: 100%; display: none;"></div>
+    
+    <!-- Map Information Panel -->
+    <div class="bg-light py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i data-feather="database" class="mb-2" style="width: 32px; height: 32px;"></i>
+                            <h4 id="totalRecords">4,173</h4>
+                            <small>Total Orchid Records</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 bg-success text-white">
+                        <div class="card-body text-center">
+                            <i data-feather="map-pin" class="mb-2" style="width: 32px; height: 32px;"></i>
+                            <h4 id="mappedRecords">2,456</h4>
+                            <small>Records with Locations</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 bg-info text-white">
+                        <div class="card-body text-center">
+                            <i data-feather="layers" class="mb-2" style="width: 32px; height: 32px;"></i>
+                            <h4 id="bioregions">6</h4>
+                            <small>Biogeographic Regions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i data-feather="image" class="mb-2" style="width: 32px; height: 32px;"></i>
+                            <h4 id="withPhotos">1,337</h4>
+                            <small>Records with Photos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Legend -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i data-feather="info" class="me-2"></i>Map Legend & Features
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Marker Types</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-map-marker-alt text-success me-2"></i>Records with photos (Google Drive)</li>
+                                        <li><i class="fas fa-map-marker-alt text-primary me-2"></i>Records with external images</li>
+                                        <li><i class="fas fa-circle text-danger me-2"></i>High species density areas</li>
+                                        <li><i class="fas fa-circle text-warning me-2"></i>Medium density areas</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Map Layers</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i data-feather="globe" class="me-2"></i>OpenStreetMap (Default)</li>
+                                        <li><i data-feather="mountain" class="me-2"></i>Topographical/Physical Map</li>
+                                        <li><i data-feather="camera" class="me-2"></i>Satellite Imagery</li>
+                                        <li><i data-feather="activity" class="me-2"></i>Species Density Heatmap</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMap = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrchidMap();
+    
+    // Initialize feather icons
+    feather.replace();
+    
+    // Button event listeners
+    document.getElementById('refreshMapBtn').addEventListener('click', loadOrchidMap);
+    document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+});
+
+function loadOrchidMap() {
+    const loadingDiv = document.getElementById('mapLoading');
+    const mapContainer = document.getElementById('orchidMapContainer');
+    
+    loadingDiv.style.display = 'block';
+    mapContainer.style.display = 'none';
+    
+    fetch('/api/orchid-map-data')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.map_html) {
+                mapContainer.innerHTML = data.map_html;
+                loadingDiv.style.display = 'none';
+                mapContainer.style.display = 'block';
+                
+                console.log('🗺️ Orchid map loaded successfully');
+            } else {
+                throw new Error(data.error || 'Failed to load map');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading orchid map:', error);
+            loadingDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>Map Loading Error</h5>
+                    <p>Unable to load the orchid distribution map. Please try refreshing the page.</p>
+                    <button class="btn btn-primary" onclick="loadOrchidMap()">Try Again</button>
+                </div>
+            `;
+        });
+}
+
+function toggleFullscreen() {
+    const mapContainer = document.getElementById('orchidMapContainer');
+    
+    if (!document.fullscreenElement) {
+        mapContainer.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Update statistics periodically
+setInterval(() => {
+    fetch('/api/live-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.total_orchids) {
+                document.getElementById('totalRecords').textContent = data.total_orchids.toLocaleString();
+            }
+            if (data.photos_available) {
+                document.getElementById('withPhotos').textContent = data.photos_available.toLocaleString();
+            }
+        })
+        .catch(error => console.warn('Statistics update failed:', error));
+}, 60000); // Update every minute
+</script>
+{% endblock %}
