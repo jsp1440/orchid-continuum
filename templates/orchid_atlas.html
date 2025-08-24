@@ -284,7 +284,7 @@
             
             <div class="filter-group">
                 <button class="btn btn-primary btn-sm" id="applyFiltersBtn">
-                    <i data-feather="filter" class="me-1"></i>Apply Filters
+                    <i data-feather="search" class="me-1"></i>Search & Filter
                 </button>
             </div>
         </div>
@@ -627,41 +627,76 @@ class OrchidAtlas {
                  class="detail-image"
                  onerror="this.src='/static/images/placeholder-orchid.jpg'">
             
-            <h5 class="mb-3">${record.scientific_name}</h5>
+            <h5 class="mb-3">${record.scientific_name || record.display_name}</h5>
             
+            <!-- Classification -->
             <div class="mb-3">
-                <h6>Classification</h6>
+                <h6><i data-feather="info" class="me-2"></i>Classification</h6>
                 <p class="mb-1"><strong>Genus:</strong> ${record.genus || '—'}</p>
                 <p class="mb-1"><strong>Species:</strong> ${record.species || '—'}</p>
                 <p class="mb-1"><strong>Hybrid:</strong> ${record.hybrid_flag ? 'Yes' : 'No'}</p>
+                <p class="mb-1"><strong>Growth Habit:</strong> ${record.growth_habit || 'Epiphytic'}</p>
             </div>
             
+            <!-- Geographic Origin -->
             <div class="mb-3">
-                <h6>Location</h6>
-                <p class="mb-1"><strong>Country:</strong> ${record.country || '—'}</p>
-                <p class="mb-1"><strong>Native Status:</strong> ${record.native_status || '—'}</p>
+                <h6><i data-feather="map-pin" class="me-2"></i>Geographic Origin</h6>
+                <p class="mb-1"><strong>Country:</strong> ${record.country || 'Unknown'}</p>
+                <p class="mb-1"><strong>Region:</strong> ${record.region || 'Not specified'}</p>
+                <p class="mb-1"><strong>Native Status:</strong> ${record.native_status || 'Unknown'}</p>
+                <p class="mb-1"><strong>Conservation:</strong> ${record.conservation_status || 'Status unknown'}</p>
             </div>
             
+            <!-- Photography Details -->
             <div class="mb-3">
-                <h6>Photography</h6>
-                <p class="mb-1"><strong>Photographer:</strong> ${record.photographer_name || '—'}</p>
-                <p class="mb-1"><strong>License:</strong> ${record.license || '—'}</p>
-                <p class="mb-1"><strong>Attribution:</strong> ${record.attribution || '—'}</p>
+                <h6><i data-feather="camera" class="me-2"></i>Photography Details</h6>
+                <p class="mb-1"><strong>Photographer:</strong> ${record.photographer_name || 'Unknown photographer'}</p>
+                <p class="mb-1"><strong>Photo Date:</strong> ${record.photo_date || 'Date unknown'}</p>
+                <p class="mb-1"><strong>Source:</strong> ${record.source_display || record.source}</p>
+                <p class="mb-1"><strong>License:</strong> ${record.license}</p>
+                <p class="mb-1"><strong>Attribution:</strong> ${record.attribution}</p>
             </div>
             
-            ${record.notes ? `
+            <!-- AI Insights & Analysis -->
+            ${record.ai_insights ? `
                 <div class="mb-3">
-                    <h6>Notes</h6>
-                    <p class="small">${record.notes}</p>
+                    <h6><i data-feather="brain" class="me-2"></i>AI Analysis & Insights</h6>
+                    <div class="bg-light p-2 rounded small">
+                        ${record.ai_insights.split('\\n').map(line => line.trim()).filter(line => line).map(line => `<p class="mb-1">${line}</p>`).join('')}
+                    </div>
                 </div>
             ` : ''}
             
+            <!-- Interesting Facts -->
+            ${record.interesting_facts && record.interesting_facts.length > 0 ? `
+                <div class="mb-3">
+                    <h6><i data-feather="lightbulb" class="me-2"></i>Interesting Facts</h6>
+                    <ul class="list-unstyled small">
+                        ${record.interesting_facts.map(fact => `<li class="mb-2">• ${fact}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+            
+            <!-- Cultural Notes -->
+            ${record.cultural_notes ? `
+                <div class="mb-3">
+                    <h6><i data-feather="book-open" class="me-2"></i>Cultural & Research Notes</h6>
+                    <div class="bg-light p-2 rounded small">
+                        <p class="mb-0">${record.cultural_notes}</p>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- Action Buttons -->
             <div class="d-grid gap-2">
                 <button class="btn btn-primary" onclick="atlas.viewInGallery()">
                     <i data-feather="eye" class="me-2"></i>View in Gallery
                 </button>
                 <button class="btn btn-outline-secondary" onclick="atlas.copyCitation()">
                     <i data-feather="copy" class="me-2"></i>Copy Citation
+                </button>
+                <button class="btn btn-outline-info" onclick="atlas.showComparison()">
+                    <i data-feather="compare" class="me-2"></i>Compare Similar
                 </button>
             </div>
         `;
@@ -720,7 +755,26 @@ class OrchidAtlas {
         if (!this.selectedRecord) return;
         
         const record = this.selectedRecord;
-        const citation = `${record.photographer_name}. ${record.scientific_name}. [Photograph]. Orchid Atlas. Retrieved ${new Date().toLocaleDateString()}.`;
+        const citation = `${record.photographer_name}. ${record.scientific_name}. [Photograph]. ${record.source_display}. Orchid Atlas. Retrieved ${new Date().toLocaleDateString()}.`;
+        
+        navigator.clipboard.writeText(citation).then(() => {
+            alert('Citation copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = citation;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Citation copied to clipboard!');
+        });
+    }
+    
+    showComparison() {
+        if (!this.selectedRecord) return;
+        // Open comparison page for this orchid
+        window.open(`/compare?orchid_id=${this.selectedRecord.id}`, '_blank');
         
         navigator.clipboard.writeText(citation).then(() => {
             alert('Citation copied to clipboard!');
