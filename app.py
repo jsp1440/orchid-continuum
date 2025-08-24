@@ -44,6 +44,13 @@ with app.app_context():
     except Exception as e:
         print(f"Database creation error: {e}")
     
+    # Import and register auth blueprint after db initialization
+    try:
+        from auth_routes import auth_bp
+        app.register_blueprint(auth_bp, url_prefix='/auth')
+    except ImportError as e:
+        logging.warning(f"Auth routes not available: {e}")
+    
     # Initialize judging standards
     try:
         from judging_standards import initialize_judging_standards
@@ -52,9 +59,7 @@ with app.app_context():
     except Exception as e:
         print(f"Judging standards initialization error: {e}")
 
-# Register authentication blueprint
-from auth_routes import auth_bp
-app.register_blueprint(auth_bp)
+# Auth blueprint is now registered inside app context above
 
 # Register user weather blueprint
 from user_weather_routes import user_weather_bp
