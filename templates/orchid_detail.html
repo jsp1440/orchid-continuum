@@ -17,10 +17,12 @@
         <!-- Image Section -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm">
-                {% if orchid.image_url %}
-                    <img src="{{ orchid.image_url }}" class="card-img-top" alt="{{ orchid.display_name }}"
+                {% if orchid.image_url or orchid.google_drive_id %}
+                    {% set image_url = '/api/drive-photo/' + orchid.google_drive_id if orchid.google_drive_id else orchid.image_url %}
+                    <img src="{{ image_url }}" class="card-img-top" alt="{{ orchid.display_name }}"
                          style="max-height: 600px; object-fit: contain; cursor: pointer;"
-                         onclick="showImageModal('{{ orchid.image_url }}', '{{ orchid.display_name }}')">
+                         onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';"
+                         onclick="showImageModal('{{ image_url }}', '{{ orchid.display_name }}')"
                 {% else %}
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                          style="height: 400px;">
