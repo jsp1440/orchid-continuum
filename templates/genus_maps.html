@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+
+{% block title %}Genus Distribution Maps - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="tag" class="me-2"></i>Genus Distribution Maps
+            </h1>
+            <p class="lead text-muted">
+                Explore the global distribution patterns of major orchid genera
+            </p>
+        </div>
+    </div>
+    
+    <!-- Genus Selection Grid -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="grid" class="me-2"></i>Select Genus
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-primary h-100 genus-card" data-genus="cattleya" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">🌺</div>
+                                    <h6>Cattleya</h6>
+                                    <p class="small text-muted">Queen of Orchids</p>
+                                    <span class="badge bg-primary">256 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-success h-100 genus-card" data-genus="phalaenopsis" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">🦋</div>
+                                    <h6>Phalaenopsis</h6>
+                                    <p class="small text-muted">Moth Orchids</p>
+                                    <span class="badge bg-success">189 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-info h-100 genus-card" data-genus="dendrobium" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">🌿</div>
+                                    <h6>Dendrobium</h6>
+                                    <p class="small text-muted">Tree Dwellers</p>
+                                    <span class="badge bg-info">167 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-warning h-100 genus-card" data-genus="oncidium" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">💃</div>
+                                    <h6>Oncidium</h6>
+                                    <p class="small text-muted">Dancing Ladies</p>
+                                    <span class="badge bg-warning">134 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-danger h-100 genus-card" data-genus="paphiopedilum" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">👠</div>
+                                    <h6>Paphiopedilum</h6>
+                                    <p class="small text-muted">Lady Slippers</p>
+                                    <span class="badge bg-danger">98 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-secondary h-100 genus-card" data-genus="cymbidium" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">⚱️</div>
+                                    <h6>Cymbidium</h6>
+                                    <p class="small text-muted">Boat Orchids</p>
+                                    <span class="badge bg-secondary">87 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-dark h-100 genus-card" data-genus="masdevallia" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">🎭</div>
+                                    <h6>Masdevallia</h6>
+                                    <p class="small text-muted">Cloud Forest</p>
+                                    <span class="badge bg-dark">76 records</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="card border-light h-100 genus-card" data-genus="bulbophyllum" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">🧅</div>
+                                    <h6>Bulbophyllum</h6>
+                                    <p class="small text-muted">Largest Genus</p>
+                                    <span class="badge bg-light text-dark">345 records</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Genus Map -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="genusTitle">
+                        <i data-feather="map-pin" class="me-2"></i>Select a genus above
+                    </h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" id="showPhylogeny">
+                            <i data-feather="git-branch" class="me-1"></i>Phylogeny
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" id="showEvolution">
+                            <i data-feather="trending-up" class="me-1"></i>Evolution
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" id="exportGenus">
+                            <i data-feather="download" class="me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="genusMapContainer" style="height: 600px; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center text-muted">
+                            <i data-feather="tag" style="width: 64px; height: 64px;" class="mb-3"></i>
+                            <h4>Choose a Genus</h4>
+                            <p>Select one of the orchid genera above to explore their global distribution patterns</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Genus Information Panel -->
+    <div class="row mt-4" id="genusInfo" style="display: none;">
+        <div class="col-md-8">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 id="genusDescription">Genus Description</h6>
+                    <p id="genusDetails" class="small mb-0">Detailed information about the selected genus will appear here.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6>Distribution Stats</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5 id="genusSpeciesCount" class="text-primary">0</h5>
+                            <small>Species</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 id="genusRegions" class="text-success">0</h5>
+                            <small>Regions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Genus card click handlers
+    document.querySelectorAll('.genus-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const genus = this.dataset.genus;
+            loadGenusMap(genus);
+        });
+    });
+});
+
+function loadGenusMap(genus) {
+    const container = document.getElementById('genusMapContainer');
+    const title = document.getElementById('genusTitle');
+    const info = document.getElementById('genusInfo');
+    
+    // Genus data
+    const genusData = {
+        'cattleya': {
+            title: 'Cattleya Distribution - Queen of Orchids',
+            species: 256,
+            regions: 12,
+            description: 'Large, showy epiphytic orchids native to Central and South America',
+            details: 'Cattleyas are among the most cultivated orchids worldwide. They prefer intermediate to warm temperatures and bright light. Most species are found in cloud forests of the Andes and Atlantic coastal ranges.',
+            mapContent: createCattleyaMap()
+        },
+        'phalaenopsis': {
+            title: 'Phalaenopsis Distribution - Moth Orchids',
+            species: 189,
+            regions: 8,
+            description: 'Monopodial epiphytes with broad, flat flowers',
+            details: 'Native to Southeast Asia, Philippines, and northern Australia. These orchids grow on trees in humid, warm forests. They are among the most popular houseplant orchids due to their long-lasting flowers.',
+            mapContent: createPhalaenopsisMap()
+        },
+        'dendrobium': {
+            title: 'Dendrobium Distribution - Tree Dwellers',
+            species: 167,
+            regions: 15,
+            description: 'Diverse genus with sympodial and monopodial growth',
+            details: 'One of the largest orchid genera, found throughout Asia, Australia, and Pacific islands. They show remarkable diversity in growth habits, from tiny epiphytes to large terrestrials.',
+            mapContent: createDendrobiumMap()
+        },
+        'oncidium': {
+            title: 'Oncidium Distribution - Dancing Ladies',
+            species: 134,
+            regions: 9,
+            description: 'Epiphytic orchids with distinctive lip and column',
+            details: 'Primarily neotropical, these orchids are known for their spray of small, often yellow flowers that resemble dancing figures. They prefer intermediate temperatures and good air circulation.',
+            mapContent: createOncidiumMap()
+        },
+        'paphiopedilum': {
+            title: 'Paphiopedilum Distribution - Asian Lady Slippers',
+            species: 98,
+            regions: 6,
+            description: 'Terrestrial and lithophytic slipper orchids',
+            details: 'Found throughout Southeast Asia, from India to the Philippines and Indonesia. They prefer shaded, humid conditions and are often found growing in leaf litter or on limestone cliffs.',
+            mapContent: createPaphiopedilumMap()
+        },
+        'cymbidium': {
+            title: 'Cymbidium Distribution - Boat Orchids',
+            species: 87,
+            regions: 7,
+            description: 'Cool-growing terrestrial and epiphytic orchids',
+            details: 'Native to temperate and tropical Asia, from the Himalayas to Japan and Australia. Many species are cool-growing and have been extensively hybridized for cut flower production.',
+            mapContent: createCymbidiumMap()
+        },
+        'masdevallia': {
+            title: 'Masdevallia Distribution - Cloud Forest Specialists',
+            species: 76,
+            regions: 5,
+            description: 'Cool-growing epiphytes with tubular flowers',
+            details: 'Endemic to the cloud forests of the Andes, from Mexico to Peru. They require cool, humid conditions with good air circulation and are prized for their colorful, often bizarre flowers.',
+            mapContent: createMasdevalliaMap()
+        },
+        'bulbophyllum': {
+            title: 'Bulbophyllum Distribution - Largest Orchid Genus',
+            species: 345,
+            regions: 18,
+            description: 'Incredibly diverse epiphytic orchids',
+            details: 'The largest genus in the orchid family, found throughout the tropics. They show remarkable diversity in flower form and pollination strategies, from tiny flowers to massive displays.',
+            mapContent: createBulbophyllumMap()
+        }
+    };
+    
+    const data = genusData[genus];
+    if (!data) return;
+    
+    // Update title
+    title.innerHTML = `<i data-feather="map-pin" class="me-2"></i>${data.title}`;
+    
+    // Show loading
+    container.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading ${genus} distribution map...</p>
+        </div>
+    `;
+    
+    // Load map content
+    setTimeout(() => {
+        container.innerHTML = data.mapContent;
+        
+        // Update information
+        document.getElementById('genusDescription').textContent = data.description;
+        document.getElementById('genusDetails').textContent = data.details;
+        document.getElementById('genusSpeciesCount').textContent = data.species.toLocaleString();
+        document.getElementById('genusRegions').textContent = data.regions.toLocaleString();
+        
+        info.style.display = 'flex';
+        feather.replace();
+        
+        console.log(`🏷️ Loaded ${genus} distribution map`);
+    }, 1500);
+}
+
+function createCattleyaMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #ff6b9d, #ff8e9b, #ffb3ba); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🌺 Cattleya Natural Range</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Brazil</h6>
+                                <p class="small">Atlantic Forest - 67 species</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Colombia</h6>
+                                <p class="small">Andes Mountains - 34 species</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Central America</h6>
+                                <p class="small">Cloud Forests - 23 species</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createPhalaenopsisMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(90deg, #a8e6cf, #dcedc8, #f8bbd9); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <h3>🦋 Phalaenopsis Native Habitat</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded mb-3">
+                                <h6>Philippines</h6>
+                                <p class="small">Primary diversity center - 78 species</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded mb-3">
+                                <h6>Borneo & Sumatra</h6>
+                                <p class="small">Lowland rainforests - 45 species</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createDendrobiumMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #74b9ff, #a29bfe, #6c5ce7); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🌿 Dendrobium Global Distribution</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>India</h6>
+                                <p class="small">Himalayas</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Thailand</h6>
+                                <p class="small">Deciduous</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Australia</h6>
+                                <p class="small">Rock orchids</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Papua NG</h6>
+                                <p class="small">Epiphytes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createOncidiumMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #fdcb6e, #e17055, #d63031); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>💃 Oncidium Neotropical Range</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Ecuador & Peru</h6>
+                                <p class="small">Andean cloud forests - highest diversity</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Brazil</h6>
+                                <p class="small">Cerrado and Atlantic Forest</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createPaphiopedilumMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(180deg, #00b894, #00cec9, #74b9ff); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>👠 Paphiopedilum Asian Distribution</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Borneo</h6>
+                                <p class="small">Limestone specialists</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>China</h6>
+                                <p class="small">Temperate species</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Philippines</h6>
+                                <p class="small">Island endemics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createCymbidiumMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(90deg, #55a3ff, #003d82, #1e3799); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>⚱️ Cymbidium Distribution</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Himalayas</h6>
+                                <p class="small">Cool-growing terrestrials</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Australia</h6>
+                                <p class="small">Rock-dwelling species</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createMasdevalliaMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #667eea, #764ba2, #f093fb); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🎭 Masdevallia Cloud Forest Range</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h6>Andean Cloud Forests</h6>
+                                <p class="small">1500-3500m elevation • Mexico to Peru • Cool, humid conditions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createBulbophyllumMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #ff7675, #fd79a8, #fdcb6e, #6c5ce7); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🧅 Bulbophyllum Global Pantropical</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Africa</h6>
+                                <p class="small">Madagascar specialists</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Asia</h6>
+                                <p class="small">Highest diversity</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-2 rounded mb-2">
+                                <h6>Americas</h6>
+                                <p class="small">Few species</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}
