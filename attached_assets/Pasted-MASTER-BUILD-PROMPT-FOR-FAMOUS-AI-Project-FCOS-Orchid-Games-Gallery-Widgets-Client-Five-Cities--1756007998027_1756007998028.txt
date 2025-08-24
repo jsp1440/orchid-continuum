@@ -1,0 +1,117 @@
+MASTER BUILD PROMPT FOR FAMOUS AI
+
+Project: FCOS Orchid Games & Gallery Widgets
+Client: Five Cities Orchid Society (FCOS)
+Brand: FCOS.org — nonprofit 501(c)(3)
+Goal: Build a modular widget suite (embeddable on Neon One) that uses our orchid databases to power educational games (Matching, Name↔Photo Match, Mahjong, Crossword, Word Search, Wordle‑style, Scrabble‑style), with single‑player and multiplayer + chat, leaderboards, and profile tracking. Also supports photo upload/editor and metadata viewing as add‑ons.
+
+⸻
+
+0) General Constraints
+    •    Embed target: Neon One CMS. Deliver as one JS bundle exporting named renderers per widget (e.g., FCOSWidgets.renderMatchingGame(...)). Must work inside a <div id="..."></div> container.
+    •    Responsive: Mobile‑first, scales up to desktop.
+    •    Dark/Light modes: User toggle + OS‑pref auto.
+    •    Branding: Use FCOS colors (orchid purple/lavender range), tasteful typography; no flower emojis—use real orchid imagery or neutral icons only.
+    •    Perf: Lazy‑load game assets; image thumbnails first; prefetch next round.
+    •    Accessibility: Keyboard navigable, ARIA labels, focus states, color‑contrast AA+.
+    •    Privacy: No third‑party trackers. Store only minimal gameplay data (scores, display name, member_id).
+    •    Security: Sanitize chat, rate‑limit, profanity filter, anti‑spam; no XSS from metadata; signed image URLs optional.
+    •    Internationalization: English initially; string table for future locales.
+
+⸻
+
+1) Data Inputs (we will supply)
+
+Two primary sources + one glossary:
+    1.    Taxonomy DB (orchids_taxonomy ~30k rows)
+    •    orchid_id (string, unique)
+    •    genus, species, hybrid_status (bool or enum), authority, synonyms[]
+    •    distribution[] (countries/regions), habitat (text), elevation_min, elevation_max
+    •    growth_form (epiphyte/lithophyte/terrestrial), bloom_season[], fragrance (text)
+    •    notes (rich text allowed but we’ll provide plain), sources[] (citations)
+    2.    Photo DB (orchids_images)
+    •    image_id (string, unique), orchid_id (FK), photographer, license (e.g., CC‑BY),
+    •    url_full, url_thumb, width, height, capture_date, location_text
+    •    Optional: aos_award, cultivar, caption
+    3.    Glossary DB (orchid_glossary)
+    •    term (string), definition (short), long_definition (optional), tags[] (e.g., anatomy, taxonomy), related_terms[]
+
+We can provide these as JSON endpoints, CSV, or static JSON files. Please support either:
+
+    •    dataSource: 'remote' with fetch URLs, or
+    •    dataSource: 'embedded' with files bundled under /data/*.json.
+
+⸻
+
+2) Widget Loader & API Surface
+
+Deliver a single script, e.g. https://cdn.fcos.org/fcos-widgets.js, exposing:
+
+
+{
+  "dataSource": "remote",
+  "endpoints": {
+    "taxonomy": "https://api.fcos.org/orchids/taxonomy.json",
+    "photos":   "https://api.fcos.org/orchids/photos.json",
+    "glossary": "https://api.fcos.org/orchids/glossary.json"
+  },
+  "auth": { "mode": "neonOne" },
+  "filters": {
+    "genus": ["Dendrobium"],
+    "region": ["Costa Rica"],
+    "bloomSeason": ["Spring","Summer"]
+  },
+  "leaderboard": { "enabled": true, "scope": "global", "boardId": "matching_v1" },
+  "chat": { "enabled": true, "roomPolicy": "perMatch" },
+  "theme": "auto",
+  "licensePolicy": ["CC-BY","CC0"],
+  "imageQuality": { "thumbMax": 512, "fullMax": 1600 }
+}
+
+15) Minimal Backend We Need From You (if you host)
+
+If Famous AI can host lightweight endpoints/realtime, please provision:
+    •    Leaderboards: simple REST + persistence (SQLite/Postgres).
+    •    Multiplayer: WebSocket rooms with 1–4 participants; message types: JOIN, STATE, MOVE, CHAT, LEAVE.
+    •    Static data: serve /orchids/*.json with CORS enabled for FCOS.org.
+    •    If not, implement adapters so we can point to our own infra later.
+
+⸻
+
+16) Deliverables
+    1.    fcos-widgets.js (production, minified) + fcos-widgets.js.map
+    2.    TypeScript typings or JSDoc for the public API
+    3.    Example HTML snippets for each widget (copy‑paste ready)
+    4.    Admin Panel route (hash‑guarded) and short setup doc
+    5.    Themable CSS (CSS variables) and style guide tokens
+    6.    README with:
+    •    Data ingestion formats & sample files
+    •    Embed instructions for Neon One
+    •    Feature flags to phase rollout (start with Matching + Crossword if needed)
+    •    Accessibility notes and keyboard controls
+    7.    Optional: a small seed dataset (10 orchids, 30 photos, 50 glossary terms) for testing.
+
+⸻
+
+17) Phased Rollout (if building iteratively)
+    •    Phase 1: Matching (photo-photo + name‑photo), Leaderboards (global), Metadata Viewer, Light/Dark theme.
+    •    Phase 2: Crossword & Word Search (glossary‑driven), Print/PDF, Admin Panel v1.
+    •    Phase 3: Multiplayer for Matching (+ chat), Wordle‑style daily.
+    •    Phase 4: Mahjong (with AI seats), Scrabble‑style, Teacher Mode exports.
+    •    Phase 5: Photo Upload/Editor and advanced metadata integrations.
+
+⸻
+
+18) Visual/UX Notes
+    •    Card flips: smooth 200–250ms, subtle elevation/shadow, no kitschy effects.
+    •    Confetti/applause on match/clear—brief and classy.
+    •    Scientific names italicized; genus capitalized, species lowercase; cultivar in single quotes.
+    •    Credits/attribution always visible near images; license icons text‑only.
+
+⸻
+
+Success Criteria:
+    •    Embeds cleanly on Neon One with one script + one div.
+    •    Pulls our JSON data and generates playable puzzles/games.
+    •    Matching and Crossword fully functional with leaderboards in Phase 1.
+    •    Accessible, fast, branded, and educational.
