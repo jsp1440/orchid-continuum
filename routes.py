@@ -1656,6 +1656,27 @@ def fcos_how_to_join():
     """How to join Five Cities Orchid Society"""
     return render_template('fcos_pages/how_to_join.html')
 
+@app.route('/orchid-maps')
+def orchid_maps():
+    """Interactive orchid mapping system with topological data"""
+    return render_template('orchid_maps.html')
+
+@app.route('/api/orchid-map-data')
+def api_orchid_map_data():
+    """API endpoint for orchid mapping data"""
+    try:
+        from orchid_mapping_system import get_orchid_map_html
+        map_html = get_orchid_map_html()
+        return jsonify({'map_html': map_html, 'success': True})
+    except Exception as e:
+        logger.error(f"Error generating orchid map: {e}")
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/thematic-maps')
+def thematic_maps():
+    """Thematic orchid distribution maps"""
+    return render_template('thematic_maps.html')
+
 @app.route('/fcos/additional-information')
 def fcos_additional_info():
     """Additional comprehensive FCOS information"""
