@@ -119,10 +119,30 @@ def get_atlas_records():
     page = int(request.args.get('page', 1))
     per_page = min(int(request.args.get('per_page', 50)), 100)  # Max 100 per page
     
-    # Execute query with pagination
-    results = query.paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    # Prioritize records with images, then add records without images
+    # This ensures users see actual orchid photos first
+    query_with_images = query.filter(OrchidRecord.image_url.isnot(None), OrchidRecord.image_url != '')
+    query_without_images = query.filter(or_(OrchidRecord.image_url.is_(None), OrchidRecord.image_url == ''))
+    
+    # Execute query with pagination - prioritize records with images
+    try:
+        # First try to get records with images
+        results_with_images = query_with_images.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        if results_with_images.total > 0:
+            results = results_with_images
+        else:
+            # Fallback to records without images if no images found
+            results = query_without_images.paginate(
+                page=page, per_page=per_page, error_out=False
+            )
+    except:
+        # Fallback to original query if pagination fails
+        results = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
     
     # Format response
     records = []

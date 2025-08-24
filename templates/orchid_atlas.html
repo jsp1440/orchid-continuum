@@ -496,7 +496,8 @@ class OrchidAtlas {
                 <img src="${record.image_url || '/static/images/placeholder-orchid.jpg'}" 
                      alt="${record.scientific_name}" 
                      class="orchid-image"
-                     onerror="this.src='/static/images/placeholder-orchid.jpg'">
+                     data-record-id="${record.id}"
+                     onerror="console.log('Image failed for record ${record.id}:', this.src); this.src='/static/images/placeholder-orchid.jpg'">
                 <div class="orchid-info">
                     <div class="orchid-name" title="${record.scientific_name}">
                         ${record.scientific_name}
@@ -509,6 +510,7 @@ class OrchidAtlas {
                         <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
                         ${record.country || 'Unknown location'}
                     </div>
+                    <small class="text-muted">ID: ${record.id} | Source: ${record.source_display || record.source}</small>
                 </div>
             </div>
         `).join('');
