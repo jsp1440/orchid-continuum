@@ -127,25 +127,55 @@ def get_atlas_records():
     # Format response
     records = []
     for record in results.items:
+        # Extract location info from region or cultural notes
+        location_info = record.region or 'Location unknown'
+        if record.cultural_notes and 'location' in record.cultural_notes.lower():
+            location_info = record.cultural_notes
+        
+        # Parse date information
+        photo_date = record.created_at.strftime('%B %d, %Y') if record.created_at else 'Date unknown'
+        
+        # Enhanced AI insights and correlations
+        ai_insights = record.ai_description or ''
+        if record.cultural_notes:
+            ai_insights += f"\n\nAdditional Notes: {record.cultural_notes}"
+        
+        # Generate interesting facts based on genus and characteristics
+        interesting_facts = []
+        if record.genus == 'Bulbophyllum':
+            interesting_facts.append("Bulbophyllums are the largest genus in the orchid family with over 2,000 species")
+            interesting_facts.append("Many species have fascinating pollination strategies involving flies and carrion scents")
+        elif record.genus == 'Cattleya':
+            interesting_facts.append("Cattleyas are known as the 'Queen of Orchids' for their large, showy flowers")
+            interesting_facts.append("They're native to Central and South America and many are endangered")
+        
         records.append({
             'id': record.id,
             'photo_id': f'ph_{record.id:06d}',
             'orchid_id': f'or_{record.id:06d}',
-            'scientific_name': record.scientific_name,
+            'scientific_name': record.scientific_name or record.display_name,
+            'display_name': record.display_name,
             'genus': record.genus,
             'species': record.species,
             'hybrid_flag': ' x ' in (record.scientific_name or '') or ' × ' in (record.scientific_name or ''),
             'country': extract_country_from_region(record.region),
+            'region': record.region,
+            'location': location_info,
             'image_url': record.image_url,
-            'thumbnail_url': record.image_url,  # Use same image for thumbnail
-            'photographer_name': record.photographer,
-            'attribution': f'© {record.photographer}' if record.photographer else None,
-            'license': 'CC BY-NC',  # Default license
+            'thumbnail_url': record.image_url,
+            'photographer_name': record.photographer or 'Unknown photographer',
+            'attribution': f'© {record.photographer}' if record.photographer else 'Attribution unknown',
+            'license': 'CC BY-NC',
             'source': record.ingestion_source,
+            'source_display': get_source_display_name(record.ingestion_source),
             'date_observed': record.created_at.isoformat() if record.created_at else None,
-            'native_status': 'unknown',  # Placeholder
-            'growth_habit': 'epiphytic',  # Default assumption
-            'notes': record.ai_description
+            'photo_date': photo_date,
+            'native_status': 'Native to ' + (record.region or 'unknown region'),
+            'growth_habit': 'epiphytic',
+            'ai_insights': ai_insights,
+            'interesting_facts': interesting_facts,
+            'cultural_notes': record.cultural_notes,
+            'conservation_status': 'Conservation status unknown'
         })
     
     return jsonify({
@@ -258,6 +288,17 @@ def parse_atlas_filters(args):
         filters['year_end'] = int(args.get('year_end'))
     
     return filters
+
+def get_source_display_name(source):
+    """Convert internal source names to user-friendly display names"""
+    source_map = {
+        'google_sheets_import': 'Five Cities Orchid Society Collection',
+        'ron_parsons_flickr': 'Ron Parsons Photography (Flickr)',
+        'roberta_fox_comprehensive': 'Roberta Fox Collection',
+        'world_collection_import': 'World Orchid Database',
+        'upload': 'User Upload'
+    }
+    return source_map.get(source, source.replace('_', ' ').title())
 
 def extract_country_from_region(region):
     """Extract country name from region field"""
