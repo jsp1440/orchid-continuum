@@ -55,6 +55,38 @@ def admin_logout():
     flash('Administrative session ended', 'info')
     return redirect(url_for('index'))
 
+@app.route('/admin/ai-assistant', methods=['GET', 'POST'])
+@admin_required
+def admin_ai_assistant():
+    """AI Assistant for making platform changes"""
+    if request.method == 'POST':
+        user_request = request.form.get('request')
+        
+        # Use existing OpenAI integration
+        try:
+            from orchid_ai import openai_client
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "You are an AI assistant for an orchid platform. Help the user understand what changes can be made and provide guidance on modifications to the orchid database, widgets, and features."
+                    },
+                    {"role": "user", "content": str(user_request or "")}
+                ],
+                max_tokens=500
+            )
+            
+            ai_response = response.choices[0].message.content
+            return render_template('admin_ai_assistant.html', 
+                                 user_request=user_request, 
+                                 ai_response=ai_response)
+        except Exception as e:
+            flash(f'AI Assistant error: {e}', 'error')
+    
+    return render_template('admin_ai_assistant.html')
+
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
