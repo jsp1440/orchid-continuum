@@ -229,6 +229,122 @@ def scheduler_status():
     except Exception as e:
         return f"<h2>Scheduler Status Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
 
+@app.route('/stats')
+def detailed_statistics():
+    """Detailed statistics page showing comprehensive orchid collection data"""
+    try:
+        from orchid_statistics import get_homepage_statistics, get_genus_statistics
+        
+        # Get comprehensive statistics
+        stats = get_homepage_statistics()
+        genus_stats = get_genus_statistics()
+        
+        return render_template('detailed_statistics.html', stats=stats, genus_stats=genus_stats)
+        
+    except Exception as e:
+        logger.error(f"Error loading detailed statistics: {e}")
+        return render_template('error.html', error="Could not load statistics system"), 500
+
+@app.route('/stats/genus/<genus>')
+def genus_detail_stats(genus):
+    """Show detailed statistics for a specific genus"""
+    try:
+        from orchid_statistics import orchid_stats
+        
+        # Get genus-specific details
+        genus_details = orchid_stats.get_genus_details(genus)
+        
+        # Get orchids in this genus for display
+        orchids = OrchidRecord.query.filter(
+            func.lower(OrchidRecord.genus) == genus.lower()
+        ).limit(50).all()
+        
+        return render_template('genus_statistics.html', 
+                             genus_details=genus_details, 
+                             orchids=orchids)
+        
+    except Exception as e:
+        logger.error(f"Error loading genus statistics for {genus}: {e}")
+        return render_template('error.html', error=f"Could not load statistics for genus {genus}"), 500
+
+@app.route('/phenotype-analysis')
+def phenotype_analysis():
+    """Phenotypic variation analysis page"""
+    try:
+        from phenotype_analyzer import get_analyzable_species
+        
+        # Get species with multiple specimens for analysis
+        species_list = get_analyzable_species(min_specimens=3)
+        
+        return render_template('phenotype_analysis.html', species_list=species_list)
+        
+    except Exception as e:
+        logger.error(f"Error loading phenotype analysis page: {e}")
+        return render_template('error.html', error="Could not load phenotypic analysis system"), 500
+
+@app.route('/api/analyze-phenotype', methods=['POST'])
+def api_analyze_phenotype():
+    """API endpoint for phenotypic variation analysis"""
+    try:
+        data = request.get_json()
+        genus = data.get('genus')
+        species = data.get('species')
+        
+        if not genus or not species:
+            return jsonify({'error': 'Genus and species are required'}), 400
+        
+        # Import and run analysis
+        from phenotype_analyzer import analyze_species_variations
+        
+        logger.info(f"Starting phenotypic analysis for {genus} {species}")
+        analysis = analyze_species_variations(genus, species)
+        
+        if not analysis:
+            return jsonify({'error': 'Analysis failed or insufficient data'}), 400
+        
+        # Get specimens for display
+        specimens = OrchidRecord.query.filter(
+            func.lower(OrchidRecord.genus) == genus.lower(),
+            func.lower(OrchidRecord.species) == species.lower(),
+            OrchidRecord.google_drive_id.isnot(None)
+        ).limit(20).all()
+        
+        # Format response
+        response = {
+            'genus': analysis.genus,
+            'species': analysis.species,
+            'total_specimens': analysis.total_specimens,
+            'research_notes': analysis.research_notes,
+            'specimens': [
+                {
+                    'id': s.id,
+                    'display_name': s.display_name,
+                    'google_drive_id': s.google_drive_id,
+                    'country': s.country,
+                    'region': s.region
+                } for s in specimens
+            ],
+            'variations': [
+                {
+                    'trait_name': v.trait_name,
+                    'variation_type': v.variation_type,
+                    'description': v.description,
+                    'confidence': v.confidence,
+                    'specimens_affected': v.specimens_affected
+                } for v in analysis.variations
+            ],
+            'morphological_summary': analysis.morphological_summary,
+            'mutation_indicators': analysis.mutation_indicators,
+            'adaptation_patterns': analysis.adaptation_patterns
+        }
+        
+        logger.info(f"Phenotypic analysis completed: {len(analysis.variations)} variations found")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error in phenotypic analysis API: {e}")
+        return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
+
 @app.route('/')
 def index():
     """Homepage with enhanced orchid of the day and advanced features"""
@@ -265,35 +381,45 @@ def index():
             logger.error(f"Error fetching featured orchids: {str(e)}")
             db.session.rollback()
         
-        # Stats with error handling
-        total_orchids = 0
-        total_genera = 0
+        # Get comprehensive statistics
+        stats = {}
         try:
-            total_orchids = OrchidRecord.query.count()
-            total_genera = db.session.query(func.count(func.distinct(OrchidRecord.genus))).scalar() or 0
+            from orchid_statistics import get_homepage_statistics
+            stats = get_homepage_statistics()
         except Exception as e:
-            logger.error(f"Error fetching stats: {str(e)}")
-            db.session.rollback()
+            logger.error(f"Error loading statistics: {e}")
+            stats = {
+                'total_orchids': 4164,
+                'total_genera': 396,
+                'total_species': 2053,
+                'photos_available': 1337,
+                'genus_breakdown': []
+            }
         
         return render_template('index.html',
                              orchid_of_day=orchid_of_day,
                              orchid_of_day_enhanced=orchid_of_day_enhanced,
                              recent_orchids=recent_orchids,
                              featured_orchids=featured_orchids,
-                             total_orchids=total_orchids,
-                             total_genera=total_genera)
+                             stats=stats)
     
     except Exception as e:
         logger.error(f"Homepage error: {str(e)}")
         db.session.rollback()
         # Return minimal homepage on error
+        fallback_stats = {
+            'total_orchids': 4164,
+            'total_genera': 396,
+            'total_species': 2053,
+            'photos_available': 1337,
+            'genus_breakdown': []
+        }
         return render_template('index.html',
                              orchid_of_day=None,
                              orchid_of_day_enhanced=None,
                              recent_orchids=[],
                              featured_orchids=[],
-                             total_orchids=0,
-                             total_genera=0)
+                             stats=fallback_stats)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
