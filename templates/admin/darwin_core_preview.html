@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Darwin Core Export Preview{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🌍 Darwin Core Export Preview</h1>
+            <p class="lead">Preview how your Orchid Atlas data will be mapped to Darwin Core standards for GBIF publishing.</p>
+        </div>
+    </div>
+
+    <!-- Export Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h5><i data-feather="bar-chart-2"></i> Export Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h3 class="text-primary">{{ export_stats.total_records }}</h3>
+                            <p class="mb-0">Total Records</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h3 class="text-success">{{ export_stats.records_with_images }}</h3>
+                            <p class="mb-0">With Images</p>
+                            <small class="text-muted">{{ export_stats.image_percentage }}%</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h3 class="text-info">{{ export_stats.records_with_coordinates }}</h3>
+                            <p class="mb-0">With Coordinates</p>
+                            <small class="text-muted">{{ export_stats.coordinate_percentage }}%</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <a href="{{ url_for('export_darwin_core') }}" class="btn btn-primary btn-lg">
+                                <i data-feather="download"></i> Download DwC Archive
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample Mapping Preview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="eye"></i> Sample Records - Darwin Core Mapping</h5>
+                    <p class="mb-0 text-muted">Showing how your orchid data will be transformed for GBIF publishing</p>
+                </div>
+                <div class="card-body">
+                    {% for sample in mapped_samples %}
+                    <div class="row mb-4 border-bottom pb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Original Record</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>ID:</strong></td>
+                                    <td>{{ sample.original.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Display Name:</strong></td>
+                                    <td>{{ sample.original.display_name or 'Not set' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Scientific Name:</strong></td>
+                                    <td><em>{{ sample.original.scientific_name or 'Not set' }}</em></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Genus:</strong></td>
+                                    <td>{{ sample.original.genus or 'Not set' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Species:</strong></td>
+                                    <td>{{ sample.original.species or 'Not set' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Region:</strong></td>
+                                    <td>{{ sample.original.region or 'Not set' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Photographer:</strong></td>
+                                    <td>{{ sample.original.photographer or 'Not set' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Darwin Core Mapping</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>occurrenceID:</strong></td>
+                                    <td><code>{{ sample.darwin_core.occurrenceID }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>scientificName:</strong></td>
+                                    <td><em>{{ sample.darwin_core.scientificName }}</em></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>basisOfRecord:</strong></td>
+                                    <td>{{ sample.darwin_core.basisOfRecord }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>family:</strong></td>
+                                    <td>{{ sample.darwin_core.family }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>genus:</strong></td>
+                                    <td>{{ sample.darwin_core.genus }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>country:</strong></td>
+                                    <td>{{ sample.darwin_core.country or 'Not mapped' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>recordedBy:</strong></td>
+                                    <td>{{ sample.darwin_core.recordedBy or 'Not set' }}</td>
+                                </tr>
+                                {% if sample.darwin_core.decimalLatitude %}
+                                <tr>
+                                    <td><strong>Coordinates:</strong></td>
+                                    <td>{{ sample.darwin_core.decimalLatitude }}, {{ sample.darwin_core.decimalLongitude }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Darwin Core Fields Reference -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="list"></i> Complete Darwin Core Fields</h5>
+                    <p class="mb-0 text-muted">All fields included in the export archive</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for field in dwc_fields %}
+                        <div class="col-md-4 col-lg-3 mb-2">
+                            <code class="text-primary">{{ field }}</code>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Instructions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5><i data-feather="info"></i> GBIF Publishing Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li><strong>Download</strong> the Darwin Core Archive ZIP file using the button above</li>
+                        <li><strong>Validate</strong> the archive using GBIF's data validator: <a href="https://www.gbif.org/tools/data-validator" target="_blank">https://www.gbif.org/tools/data-validator</a></li>
+                        <li><strong>Register</strong> as a GBIF data publisher if you haven't already</li>
+                        <li><strong>Upload</strong> the archive through GBIF's IPT (Integrated Publishing Toolkit)</li>
+                        <li><strong>Publish</strong> your dataset to make it globally accessible</li>
+                    </ol>
+                    
+                    <div class="alert alert-info mt-3">
+                        <strong>📊 Data Quality Notes:</strong>
+                        <ul class="mb-0">
+                            <li>{{ export_stats.coordinate_percentage }}% of records have geographic coordinates</li>
+                            <li>{{ export_stats.image_percentage }}% of records have associated images</li>
+                            <li>All records include institution code "FCOS" (Five Cities Orchid Society)</li>
+                            <li>License: CC-BY-NC (Creative Commons Attribution-NonCommercial)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4 mb-5">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('export_darwin_core') }}" class="btn btn-primary btn-lg me-3">
+                <i data-feather="download"></i> Download Darwin Core Archive
+            </a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                <i data-feather="arrow-left"></i> Back to Admin
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Feather icons
+    feather.replace();
+</script>
+{% endblock %}
