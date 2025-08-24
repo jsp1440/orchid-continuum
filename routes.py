@@ -212,18 +212,33 @@ def test_filename_parser():
 app.register_blueprint(processing_bp)
 app.register_blueprint(photo_editor_bp)
 
+# Register advanced gallery system
+from advanced_gallery_routes import advanced_gallery_bp
+app.register_blueprint(advanced_gallery_bp, url_prefix='/advanced_gallery')
+
 @app.route('/')
 def index():
-    """Homepage with featured orchids and widgets"""
+    """Homepage with enhanced orchid of the day and advanced features"""
     try:
-        # Get orchid of the day
-        orchid_of_day = get_orchid_of_the_day()
+        # Get enhanced orchid of the day
+        from enhanced_orchid_of_day import EnhancedOrchidOfDay
+        enhanced_system = EnhancedOrchidOfDay()
+        orchid_of_day_enhanced = enhanced_system.get_enhanced_orchid_of_day()
+        
+        # Fallback to basic orchid of day if enhanced fails
+        orchid_of_day = orchid_of_day_enhanced['orchid'] if orchid_of_day_enhanced else get_orchid_of_the_day()
         
         # Get recent uploads with error handling
         recent_orchids = []
         try:
             recent_orchids = OrchidRecord.query.filter(
-                OrchidRecord.image_url.isnot(None)
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    and_(
+                        OrchidRecord.image_url.isnot(None),
+                        OrchidRecord.image_url != '/static/images/orchid_placeholder.svg'
+                    )
+                )
             ).order_by(OrchidRecord.created_at.desc()).limit(6).all()
         except Exception as e:
             logger.error(f"Error fetching recent orchids: {str(e)}")
@@ -249,6 +264,7 @@ def index():
         
         return render_template('index.html',
                              orchid_of_day=orchid_of_day,
+                             orchid_of_day_enhanced=orchid_of_day_enhanced,
                              recent_orchids=recent_orchids,
                              featured_orchids=featured_orchids,
                              total_orchids=total_orchids,
@@ -260,6 +276,7 @@ def index():
         # Return minimal homepage on error
         return render_template('index.html',
                              orchid_of_day=None,
+                             orchid_of_day_enhanced=None,
                              recent_orchids=[],
                              featured_orchids=[],
                              total_orchids=0,
