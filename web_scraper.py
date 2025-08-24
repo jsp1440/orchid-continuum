@@ -28,7 +28,7 @@ def scrape_gary_yong_gee():
     """
     Scrape orchid information from Gary Yong Gee's website
     """
-    base_url = "https://garyyonggee.com"
+    base_url = "https://yonggee.name"
     results = {'processed': 0, 'errors': 0, 'skipped': 0}
     
     try:
@@ -139,7 +139,7 @@ def scrape_roberta_fox():
     """
     Scrape orchid information from Roberta Fox's website
     """
-    base_url = "https://robertafox.com"
+    base_url = "https://southcoastorchidsociety.com/bio_RobertaFox.html"
     results = {'processed': 0, 'errors': 0, 'skipped': 0}
     
     try:
