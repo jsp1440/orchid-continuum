@@ -26,15 +26,15 @@ class DarwinCoreExporter:
             'datasetName', 'references'
         ]
         
-    def export_to_dwc_archive(self, output_dir="darwin_core_export"):
-        """Export all orchid records to Darwin Core Archive"""
+    def export_to_dwc_archive(self, output_dir="darwin_core_export", enhance_data=True):
+        """Export all orchid records to Darwin Core Archive with optional enhancement"""
         
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
             
-        # Export occurrence data
+        # Export occurrence data with enhancement
         occurrence_file = os.path.join(output_dir, "occurrence.txt")
-        self.export_occurrence_data(occurrence_file)
+        self.export_occurrence_data(occurrence_file, enhance_data=enhance_data)
         
         # Create meta.xml
         meta_file = os.path.join(output_dir, "meta.xml")
@@ -50,8 +50,8 @@ class DarwinCoreExporter:
         
         return archive_file
     
-    def export_occurrence_data(self, output_file):
-        """Export occurrence.txt with all orchid records"""
+    def export_occurrence_data(self, output_file, enhance_data=True):
+        """Export occurrence.txt with all orchid records, optionally enhanced"""
         
         from models import OrchidRecord
         
@@ -62,8 +62,25 @@ class DarwinCoreExporter:
             # Get all orchid records
             records = OrchidRecord.query.all()
             
+            # Create basic Darwin Core records
+            dwc_records = []
             for record in records:
                 dwc_record = self.map_orchid_to_dwc(record)
+                dwc_records.append(dwc_record)
+            
+            # Enhance with authoritative data if requested
+            if enhance_data:
+                print(f"🔧 Enhancing {len(dwc_records)} records with taxonomic data...")
+                try:
+                    from darwin_core_enhancer import OrchidDataEnhancer
+                    enhancer = OrchidDataEnhancer()
+                    dwc_records = enhancer.enhance_darwin_core_records(dwc_records)
+                    print(f"✅ Enhanced {enhancer.enhanced_count} records")
+                except ImportError:
+                    print("⚠️ Data enhancer not available, using basic mapping")
+            
+            # Write enhanced records
+            for dwc_record in dwc_records:
                 writer.writerow(dwc_record)
     
     def map_orchid_to_dwc(self, orchid):
