@@ -283,17 +283,17 @@
                              onerror="this.onerror=null; this.src='/static/images/fcos_placeholder_square.png'; this.alt='Orchid photo coming soon'; console.error('Recent orchid failed:', '{{ orchid.display_name }}');"
                              onload="console.log('✅ Recent orchid loaded:', '{{ orchid.display_name }}');">
                     {% elif orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' %}
-                        <img src="/api/proxy-image?url={{ orchid.image_url|urlencode }}" 
-                             class="card-img-top"
+                        <img data-src="/api/proxy-image?url={{ orchid.image_url|urlencode }}" 
+                             src="/static/images/fcos_placeholder_square.png"
+                             class="card-img-top lazy" 
                              alt="{{ orchid.display_name }}"
-                             style="height: 120px; width: 100%; object-fit: cover; background: red !important; border: 3px solid yellow !important; z-index: 9999 !important; position: relative !important;"
-                             onerror="console.error('❌ PROXY FAILED:', '{{ orchid.image_url }}'); this.style.background='orange'; this.style.border='3px solid red';"
-                             onload="console.log('✅ VISIBLE TEST:', '{{ orchid.display_name }}'); this.style.background='green'; this.style.border='3px solid blue';">
+                             style="height: 120px; width: 100%; object-fit: cover;"
+                             onload="console.log('✅ LAZY LOAD SUCCESS:', '{{ orchid.display_name }}');">
                     {% else %}
                         <img src="/static/images/fcos_placeholder_square.png" 
                              class="card-img-top" 
                              alt="Orchid photo coming soon"
-                             style="height: 120px; object-fit: cover; background: purple; border: 3px solid orange;">
+                             style="height: 120px; object-fit: cover;">
                     {% endif %}
                     <div class="card-body p-2">
                         <h6 class="card-title small mb-1 text-truncate">{{ orchid.display_name or orchid.scientific_name }}</h6>
