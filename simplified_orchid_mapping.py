@@ -113,6 +113,72 @@ class SimplifiedOrchidMapper:
             logger.error(f"❌ Error retrieving regional orchid data: {e}")
             return []
     
+    def get_genus_regional_data(self, genus: str) -> List[Dict[str, Any]]:
+        """
+        Get orchid data for a specific genus organized by regions
+        
+        Args:
+            genus: The orchid genus to filter by
+            
+        Returns:
+            List of regional orchid data for the specified genus
+        """
+        try:
+            with app.app_context():
+                # Get orchids for specific genus grouped by region
+                orchids = OrchidRecord.query.filter(
+                    OrchidRecord.genus == genus,
+                    OrchidRecord.region.isnot(None)
+                ).all()
+                
+                regional_data = {}
+                
+                for orchid in orchids:
+                    region = orchid.region.strip() if orchid.region else 'Unknown'
+                    
+                    if region not in regional_data:
+                        regional_data[region] = {
+                            'orchids': [],
+                            'count': 0,
+                            'species': set()
+                        }
+                    
+                    regional_data[region]['orchids'].append({
+                        'id': orchid.id,
+                        'scientific_name': orchid.scientific_name or 'Unknown',
+                        'genus': orchid.genus or 'Unknown',
+                        'species': orchid.species or 'Unknown',
+                        'display_name': orchid.display_name or orchid.scientific_name,
+                        'native_habitat': orchid.native_habitat or 'Unknown'
+                    })
+                    
+                    regional_data[region]['count'] += 1
+                    if orchid.scientific_name:
+                        regional_data[region]['species'].add(orchid.scientific_name)
+                
+                # Convert to list with coordinates
+                map_data = []
+                for region, data in regional_data.items():
+                    coords = self.region_coordinates.get(region, [0.0, 0.0])
+                    
+                    map_data.append({
+                        'region': region,
+                        'lat': coords[0],
+                        'lng': coords[1],
+                        'orchid_count': data['count'],
+                        'unique_genera': 1,  # Only one genus
+                        'unique_species': len(data['species']),
+                        'sample_orchids': data['orchids'][:10],
+                        'genus': genus
+                    })
+                
+                logger.info(f"📍 Retrieved {len(map_data)} regional distributions for genus {genus}")
+                return map_data
+                
+        except Exception as e:
+            logger.error(f"❌ Error retrieving genus regional data for {genus}: {e}")
+            return []
+    
     def create_working_world_map(self) -> folium.Map:
         """
         Create working world map with regional orchid distributions

@@ -48,12 +48,14 @@ def world_map():
 def genus_map(genus):
     """Map showing distribution of specific orchid genus"""
     try:
-        mapper = OrchidGeographicMapper()
-        genus_map_obj = mapper.create_genus_distribution_map(genus)
+        # Use simplified mapper instead of the complex one
+        coordinates = simplified_mapper.get_genus_regional_data(genus)
+        stats = simplified_mapper.get_working_statistics()
         
-        return render_template('genus_map.html',
+        return render_template('world_orchid_map.html',
                              genus=genus,
-                             map_html=genus_map_obj._repr_html_())
+                             stats=stats,
+                             orchid_limit=len(coordinates))
         
     except Exception as e:
         logger.error(f"❌ Error creating genus map for {genus}: {e}")
@@ -104,18 +106,33 @@ def api_statistics():
 def api_export(format_type):
     """API endpoint for exporting geographic data"""
     try:
-        mapper = OrchidGeographicMapper()
-        exported_data = mapper.export_geographic_data(format_type=format_type)
-        
-        if 'error' in exported_data:
-            return jsonify({
-                'success': False,
-                'error': exported_data['error']
-            }), 400
+        # Use simplified mapper for export
+        coordinates = simplified_mapper.get_regional_orchid_data()
         
         if format_type == 'geojson':
+            geojson_data = {
+                "type": "FeatureCollection",
+                "features": []
+            }
+            
+            for region in coordinates:
+                feature = {
+                    "type": "Feature",
+                    "properties": {
+                        "region": region.get('region', 'Unknown'),
+                        "orchid_count": region.get('orchid_count', 0),
+                        "unique_genera": region.get('unique_genera', 0),
+                        "unique_species": region.get('unique_species', 0)
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [region.get('lng', 0), region.get('lat', 0)]
+                    }
+                }
+                geojson_data["features"].append(feature)
+            
             return Response(
-                json.dumps(exported_data, indent=2),
+                json.dumps(geojson_data, indent=2),
                 mimetype='application/geo+json',
                 headers={'Content-Disposition': 'attachment; filename=orchid_occurrences.geojson'}
             )
@@ -125,11 +142,19 @@ def api_export(format_type):
             import io
             
             output = io.StringIO()
-            if exported_data['data']:
-                fieldnames = exported_data['data'][0].keys()
+            if coordinates:
+                fieldnames = ['region', 'lat', 'lng', 'orchid_count', 'unique_genera', 'unique_species']
                 writer = csv.DictWriter(output, fieldnames=fieldnames)
                 writer.writeheader()
-                writer.writerows(exported_data['data'])
+                for region in coordinates:
+                    writer.writerow({
+                        'region': region.get('region', 'Unknown'),
+                        'lat': region.get('lat', 0),
+                        'lng': region.get('lng', 0),
+                        'orchid_count': region.get('orchid_count', 0),
+                        'unique_genera': region.get('unique_genera', 0),
+                        'unique_species': region.get('unique_species', 0)
+                    })
             
             return Response(
                 output.getvalue(),
@@ -137,7 +162,10 @@ def api_export(format_type):
                 headers={'Content-Disposition': 'attachment; filename=orchid_occurrences.csv'}
             )
         else:
-            return jsonify(exported_data)
+            return jsonify({
+                'success': True,
+                'data': coordinates
+            })
             
     except Exception as e:
         logger.error(f"❌ API error exporting {format_type}: {e}")
@@ -150,33 +178,15 @@ def api_export(format_type):
 def api_genus_coordinates(genus):
     """API endpoint for specific genus coordinates"""
     try:
-        mapper = OrchidGeographicMapper()
-        
-        with mapper.app.app_context():
-            from models import OrchidRecord
-            orchids = OrchidRecord.query.filter(
-                OrchidRecord.genus == genus,
-                OrchidRecord.latitude.isnot(None),
-                OrchidRecord.longitude.isnot(None)
-            ).all()
-            
-            coordinates = []
-            for orchid in orchids:
-                coordinates.append({
-                    'id': orchid.id,
-                    'lat': float(orchid.latitude),
-                    'lng': float(orchid.longitude),
-                    'scientific_name': orchid.scientific_name or 'Unknown',
-                    'species': orchid.species or 'Unknown',
-                    'region': orchid.region or 'Unknown',
-                    'habitat': orchid.native_habitat or 'Unknown'
-                })
+        # Use simplified mapper for genus data
+        coordinates = simplified_mapper.get_genus_regional_data(genus)
         
         return jsonify({
             'success': True,
             'genus': genus,
             'coordinates': coordinates,
-            'total': len(coordinates)
+            'total': len(coordinates),
+            'type': 'regional_approximations'
         })
         
     except Exception as e:
@@ -190,21 +200,17 @@ def api_genus_coordinates(genus):
 def api_regions():
     """API endpoint for available regions with orchid data"""
     try:
-        mapper = OrchidGeographicMapper()
+        # Use simplified mapper for region data
+        regions = simplified_mapper.get_regional_orchid_data()
         
-        with mapper.app.app_context():
-            from models import OrchidRecord
-            regions = mapper.db.session.query(
-                OrchidRecord.region,
-                mapper.db.func.count(OrchidRecord.id).label('count')
-            ).filter(
-                OrchidRecord.region.isnot(None),
-                OrchidRecord.latitude.isnot(None)
-            ).group_by(OrchidRecord.region).order_by(
-                mapper.db.func.count(OrchidRecord.id).desc()
-            ).all()
-            
-            region_data = [{'region': r.region, 'count': r.count} for r in regions]
+        region_data = [
+            {
+                'region': r.get('region', 'Unknown'), 
+                'count': r.get('orchid_count', 0),
+                'lat': r.get('lat', 0),
+                'lng': r.get('lng', 0)
+            } for r in regions
+        ]
         
         return jsonify({
             'success': True,
@@ -228,8 +234,8 @@ def mapping_help():
 def mapping_dashboard():
     """Geographic mapping dashboard with analytics"""
     try:
-        mapper = OrchidGeographicMapper()
-        stats = mapper.get_geographic_statistics()
+        # Use simplified mapper for dashboard
+        stats = simplified_mapper.get_working_statistics()
         
         return render_template('mapping_dashboard.html', statistics=stats)
         
