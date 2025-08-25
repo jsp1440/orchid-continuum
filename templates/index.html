@@ -1,100 +1,86 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Orchid of the Day - Above the Fold Feature -->
+<!-- Orchid of the Day - Above the Fold Hero -->
 {% if orchid_of_day %}
-<div class="orchid-of-day-hero py-5 mb-4" style="background: linear-gradient(135deg, #4a7c59 0%, #6fa16c 100%);">
+<div class="orchid-of-day-hero py-4 mb-3" style="background: linear-gradient(135deg, #C5A3D0 0%, #7A4B8E 100%);">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-12 text-center mb-4">
-                <h1 class="display-4 text-white fw-bold mb-2">
-                    <i data-feather="star" class="me-3" style="width: 48px; height: 48px; color: #ffc107;"></i>
-                    ORCHID OF THE DAY
-                </h1>
-                <p class="h5 text-light mb-0" style="opacity: 0.9;">
-                    Five Cities Orchid Society Daily Feature
-                </p>
-            </div>
-        </div>
         <div class="row justify-content-center">
-            <div class="col-lg-8 col-xl-6">
+            <div class="col-lg-10 col-xl-8">
                 <div class="card bg-dark text-white border-0 shadow-lg">
-                    <div class="position-relative">
-                        {% if orchid_of_day.google_drive_id %}
-                        <img src="/api/drive-photo/{{ orchid_of_day.google_drive_id }}" 
-                             alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
-                             class="card-img-top"
-                             style="height: 400px; object-fit: cover;"
-                             onerror="this.src='/static/images/orchid_placeholder.svg';">
-                        {% elif orchid_of_day.image_url and orchid_of_day.image_url != '/static/images/orchid_placeholder.svg' %}
-                        <img src="{{ orchid_of_day.image_url }}" 
-                             alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
-                             class="card-img-top"
-                             style="height: 400px; object-fit: cover;"
-                             onerror="this.src='/static/images/orchid_placeholder.svg';">
-                        {% else %}
-                        <div class="card-img-top d-flex align-items-center justify-content-center bg-secondary" style="height: 400px;">
-                            <i data-feather="image" style="width: 64px; height: 64px; color: #6c757d;"></i>
+                    <div class="row g-0">
+                        <div class="col-md-6">
+                            <div class="position-relative">
+                                {% if orchid_of_day.google_drive_id %}
+                                <img src="/api/drive-photo/{{ orchid_of_day.google_drive_id }}" 
+                                     alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                                     class="card-img"
+                                     style="height: 300px; object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;"
+                                     onerror="this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon';">
+                                {% elif orchid_of_day.image_url and orchid_of_day.image_url != '/static/images/orchid_placeholder.svg' %}
+                                <img src="{{ orchid_of_day.image_url }}" 
+                                     alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                                     class="card-img"
+                                     style="height: 300px; object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;"
+                                     onerror="this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon';">
+                                {% else %}
+                                <img src="/static/images/fcos_placeholder_rect.png" 
+                                     alt="Orchid photo coming soon" 
+                                     class="card-img"
+                                     style="height: 300px; object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;">
+                                {% endif %}
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+                                        <i data-feather="star" style="width: 14px; height: 14px;" class="me-1"></i>
+                                        Today
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        {% endif %}
-                        <div class="position-absolute top-0 end-0 m-3">
-                            <span class="badge bg-warning text-dark fw-bold px-3 py-2 fs-6">
-                                <i data-feather="calendar" style="width: 16px; height: 16px;" class="me-1"></i>
-                                Today
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body p-4">
-                        <h3 class="card-title text-warning mb-3">
-                            {% if orchid_of_day_enhanced and orchid_of_day_enhanced.orchid.expanded_display_name %}
-                                {{ orchid_of_day_enhanced.orchid.expanded_display_name }}
-                            {% elif orchid_of_day.display_name %}
-                                {{ orchid_of_day.display_name }}
-                            {% else %}
-                                {{ orchid_of_day.scientific_name }}
-                            {% endif %}
-                        </h3>
-                        
-                        <div class="row g-3 mb-4">
-                            {% if orchid_of_day.genus %}
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <i data-feather="tag" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
-                                    <span><strong>Genus:</strong> {{ orchid_of_day.genus }}</span>
+                        <div class="col-md-6">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i data-feather="star" class="me-2 text-warning" style="width: 24px; height: 24px;"></i>
+                                    <h5 class="text-warning mb-0">ORCHID OF THE DAY</h5>
+                                </div>
+                                <h4 class="card-title mb-3">
+                                    {% if orchid_of_day_enhanced and orchid_of_day_enhanced.orchid.expanded_display_name %}
+                                        {{ orchid_of_day_enhanced.orchid.expanded_display_name }}
+                                    {% elif orchid_of_day.display_name %}
+                                        {{ orchid_of_day.display_name }}
+                                    {% else %}
+                                        {{ orchid_of_day.scientific_name }}
+                                    {% endif %}
+                                </h4>
+                                
+                                <div class="row g-2 mb-3 small">
+                                    {% if orchid_of_day.genus %}
+                                    <div class="col-12">
+                                        <i data-feather="tag" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
+                                        <strong>Genus:</strong> {{ orchid_of_day.genus }}
+                                    </div>
+                                    {% endif %}
+                                    {% if orchid_of_day.species %}
+                                    <div class="col-12">
+                                        <i data-feather="layers" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
+                                        <strong>Species:</strong> {{ orchid_of_day.species }}
+                                    </div>
+                                    {% endif %}
+                                    {% if orchid_of_day.region %}
+                                    <div class="col-12">
+                                        <i data-feather="map-pin" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
+                                        <strong>Origin:</strong> {{ orchid_of_day.region.title() }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning">
+                                        <i data-feather="eye" class="me-2"></i>
+                                        Learn More
+                                    </a>
                                 </div>
                             </div>
-                            {% endif %}
-                            {% if orchid_of_day.species %}
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <i data-feather="layers" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
-                                    <span><strong>Species:</strong> {{ orchid_of_day.species }}</span>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if orchid_of_day.region %}
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <i data-feather="map-pin" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
-                                    <span><strong>Origin:</strong> {{ orchid_of_day.region.title() }}</span>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if orchid_of_day.climate_preference %}
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <i data-feather="thermometer" class="me-2 text-warning" style="width: 18px; height: 18px;"></i>
-                                    <span><strong>Climate:</strong> {{ orchid_of_day.climate_preference.title() }}</span>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="text-center">
-                            <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning btn-lg px-4">
-                                <i data-feather="eye" class="me-2"></i>
-                                Explore This Orchid
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -104,332 +90,277 @@
 </div>
 {% endif %}
 
-<!-- Hero Section -->
-<div class="hero-section bg-gradient text-white py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="container">
-        <div class="row align-items-center text-center">
-            <div class="col-12">
-                <h1 class="display-3 fw-bold mb-3">
-                    The Orchid Continuum
-                </h1>
-                <p class="h5 text-light mb-4" style="opacity: 0.9;">
-                    A Project of the Five Cities Orchid Society
-                </p>
-                <p class="lead mb-4 mx-auto" style="max-width: 600px;">
-                    Enhanced digital tools for orchid society members. 
-                    Discover, identify, and share knowledge with comprehensive orchid database and AI-powered analysis.
-                </p>
-                <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    {% if not current_user.is_authenticated %}
-                    <a href="{{ url_for('upload') }}" class="btn btn-light btn-lg">
-                        <i data-feather="upload" class="me-2"></i>
-                        Share Your Orchid
-                    </a>
-                    <a href="{{ url_for('gallery') }}" class="btn btn-outline-light btn-lg">
-                        <i data-feather="grid" class="me-2"></i>
-                        Browse Collection
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('upload') }}" class="btn btn-light btn-lg">
-                        <i data-feather="upload" class="me-2"></i>
-                        Upload New Orchid
-                    </a>
-                    <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-light btn-lg">
-                        <i data-feather="layout" class="me-2"></i>
-                        My Dashboard
-                    </a>
-                    {% endif %}
+<!-- Quick Links Row -->
+<div class="container mb-4">
+    <div class="row g-2">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('gallery') }}" class="btn btn-outline-primary w-100 py-3">
+                <i data-feather="grid" class="d-block mx-auto mb-1" style="width: 24px; height: 24px;"></i>
+                <small>Browse Gallery</small>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('search') }}" class="btn btn-outline-secondary w-100 py-3">
+                <i data-feather="help-circle" class="d-block mx-auto mb-1" style="width: 24px; height: 24px;"></i>
+                <small>Search Orchids</small>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-success w-100 py-3">
+                <i data-feather="upload" class="d-block mx-auto mb-1" style="width: 24px; height: 24px;"></i>
+                <small>Upload Photo</small>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('database_coverage_route') }}" class="btn btn-outline-info w-100 py-3">
+                <i data-feather="database" class="d-block mx-auto mb-1" style="width: 24px; height: 24px;"></i>
+                <small>Database Sources</small>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Society Digital Tools - Compact -->
+<div class="container mb-4">
+    <div class="row">
+        <div class="col-12 text-center mb-3">
+            <h3 class="h4 text-light mb-2">Digital Tools & Resources</h3>
+            <p class="text-muted small mb-0">Professional orchid analysis and community features</p>
+        </div>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-primary border-1">
+                <div class="card-body text-center py-3">
+                    <i data-feather="cpu" style="width: 32px; height: 32px; color: #0d6efd;" class="mb-2"></i>
+                    <h6 class="card-title mb-1">AI Identification</h6>
+                    <p class="card-text small text-muted mb-2">Instant species identification with 95%+ accuracy</p>
+                    <span class="badge bg-primary">AI Powered</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-success border-1">
+                <div class="card-body text-center py-3">
+                    <i data-feather="award" style="width: 32px; height: 32px; color: #198754;" class="mb-2"></i>
+                    <h6 class="card-title mb-1">Judging Standards</h6>
+                    <p class="card-text small text-muted mb-2">Official AOS, RHS evaluation criteria</p>
+                    <span class="badge bg-success">Official</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-warning border-1">
+                <div class="card-body text-center py-3">
+                    <i data-feather="globe" style="width: 32px; height: 32px; color: #ffc107;" class="mb-2"></i>
+                    <h6 class="card-title mb-1">Global Database</h6>
+                    <p class="card-text small text-muted mb-2">Multiple international orchid databases</p>
+                    <span class="badge bg-warning text-dark">5+ Sources</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Why Use Orchid Continuum Section -->
-<div class="container mb-5">
+<!-- Compact Collection Statistics -->
+<div class="container mb-4">
     <div class="row">
-        <div class="col-12 text-center mb-5">
-            <h2 class="h1 text-light mb-3">Society Digital Tools & Resources</h2>
-            <p class="lead text-muted">
-                Explore our comprehensive orchid database and digital community features designed for members and enthusiasts
-            </p>
+        <div class="col-12 text-center mb-3">
+            <h3 class="h4 text-light">Collection Overview</h3>
+            <p class="text-muted small mb-0">Five Cities Orchid Society Database</p>
         </div>
     </div>
     
-    <div class="row g-4">
-        <!-- AI Analysis -->
-        <div class="col-lg-4">
-            <div class="card bg-dark text-light h-100 border-primary">
-                <div class="card-body text-center">
-                    <div class="mb-4">
-                        <i data-feather="cpu" style="width: 64px; height: 64px; color: #0d6efd;"></i>
-                    </div>
-                    <h4 class="card-title">Instant AI Identification</h4>
-                    <p class="card-text">
-                        Upload any orchid photo and get immediate AI-powered identification with detailed species information, 
-                        growing requirements, and care recommendations.
-                    </p>
-                    <div class="badge bg-primary mb-2">95%+ Accuracy Rate</div>
+    <!-- Main Statistics Row - Compact -->
+    <div class="row text-center mb-3">
+        <div class="col-6 col-md-3 mb-2">
+            <div class="card bg-dark text-light border-primary border-1 py-2">
+                <div class="card-body p-2">
+                    <i data-feather="database" class="text-primary mb-1" style="width: 20px; height: 20px;"></i>
+                    <div class="h5 text-primary mb-0">{{ stats.total_orchids or '5,516' }}</div>
+                    <small class="text-muted">Records</small>
                 </div>
             </div>
         </div>
-
-        <!-- Professional Judging -->
-        <div class="col-lg-4">
-            <div class="card bg-dark text-light h-100 border-success">
-                <div class="card-body text-center">
-                    <div class="mb-4">
-                        <i data-feather="award" style="width: 64px; height: 64px; color: #198754;"></i>
-                    </div>
-                    <h4 class="card-title">Professional Judging Standards</h4>
-                    <p class="card-text">
-                        Get your orchids evaluated using official judging criteria from AOS, RHS, and other major 
-                        orchid societies. Perfect for show preparation and quality assessment.
-                    </p>
-                    <div class="badge bg-success mb-2">Official Standards</div>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="card bg-dark text-light border-success border-1 py-2">
+                <div class="card-body p-2">
+                    <i data-feather="image" class="text-success mb-1" style="width: 20px; height: 20px;"></i>
+                    <div class="h5 text-success mb-0">{{ stats.photos_available or '2,472' }}</div>
+                    <small class="text-muted">Photos</small>
                 </div>
             </div>
         </div>
-
-        <!-- Global Database -->
-        <div class="col-lg-4">
-            <div class="card bg-dark text-light h-100 border-warning">
-                <div class="card-body text-center">
-                    <div class="mb-4">
-                        <i data-feather="globe" style="width: 64px; height: 64px; color: #ffc107;"></i>
-                    </div>
-                    <h4 class="card-title">Comprehensive Database Access</h4>
-                    <p class="card-text">
-                        Access data from RHS International Register, WorldPlants.de, American Orchid Society, 
-                        and other authoritative botanical databases in one place.
-                    </p>
-                    <div class="badge bg-warning text-dark mb-2">5+ Major Databases</div>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="card bg-dark text-light border-info border-1 py-2">
+                <div class="card-body p-2">
+                    <i data-feather="layers" class="text-info mb-1" style="width: 20px; height: 20px;"></i>
+                    <div class="h5 text-info mb-0">{{ stats.total_genera or '396' }}</div>
+                    <small class="text-muted">Genera</small>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Enhanced Statistics Section -->
-<div class="container mb-5">
-    <div class="row">
-        <div class="col-12 text-center mb-4">
-            <h2 class="text-light">Our Orchid Collection Statistics</h2>
-            <p class="text-muted">Comprehensive data across multiple international orchid databases</p>
-        </div>
-    </div>
-    
-    <!-- Main Statistics Row -->
-    <div class="row text-center mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-primary">
-                <div class="card-body">
-                    <i data-feather="database" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-primary">{{ stats.total_orchids or '4,164' }}</h3>
-                    <p class="mb-0">Total Orchid Records</p>
-                    <small class="text-muted">Across all databases</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-success">
-                <div class="card-body">
-                    <i data-feather="layers" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-success">{{ stats.total_genera or '396' }}</h3>
-                    <p class="mb-0">Genera Represented</p>
-                    <small class="text-muted">Unique taxonomic groups</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-info">
-                <div class="card-body">
-                    <i data-feather="tag" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-info">{{ stats.total_species or '2,053' }}</h3>
-                    <p class="mb-0">Species Documented</p>
-                    <small class="text-muted">Distinct species entries</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-warning">
-                <div class="card-body">
-                    <i data-feather="image" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-warning">{{ stats.photos_available or '1,337' }}</h3>
-                    <p class="mb-0">Photos Available</p>
-                    <small class="text-muted">High-quality images</small>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="card bg-dark text-light border-warning border-1 py-2">
+                <div class="card-body p-2">
+                    <i data-feather="tag" class="text-warning mb-1" style="width: 20px; height: 20px;"></i>
+                    <div class="h5 text-warning mb-0">{{ stats.total_species or '2,053' }}</div>
+                    <small class="text-muted">Species</small>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Secondary Statistics Row -->
-    <div class="row text-center mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-secondary">
-                <div class="card-body">
-                    <i data-feather="cpu" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-secondary">{{ stats.ai_analyzed or '500' }}</h3>
-                    <p class="mb-0">AI Analyzed</p>
-                    <small class="text-muted">Computer vision processed</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-secondary">
-                <div class="card-body">
-                    <i data-feather="map-pin" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-secondary">{{ stats.geographic_regions or '25' }}</h3>
-                    <p class="mb-0">Geographic Regions</p>
-                    <small class="text-muted">Worldwide coverage</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-secondary">
-                <div class="card-body">
-                    <i data-feather="shield" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-secondary">{{ stats.validated_count or '200' }}</h3>
-                    <p class="mb-0">Validated Records</p>
-                    <small class="text-muted">Expert verified</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card bg-dark text-light border-secondary">
-                <div class="card-body">
-                    <i data-feather="star" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
-                    <h3 class="text-secondary">{{ stats.featured_count or '12' }}</h3>
-                    <p class="mb-0">Featured Orchids</p>
-                    <small class="text-muted">Specially highlighted</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Top Genera Breakdown -->
+    <!-- Expandable Top Genera Section -->
     {% if stats.genus_breakdown %}
     <div class="row">
         <div class="col-12">
-            <div class="card bg-dark text-light border-0 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i data-feather="bar-chart-2" class="me-2"></i>Top Genera in Collection
-                        <span class="badge bg-primary ms-2">{{ stats.genus_breakdown|length }} Shown</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for genus_stat in stats.genus_breakdown[:12] %}
-                        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                            <div class="d-flex justify-content-between align-items-center p-2 bg-secondary rounded">
-                                <div>
-                                    <strong class="text-warning">{{ genus_stat.genus }}</strong><br>
-                                    <small class="text-muted">{{ genus_stat.species_count }} species</small>
-                                </div>
-                                <div class="text-end">
-                                    <div class="h6 mb-0 text-primary">{{ genus_stat.total_records }}</div>
-                                    <small class="text-success">{{ genus_stat.photos_count }} photos</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="text-center mt-3">
-                        <a href="/stats" class="btn btn-outline-primary">
-                            <i data-feather="trending-up" class="me-2"></i>View Detailed Statistics
-                        </a>
-                        <a href="/phenotype-analysis" class="btn btn-outline-success ms-2">
-                            <i data-feather="microscope" class="me-2"></i>Phenotype Analysis
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-    <!-- Recent Orchids -->
-    {% if recent_orchids %}
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h3 mb-0">
-                    <i data-feather="clock" class="me-2"></i>Recent Additions
-                </h2>
-                <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
-                    View All <i data-feather="arrow-right" class="ms-1"></i>
-                </a>
+            <div class="text-center">
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#topGeneraCollapse" aria-expanded="false">
+                    <i data-feather="bar-chart-2" class="me-1" style="width: 16px; height: 16px;"></i>
+                    View Top Genera <i data-feather="chevron-down" class="ms-1" style="width: 16px; height: 16px;"></i>
+                </button>
             </div>
             
-            <div class="row g-4">
-                {% for orchid in recent_orchids %}
-                <div class="col-md-4 col-lg-2">
-                    <div class="card border-0 shadow-sm h-100">
-                        {% if orchid.image_url %}
-                            <img src="{{ orchid.image_url }}" class="card-img-top" alt="{{ orchid.display_name }}"
-                                 style="height: 180px; object-fit: cover;">
-                        {% else %}
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
-                                 style="height: 180px;">
-                                <i data-feather="image" class="text-muted"></i>
+            <div class="collapse mt-3" id="topGeneraCollapse">
+                <div class="card bg-dark text-light border-0">
+                    <div class="card-body p-3">
+                        <div class="row g-2">
+                            {% for genus_stat in stats.genus_breakdown[:8] %}
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-secondary rounded small">
+                                    <div>
+                                        <strong class="text-warning">{{ genus_stat.genus }}</strong><br>
+                                        <small class="text-muted">{{ genus_stat.species_count }} species</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="small text-primary">{{ genus_stat.total_records }}</div>
+                                    </div>
+                                </div>
                             </div>
-                        {% endif %}
-                        <div class="card-body p-3">
-                            <h6 class="card-title small mb-1">{{ orchid.display_name }}</h6>
-                            {% if orchid.genus %}
-                                <p class="text-muted small mb-2">{{ orchid.genus }}</p>
-                            {% endif %}
-                            <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            {% endfor %}
                         </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Featured Orchids -->
-    {% if featured_orchids %}
-    <div class="row mb-5">
-        <div class="col-12">
-            <h2 class="h3 mb-4">
-                <i data-feather="award" class="me-2"></i>Featured Orchids
-            </h2>
-            
-            <div class="row g-4">
-                {% for orchid in featured_orchids %}
-                <div class="col-md-6 col-lg-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        {% if orchid.image_url %}
-                            <img src="{{ orchid.image_url }}" class="card-img-top" alt="{{ orchid.display_name }}"
-                                 style="height: 200px; object-fit: cover;">
-                        {% endif %}
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-2">
-                                <h6 class="card-title mb-0">{{ orchid.display_name }}</h6>
-                                <i data-feather="star" class="ms-auto text-warning"></i>
-                            </div>
-                            {% if orchid.scientific_name %}
-                                <p class="text-muted small fst-italic mb-2">{{ orchid.scientific_name }}</p>
-                            {% endif %}
-                            {% if orchid.cultural_notes %}
-                                <p class="card-text small">{{ orchid.cultural_notes[:80] }}...</p>
-                            {% endif %}
-                            <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-sm btn-primary">
-                                Learn More
+                        <div class="text-center mt-2">
+                            <a href="/stats" class="btn btn-outline-primary btn-sm me-2">
+                                <i data-feather="trending-up" class="me-1" style="width: 14px; height: 14px;"></i>Detailed Stats
+                            </a>
+                            <a href="/phenotype-analysis" class="btn btn-outline-success btn-sm">
+                                <i data-feather="activity" class="me-1" style="width: 14px; height: 14px;"></i>Analysis
                             </a>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
     {% endif %}
+</div>
+
+<!-- Recent Additions - Horizontal Carousel -->
+{% if recent_orchids %}
+<div class="container mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h4 mb-0 text-light">
+            <i data-feather="clock" class="me-2"></i>Recent Additions
+        </h3>
+        <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary btn-sm">
+            View All <i data-feather="arrow-right" class="ms-1"></i>
+        </a>
+    </div>
+    
+    <div class="position-relative">
+        <div class="d-flex overflow-auto pb-2" style="scroll-behavior: smooth; scrollbar-width: thin;">
+            {% for orchid in recent_orchids %}
+            <div class="flex-shrink-0 me-3" style="width: 160px;">
+                <div class="card bg-dark text-light border-0 shadow-sm h-100">
+                    {% if orchid.google_drive_id %}
+                        <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                             class="card-img-top" 
+                             alt="{{ orchid.display_name }}"
+                             style="height: 120px; object-fit: cover;"
+                             onerror="this.src='/static/images/fcos_placeholder_square.png'; this.alt='Orchid photo coming soon';">
+                    {% elif orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' %}
+                        <img src="{{ orchid.image_url }}" 
+                             class="card-img-top" 
+                             alt="{{ orchid.display_name }}"
+                             style="height: 120px; object-fit: cover;"
+                             onerror="this.src='/static/images/fcos_placeholder_square.png'; this.alt='Orchid photo coming soon';">
+                    {% else %}
+                        <img src="/static/images/fcos_placeholder_square.png" 
+                             class="card-img-top" 
+                             alt="Orchid photo coming soon"
+                             style="height: 120px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body p-2">
+                        <h6 class="card-title small mb-1 text-truncate">{{ orchid.display_name or orchid.scientific_name }}</h6>
+                        {% if orchid.genus %}
+                            <p class="text-muted small mb-2 text-truncate">{{ orchid.genus }}</p>
+                        {% endif %}
+                        <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-xs btn-outline-primary btn-sm w-100">View</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Featured Orchids - Horizontal Carousel -->
+{% if featured_orchids %}
+<div class="container mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h4 mb-0 text-light">
+            <i data-feather="award" class="me-2 text-warning"></i>Featured Orchids
+            <span class="badge bg-warning text-dark ms-2">FCOS Highlights</span>
+        </h3>
+    </div>
+    
+    <div class="position-relative">
+        <div class="d-flex overflow-auto pb-2" style="scroll-behavior: smooth; scrollbar-width: thin;">
+            {% for orchid in featured_orchids %}
+            <div class="flex-shrink-0 me-3" style="width: 200px;">
+                <div class="card bg-dark text-light border-warning border-2 shadow-sm h-100">
+                    <div class="position-relative">
+                        {% if orchid.google_drive_id %}
+                            <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                                 class="card-img-top" 
+                                 alt="{{ orchid.display_name }}"
+                                 style="height: 140px; object-fit: cover;"
+                                 onerror="this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon';">
+                        {% elif orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' %}
+                            <img src="{{ orchid.image_url }}" 
+                                 class="card-img-top" 
+                                 alt="{{ orchid.display_name }}"
+                                 style="height: 140px; object-fit: cover;"
+                                 onerror="this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon';">
+                        {% else %}
+                            <img src="/static/images/fcos_placeholder_rect.png" 
+                                 class="card-img-top" 
+                                 alt="Orchid photo coming soon"
+                                 style="height: 140px; object-fit: cover;">
+                        {% endif %}
+                        <div class="position-absolute top-0 end-0 m-1">
+                            <i data-feather="star" class="text-warning" style="width: 16px; height: 16px;"></i>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <h6 class="card-title small mb-1 text-truncate text-warning">{{ orchid.display_name or orchid.scientific_name }}</h6>
+                        {% if orchid.scientific_name and orchid.display_name %}
+                            <p class="text-muted small fst-italic mb-2 text-truncate">{{ orchid.scientific_name }}</p>
+                        {% endif %}
+                        <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-xs btn-warning btn-sm w-100">
+                            Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Call to Action Section -->
 <div class="bg-gradient py-5 mb-5" style="background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);">
@@ -496,6 +427,46 @@
                     <i data-feather="database" class="mb-2 text-info" style="width: 32px; height: 32px;"></i>
                     <h6>Database Sources</h6>
                     <a href="{{ url_for('database_coverage_route') }}" class="btn btn-outline-info btn-sm">Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FCOS Integration Footer -->
+<div class="container-fluid bg-dark py-4 mt-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <img src="/static/images/five_cities_orchid_society_logo.png" 
+                         alt="Five Cities Orchid Society" 
+                         style="height: 40px; width: auto;" 
+                         class="me-3"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <i data-feather="star" class="me-3 text-warning" style="display: none; width: 24px; height: 24px;"></i>
+                    <div>
+                        <h6 class="mb-0 text-light">Five Cities Orchid Society</h6>
+                        <small class="text-muted">A Digital Resource of the Five Cities Orchid Society</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-flex flex-wrap justify-content-md-end gap-3 mb-2">
+                    <a href="/culture/demo" class="btn btn-outline-secondary btn-sm">
+                        <i data-feather="book-open" class="me-1" style="width: 14px; height: 14px;"></i>Culture Sheets
+                    </a>
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="upload" class="me-1" style="width: 14px; height: 14px;"></i>Upload Photo
+                    </a>
+                    <a href="{{ url_for('gallery') }}" class="btn btn-outline-success btn-sm">
+                        <i data-feather="grid" class="me-1" style="width: 14px; height: 14px;"></i>Browse Gallery
+                    </a>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        Serving Central Coast orchid enthusiasts since 1979
+                    </small>
                 </div>
             </div>
         </div>
