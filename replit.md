@@ -135,7 +135,15 @@ The system uses a dual-model approach:
 - **Widget system created** for Neon One website integration
 - **Direct photo display** from society's Google Drive storage
 
-### Recent Major Updates (August 2025)
+#### Weather/Habitat Comparison Widget System (August 25, 2025)
+- **Advanced comparison modes**: Calendar (raw), Seasonal (default with hemisphere offset), and Photoperiod (precise solar alignment)
+- **Biologically meaningful alignment**: Automatic seasonal phase matching and solar time calculations
+- **Interactive charts**: 24-hour and seasonal temperature/humidity overlays with real-time data
+- **Transparency badges**: Clear indicators for hemisphere offset, solar alignment, elevation adjustments, and confidence levels
+- **AI-powered insights**: Plain English recommendations with specific growing advice for greenhouse, indoor, outdoor, and lights environments
+- **Responsive design**: Desktop and mobile optimized with chart stacking and compact layouts
+- **My Orchid Collection integration**: Direct access from orchid detail pages with auto-loading habitat data
+- **Embeddable widget**: Standalone widget mode for external integration
 
 #### Advanced Comparison Interface
 - Implemented comprehensive orchid comparison system with AI-enhanced analysis
