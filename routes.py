@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
                    User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert)
-from orchid_ai import analyze_orchid_image, extract_metadata_from_text
+from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
 from utils import allowed_file, generate_filename, get_orchid_of_the_day
@@ -457,6 +457,43 @@ def index():
                              recent_orchids=[],
                              featured_orchids=[],
                              stats=fallback_stats)
+
+@app.route('/api/ai/baker-weather-advice', methods=['POST'])
+def baker_weather_advice():
+    """API endpoint for AI-powered Baker culture weather advice"""
+    try:
+        data = request.get_json()
+        orchid_id = data.get('orchid_id')
+        weather_data = data.get('weather', {})
+        forecast_data = data.get('forecast', [])
+        
+        if not orchid_id:
+            return jsonify({'success': False, 'error': 'Orchid ID required'})
+        
+        # Get orchid record
+        orchid = OrchidRecord.query.get(orchid_id)
+        if not orchid:
+            return jsonify({'success': False, 'error': 'Orchid not found'})
+        
+        # Generate AI advice using Baker culture data
+        advice = get_weather_based_care_advice(orchid, weather_data, forecast_data)
+        
+        if advice:
+            return jsonify({
+                'success': True,
+                'advice': advice,
+                'has_baker_data': bool(orchid.cultural_notes and 'BAKER' in orchid.cultural_notes)
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'advice': 'Monitor temperature and humidity. Adjust watering based on conditions.',
+                'has_baker_data': False
+            })
+        
+    except Exception as e:
+        logger.error(f"Error generating Baker weather advice: {str(e)}")
+        return jsonify({'success': False, 'error': 'Unable to generate advice'})
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():

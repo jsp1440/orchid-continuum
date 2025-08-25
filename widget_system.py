@@ -261,7 +261,9 @@ class OrchidWidgetSystem:
                     'climate_data': climate_mappings.get(orchid.climate_preference or 'intermediate', climate_mappings['intermediate']),
                     'temperature_range': orchid.temperature_range,
                     'light_requirements': orchid.light_requirements or 'Bright indirect',
-                    'growth_habit': orchid.growth_habit or 'epiphytic'
+                    'growth_habit': orchid.growth_habit or 'epiphytic',
+                    'cultural_notes': orchid.cultural_notes,
+                    'has_baker_data': bool(orchid.cultural_notes and 'BAKER' in orchid.cultural_notes)
                 } for orchid in orchids_to_show
             ],
             'climate_mappings': climate_mappings,

@@ -106,6 +106,12 @@ If you cannot identify the exact species, focus on genus-level identification an
             if key not in result:
                 result[key] = default_value
         
+        # Enhance with Baker culture data if this is a known species
+        if result.get('scientific_name'):
+            baker_advice = get_baker_culture_enhancement(result['scientific_name'])
+            if baker_advice:
+                result['baker_culture_notes'] = baker_advice
+        
         logger.info(f"Successfully analyzed orchid image with confidence: {result.get('confidence', 0.0)}")
         return result
         
@@ -117,6 +123,119 @@ If you cannot identify the exact species, focus on genus-level identification an
             'confidence': 0.0,
             'metadata': {}
         }
+
+def get_baker_culture_enhancement(scientific_name):
+    """Get Baker culture sheet data for a specific orchid species"""
+    try:
+        from models import OrchidRecord
+        
+        # Find Baker culture sheet for this species
+        baker_record = OrchidRecord.query.filter(
+            OrchidRecord.scientific_name == scientific_name,
+            OrchidRecord.photographer == 'Charles & Margaret Baker',
+            OrchidRecord.cultural_notes.isnot(None)
+        ).first()
+        
+        if baker_record and baker_record.cultural_notes:
+            return analyze_baker_culture_data(baker_record.cultural_notes)
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error getting Baker culture enhancement: {str(e)}")
+        return None
+
+def analyze_baker_culture_data(cultural_notes):
+    """
+    Analyze Baker culture sheet data using AI to extract structured recommendations
+    """
+    try:
+        if not cultural_notes or "BAKER'S CULTURE SHEET DATA" not in cultural_notes:
+            return None
+            
+        system_prompt = """You are an expert orchid cultivation specialist analyzing Charles & Margaret Baker culture sheet data.
+        
+Extract and structure the following information from the culture notes:
+        - climate_requirements: Specific temperature and climate needs
+        - humidity_optimal: Ideal humidity range
+        - seasonal_care: Care adjustments by season
+        - weather_adaptations: How to adapt care based on weather conditions
+        - growing_recommendations: Specific cultivation advice
+        - risk_factors: Weather conditions to avoid
+        - care_calendar: Monthly care schedule if mentioned
+        
+Provide actionable advice that can be used for weather-based growing recommendations.
+        Return as structured JSON."""
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Analyze this Baker culture data:\n\n{cultural_notes}"}
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=800
+        )
+        
+        return json.loads(response.choices[0].message.content)
+        
+    except Exception as e:
+        logger.error(f"Error analyzing Baker culture data: {str(e)}")
+        return None
+
+def get_weather_based_care_advice(orchid_record, current_weather, forecast_data=None):
+    """
+    Generate AI-powered care advice based on Baker culture data and current weather
+    """
+    try:
+        # Get Baker culture analysis if available
+        baker_analysis = None
+        if orchid_record.cultural_notes:
+            baker_analysis = analyze_baker_culture_data(orchid_record.cultural_notes)
+        
+        # Prepare weather context
+        weather_context = {
+            'temperature': current_weather.get('temperature'),
+            'humidity': current_weather.get('humidity'),
+            'conditions': current_weather.get('description'),
+            'forecast': forecast_data
+        }
+        
+        system_prompt = """You are an expert orchid growing advisor. Provide specific care recommendations based on:
+        1. Current weather conditions
+        2. Baker culture sheet data (if available)
+        3. Orchid species requirements
+        
+Provide practical, actionable advice for the next 2-3 days focusing on:
+        - Watering adjustments
+        - Humidity management 
+        - Temperature protection
+        - Light modifications
+        - Ventilation needs
+        
+Be specific and practical. Limit to 2-3 key recommendations."""
+        
+        orchid_info = {
+            'name': orchid_record.display_name,
+            'scientific_name': orchid_record.scientific_name,
+            'climate_preference': orchid_record.climate_preference,
+            'temperature_range': orchid_record.temperature_range,
+            'baker_culture_data': baker_analysis
+        }
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o", 
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Weather: {weather_context}\n\nOrchid: {orchid_info}\n\nProvide care advice:"}
+            ],
+            max_tokens=300
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        logger.error(f"Error generating weather-based care advice: {str(e)}")
+        return None
 
 def extract_metadata_from_text(text_content):
     """

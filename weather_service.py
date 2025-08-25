@@ -21,6 +21,60 @@ class WeatherService:
     HISTORICAL_URL = f"{BASE_URL}/historical"
     
     @staticmethod
+    def get_growing_conditions_analysis(weather_data: WeatherData, orchid_records: List = None) -> Dict:
+        """Analyze growing conditions based on weather and Baker culture data"""
+        try:
+            analysis = {
+                'overall_rating': 'good',
+                'temperature_status': 'optimal',
+                'humidity_status': 'adequate', 
+                'recommendations': [],
+                'baker_insights': []
+            }
+            
+            # Analyze temperature
+            temp = weather_data.temperature
+            if temp:
+                if temp < 10:
+                    analysis['temperature_status'] = 'too_cold'
+                    analysis['recommendations'].append('Protect orchids from cold temperatures')
+                elif temp > 35:
+                    analysis['temperature_status'] = 'too_hot'
+                    analysis['recommendations'].append('Increase ventilation and reduce light')
+                elif 15 <= temp <= 30:
+                    analysis['temperature_status'] = 'optimal'
+            
+            # Analyze humidity
+            humidity = weather_data.humidity
+            if humidity:
+                if humidity < 40:
+                    analysis['humidity_status'] = 'low'
+                    analysis['recommendations'].append('Increase humidity around orchids')
+                elif humidity > 90:
+                    analysis['humidity_status'] = 'high'
+                    analysis['recommendations'].append('Improve air circulation')
+                elif 50 <= humidity <= 80:
+                    analysis['humidity_status'] = 'optimal'
+            
+            # Add Baker culture insights for specific orchids
+            if orchid_records:
+                from orchid_ai import analyze_baker_culture_data
+                for orchid in orchid_records:
+                    if orchid.cultural_notes and 'BAKER' in orchid.cultural_notes:
+                        baker_data = analyze_baker_culture_data(orchid.cultural_notes)
+                        if baker_data:
+                            analysis['baker_insights'].append({
+                                'orchid': orchid.display_name,
+                                'insights': baker_data
+                            })
+            
+            return analysis
+            
+        except Exception as e:
+            logger.error(f"Error analyzing growing conditions: {str(e)}")
+            return {'overall_rating': 'unknown', 'recommendations': []}
+    
+    @staticmethod
     def get_current_weather(latitude: float, longitude: float, location_name: str = None) -> Optional[WeatherData]:
         """Fetch current weather conditions"""
         try:

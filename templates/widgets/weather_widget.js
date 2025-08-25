@@ -126,6 +126,7 @@
                 this.weatherData = { current, forecast };
                 this.updateWeatherDisplay();
                 this.updateClimateComparisons();
+                this.loadBakerAdvice(current, forecast);
             })
             .catch(error => {
                 console.error('Weather update error:', error);
