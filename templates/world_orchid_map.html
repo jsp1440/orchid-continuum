@@ -2,6 +2,8 @@
 {% set title = "World Orchid Distribution Map" %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 .map-container {
     background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
@@ -181,7 +183,7 @@
             </div>
             
             <div id="mapContainer" class="map-frame" style="display: none;">
-                {{ map_html|safe }}
+                <div id="leafletMap" style="height: 600px; width: 100%;"></div>
             </div>
         </div>
 
@@ -342,38 +344,197 @@
 </div>
 
 <script>
+// Global variables
+let orchidMap;
+let markersLayer;
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     feather.replace();
-    
-    // Show map after brief loading delay
-    setTimeout(() => {
+    initializeOrchidMap();
+});
+
+async function initializeOrchidMap() {
+    try {
+        // Show map container
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('mapContainer').style.display = 'block';
+        
+        // Initialize Leaflet map
+        orchidMap = L.map('leafletMap', {
+            center: [20.0, 0.0],
+            zoom: 2,
+            zoomControl: true,
+            attributionControl: true
+        });
+        
+        // Add base tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(orchidMap);
+        
+        // Add alternative tile layers
+        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            attribution: '© CartoDB'
+        });
+        
+        const darkTheme = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            attribution: '© CartoDB'
+        });
+        
+        // Layer control
+        const baseLayers = {
+            "OpenStreetMap": orchidMap._layers[Object.keys(orchidMap._layers)[0]],
+            "Light Theme": cartoDB,
+            "Dark Theme": darkTheme
+        };
+        
+        L.control.layers(baseLayers).addTo(orchidMap);
+        
+        // Load orchid data and add markers
+        await loadOrchidMarkers();
+        
         console.log('🗺️ Interactive orchid map loaded successfully');
-    }, 1500);
-});
+        
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        document.getElementById('mapContainer').innerHTML = `
+            <div class="alert alert-warning text-dark">
+                <h5><i class="fas fa-exclamation-triangle"></i> Map Loading Error</h5>
+                <p>Unable to load the interactive map. Please try refreshing the page.</p>
+                <small>Error: ${error.message}</small>
+            </div>
+        `;
+    }
+}
+
+async function loadOrchidMarkers() {
+    try {
+        // Fetch orchid coordinate data
+        const response = await fetch('/mapping/api/coordinates');
+        const data = await response.json();
+        
+        if (data.success && data.coordinates) {
+            // Create markers layer group
+            markersLayer = L.layerGroup();
+            
+            let markerCount = 0;
+            
+            // Add markers for each region
+            data.coordinates.forEach(region => {
+                // Create marker with custom popup
+                const marker = L.marker([region.lat, region.lng], {
+                    title: `${region.region}: ${region.orchid_count} orchids`
+                });
+                
+                // Create detailed popup content
+                const popupContent = `
+                    <div style="max-width: 300px;">
+                        <h5><strong>${region.region}</strong></h5>
+                        <p><strong>Orchid Count:</strong> ${region.orchid_count.toLocaleString()}</p>
+                        <p><strong>Unique Genera:</strong> ${region.unique_genera}</p>
+                        <p><strong>Unique Species:</strong> ${region.unique_species}</p>
+                        <hr>
+                        <h6>Sample Species:</h6>
+                        <ul style="margin: 0; padding-left: 1rem;">
+                `;
+                
+                let finalPopup = popupContent;
+                
+                // Add sample species (limit to 5)
+                if (region.sample_orchids && region.sample_orchids.length > 0) {
+                    region.sample_orchids.slice(0, 5).forEach(orchid => {
+                        finalPopup += `<li><em>${orchid.scientific_name}</em></li>`;
+                    });
+                }
+                
+                finalPopup += `
+                        </ul>
+                        <small class="text-muted">Regional distribution data</small>
+                    </div>
+                `;
+                
+                marker.bindPopup(finalPopup);
+                marker.bindTooltip(`${region.region}: ${region.orchid_count} orchids`);
+                
+                markersLayer.addLayer(marker);
+                markerCount++;
+            });
+            
+            // Add markers to map
+            markersLayer.addTo(orchidMap);
+            
+            console.log(`📍 Added ${markerCount} regional markers to map`);
+            
+            // Fit map to show all markers
+            if (markerCount > 0) {
+                orchidMap.fitBounds(markersLayer.getBounds(), {padding: [20, 20]});
+            }
+            
+        } else {
+            console.warn('No coordinate data available');
+            
+            // Add sample markers if no data
+            addSampleMarkers();
+        }
+        
+    } catch (error) {
+        console.error('Error loading orchid markers:', error);
+        addSampleMarkers();
+    }
+}
+
+function addSampleMarkers() {
+    // Add sample markers to show the map is working
+    const sampleLocations = [
+        {lat: 38.9, lng: -77.0, name: "North America", count: "Sample Data"},
+        {lat: -23.5, lng: -46.6, name: "South America", count: "Sample Data"},
+        {lat: 51.5, lng: -0.1, name: "Europe", count: "Sample Data"},
+        {lat: 35.7, lng: 139.7, name: "Asia", count: "Sample Data"},
+        {lat: -33.9, lng: 151.2, name: "Australia", count: "Sample Data"}
+    ];
+    
+    markersLayer = L.layerGroup();
+    
+    sampleLocations.forEach(location => {
+        const marker = L.marker([location.lat, location.lng])
+            .bindPopup(`<strong>${location.name}</strong><br>Orchid distribution area<br><small>${location.count}</small>`)
+            .bindTooltip(`${location.name} - ${location.count}`);
+        markersLayer.addLayer(marker);
+    });
+    
+    markersLayer.addTo(orchidMap);
+    console.log('📍 Added sample markers');
+}
 
 // Map control functions
 function toggleHeatMap() {
     console.log('Toggling heat map layer...');
-    // This would interact with the Folium map layers
-    alert('Heat map layer toggled! (Feature requires map layer integration)');
+    alert('Heat map feature will be available once coordinate data is expanded to include precise locations!');
 }
 
 function toggleClusters() {
     console.log('Toggling marker clusters...');
-    alert('Marker clustering toggled! (Feature requires map layer integration)');
+    if (markersLayer) {
+        if (orchidMap.hasLayer(markersLayer)) {
+            orchidMap.removeLayer(markersLayer);
+        } else {
+            markersLayer.addTo(orchidMap);
+        }
+    }
 }
 
 function fitToBounds() {
     console.log('Fitting map to data bounds...');
-    alert('Map fitted to show all orchid data! (Feature requires map bounds calculation)');
+    if (markersLayer && markersLayer.getLayers().length > 0) {
+        orchidMap.fitBounds(markersLayer.getBounds(), {padding: [20, 20]});
+    }
 }
 
 function resetView() {
     console.log('Resetting map view...');
-    alert('Map view reset to default world view! (Feature requires map reset)');
+    orchidMap.setView([20.0, 0.0], 2);
 }
 
 function exportMap() {
