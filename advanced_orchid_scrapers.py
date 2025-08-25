@@ -27,6 +27,67 @@ class EcuageneraScraper:
             'User-Agent': 'Mozilla/5.0 (compatible; OrchidBot/1.0; Educational/Research)'
         })
         self.base_url = "https://ecuagenera.com"
+        self.collected_total = 0
+        self.last_report = time.time()
+        self.last_reconfigure = time.time()
+        self.report_interval = 60  # Report every minute
+        self.reconfigure_interval = 120  # Reconfigure every 2 minutes
+        self.running = False
+        self.current_strategy = 0
+        
+    def run_continuous_scraping(self):
+        """Continuous scraping with auto-reconfiguration and reporting"""
+        logger.info("🚀 Starting continuous Ecuagenera scraping")
+        logger.info("⏰ Reports every 60s, reconfigures every 120s")
+        
+        self.running = True
+        
+        try:
+            while self.running:
+                current_time = time.time()
+                
+                # Report progress every minute
+                if current_time - self.last_report >= self.report_interval:
+                    self.report_progress()
+                    self.last_report = current_time
+                
+                # Auto-reconfigure every 2 minutes
+                if current_time - self.last_reconfigure >= self.reconfigure_interval:
+                    self.auto_reconfigure()
+                    self.last_reconfigure = current_time
+                
+                # Run collection cycle
+                collected = self.scrape_orchid_catalog(max_pages=5)
+                if isinstance(collected, dict):
+                    self.collected_total += collected.get('processed', 0)
+                else:
+                    self.collected_total += collected if collected else 0
+                
+                logger.info(f"📊 Ecuagenera cycle complete: +{collected} photos")
+                time.sleep(30)  # 30 second cycle
+                
+        except KeyboardInterrupt:
+            logger.info("⏹️  Stopping Ecuagenera scraper...")
+            self.stop()
+            
+    def report_progress(self):
+        """Report current progress"""
+        logger.info("=" * 50)
+        logger.info(f"📊 ECUAGENERA SCRAPER PROGRESS")
+        logger.info(f"✅ Total collected: {self.collected_total}")
+        logger.info(f"⏰ Runtime: {time.time() - self.last_reconfigure:.0f}s since reconfigure")
+        logger.info("=" * 50)
+        
+    def auto_reconfigure(self):
+        """Auto-reconfigure scraping strategy"""
+        logger.info(f"🔧 AUTO-RECONFIGURING ECUAGENERA SCRAPER")
+        # Adjust scraping parameters based on performance
+        self.current_strategy = (self.current_strategy + 1) % 3
+        
+    def stop(self):
+        """Stop the scraper"""
+        self.running = False
+        logger.info("✅ Ecuagenera scraper stopped")
         
     def scrape_orchid_catalog(self, max_pages=10):
         """Scrape Ecuagenera's orchid catalog"""

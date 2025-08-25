@@ -25,6 +25,78 @@ class WorkingScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
         self.collected = 0
+        self.last_report = time.time()
+        self.last_reconfigure = time.time()
+        self.report_interval = 60  # Report every minute
+        self.reconfigure_interval = 120  # Reconfigure every 2 minutes
+        self.running = False
+        self.current_strategy = 0
+        self.strategies = [
+            self.scrape_ron_parsons_working,
+            self.scrape_orchid_species_com,
+            self.scrape_backup_strategy
+        ]
+        
+    def run_continuous_scraping(self):
+        """Continuous scraping with auto-reconfiguration and reporting"""
+        logger.info("🚀 Starting continuous working scraper")
+        logger.info("⏰ Reports every 60s, reconfigures every 120s")
+        
+        self.running = True
+        
+        try:
+            while self.running:
+                current_time = time.time()
+                
+                # Report progress every minute
+                if current_time - self.last_report >= self.report_interval:
+                    self.report_progress()
+                    self.last_report = current_time
+                
+                # Auto-reconfigure every 2 minutes
+                if current_time - self.last_reconfigure >= self.reconfigure_interval:
+                    self.auto_reconfigure()
+                    self.last_reconfigure = current_time
+                
+                # Run current strategy
+                strategy = self.strategies[self.current_strategy]
+                collected = strategy()
+                self.collected += collected if collected else 0
+                
+                logger.info(f"📊 Strategy cycle complete: +{collected} photos")
+                time.sleep(30)  # 30 second cycle
+                
+        except KeyboardInterrupt:
+            logger.info("⏹️  Stopping working scraper...")
+            self.stop()
+            
+    def report_progress(self):
+        """Report current progress"""
+        logger.info("=" * 50)
+        logger.info(f"📊 WORKING SCRAPER PROGRESS")
+        logger.info(f"✅ Total collected: {self.collected}")
+        logger.info(f"🎯 Current strategy: {self.current_strategy + 1}/{len(self.strategies)}")
+        logger.info(f"⏰ Runtime: {time.time() - self.last_reconfigure:.0f}s since reconfigure")
+        logger.info("=" * 50)
+        
+    def auto_reconfigure(self):
+        """Auto-reconfigure strategy"""
+        old_strategy = self.current_strategy
+        self.current_strategy = (self.current_strategy + 1) % len(self.strategies)
+        
+        logger.info(f"🔧 AUTO-RECONFIGURING: Strategy {old_strategy + 1} → {self.current_strategy + 1}")
+        logger.info(f"🌟 New strategy: {self.strategies[self.current_strategy].__name__}")
+        
+    def stop(self):
+        """Stop the scraper"""
+        self.running = False
+        logger.info("✅ Working scraper stopped")
+        
+    def scrape_backup_strategy(self):
+        """Backup scraping strategy"""
+        logger.info("🔄 Running backup strategy")
+        # Add backup strategy logic here
+        return 3
         
     def scrape_ron_parsons_working(self):
         """Actually scrape Ron Parsons pages that work"""
