@@ -88,6 +88,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Orchid Research Links Database',
                 'genus': 'Multiple',
                 'type': 'research_database'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/intro_climate.html',
+                'species': 'Orchid Climate Tables Guide',
+                'genus': 'Multiple',
+                'type': 'scientific_methodology'
             }
         ]
     
