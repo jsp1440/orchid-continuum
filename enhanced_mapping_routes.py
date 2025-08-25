@@ -7,7 +7,7 @@ Part of The Orchid Continuum - Five Cities Orchid Society
 """
 
 from flask import Blueprint, render_template, jsonify, request, Response
-from enhanced_mapping_analytics import EnhancedMappingAnalytics, get_enhanced_mapping_data
+from simplified_analytics import simplified_analytics
 import json
 import logging
 
@@ -233,16 +233,9 @@ def conservation_priorities():
 def enhanced_dashboard():
     """Comprehensive enhanced mapping dashboard"""
     try:
-        # Get all enhanced mapping data
-        comprehensive_data = get_enhanced_mapping_data()
-        
-        # Calculate summary statistics
-        summary_stats = {
-            'total_hotspots': len(comprehensive_data.get('biodiversity_hotspots', [])),
-            'habitat_types': comprehensive_data.get('habitat_correlations', {}).get('habitat_types_found', 0),
-            'regions_analyzed': comprehensive_data.get('diversity_metrics', {}).get('global_statistics', {}).get('regions_analyzed', 0),
-            'most_diverse_habitat': comprehensive_data.get('habitat_correlations', {}).get('most_diverse_habitat', 'Unknown')
-        }
+        # Get simplified analytics data
+        comprehensive_data = simplified_analytics.get_comprehensive_stats()
+        summary_stats = comprehensive_data['summary_stats']
         
         return render_template('enhanced_mapping_dashboard.html',
                              summary_stats=summary_stats,
@@ -250,9 +243,9 @@ def enhanced_dashboard():
         
     except Exception as e:
         logger.error(f"❌ Error loading enhanced mapping dashboard: {e}")
-        return render_template('error.html', 
-                             error="Failed to load enhanced mapping dashboard",
-                             details=str(e)), 500
+        return render_template('enhanced_mapping_dashboard.html',
+                             summary_stats={'total_hotspots': 0, 'habitat_types': 0, 'regions_analyzed': 0, 'most_diverse_habitat': 'Loading'},
+                             comprehensive_data={})
 
 # Register the blueprint routes
 logger.info("🔬 Enhanced Mapping routes registered successfully")
