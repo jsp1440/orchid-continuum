@@ -27,13 +27,19 @@ class BakerOrchidCultureScraper:
         self.base_url = "https://www.orchidculture.com"
         self.collected_count = 0
         
-        # Start with the specific Paphiopedilum armeniacum article
+        # Baker culture articles and sheets
         self.culture_articles = [
             {
                 'url': 'https://www.orchidculture.com/COD/FREE/Paph_arm_Art.html',
                 'species': 'Paphiopedilum armeniacum',
                 'genus': 'Paphiopedilum',
                 'type': 'detailed_habitat'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/FREE/Miltoniopsis_Art.html',
+                'species': 'Miltoniopsis',
+                'genus': 'Miltoniopsis',
+                'type': 'genus_comprehensive'
             }
         ]
     
@@ -114,10 +120,16 @@ class BakerOrchidCultureScraper:
             habitat_info['elevation_ft'] = elevation_match.group(1).replace(',', '')
             habitat_info['elevation_m'] = elevation_match.group(2).replace(',', '')
         
-        # Extract location
+        # Extract location - specific patterns
         if 'Yunnan Province' in text:
             habitat_info['location'] = 'Yunnan Province, China'
             habitat_info['country'] = 'China'
+        elif 'Colombia, Ecuador, and Panama' in text:
+            habitat_info['location'] = 'Colombia, Ecuador, Panama'
+            habitat_info['country'] = 'South America'
+        elif 'Andean' in text:
+            habitat_info['location'] = 'Andean regions'
+            habitat_info['country'] = 'South America'
         
         # Extract latitude if mentioned
         lat_match = re.search(r'(\d+\.?\d*)°N\s*Latitude', text)
@@ -128,6 +140,10 @@ class BakerOrchidCultureScraper:
         if 'limestone hills and cliffs' in text:
             habitat_info['substrate'] = 'limestone cliffs'
             habitat_info['habitat_type'] = 'semishady mountain forests'
+        elif 'cloudforests' in text:
+            habitat_info['habitat_type'] = 'humid cloudforests'
+        elif 'humid forests' in text:
+            habitat_info['habitat_type'] = 'humid forests'
         
         return habitat_info
     
@@ -206,9 +222,19 @@ class BakerOrchidCultureScraper:
             # Create comprehensive cultural notes
             cultural_notes = self.format_baker_cultural_notes(culture_data)
             
-            # Check if we already have a record for this species
+            # Check if we already have a record for this species/genus
+            # Handle both species-specific and genus-wide articles
+            if culture_data['article_type'] == 'genus_comprehensive':
+                search_name = culture_data['genus']
+                display_name = f"{culture_data['genus']} Comprehensive Culture Guide"
+                species_part = 'Comprehensive Guide'
+            else:
+                search_name = culture_data['species']
+                display_name = f"{culture_data['species']} - Baker Culture Guide"
+                species_part = culture_data['species'].split()[1] if len(culture_data['species'].split()) > 1 else 'sp.'
+            
             existing_record = OrchidRecord.query.filter_by(
-                scientific_name=culture_data['species'],
+                scientific_name=search_name,
                 photographer='Charles and Margaret Baker'
             ).first()
             
@@ -217,25 +243,30 @@ class BakerOrchidCultureScraper:
                 existing_record.cultural_notes = cultural_notes
                 existing_record.ingestion_source = 'Baker OrchidCulture.com'
                 existing_record.updated_at = datetime.now()
-                logger.info(f"📝 Updated existing {culture_data['species']} culture record")
+                logger.info(f"📝 Updated existing {search_name} culture record")
             else:
                 # Create new record
+                habitat_info = culture_data.get('habitat_data', {})
+                elevation_info = f"Elevation: {habitat_info.get('elevation_ft', 'Various')} ft" if habitat_info.get('elevation_ft') else ""
+                habitat_type = habitat_info.get('habitat_type', '')
+                native_habitat = f"{elevation_info}, {habitat_type}".strip(', ') if elevation_info or habitat_type else "Various habitats"
+                
                 new_record = OrchidRecord(
-                    scientific_name=culture_data['species'],
-                    display_name=f"{culture_data['species']} - Baker Culture Guide",
+                    scientific_name=search_name,
+                    display_name=display_name,
                     genus=culture_data['genus'],
-                    species=culture_data['species'].split()[1] if len(culture_data['species'].split()) > 1 else 'sp.',
+                    species=species_part,
                     photographer='Charles and Margaret Baker',
                     ingestion_source='Baker OrchidCulture.com',
                     cultural_notes=cultural_notes,
-                    ai_description=f"Detailed habitat and culture guide for {culture_data['species']} by Charles and Margaret Baker",
-                    region=culture_data['habitat_data'].get('location', 'Unknown'),
-                    native_habitat=f"Elevation: {culture_data['habitat_data'].get('elevation_ft', 'Unknown')} ft, {culture_data['habitat_data'].get('habitat_type', '')}",
+                    ai_description=f"Comprehensive culture guide for {search_name} by Charles and Margaret Baker",
+                    region=habitat_info.get('location', 'South America'),
+                    native_habitat=native_habitat,
                     created_at=datetime.now()
                 )
                 
                 db.session.add(new_record)
-                logger.info(f"🆕 Created new {culture_data['species']} culture record")
+                logger.info(f"🆕 Created new {search_name} culture record")
             
             db.session.commit()
             return True
