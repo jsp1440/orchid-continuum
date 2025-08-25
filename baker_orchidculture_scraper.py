@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+"""
+Baker OrchidCulture.com Scraper - Import Charles and Margaret Baker culture sheets
+Imports detailed orchid culture information from orchidculture.com
+"""
+
+import requests
+from bs4 import BeautifulSoup
+import re
+import time
+import logging
+from app import app, db
+from models import OrchidRecord, OrchidTaxonomy
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class BakerOrchidCultureScraper:
+    """Scraper for Charles and Margaret Baker culture sheets from orchidculture.com"""
+    
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (compatible; OrchidBot/1.0; Educational/Research)'
+        })
+        self.base_url = "https://www.orchidculture.com"
+        self.collected_count = 0
+        
+        # Start with the specific Paphiopedilum armeniacum article
+        self.culture_articles = [
+            {
+                'url': 'https://www.orchidculture.com/COD/FREE/Paph_arm_Art.html',
+                'species': 'Paphiopedilum armeniacum',
+                'genus': 'Paphiopedilum',
+                'type': 'detailed_habitat'
+            }
+        ]
+    
+    def scrape_all_baker_culture_sheets(self):
+        """Scrape all Baker culture sheets"""
+        logger.info("🌺 Starting Baker Culture Sheet import from orchidculture.com...")
+        logger.info(f"📚 Found {len(self.culture_articles)} culture articles to import")
+        
+        with app.app_context():
+            results = []
+            
+            for article in self.culture_articles:
+                try:
+                    logger.info(f"📖 Processing {article['species']} culture article...")
+                    
+                    culture_data = self.scrape_culture_article(article)
+                    
+                    if culture_data:
+                        # Save to database
+                        saved = self.save_baker_culture_data(culture_data)
+                        if saved:
+                            results.append(culture_data)
+                            self.collected_count += 1
+                            logger.info(f"✅ {article['species']} culture sheet imported successfully")
+                        else:
+                            logger.warning(f"⚠️ Failed to save {article['species']} culture sheet")
+                    else:
+                        logger.warning(f"⚠️ No data extracted for {article['species']}")
+                    
+                    # Be respectful to orchidculture.com servers
+                    time.sleep(3)
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error processing {article['species']}: {str(e)}")
+                    continue
+            
+            logger.info(f"🎉 Baker OrchidCulture import complete: {self.collected_count} culture sheets imported")
+            return results
+    
+    def scrape_culture_article(self, article):
+        """Scrape individual culture article"""
+        try:
+            response = self.session.get(article['url'], timeout=15)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Extract the full text content
+            full_text = soup.get_text()
+            
+            # Parse the specific sections
+            culture_data = {
+                'species': article['species'],
+                'genus': article['genus'],
+                'source_url': article['url'],
+                'article_type': article['type'],
+                'authors': 'Charles and Margaret Baker',
+                'full_text': full_text,
+                'habitat_data': self.extract_habitat_data(full_text),
+                'climate_data': self.extract_climate_data(full_text),
+                'culture_recommendations': self.extract_culture_recommendations(full_text),
+                'extracted_at': datetime.now()
+            }
+            
+            return culture_data
+            
+        except Exception as e:
+            logger.error(f"Error scraping {article['species']} culture article: {str(e)}")
+            return None
+    
+    def extract_habitat_data(self, text):
+        """Extract habitat information from the text"""
+        habitat_info = {}
+        
+        # Extract elevation
+        elevation_match = re.search(r'(\d+,?\d*)\s*ft\.?\s*\((\d+,?\d*)\s*m\)', text)
+        if elevation_match:
+            habitat_info['elevation_ft'] = elevation_match.group(1).replace(',', '')
+            habitat_info['elevation_m'] = elevation_match.group(2).replace(',', '')
+        
+        # Extract location
+        if 'Yunnan Province' in text:
+            habitat_info['location'] = 'Yunnan Province, China'
+            habitat_info['country'] = 'China'
+        
+        # Extract latitude if mentioned
+        lat_match = re.search(r'(\d+\.?\d*)°N\s*Latitude', text)
+        if lat_match:
+            habitat_info['latitude'] = lat_match.group(1)
+        
+        # Extract specific habitat description
+        if 'limestone hills and cliffs' in text:
+            habitat_info['substrate'] = 'limestone cliffs'
+            habitat_info['habitat_type'] = 'semishady mountain forests'
+        
+        return habitat_info
+    
+    def extract_climate_data(self, text):
+        """Extract detailed climate data from the text"""
+        climate_data = {}
+        
+        # Look for the climate table
+        if 'F AVG MAX' in text:
+            # Extract temperature ranges
+            temp_pattern = r'F AVG MAX\s+([\d\s]+)\nF AVG MIN\s+([\d\s]+)'
+            temp_match = re.search(temp_pattern, text)
+            if temp_match:
+                max_temps = temp_match.group(1).split()
+                min_temps = temp_match.group(2).split()
+                
+                climate_data['temp_max_f'] = max_temps
+                climate_data['temp_min_f'] = min_temps
+        
+        # Extract humidity data
+        humidity_match = re.search(r'HUMIDITY/%\s+([\d\s]+)', text)
+        if humidity_match:
+            climate_data['humidity_percent'] = humidity_match.group(1).split()
+        
+        # Extract rainfall data
+        rainfall_match = re.search(r'RAIN/INCHES\s+([\d\.\s]+)', text)
+        if rainfall_match:
+            climate_data['rainfall_inches'] = rainfall_match.group(1).split()
+        
+        return climate_data
+    
+    def extract_culture_recommendations(self, text):
+        """Extract specific culture recommendations"""
+        recommendations = {}
+        
+        # Extract light requirements
+        light_match = re.search(r'LIGHT:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if light_match:
+            recommendations['light'] = light_match.group(1).strip()
+        
+        # Extract temperature requirements
+        temp_match = re.search(r'TEMPERATURES:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if temp_match:
+            recommendations['temperature'] = temp_match.group(1).strip()
+        
+        # Extract humidity requirements
+        humidity_match = re.search(r'HUMIDITY:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if humidity_match:
+            recommendations['humidity'] = humidity_match.group(1).strip()
+        
+        # Extract watering requirements
+        water_match = re.search(r'WATER:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if water_match:
+            recommendations['water'] = water_match.group(1).strip()
+        
+        # Extract fertilizer requirements
+        fert_match = re.search(r'FERTILIZER:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if fert_match:
+            recommendations['fertilizer'] = fert_match.group(1).strip()
+        
+        # Extract rest period info
+        rest_match = re.search(r'REST PERIOD:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if rest_match:
+            recommendations['rest_period'] = rest_match.group(1).strip()
+        
+        # Extract growing media info
+        media_match = re.search(r'GROWING MEDIA:\s*([^\n]+(?:\n[^A-Z\n][^\n]*)*)', text)
+        if media_match:
+            recommendations['growing_media'] = media_match.group(1).strip()
+        
+        return recommendations
+    
+    def save_baker_culture_data(self, culture_data):
+        """Save Baker culture data to database"""
+        try:
+            # Create comprehensive cultural notes
+            cultural_notes = self.format_baker_cultural_notes(culture_data)
+            
+            # Check if we already have a record for this species
+            existing_record = OrchidRecord.query.filter_by(
+                scientific_name=culture_data['species'],
+                photographer='Charles and Margaret Baker'
+            ).first()
+            
+            if existing_record:
+                # Update existing record
+                existing_record.cultural_notes = cultural_notes
+                existing_record.ingestion_source = 'Baker OrchidCulture.com'
+                existing_record.updated_at = datetime.now()
+                logger.info(f"📝 Updated existing {culture_data['species']} culture record")
+            else:
+                # Create new record
+                new_record = OrchidRecord(
+                    scientific_name=culture_data['species'],
+                    display_name=f"{culture_data['species']} - Baker Culture Guide",
+                    genus=culture_data['genus'],
+                    species=culture_data['species'].split()[1] if len(culture_data['species'].split()) > 1 else 'sp.',
+                    photographer='Charles and Margaret Baker',
+                    ingestion_source='Baker OrchidCulture.com',
+                    cultural_notes=cultural_notes,
+                    ai_description=f"Detailed habitat and culture guide for {culture_data['species']} by Charles and Margaret Baker",
+                    region=culture_data['habitat_data'].get('location', 'Unknown'),
+                    native_habitat=f"Elevation: {culture_data['habitat_data'].get('elevation_ft', 'Unknown')} ft, {culture_data['habitat_data'].get('habitat_type', '')}",
+                    created_at=datetime.now()
+                )
+                
+                db.session.add(new_record)
+                logger.info(f"🆕 Created new {culture_data['species']} culture record")
+            
+            db.session.commit()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving culture data for {culture_data['species']}: {str(e)}")
+            db.session.rollback()
+            return False
+    
+    def format_baker_cultural_notes(self, data):
+        """Format Baker culture data into comprehensive notes"""
+        notes = f"BAKER CULTURE GUIDE - {data['species']}\n"
+        notes += "=" * 60 + "\n\n"
+        notes += "By Charles and Margaret Baker\n\n"
+        
+        # Habitat information
+        if data['habitat_data']:
+            notes += "🏔️ HABITAT DATA:\n"
+            habitat = data['habitat_data']
+            if habitat.get('location'):
+                notes += f"Location: {habitat['location']}\n"
+            if habitat.get('elevation_ft'):
+                notes += f"Elevation: {habitat['elevation_ft']} ft ({habitat.get('elevation_m', 'Unknown')} m)\n"
+            if habitat.get('latitude'):
+                notes += f"Latitude: {habitat['latitude']}°N\n"
+            if habitat.get('substrate'):
+                notes += f"Substrate: {habitat['substrate']}\n"
+            if habitat.get('habitat_type'):
+                notes += f"Habitat: {habitat['habitat_type']}\n"
+            notes += "\n"
+        
+        # Culture recommendations
+        if data['culture_recommendations']:
+            recs = data['culture_recommendations']
+            
+            if recs.get('light'):
+                notes += "💡 LIGHT:\n"
+                notes += recs['light'] + "\n\n"
+            
+            if recs.get('temperature'):
+                notes += "🌡️ TEMPERATURE:\n"
+                notes += recs['temperature'] + "\n\n"
+            
+            if recs.get('humidity'):
+                notes += "💨 HUMIDITY:\n"
+                notes += recs['humidity'] + "\n\n"
+            
+            if recs.get('water'):
+                notes += "💧 WATERING:\n"
+                notes += recs['water'] + "\n\n"
+            
+            if recs.get('fertilizer'):
+                notes += "🌱 FERTILIZER:\n"
+                notes += recs['fertilizer'] + "\n\n"
+            
+            if recs.get('rest_period'):
+                notes += "😴 REST PERIOD:\n"
+                notes += recs['rest_period'] + "\n\n"
+            
+            if recs.get('growing_media'):
+                notes += "🪴 GROWING MEDIA:\n"
+                notes += recs['growing_media'] + "\n\n"
+        
+        # Climate data summary
+        if data['climate_data']:
+            notes += "📊 CLIMATE SUMMARY:\n"
+            climate = data['climate_data']
+            if climate.get('temp_max_f'):
+                notes += "Temperature range throughout the year with precise monthly data\n"
+            if climate.get('humidity_percent'):
+                notes += "Humidity varies seasonally from 60-85%\n"
+            if climate.get('rainfall_inches'):
+                notes += "Distinct wet and dry seasons\n"
+            notes += "\n"
+        
+        notes += f"Source: {data['source_url']}\n"
+        notes += f"Authors: {data['authors']}\n"
+        notes += f"Imported: {data['extracted_at'].strftime('%Y-%m-%d %H:%M:%S')}\n"
+        notes += "© Charles and Margaret Baker - Used for educational purposes"
+        
+        return notes
+
+def run_baker_import():
+    """Run the Baker OrchidCulture.com import"""
+    scraper = BakerOrchidCultureScraper()
+    results = scraper.scrape_all_baker_culture_sheets()
+    
+    print("🎉 BAKER ORCHIDCULTURE.COM IMPORT COMPLETE!")
+    print(f"📊 Total imported: {scraper.collected_count} culture sheets")
+    print(f"🌺 Species covered: {', '.join([r['species'] for r in results])}")
+    
+    return results
+
+if __name__ == "__main__":
+    run_baker_import()
