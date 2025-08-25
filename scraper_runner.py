@@ -75,8 +75,8 @@ class OrchidScraperRunner:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
-        # Start with one genus to test the deep scraping
-        test_genus = 'aa'  # Start with Aa as shown in screenshot
+        # Start with Cattleya since we know it has data
+        test_genus = 'cattleya'  # Start with Cattleya which has rich content
         
         try:
             import re
@@ -96,28 +96,41 @@ class OrchidScraperRunner:
                 genus_data = self.extract_genus_botanical_data(soup, test_genus)
                 logger.info(f"📊 Extracted genus data: {genus_data.get('subfamily', 'N/A')} subfamily")
                 
-                # Find all species links in the table
+                # Find all species links - look for links with '/species/' in them
                 species_links = []
-                table = soup.find('table')
-                if table:
-                    rows = table.find_all('tr')[1:]  # Skip header
-                    for row in rows[:5]:  # Limit to 5 species for testing
-                        cells = row.find_all('td')
-                        if cells:
-                            species_cell = cells[0]
-                            species_link = species_cell.find('a')
-                            if species_link and species_link.get('href'):
-                                species_url = urljoin(base_url, species_link.get('href'))
-                                species_name = species_link.get_text(strip=True)
-                                species_links.append({
-                                    'url': species_url,
-                                    'name': species_name,
-                                    'basic_data': {
+                all_links = soup.find_all('a', href=True)
+                
+                for link in all_links[:10]:  # Test first 10 species links
+                    href = link.get('href')
+                    if href and '/species/' in href:
+                        species_url = urljoin(base_url, href)
+                        species_name = link.get_text(strip=True)
+                        
+                        # Clean up the species name
+                        if species_name and len(species_name.split()) >= 2:
+                            logger.info(f"🌸 Found species link: {species_name} -> {species_url}")
+                            
+                            # Try to get basic data from the row context
+                            parent_row = link.find_parent('tr')
+                            basic_data = {'publication': '', 'year': '', 'distribution': ''}
+                            
+                            if parent_row:
+                                cells = parent_row.find_all('td')
+                                if len(cells) >= 4:
+                                    basic_data = {
                                         'publication': cells[1].get_text(strip=True) if len(cells) > 1 else '',
                                         'year': cells[2].get_text(strip=True) if len(cells) > 2 else '',
                                         'distribution': cells[3].get_text(strip=True) if len(cells) > 3 else ''
                                     }
-                                })
+                            
+                            species_links.append({
+                                'url': species_url,
+                                'name': species_name,
+                                'basic_data': basic_data
+                            })
+                            
+                            if len(species_links) >= 5:  # Limit for testing
+                                break
                 
                 logger.info(f"🎯 Found {len(species_links)} individual species to scrape deeply")
                 
