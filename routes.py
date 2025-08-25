@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session
+from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
@@ -30,6 +30,7 @@ import requests
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_
 from io import BytesIO
+from googleapiclient.http import MediaIoBaseDownload
 
 logger = logging.getLogger(__name__)
 
@@ -1770,14 +1771,14 @@ def get_drive_photo(file_id):
         else:
             # Return placeholder if image not accessible
             logger.warning(f"Drive photo {file_id} returned {response.status_code}")
-            return redirect('/static/images/orchid_placeholder.jpg')
+            return redirect('/static/images/orchid_placeholder.svg')
             
     except requests.Timeout:
         logger.warning(f"Drive photo {file_id} timed out - serving placeholder")
-        return redirect('/static/images/orchid_placeholder.jpg')
+        return redirect('/static/images/orchid_placeholder.svg')
     except Exception as e:
         logger.error(f"Error loading Drive photo {file_id}: {e}")
-        return redirect('/static/images/orchid_placeholder.jpg')
+        return redirect('/static/images/orchid_placeholder.svg')
 
 @app.route('/admin/import-sheets-data', methods=['POST'])
 def admin_import_sheets_data():
