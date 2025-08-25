@@ -2,7 +2,7 @@
 <div class="card border-info mb-4" id="discovery-widget">
     <div class="card-header bg-info text-white">
         <h6 class="mb-0">
-            <img src="/static/images/professor_bloombot_1.png" alt="Professor BloomBot" style="height: 20px; width: auto;" class="me-2">
+            <img src="/static/images/professor_bloombot_1.png" alt="Professor BloomBot" style="height: 20px; width: auto;" class="me-2 professor-bloombot">
             Professor BloomBot Discovery Alert
             <small class="float-right">
                 <span class="badge badge-light" id="discovery-status">Monitoring</span>
@@ -11,7 +11,7 @@
     </div>
     <div class="card-body" id="discovery-content">
         <div class="text-center text-muted">
-            <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot thinking" style="height: 60px; width: auto;" class="mb-2">
+            <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot thinking" style="height: 60px; width: auto;" class="mb-2 professor-bloombot-reading professor-bloombot-thinking">
             <div class="spinner-border spinner-border-sm" role="status">
                 <span class="sr-only">Loading discoveries...</span>
             </div>
@@ -34,10 +34,14 @@ function loadDiscoveryWidget() {
                 status.textContent = 'New Discovery!';
                 status.className = 'badge badge-warning';
                 
+                // Add celebration animation to widget
+                const widget = document.getElementById('discovery-widget');
+                widget.classList.add('discovery-active');
+                
                 content.innerHTML = `
                     <div class="d-flex align-items-start">
                         <div class="mr-3">
-                            <img src="/static/images/professor_bloombot_1.png" alt="Professor BloomBot" style="height: 40px; width: auto;" class="text-info">
+                            <img src="/static/images/professor_bloombot_1.png" alt="Professor BloomBot" style="height: 40px; width: auto;" class="text-info professor-bloombot">
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="font-weight-bold text-info">${discovery.title}</h6>
@@ -59,17 +63,23 @@ function loadDiscoveryWidget() {
                     feather.replace();
                 }
                 
-                // Add pulse animation for new discoveries
-                const widget = document.getElementById('discovery-widget');
-                widget.style.animation = 'pulse 2s ease-in-out 3';
+                // Remove celebration class after animation
+                setTimeout(() => {
+                    const widget = document.getElementById('discovery-widget');
+                    widget.classList.remove('discovery-active');
+                }, 1200);
                 
             } else {
                 status.textContent = 'Monitoring';
                 status.className = 'badge badge-light';
                 
+                // Remove any active discovery classes
+                const widget = document.getElementById('discovery-widget');
+                widget.classList.remove('discovery-active');
+                
                 content.innerHTML = `
                     <div class="text-center text-muted">
-                        <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot" style="height: 50px; width: auto;" class="mb-2">
+                        <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot" style="height: 50px; width: auto;" class="mb-2 professor-bloombot-reading">
                         <p class="mb-0 small">Professor BloomBot is analyzing orchid patterns and correlations...</p>
                     </div>
                 `;
@@ -84,7 +94,7 @@ function loadDiscoveryWidget() {
             const content = document.getElementById('discovery-content');
             content.innerHTML = `
                 <div class="text-center text-muted">
-                    <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot" style="height: 50px; width: auto;" class="mb-2">
+                    <img src="/static/images/professor_bloombot_reading.png" alt="Professor BloomBot" style="height: 50px; width: auto;" class="mb-2 professor-bloombot-reading professor-bloombot-thinking">
                     <p class="mb-0 small">Discovery system initializing...</p>
                 </div>
             `;
