@@ -67,7 +67,7 @@ class OrchidScraperRunner:
             session.close()
     
     def scrape_gary_young_gee(self, max_photos=50):
-        """Scrape Gary Young Gee orchids"""
+        """Scrape orchids from Gary Young Gee's website - Updated for correct structure"""
         logger.info("🌿 Starting Gary Young Gee scraper...")
         
         base_url = "https://orchids.yonggee.name"
@@ -75,56 +75,90 @@ class OrchidScraperRunner:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
+        # Focus on major orchid genera
+        target_genera = ['cattleya', 'dendrobium', 'phalaenopsis', 'oncidium', 'cymbidium', 
+                        'paphiopedilum', 'vanda', 'miltonia', 'brassia', 'zygopetalum']
+        
         try:
-            response = requests.get(base_url, headers=headers, timeout=30)
-            if response.status_code == 200:
-                # Simple scraping logic
-                content = response.text.lower()
-                
-                # Look for actual orchid species names in the content
-                import re
-                from bs4 import BeautifulSoup
-                from urllib.parse import urljoin
-                
-                soup = BeautifulSoup(response.text, 'html.parser')
-                added_count = 0
-                
-                # Find species links that look like orchid names
-                links = soup.find_all('a', href=True)
-                for link in links[:max_photos]:
-                    link_text = link.get_text(strip=True)
-                    href = link.get('href', '')
+            import re
+            from bs4 import BeautifulSoup
+            from urllib.parse import urljoin
+            
+            total_added = 0
+            
+            for genus in target_genera[:3]:  # Start with 3 genera to test
+                if total_added >= max_photos:
+                    break
                     
-                    # Look for scientific name pattern (Genus species)
-                    if re.match(r'^[A-Z][a-z]+ [a-z]+', link_text) and added_count < max_photos:
-                        # Parse the actual orchid name
-                        name_parts = link_text.split()
-                        genus = name_parts[0]
-                        species = name_parts[1] if len(name_parts) > 1 else 'sp.'
-                        
-                        orchid_data = {
-                            'scientific_name': link_text,
-                            'display_name': link_text,
-                            'genus': genus,
-                            'species': species,
-                            'photographer': 'Gary Young Gee',
-                            'ingestion_source': 'gary_young_gee_scraper',
-                            'ai_description': f'Beautiful {link_text} orchid from Gary Young Gee collection',
-                            'image_url': urljoin(base_url, href) if href.startswith('/') else f'{base_url}/{href}',
-                            'region': 'Southeast Asia'
-                        }
-                        
-                        if self.add_orchid_record(orchid_data):
-                            added_count += 1
-                            logger.info(f"✅ Added {genus} orchid #{added_count}")
-                        
-                        time.sleep(1)  # Be respectful
+                genus_url = f"{base_url}/genera/{genus}"
+                logger.info(f"🔍 Scraping {genus} from {genus_url}")
                 
-                logger.info(f"🎉 Gary Young Gee scraper complete: {added_count} orchids added")
-                return added_count
+                response = requests.get(genus_url, headers=headers, timeout=30)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    
+                    # Find the species table
+                    table = soup.find('table')
+                    if table:
+                        rows = table.find_all('tr')[1:]  # Skip header
+                        
+                        for row in rows[:max_photos//3]:  # Limit per genus
+                            if total_added >= max_photos:
+                                break
+                                
+                            cells = row.find_all('td')
+                            if len(cells) >= 4:
+                                # Extract species data
+                                species_cell = cells[0]
+                                publication = cells[1].get_text(strip=True) if len(cells) > 1 else ''
+                                year = cells[2].get_text(strip=True) if len(cells) > 2 else ''
+                                distribution = cells[3].get_text(strip=True) if len(cells) > 3 else ''
+                                
+                                # Get species name and image
+                                species_link = species_cell.find('a')
+                                if species_link:
+                                    species_name = species_link.get_text(strip=True)
+                                    # Clean up scientific name (remove formatting)
+                                    clean_name = re.sub(r'[_*]', '', species_name)
+                                    
+                                    # Extract image URL
+                                    img = species_cell.find('img')
+                                    image_url = ''
+                                    if img and img.get('src'):
+                                        image_url = urljoin(base_url, img.get('src'))
+                                    
+                                    # Parse genus and species
+                                    name_parts = clean_name.split()
+                                    if len(name_parts) >= 2:
+                                        genus_name = name_parts[0]
+                                        species_name = name_parts[1]
+                                        
+                                        orchid_data = {
+                                            'scientific_name': clean_name,
+                                            'display_name': clean_name,
+                                            'genus': genus_name,
+                                            'species': species_name,
+                                            'photographer': 'Gary Yong Gee',
+                                            'ingestion_source': 'gary_yong_gee_updated',
+                                            'ai_description': f'{clean_name} - {distribution}. Publication: {publication} ({year})',
+                                            'image_url': image_url,
+                                            'region': distribution,
+                                            'source_year': year
+                                        }
+                                        
+                                        if self.add_orchid_record(orchid_data):
+                                            total_added += 1
+                                            logger.info(f"✅ Added {genus_name} {species_name} #{total_added}")
+                                        
+                                        time.sleep(1)  # Be respectful
+                
+                time.sleep(2)  # Pause between genera
+                
+            logger.info(f"🎉 Gary Yong Gee scraper complete: {total_added} orchids added from {len(target_genera[:3])} genera")
+            return total_added
                 
         except Exception as e:
-            logger.error(f"Gary Young Gee scraper error: {e}")
+            logger.error(f"Gary Yong Gee scraper error: {e}")
             return 0
     
     def scrape_ron_parsons(self, max_photos=50):
