@@ -369,17 +369,11 @@ def index():
         # Fallback to basic orchid of day if enhanced fails
         orchid_of_day = orchid_of_day_enhanced['orchid'] if orchid_of_day_enhanced else get_orchid_of_the_day()
         
-        # Get recent uploads with error handling
+        # Get recent uploads with Google Drive images only (to match working Orchid of Day)
         recent_orchids = []
         try:
             recent_orchids = OrchidRecord.query.filter(
-                or_(
-                    OrchidRecord.google_drive_id.isnot(None),
-                    and_(
-                        OrchidRecord.image_url.isnot(None),
-                        OrchidRecord.image_url != '/static/images/orchid_placeholder.svg'
-                    )
-                )
+                OrchidRecord.google_drive_id.isnot(None)
             ).order_by(OrchidRecord.created_at.desc()).limit(6).all()
         except Exception as e:
             logger.error(f"Error fetching recent orchids: {str(e)}")
