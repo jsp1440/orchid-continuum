@@ -54,30 +54,98 @@
                                     {% endif %}
                                 </h4>
                                 
+                                <!-- Scientific Classification -->
                                 <div class="row g-2 mb-3 small">
                                     {% if orchid_of_day.genus %}
                                     <div class="col-12">
                                         <i data-feather="tag" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
-                                        <strong>Genus:</strong> 
+                                        <strong>Scientific Name:</strong> 
                                         {% if orchid_of_day.species %}
                                             <em>{{ orchid_of_day.genus }} {{ orchid_of_day.species }}</em>
                                         {% else %}
-                                            {{ orchid_of_day.genus }}
+                                            <em>{{ orchid_of_day.genus }}</em>
                                         {% endif %}
                                     </div>
                                     {% endif %}
-                                    {% if orchid_of_day.region %}
+                                    
+                                    <!-- Country/Region of Origin -->
+                                    {% if orchid_of_day_enhanced and orchid_of_day_enhanced.expanded_info and orchid_of_day_enhanced.expanded_info.geography %}
+                                    <div class="col-12">
+                                        <i data-feather="globe" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
+                                        <strong>Native to:</strong> {{ orchid_of_day_enhanced.expanded_info.geography.distribution or orchid_of_day_enhanced.expanded_info.geography.native_habitat }}
+                                    </div>
+                                    {% elif orchid_of_day.region %}
                                     <div class="col-12">
                                         <i data-feather="map-pin" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
                                         <strong>Origin:</strong> {{ orchid_of_day.region.title() }}
                                     </div>
                                     {% endif %}
+                                    
+                                    <!-- Common Name if available -->
+                                    {% if orchid_of_day.common_name %}
+                                    <div class="col-12">
+                                        <i data-feather="heart" class="me-1 text-warning" style="width: 14px; height: 14px;"></i>
+                                        <strong>Common Name:</strong> {{ orchid_of_day.common_name }}
+                                    </div>
+                                    {% endif %}
                                 </div>
+                                
+                                <!-- Enhanced Story Description -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.story %}
+                                <div class="mb-3">
+                                    <h6 class="text-warning mb-2">
+                                        <i data-feather="book-open" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        About This Orchid
+                                    </h6>
+                                    <p class="small text-light-emphasis mb-0" style="line-height: 1.4;">
+                                        {{ orchid_of_day_enhanced.story }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Discovery History -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.discovery_history %}
+                                <div class="mb-3">
+                                    <h6 class="text-warning mb-2">
+                                        <i data-feather="clock" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Botanical History
+                                    </h6>
+                                    <p class="small text-light-emphasis mb-0" style="line-height: 1.4;">
+                                        {{ orchid_of_day_enhanced.discovery_history }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Haiku (Artistic Description) -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.haiku %}
+                                <div class="mb-3">
+                                    <h6 class="text-warning mb-2">
+                                        <i data-feather="feather" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Poetic Reflection
+                                    </h6>
+                                    <div class="text-center py-2 px-3 bg-dark-subtle rounded border-start border-warning border-3">
+                                        <em class="small text-light" style="line-height: 1.6; white-space: pre-line;">{{ orchid_of_day_enhanced.haiku }}</em>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Pollinator Story (Unique Feature) -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.pollinator_story %}
+                                <div class="mb-3">
+                                    <h6 class="text-warning mb-2">
+                                        <i data-feather="butterfly" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Nature's Partnership
+                                    </h6>
+                                    <p class="small text-light-emphasis mb-0" style="line-height: 1.4;">
+                                        {{ orchid_of_day_enhanced.pollinator_story }}
+                                    </p>
+                                </div>
+                                {% endif %}
                                 
                                 <div class="d-grid">
                                     <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" class="btn btn-warning">
                                         <i data-feather="eye" class="me-2"></i>
-                                        Learn More
+                                        Explore Full Details
                                     </a>
                                 </div>
                             </div>
