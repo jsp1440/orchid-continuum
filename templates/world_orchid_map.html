@@ -3,7 +3,6 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 .map-container {
     background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
@@ -274,6 +273,9 @@
     </div>
 </div>
 
+<!-- Load Leaflet before our custom script -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <!-- Advanced Options Modal -->
 <div class="modal fade" id="advancedModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -348,10 +350,21 @@
 let orchidMap;
 let markersLayer;
 
-// Initialize page
+// Initialize page - wait for Leaflet to load
 document.addEventListener('DOMContentLoaded', function() {
     feather.replace();
-    initializeOrchidMap();
+    
+    // Wait for Leaflet library to load
+    function waitForLeaflet() {
+        if (typeof L !== 'undefined') {
+            initializeOrchidMap();
+        } else {
+            console.log('🔄 Waiting for Leaflet to load...');
+            setTimeout(waitForLeaflet, 100);
+        }
+    }
+    
+    waitForLeaflet();
 });
 
 async function initializeOrchidMap() {
