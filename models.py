@@ -636,3 +636,53 @@ class UserOrchidCollection(db.Model):
     
     def __repr__(self):
         return f'<UserOrchidCollection {self.user_id}: {self.orchid_id}>'
+
+class DiscoveryAlert(db.Model):
+    """Professor BloomBot discovery alerts and notifications"""
+    __tablename__ = 'discovery_alerts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Alert details
+    alert_type = db.Column(db.String(50), nullable=False)  # research_breakthrough, geographic_insight, etc.
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    importance = db.Column(db.Float, nullable=False)  # 0.0 to 1.0
+    
+    # Action details
+    action_url = db.Column(db.String(500))
+    action_text = db.Column(db.String(100))
+    
+    # Display details
+    icon = db.Column(db.String(50))  # Feather icon name
+    category = db.Column(db.String(50))  # research, geography, genetics, etc.
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
+    dismissed_by_admin = db.Column(db.Boolean, default=False)
+    
+    # Metadata
+    discovery_data = db.Column(db.Text)  # JSON with additional data
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def get_discovery_data(self):
+        """Get parsed discovery data"""
+        if self.discovery_data:
+            try:
+                import json
+                return json.loads(self.discovery_data)
+            except:
+                return {}
+        return {}
+    
+    def set_discovery_data(self, data):
+        """Set discovery data as JSON"""
+        import json
+        self.discovery_data = json.dumps(data)
+    
+    def __repr__(self):
+        return f'<DiscoveryAlert {self.alert_type}: {self.title}>'

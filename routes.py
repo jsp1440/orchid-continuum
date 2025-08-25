@@ -1874,3 +1874,117 @@ def research_dashboard():
     
     return render_template("research_dashboard.html", candidates=research_candidates[:50])
 
+
+@app.route("/discovery_alerts")
+def discovery_alerts():
+    """Show Professor BloomBot discovery alerts dashboard"""
+    from professor_bloombot import ProfessorBloomBot
+    from models import DiscoveryAlert
+    
+    # Generate new discoveries
+    bot = ProfessorBloomBot()
+    discoveries = bot.discover_patterns()
+    
+    # Save important discoveries to database
+    for discovery in discoveries:
+        if discovery['importance'] >= 0.7:  # Only save important ones
+            # Check if similar alert already exists
+            existing = DiscoveryAlert.query.filter(
+                DiscoveryAlert.alert_type == discovery['type'],
+                DiscoveryAlert.title == discovery['title']
+            ).first()
+            
+            if not existing:
+                alert = DiscoveryAlert(
+                    alert_type=discovery['type'],
+                    title=discovery['title'],
+                    message=discovery['message'],
+                    importance=discovery['importance'],
+                    action_url=discovery.get('action_url'),
+                    action_text=discovery.get('action_text'),
+                    icon=discovery.get('icon'),
+                    category=discovery.get('category')
+                )
+                db.session.add(alert)
+    
+    db.session.commit()
+    
+    # Get all active alerts
+    active_alerts = DiscoveryAlert.query.filter(
+        DiscoveryAlert.is_active == True,
+        DiscoveryAlert.dismissed_by_admin == False
+    ).order_by(DiscoveryAlert.importance.desc()).all()
+    
+    # Generate daily report
+    daily_report = bot.generate_daily_discovery_report()
+    
+    return render_template("discovery_alerts.html", 
+                         alerts=active_alerts, 
+                         daily_report=daily_report,
+                         live_discoveries=discoveries)
+
+@app.route("/dismiss_alert/<int:alert_id>", methods=['POST'])
+def dismiss_alert(alert_id):
+    """Dismiss a discovery alert"""
+    alert = DiscoveryAlert.query.get_or_404(alert_id)
+    alert.dismissed_by_admin = True
+    db.session.commit()
+    
+    flash(f"Dismissed alert: {alert.title}", "success")
+    return redirect(url_for('discovery_alerts'))
+
+@app.route("/featured_discovery")
+def featured_discovery():
+    """Get featured discovery for homepage widget"""
+    from professor_bloombot import ProfessorBloomBot
+    
+    # Try to get a featured alert from database first
+    featured = DiscoveryAlert.query.filter(
+        DiscoveryAlert.is_featured == True,
+        DiscoveryAlert.is_active == True
+    ).first()
+    
+    if featured:
+        discovery = {
+            'title': featured.title,
+            'message': featured.message,
+            'action_url': featured.action_url,
+            'action_text': featured.action_text,
+            'icon': featured.icon,
+            'category': featured.category
+        }
+    else:
+        # Generate a fresh discovery
+        bot = ProfessorBloomBot()
+        discoveries = bot.discover_patterns()
+        discovery = discoveries[0] if discoveries else {
+            'title': '🔬 Professor BloomBot is monitoring...',
+            'message': 'Analyzing orchid patterns and correlations for new discoveries!',
+            'icon': 'activity',
+            'category': 'monitoring'
+        }
+    
+    return jsonify(discovery)
+
+@app.route("/api/discovery_widget")
+def discovery_widget():
+    """API endpoint for discovery widget data"""
+    from professor_bloombot import ProfessorBloomBot
+    
+    bot = ProfessorBloomBot()
+    report = bot.generate_daily_discovery_report()
+    
+    # Get the most important discovery for widget
+    if report['discoveries']:
+        top_discovery = report['discoveries'][0]
+        return jsonify({
+            'status': 'active',
+            'discovery': top_discovery,
+            'total_discoveries': len(report['discoveries'])
+        })
+    
+    return jsonify({
+        'status': 'monitoring',
+        'message': 'Professor BloomBot is analyzing orchid patterns...',
+        'icon': 'search'
+    })
