@@ -54,23 +54,300 @@
         </div>
     </div>
     
-    <!-- Action Cards -->
+    <!-- Real-time Scraping Dashboard -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i data-feather="activity" class="me-2"></i>Live Scraping Dashboard
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <button id="startScrapingBtn" class="btn btn-success btn-sm" onclick="startMethodicalScraping()">
+                                <i data-feather="play" class="me-1"></i>Start
+                            </button>
+                            <button id="stopScrapingBtn" class="btn btn-danger btn-sm" onclick="stopScraping()">
+                                <i data-feather="stop" class="me-1"></i>Stop
+                            </button>
+                            <button class="btn btn-info btn-sm" onclick="refreshDashboard()">
+                                <i data-feather="refresh-cw" class="me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Dashboard Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-primary" id="totalScraped">0</div>
+                                <small class="text-muted">Total Scraped</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-success" id="successRate">0%</div>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-info" id="currentCycle">0</div>
+                                <small class="text-muted">Current Cycle</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h5 text-warning" id="currentScraper">Idle</div>
+                                <small class="text-muted">Current Scraper</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h5" id="uptime">00:00:00</div>
+                                <small class="text-muted">Uptime</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scraper Status Grid -->
+                    <h5 class="mb-3">Scraper Status - One Plant at a Time (90s cycles, 9s reinitialize)</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🌐 Primary Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="gary_yong_gee">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Gary Yong Gee</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="gary_yong_gee_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('gary_yong_gee')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="gary_yong_gee_plants">0</span> | Images: <span id="gary_yong_gee_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="roberta_fox">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Roberta Fox</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="roberta_fox_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('roberta_fox')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="roberta_fox_plants">0</span> | Images: <span id="roberta_fox_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🌍 International Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-1" data-scraper="orchidspecies">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>OrchidSpecies.com</strong> (25K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="orchidspecies_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('orchidspecies')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="orchidspecies_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="singapore_botanic">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>Singapore Botanic</strong> (3K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="singapore_botanic_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('singapore_botanic')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="singapore_botanic_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="kew_gardens">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>Kew Gardens</strong> (50K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="kew_gardens_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('kew_gardens')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="kew_gardens_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="orchidwire">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>OrchidWire</strong> (84K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="orchidwire_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('orchidwire')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="orchidwire_plants">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🏪 Commercial Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="ecuagenera">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Ecuagenera</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="ecuagenera_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('ecuagenera')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="ecuagenera_plants">0</span> | Images: <span id="ecuagenera_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="andys_orchids">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Andy's Orchids</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="andys_orchids_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('andys_orchids')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="andys_orchids_plants">0</span> | Images: <span id="andys_orchids_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">📸 Photography Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="ron_parsons">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Ron Parsons</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="ron_parsons_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('ron_parsons')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="ron_parsons_plants">0</span> | Images: <span id="ron_parsons_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="australian_terrestrial">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Australian Terrestrial</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="australian_terrestrial_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('australian_terrestrial')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="australian_terrestrial_plants">0</span> | Images: <span id="australian_terrestrial_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vigilant Monitor Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">🚨 Vigilant Monitor - 30-second checks</h6>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success btn-sm" onclick="startVigilantMonitoring()">
+                                            <i data-feather="shield" class="me-1"></i>Start
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="forceBackup()">
+                                            <i data-feather="save" class="me-1"></i>Backup Now
+                                        </button>
+                                        <button class="btn btn-info btn-sm" onclick="showVigilantStats()">
+                                            <i data-feather="activity" class="me-1"></i>Stats
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-3">
+                                        <small class="text-muted">DB Health</small>
+                                        <div class="h6" id="vigilantDBStatus">✅</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Image Check</small>
+                                        <div class="h6" id="vigilantImageStatus">✅</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Backups</small>
+                                        <div class="h6" id="vigilantBackups">0</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Uptime</small>
+                                        <div class="h6" id="vigilantUptime">00:00:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Original Action Cards -->
     <div class="row mb-5">
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i data-feather="download" class="me-2"></i>Web Scraping
+                        <i data-feather="download" class="me-2"></i>Legacy Web Scraping
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">Automatically scrape orchid information from external websites.</p>
+                    <p class="card-text">Traditional batch scraping for specific websites.</p>
                     <div class="d-grid gap-2">
                         <button class="btn btn-outline-primary" onclick="triggerScraping('gary')">
-                            <i data-feather="globe" class="me-2"></i>Scrape Gary Yong Gee
+                            <i data-feather="globe" class="me-2"></i>Batch Scrape Gary Yong Gee
                         </button>
                         <button class="btn btn-outline-primary" onclick="triggerScraping('roberta')">
-                            <i data-feather="globe" class="me-2"></i>Scrape Roberta Fox
+                            <i data-feather="globe" class="me-2"></i>Batch Scrape Roberta Fox
                         </button>
                     </div>
                     
@@ -316,6 +593,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/scraping-dashboard.js') }}"></script>
 <script>
 function triggerScraping(source) {
     const statusDiv = document.getElementById('scrapingStatus');
@@ -351,6 +629,107 @@ function syncDriveFiles() {
     // This would call an API endpoint to sync files with Google Drive
     alert('Google Drive sync would be triggered here. Implement the backend endpoint first.');
 }
+
+// ==============================================================================
+// VIGILANT MONITORING FUNCTIONS  
+// ==============================================================================
+
+async function startVigilantMonitoring() {
+    try {
+        const response = await fetch('/admin/vigilant/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Vigilant monitoring started! 30-second health checks active.');
+            updateVigilantStatus();
+        } else {
+            alert(`❌ Failed to start: ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Connection error: ${error.message}`);
+    }
+}
+
+async function forceBackup() {
+    try {
+        const response = await fetch('/admin/vigilant/force-backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Backup created! ${result.message}`);
+            if (result.backup_url) {
+                window.open(result.backup_url, '_blank');
+            }
+            updateVigilantStatus();
+        } else {
+            alert(`❌ Backup failed: ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Connection error: ${error.message}`);
+    }
+}
+
+async function showVigilantStats() {
+    try {
+        const response = await fetch('/admin/vigilant/stats');
+        const stats = await response.json();
+        
+        const statsText = `🚨 VIGILANT MONITOR STATISTICS
+
+📊 System Health:
+• Total Checks: ${stats.total_checks}
+• Database Issues: ${stats.database_issues} 
+• Image Issues: ${stats.image_issues}
+• Connection Resets: ${stats.connection_resets}
+
+💾 Backup Status:
+• Backups Created: ${stats.backups_created}
+• Check Interval: ${stats.check_interval}s
+• Backup Interval: ${stats.backup_interval}s
+
+⏱️ Uptime:
+• Running: ${stats.is_running ? 'YES' : 'NO'}
+• Uptime: ${stats.uptime_formatted}
+• Last Check: ${stats.last_check}`;
+        
+        alert(statsText);
+        
+    } catch (error) {
+        alert(`❌ Stats error: ${error.message}`);
+    }
+}
+
+async function updateVigilantStatus() {
+    try {
+        const response = await fetch('/admin/vigilant/stats');
+        const stats = await response.json();
+        
+        // Update UI elements
+        document.getElementById('vigilantBackups').textContent = stats.backups_created || 0;
+        document.getElementById('vigilantUptime').textContent = stats.uptime_formatted || '00:00:00';
+        
+        // Update health indicators
+        const dbStatus = stats.database_issues === 0 ? '✅' : '❌';
+        const imageStatus = stats.image_issues === 0 ? '✅' : '⚠️';
+        
+        document.getElementById('vigilantDBStatus').textContent = dbStatus;
+        document.getElementById('vigilantImageStatus').textContent = imageStatus;
+        
+    } catch (error) {
+        console.error('Vigilant status update failed:', error);
+    }
+}
+
+// Auto-update vigilant status every 30 seconds
+setInterval(updateVigilantStatus, 30000);
 
 // Initialize tooltips
 document.addEventListener('DOMContentLoaded', function() {
