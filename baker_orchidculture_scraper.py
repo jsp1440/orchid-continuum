@@ -132,6 +132,83 @@ class BakerOrchidCultureScraper:
             
             logger.info(f"🎉 Baker OrchidCulture import complete: {self.collected_count} culture sheets imported")
             return results
+
+    def import_individual_culture_sheets(self, url_list):
+        """Import individual Baker culture sheets from URLs"""
+        logger.info(f"📖 Starting import of {len(url_list)} individual Baker culture sheets...")
+        
+        with app.app_context():
+            results = []
+            
+            for url in url_list:
+                try:
+                    # Extract FS number for tracking
+                    fs_number = url.split('/')[-1].replace('.html', '').replace('FS', '')
+                    logger.info(f"📖 Processing FS{fs_number}...")
+                    
+                    # Fetch and parse the page
+                    response = self.session.get(url, timeout=15)
+                    response.raise_for_status()
+                    
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # Extract species name from the page content
+                    species_name = None
+                    
+                    # Try to find species name in italic text (most common location)
+                    em_tag = soup.find('em')
+                    if em_tag:
+                        species_name = em_tag.get_text().strip()
+                    
+                    # If not found, look for pattern in text
+                    if not species_name:
+                        text = soup.get_text()
+                        import re
+                        # Look for pattern like "Genus species Author"
+                        pattern = r'([A-Z][a-z]+\s+[a-z]+(?:\s+[a-z]+)*)\s+[A-Z]'
+                        match = re.search(pattern, text)
+                        if match:
+                            species_name = match.group(1)
+                    
+                    # If still not found, use FS number
+                    if not species_name or len(species_name) < 5:
+                        species_name = f"Baker Culture Sheet FS{fs_number}"
+                    
+                    # Get the full content
+                    content = soup.get_text()
+                    
+                    # Create culture data record
+                    culture_data = {
+                        'species': species_name,
+                        'genus': species_name.split()[0] if ' ' in species_name else 'Baker',
+                        'source_url': url,
+                        'article_type': f'individual_culture_sheet_FS{fs_number}',
+                        'authors': 'Charles and Margaret Baker',
+                        'full_text': content,
+                        'habitat_data': self.extract_habitat_data(content),
+                        'climate_data': self.extract_climate_data(content), 
+                        'culture_recommendations': self.extract_culture_recommendations(content),
+                        'extracted_at': datetime.now()
+                    }
+                    
+                    # Save to database
+                    saved = self.save_baker_culture_data(culture_data)
+                    if saved:
+                        logger.info(f"✅ Successfully imported {species_name} (FS{fs_number})")
+                        results.append(culture_data)
+                        self.collected_count += 1
+                    else:
+                        logger.warning(f"❌ Failed to save {species_name} (FS{fs_number})")
+                    
+                    # Be respectful to servers
+                    time.sleep(2)
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error processing {url}: {str(e)}")
+                    continue
+            
+            logger.info(f"🎉 Individual culture sheet import complete: {len(results)} sheets imported")
+            return results
     
     def scrape_culture_article(self, article):
         """Scrape individual culture article"""
