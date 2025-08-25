@@ -296,9 +296,15 @@
                              style="height: 120px; object-fit: cover;">
                     {% endif %}
                     <div class="card-body p-2">
-                        <h6 class="card-title small mb-1 text-truncate">{{ orchid.display_name or orchid.scientific_name }}</h6>
-                        {% if orchid.genus %}
-                            <p class="text-muted small mb-2 text-truncate">{{ orchid.genus }}</p>
+                        <h6 class="card-title small mb-1 text-truncate">
+                            {% if orchid.scientific_name %}
+                                <em>{{ orchid.scientific_name }}</em>
+                            {% else %}
+                                {{ orchid.display_name }}
+                            {% endif %}
+                        </h6>
+                        {% if orchid.display_name and orchid.scientific_name and orchid.display_name != orchid.scientific_name %}
+                            <p class="text-muted small mb-2 text-truncate">{{ orchid.display_name }}</p>
                         {% endif %}
                         <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-xs btn-outline-primary btn-sm w-100">View</a>
                     </div>
@@ -350,9 +356,15 @@
                         </div>
                     </div>
                     <div class="card-body p-2">
-                        <h6 class="card-title small mb-1 text-truncate text-warning">{{ orchid.display_name or orchid.scientific_name }}</h6>
-                        {% if orchid.scientific_name and orchid.display_name %}
-                            <p class="text-muted small fst-italic mb-2 text-truncate">{{ orchid.scientific_name }}</p>
+                        <h6 class="card-title small mb-1 text-truncate text-warning">
+                            {% if orchid.scientific_name %}
+                                <em>{{ orchid.scientific_name }}</em>
+                            {% else %}
+                                {{ orchid.display_name }}
+                            {% endif %}
+                        </h6>
+                        {% if orchid.display_name and orchid.scientific_name and orchid.display_name != orchid.scientific_name %}
+                            <p class="text-muted small mb-2 text-truncate">{{ orchid.display_name }}</p>
                         {% endif %}
                         <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-xs btn-warning btn-sm w-100">
                             Learn More
