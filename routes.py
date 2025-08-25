@@ -2276,6 +2276,40 @@ def download_backup(filename):
 # VIGILANT MONITOR AUTO-START - Start vigilant monitoring on app startup
 # ==============================================================================
 
+# ==============================================================================
+# REAL GALLERY API - For testing actual user-visible images
+# ==============================================================================
+
+@app.route('/api/recent-orchids')
+def api_recent_orchids():
+    """API endpoint for recent orchids - used by vigilant monitor to test REAL gallery images"""
+    try:
+        # Get recent orchids with images (what users actually see)
+        recent_orchids = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.image_url.isnot(None)
+            )
+        ).order_by(OrchidRecord.created_at.desc()).limit(20).all()
+        
+        orchids_data = []
+        for orchid in recent_orchids:
+            orchid_data = {
+                'id': orchid.id,
+                'display_name': orchid.display_name or orchid.scientific_name or f"Orchid {orchid.id}",
+                'scientific_name': orchid.scientific_name,
+                'google_drive_file_id': orchid.google_drive_id,  # Template expects this name
+                'photo_url': orchid.image_url,  # Template expects image_url as photo_url
+                'created_at': orchid.created_at.isoformat() if orchid.created_at else None
+            }
+            orchids_data.append(orchid_data)
+        
+        return jsonify(orchids_data)
+        
+    except Exception as e:
+        logger.error(f"Error in recent orchids API: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # Auto-start vigilant monitoring
 try:
     vigilant_monitor.start_vigilant_monitoring()
