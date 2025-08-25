@@ -7,6 +7,10 @@
         </h3>
         <p class="widget-subtitle">Compare Your Climate to the Origins of Your Orchids</p>
         <div class="fcos-badge">FCOS</div>
+        <div class="baker-indicator">
+            <span class="baker-count">{{ widget_data.orchids|selectattr('has_baker_data')|list|length }}</span>
+            Expert Culture Sheets Available
+        </div>
     </div>
 
     <!-- Location & Current Weather -->
@@ -112,12 +116,19 @@
             <div class="care-advice">
                 <div class="advice-icon">💡</div>
                 <div class="advice-text">
+                    {% if orchid.has_baker_data %}
+                    <div class="baker-advice">
+                        <span class="baker-badge">👨‍🌾 Baker Expert</span>
+                        <div id="baker-advice-{{ orchid.id }}" class="loading">Loading expert advice...</div>
+                    </div>
+                    {% else %}
                     {% if orchid.climate_preference == 'cool' %}
                     Keep cool & ventilated. Protect from heat.
                     {% elif orchid.climate_preference == 'warm' %}
                     Increase humidity. Warm conditions ideal.
                     {% else %}
                     Perfect growing conditions. Monitor humidity.
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
