@@ -63,9 +63,14 @@ class MetadataEnhancer:
                 enhanced['photo_analysis'] = ai_analysis.get('photo_analysis', {})
                 enhanced['morphological_tags'] = ai_analysis.get('morphological_tags', [])
             
-            # Generate cultural requirements
+            # Generate cultural requirements with photoperiod analysis
             cultural_reqs = self._generate_cultural_requirements(genus, species, botanical_data)
             enhanced['cultural_requirements'] = cultural_reqs
+            
+            # Add comprehensive photoperiod analysis
+            photoperiod_data = self._analyze_photoperiod_requirements(genus, species, botanical_data, ai_analysis)
+            if photoperiod_data:
+                enhanced['photoperiod_analysis'] = photoperiod_data
             
             # Perform judging analysis
             judging_analysis = self._perform_judging_analysis(submission_data, enhanced['ai_analysis'])
@@ -328,6 +333,12 @@ class MetadataEnhancer:
                 'frequency': 'Every 1-2 years or when medium breaks down',
                 'timing': 'Best after flowering, during new growth',
                 'medium': base_requirements.get('growing_medium', 'Bark-based orchid mix')
+            },
+            'photoperiod': {
+                'importance': 'Critical for flowering in most orchids',
+                'optimal_hours': base_requirements.get('light_duration', '12 hours'),
+                'seasonal_variation': 'Natural seasonal changes help trigger blooming',
+                'notes': 'Day length often more important than light intensity for flowering'
             }
         }
         

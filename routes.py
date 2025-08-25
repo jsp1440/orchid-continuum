@@ -2133,3 +2133,11 @@ def discovery_widget():
         'message': 'Professor BloomBot is analyzing orchid patterns...',
         'icon': 'search'
     })
+
+# Register AOS-Baker Culture Sheet System
+try:
+    from aos_baker_culture_routes import register_culture_routes
+    register_culture_routes(app)
+    logger.info("AOS-Baker Culture Sheet system registered successfully")
+except Exception as e:
+    logger.error(f"Failed to register culture sheet system: {str(e)}")
