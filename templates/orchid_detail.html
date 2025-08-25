@@ -36,12 +36,14 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-0">{{ orchid.display_name }}</h5>
+                            <h5 class="card-title mb-0">{{ orchid.display_name }} 
+                                <small class="text-muted">OC-{{ "%04d"|format(orchid.id) }}</small>
+                            </h5>
                             {% if orchid.scientific_name %}
                                 <p class="text-muted fst-italic">{{ orchid.scientific_name }}</p>
                             {% endif %}
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             {% if orchid.is_featured %}
                                 <span class="badge bg-warning">
                                     <i data-feather="star" style="width: 14px; height: 14px;"></i> Featured
@@ -51,7 +53,15 @@
                                 <span class="badge bg-success">
                                     <i data-feather="check-circle" style="width: 14px; height: 14px;"></i> Verified
                                 </span>
+                            {% elif orchid.validation_status == 'needs_review' %}
+                                <span class="badge bg-warning">
+                                    <i data-feather="alert-triangle" style="width: 14px; height: 14px;"></i> Needs Review
+                                </span>
                             {% endif %}
+                            <!-- Report Issue Button -->
+                            <button class="btn btn-sm btn-outline-danger" onclick="reportIssue('{{ orchid.id }}', '{{ orchid.display_name }}')">
+                                <i data-feather="flag" style="width: 14px; height: 14px;"></i> Report Issue
+                            </button>
                         </div>
                     </div>
                     
@@ -425,6 +435,37 @@ function showImageModal(imageUrl, title) {
     document.getElementById('modalImage').src = imageUrl;
     document.getElementById('imageModalTitle').textContent = title;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function reportIssue(orchidId, orchidName) {
+    const issue = prompt(`Report an issue with "${orchidName}" (OC-${orchidId.toString().padStart(4, '0')}):
+    
+What's wrong? (e.g., "Wrong identification - this is a Cattleya, not Trichocentrum")`);
+    
+    if (issue && issue.trim()) {
+        fetch('/report-issue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                orchid_id: orchidId,
+                issue_description: issue.trim(),
+                page_url: window.location.href
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Issue reported! Reference number: ' + data.reference_number + '\n\nThank you for helping improve the Orchid Continuum.');
+            } else {
+                alert('❌ Error reporting issue. Please try again.');
+            }
+        })
+        .catch(error => {
+            alert('❌ Error reporting issue. Please try again.');
+        });
+    }
 }
 
 // Initialize feather icons
