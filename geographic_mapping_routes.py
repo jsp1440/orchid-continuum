@@ -7,7 +7,7 @@ Part of The Orchid Continuum - Five Cities Orchid Society
 """
 
 from flask import Blueprint, render_template, jsonify, request, Response
-from orchid_geographic_mapping import OrchidGeographicMapper, get_orchid_geographic_data, create_world_orchid_map
+from simplified_orchid_mapping import simplified_mapper
 import json
 import logging
 
@@ -27,20 +27,16 @@ def mapping_home():
 def world_map():
     """Interactive world map of orchid occurrences"""
     try:
-        # Get limit from query parameters
-        limit = request.args.get('limit', 1000, type=int)
-        limit = min(limit, 2000)  # Cap at 2000 for performance
-        
-        mapper = OrchidGeographicMapper()
-        world_map_obj = mapper.create_interactive_world_map(orchid_limit=limit)
+        # Create working world map
+        world_map_obj = simplified_mapper.create_working_world_map()
         
         # Get statistics
-        stats = mapper.get_geographic_statistics()
+        stats = simplified_mapper.get_working_statistics()
         
         return render_template('world_orchid_map.html', 
                              map_html=world_map_obj._repr_html_(),
                              stats=stats,
-                             orchid_limit=limit)
+                             orchid_limit=stats['orchids_with_regional_data'])
         
     except Exception as e:
         logger.error(f"❌ Error creating world map: {e}")
@@ -69,17 +65,14 @@ def genus_map(genus):
 def api_coordinates():
     """API endpoint for orchid coordinate data"""
     try:
-        limit = request.args.get('limit', 500, type=int)
-        limit = min(limit, 1000)  # Cap for API performance
-        
-        mapper = OrchidGeographicMapper()
-        coordinates = mapper.get_orchid_coordinates(limit=limit)
+        # Get regional coordinate data
+        coordinates = simplified_mapper.get_regional_orchid_data()
         
         return jsonify({
             'success': True,
             'coordinates': coordinates,
             'total': len(coordinates),
-            'limit': limit
+            'type': 'regional_approximations'
         })
         
     except Exception as e:
@@ -93,8 +86,7 @@ def api_coordinates():
 def api_statistics():
     """API endpoint for geographic statistics"""
     try:
-        mapper = OrchidGeographicMapper()
-        stats = mapper.get_geographic_statistics()
+        stats = simplified_mapper.get_working_statistics()
         
         return jsonify({
             'success': True,
