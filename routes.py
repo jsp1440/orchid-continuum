@@ -1811,3 +1811,66 @@ def preview_darwin_core():
         logger.error(f"Error generating Darwin Core preview: {e}")
         flash('Error generating preview. Please try again.', 'error')
         return redirect(url_for('admin_dashboard'))
+
+@app.route("/compare/<species_name>")
+def compare_orchid_specimens(species_name):
+    """Compare multiple specimens of the same orchid species"""
+    from collections import defaultdict
+    
+    # Get all specimens of this species
+    records = OrchidRecord.query.filter(
+        func.lower(OrchidRecord.display_name) == species_name.lower()
+    ).all()
+    
+    if not records:
+        flash("No specimens found for this species", "error")
+        return redirect(url_for("gallery"))
+    
+    # Group specimens by different characteristics for comparison
+    comparison_data = {
+        "species_name": species_name,
+        "specimen_count": len(records),
+        "specimens": records,
+        "photographers": list(set(r.photographer for r in records if r.photographer)),
+        "sources": list(set(r.ingestion_source for r in records if r.ingestion_source)),
+        "with_photos": [r for r in records if r.google_drive_id],
+        "climate_conditions": list(set(r.climate_preference for r in records if r.climate_preference)),
+        "growth_habits": list(set(r.growth_habit for r in records if r.growth_habit))
+    }
+    
+    return render_template("comparison.html", data=comparison_data)
+
+@app.route("/research_dashboard") 
+def research_dashboard():
+    """Dashboard for orchid growth research and comparison analysis"""
+    # Get species with multiple specimens
+    from collections import defaultdict
+    
+    species_groups = defaultdict(list)
+    all_records = OrchidRecord.query.all()
+    
+    for record in all_records:
+        if record.display_name:
+            species_key = record.display_name.strip().lower()
+            species_groups[species_key].append(record)
+    
+    # Filter to research candidates (multiple specimens)
+    research_candidates = []
+    for species, records in species_groups.items():
+        if len(records) >= 2:  # Multiple specimens for comparison
+            photos = sum(1 for r in records if r.google_drive_id)
+            photographers = len(set(r.photographer for r in records if r.photographer))
+            
+            research_candidates.append({
+                "species": species,
+                "specimens": len(records),
+                "photos": photos,
+                "photographers": photographers,
+                "photo_percentage": (photos/len(records)*100) if len(records) > 0 else 0
+            })
+    
+    # Sort by research value (specimens with photos)
+    research_candidates.sort(key=lambda x: (x["photos"], x["specimens"]), reverse=True)
+    
+    return render_template("research_dashboard.html", candidates=research_candidates[:50])
+
