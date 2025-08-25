@@ -708,7 +708,8 @@ def gallery():
     climate = request.args.get('climate', '')
     growth_habit = request.args.get('growth_habit', '')
     
-    query = OrchidRecord.query.filter(OrchidRecord.image_url.isnot(None))
+    # Filter for Google Drive images only (to avoid CORS issues with external URLs)
+    query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
     
     if genus:
         query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
