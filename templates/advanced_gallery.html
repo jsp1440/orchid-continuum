@@ -357,13 +357,23 @@
                             </div>
                             
                             <div class="card-body">
-                                <h6 class="card-title text-warning">{{ orchid.display_name or orchid.scientific_name or "Unknown Orchid" }}</h6>
+                                <h6 class="card-title text-warning">
+                                    {% if orchid.genus and orchid.species %}
+                                        <em>{{ orchid.genus }} {{ orchid.species }}</em>
+                                    {% elif orchid.scientific_name %}
+                                        <em>{{ orchid.scientific_name }}</em>
+                                    {% else %}
+                                        {{ orchid.display_name or "Unknown Orchid" }}
+                                    {% endif %}
+                                </h6>
                                 
                                 <div class="small text-muted mb-2">
-                                    {% if orchid.genus %}
+                                    {% if orchid.genus and orchid.species %}
                                     <i data-feather="tag" style="width: 14px; height: 14px;"></i>
-                                    {{ orchid.genus }}
-                                    {% if orchid.species %}{{ orchid.species }}{% endif %}
+                                    <strong>{{ orchid.genus }}</strong> • <strong>{{ orchid.species }}</strong>
+                                    {% elif orchid.genus %}
+                                    <i data-feather="tag" style="width: 14px; height: 14px;"></i>
+                                    <strong>{{ orchid.genus }}</strong>
                                     {% endif %}
                                 </div>
                                 
