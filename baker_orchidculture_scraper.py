@@ -40,6 +40,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Miltoniopsis',
                 'genus': 'Miltoniopsis',
                 'type': 'genus_comprehensive'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/FREE/Miltonia_Art.html',
+                'species': 'Miltonia',
+                'genus': 'Miltonia',
+                'type': 'genus_comprehensive'
             }
         ]
     
@@ -130,6 +136,9 @@ class BakerOrchidCultureScraper:
         elif 'Andean' in text:
             habitat_info['location'] = 'Andean regions'
             habitat_info['country'] = 'South America'
+        elif 'Brazilian' in text and 'Brazil' in text:
+            habitat_info['location'] = 'Brazil (multiple states)'
+            habitat_info['country'] = 'Brazil'
         
         # Extract latitude if mentioned
         lat_match = re.search(r'(\d+\.?\d*)°N\s*Latitude', text)
