@@ -108,9 +108,21 @@ If you cannot identify the exact species, focus on genus-level identification an
         
         # Enhance with Baker culture data if this is a known species
         if result.get('scientific_name'):
+            # Try direct Baker culture sheet first
             baker_advice = get_baker_culture_enhancement(result['scientific_name'])
             if baker_advice:
                 result['baker_culture_notes'] = baker_advice
+            else:
+                # Try extrapolation from related species
+                mock_orchid = type('MockOrchid', (), {
+                    'scientific_name': result['scientific_name'],
+                    'climate_preference': result.get('climate_preference'),
+                    'growth_habit': result.get('growth_habit'),
+                    'display_name': result.get('suggested_name')
+                })()
+                extrapolated_advice = extrapolate_baker_culture_data(mock_orchid)
+                if extrapolated_advice:
+                    result['baker_extrapolated_notes'] = extrapolated_advice
         
         logger.info(f"Successfully analyzed orchid image with confidence: {result.get('confidence', 0.0)}")
         return result
@@ -132,8 +144,7 @@ def get_baker_culture_enhancement(scientific_name):
         # Find Baker culture sheet for this species
         baker_record = OrchidRecord.query.filter(
             OrchidRecord.scientific_name == scientific_name,
-            OrchidRecord.photographer == 'Charles & Margaret Baker',
-            OrchidRecord.cultural_notes.isnot(None)
+            OrchidRecord.photographer.like('%Baker%')
         ).first()
         
         if baker_record and baker_record.cultural_notes:
@@ -143,6 +154,170 @@ def get_baker_culture_enhancement(scientific_name):
     except Exception as e:
         logger.error(f"Error getting Baker culture enhancement: {str(e)}")
         return None
+
+def extrapolate_baker_culture_data(target_orchid):
+    """
+    Extrapolate Baker culture knowledge to orchids without direct culture sheets
+    Uses taxonomic relationships, climate preferences, and growth habits
+    """
+    try:
+        from models import OrchidRecord
+        from sqlalchemy import or_, and_
+        
+        if not target_orchid.scientific_name:
+            return None
+            
+        # Extract genus from target orchid
+        target_genus = target_orchid.scientific_name.split(' ')[0] if ' ' in target_orchid.scientific_name else target_orchid.scientific_name
+        
+        # Strategy 1: Find Baker culture sheets for same genus
+        genus_matches = OrchidRecord.query.filter(
+            OrchidRecord.photographer.like('%Baker%'),
+            OrchidRecord.scientific_name.like(f'{target_genus} %')
+        ).all()
+        
+        # Strategy 2: Find Baker culture sheets with similar climate preferences
+        climate_matches = []
+        if target_orchid.climate_preference:
+            climate_matches = OrchidRecord.query.filter(
+                OrchidRecord.photographer.like('%Baker%'),
+                OrchidRecord.climate_preference == target_orchid.climate_preference
+            ).limit(5).all()
+        
+        # Strategy 3: Find Baker culture sheets with similar growth habits
+        growth_matches = []
+        if target_orchid.growth_habit:
+            growth_matches = OrchidRecord.query.filter(
+                OrchidRecord.photographer.like('%Baker%'),
+                OrchidRecord.growth_habit == target_orchid.growth_habit
+            ).limit(3).all()
+        
+        # Combine and analyze all relevant Baker data
+        all_relevant = genus_matches + climate_matches + growth_matches
+        if not all_relevant:
+            return None
+            
+        # Extract and synthesize cultural insights
+        cultural_insights = []
+        for record in all_relevant:
+            if record.cultural_notes:
+                analysis = analyze_baker_culture_data(record.cultural_notes)
+                if analysis:
+                    analysis['source_species'] = record.scientific_name
+                    analysis['relationship'] = get_relationship_type(target_orchid, record)
+                    cultural_insights.append(analysis)
+        
+        # Generate extrapolated recommendations
+        if cultural_insights:
+            return synthesize_baker_recommendations(target_orchid, cultural_insights)
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error extrapolating Baker culture data: {str(e)}")
+        return None
+
+def get_relationship_type(target_orchid, baker_orchid):
+    """Determine the taxonomic/ecological relationship between orchids"""
+    target_genus = target_orchid.scientific_name.split(' ')[0] if target_orchid.scientific_name else ''
+    baker_genus = baker_orchid.scientific_name.split(' ')[0] if baker_orchid.scientific_name else ''
+    
+    if target_genus == baker_genus:
+        return 'same_genus'
+    elif target_orchid.climate_preference == baker_orchid.climate_preference:
+        return 'similar_climate'
+    elif target_orchid.growth_habit == baker_orchid.growth_habit:
+        return 'similar_growth'
+    else:
+        return 'general_orchid'
+
+def synthesize_baker_recommendations(target_orchid, cultural_insights):
+    """
+    Synthesize multiple Baker culture insights into recommendations for target orchid
+    """
+    try:
+        # Prepare synthesis prompt
+        system_prompt = """You are an expert orchid cultivation specialist synthesizing Charles & Margaret Baker culture sheet knowledge.
+
+Create extrapolated growing recommendations for the target orchid based on related Baker culture data.
+
+Consider:
+- Taxonomic relationships (same genus = highest priority)
+- Climate preference similarities
+- Growth habit similarities
+- Common patterns across related species
+
+Provide practical, actionable advice focusing on:
+- Temperature and climate needs
+- Humidity requirements
+- Watering patterns
+- Light requirements
+- Seasonal care adjustments
+
+Be conservative - only extrapolate what can be reasonably inferred from the related species data."""
+
+        target_info = {
+            'name': target_orchid.display_name,
+            'scientific_name': target_orchid.scientific_name,
+            'climate_preference': target_orchid.climate_preference,
+            'growth_habit': target_orchid.growth_habit,
+            'temperature_range': target_orchid.temperature_range
+        }
+        
+        insights_summary = []
+        for insight in cultural_insights:
+            insights_summary.append({
+                'source': insight.get('source_species'),
+                'relationship': insight.get('relationship'),
+                'climate_data': insight.get('climate_requirements'),
+                'humidity_data': insight.get('humidity_optimal'),
+                'care_notes': insight.get('growing_recommendations')
+            })
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Target orchid: {target_info}\\n\\nRelated Baker insights: {insights_summary}\\n\\nProvide extrapolated care recommendations:"}
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=600
+        )
+        
+        extrapolated_data = json.loads(response.choices[0].message.content)
+        extrapolated_data['extrapolated'] = True
+        extrapolated_data['source_count'] = len(cultural_insights)
+        extrapolated_data['confidence_level'] = calculate_extrapolation_confidence(target_orchid, cultural_insights)
+        
+        return extrapolated_data
+        
+    except Exception as e:
+        logger.error(f"Error synthesizing Baker recommendations: {str(e)}")
+        return None
+
+def calculate_extrapolation_confidence(target_orchid, cultural_insights):
+    """Calculate confidence level for extrapolated recommendations"""
+    if not cultural_insights:
+        return 0.0
+    
+    confidence = 0.0
+    for insight in cultural_insights:
+        relationship = insight.get('relationship', '')
+        if relationship == 'same_genus':
+            confidence += 0.4
+        elif relationship == 'similar_climate':
+            confidence += 0.3
+        elif relationship == 'similar_growth':
+            confidence += 0.2
+        else:
+            confidence += 0.1
+    
+    # Cap at 1.0 and adjust based on number of sources
+    confidence = min(confidence, 1.0)
+    if len(cultural_insights) >= 3:
+        confidence *= 1.1  # Boost for multiple sources
+    
+    return min(confidence, 0.95)  # Conservative maximum
 
 def analyze_baker_culture_data(cultural_notes):
     """
