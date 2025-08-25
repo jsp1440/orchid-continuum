@@ -46,6 +46,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Miltonia',
                 'genus': 'Miltonia',
                 'type': 'genus_comprehensive'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/FREE/Coel_Art.html',
+                'species': 'Coelogyne',
+                'genus': 'Coelogyne',
+                'type': 'genus_comprehensive'
             }
         ]
     
@@ -139,6 +145,12 @@ class BakerOrchidCultureScraper:
         elif 'Brazilian' in text and 'Brazil' in text:
             habitat_info['location'] = 'Brazil (multiple states)'
             habitat_info['country'] = 'Brazil'
+        elif 'Himalayan' in text and 'India' in text:
+            habitat_info['location'] = 'Himalayan region (India, Nepal, Sikkim)'
+            habitat_info['country'] = 'India/Nepal'
+        elif 'Vietnam' in text and 'Annam' in text:
+            habitat_info['location'] = 'Vietnam (formerly Annam)'
+            habitat_info['country'] = 'Vietnam'
         
         # Extract latitude if mentioned
         lat_match = re.search(r'(\d+\.?\d*)°N\s*Latitude', text)
