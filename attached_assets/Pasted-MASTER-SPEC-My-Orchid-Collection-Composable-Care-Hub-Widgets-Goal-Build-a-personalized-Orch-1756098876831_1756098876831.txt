@@ -1,0 +1,136 @@
+MASTER SPEC — “My Orchid Collection” (Composable Care Hub + Widgets)
+
+Goal
+Build a personalized Orchid Care Hub that can host and orchestrate multiple widgets, each of which can also run stand-alone:
+    1.    Collection (photos + metadata)
+    2.    Photo Enhancer (edit/filters)
+    3.    Care Scheduler (watering/repotting/fertilizer)
+    4.    Culture Intelligence (Baker/AOS/FCOS + extrapolation)
+    5.    Weather/Habitat Comparison (seasonal & photoperiod aligned)
+    6.    Sharing (newsletter submission, members gallery)
+
+A. Architecture (must)
+    •    Hub Shell: a lightweight container that renders any combination of widgets via config.
+    •    Widgets: self-contained, lazy-loaded bundles with their own routes; each accepts a userContext and orchidId (optional).
+    •    Shared Services (singletons):
+    •    Auth/Profile (userId, display name, email, recovery flows).
+    •    Orchid DB (photos, metadata, ownership tags).
+    •    Scheduler Service (rules, reminders).
+    •    Culture Engine (Baker/AOS/FCOS data + extrapolation).
+    •    Weather/Habitat Engine (alignment logic).
+    •    Media/Enhancer (non-destructive edits, versions).
+    •    Event Bus (pub/sub): PHOTO_UPLOADED, ORCHID_UPDATED, SCHEDULE_CHANGED, SHARE_REQUESTED, etc.
+    •    Design System: one theme (light/dark), shared components (cards, tables, toasts, charts).
+
+B. Personalization
+    •    On first visit: prompt for a collection name (default “My Orchid Collection”) → user can rename (e.g., “Jeff’s Orchid Collection”).
+    •    Show name in Hub header; store in profile.
+
+C. Data Model (minimum)
+    •    User: userId, displayName, email, recoveryPhone, preferences{theme, units, timezone}.
+    •    Orchid: orchidId, userId, title, genus, species, clonalName, acquiredOn, source, notes, environment{indoor|outdoor|greenhouse|patio|bathroom|lights}, location{lat,long,elev}, tags[].
+    •    Photo: photoId, orchidId, userId, url, capturedOn, exif{...}, edits{versioned}.
+    •    CarePlan: orchidId, watering{rule, nextDate}, fertilizer{type, strength, rule, nextDate}, repot{last, next}, reminders{email|push}.
+    •    CultureLink: orchidId, source{Baker|AOS|FCOS|Extrapolated}, confidence, sheetId.
+    •    ShareIntent: orchidId, dest{newsletter|gallery|website}, status.
+
+D. Widgets (stand-alone + pluggable)
+
+1) Collection Widget
+    •    Features: manual + bulk upload, metadata editor, quick tags, search/filter, ownership tagging.
+    •    Bulk import: drag-and-drop; infer genus/species from filename or OCR (optional).
+    •    Outputs/Events: PHOTO_UPLOADED, ORCHID_UPDATED.
+    •    Embed: <script src="collection.js" data-user="…" data-theme="…"></script>
+
+2) Photo Enhancer
+    •    Non-destructive edits (crop, rotate, exposure, clarity, background, watermark off by default).
+    •    Save creates a new version under same photoId.
+    •    Event: PHOTO_VERSION_CREATED.
+
+3) Care Scheduler
+    •    Presets by genus/species; custom rules (e.g., “every 3 days”, “1st & 15th”).
+    •    Notifications: email (now), push (hookable later).
+    •    Weekly roll-up: “Your week at a glance” list/table export (PDF).
+    •    Events: SCHEDULE_CHANGED, REMINDER_SENT.
+
+4) Culture Intelligence
+    •    Resolution order: Direct Baker → FCOS notes → AOS fallback → Extrapolated (similar traits or geographic region).
+    •    Show Source Badge + Confidence %.
+    •    Generate Culture Card (PDF) and Full Sheet on demand.
+
+5) Weather/Habitat Comparison
+    •    Modes: Calendar (raw), Seasonal (default), Photoperiod.
+    •    Align by seasonal phase or daylength; align solar time for hourly charts.
+    •    Elevation temperature adjustment; transparency panel lists methods & sources.
+    •    Badge stack: “Hemisphere offset X months”, “Solar aligned”, “Elevation adj”, “Confidence: High/Med/Low”.
+
+6) Sharing
+    •    Buttons on each orchid/photo:
+    •    “Submit to Newsletter” → ShareIntent{newsletter}
+    •    “Add to Member Gallery”
+    •    “Keep Private”
+    •    Simple queue view for admins (status: pending/approved/published).
+
+E. Hub Shell (composition)
+    •    Left nav: Collection • Care • Culture • Weather • Sharing • Settings
+    •    Main: responsive cards, empty-state helpers.
+    •    Each nav item mounts the respective widget; pass userContext + optional orchidId.
+    •    Feature flags let you hide widgets on pages where you want only one.
+
+F. Weather/Habitat Algorithm (essential math)
+    •    Implement as a service used by the Weather widget and by Culture insights.
+    •    Inputs: user lat/long/elev; habitat lat/long/elev per species; 30-year normals; hourly where available.
+    •    Seasonal mode: best-match habitat month to user’s current month over vector (Tmin, Tmax, RH, precip).
+    •    Photoperiod mode: compute daylength; pick habitat date with nearest daylength; align by solar hour.
+    •    Output: diffs, percentiles, z-scores, confidence.
+
+G. Accessibility & Transparency
+    •    Every chart has a plain-English summary.
+    •    “Details” drawer shows data sources, alignment mode, station distance, elevation delta.
+
+H. Example APIs (pseudo)
+
+// Shared context
+initHub({ userId, theme, units, timezone });
+
+// Collection
+createOrchid(payload): Promise<{orchidId}>
+uploadPhotos({orchidId, files[]}): Promise<Photo[]>
+updateOrchid(orchidId, patch)
+
+// Care
+getCarePlan(orchidId)
+setCarePlan(orchidId, plan)
+getWeeklySchedule(userId)
+
+// Culture
+resolveCulture(orchidId): {source, confidence, url, summary}
+generateCultureCard(orchidId): URL
+
+// Weather
+compareHabitat({
+  userLoc, habitatLoc, mode: "calendar"|"seasonal"|"photoperiod"
+}): {
+  badges[], confidence, hourlySeries[], seasonalBand, insights[]
+}
+
+// Sharing
+submitShare(orchidId, dest)
+
+I. Copy (UI strings)
+    •    Source badges: “Direct Baker”, “FCOS Notes”, “AOS Fallback”, “Extended—Geographic”, “Extended—Trait Similarity”.
+    •    Insight template:
+“Your greenhouse today (72 °F, 48% RH) vs habitat late-summer (71–75 °F, 65% RH). You’re ~17% drier; mist briefly during warmest 3 hours.”
+
+J. Names/Brand
+
+Default hub title: My Orchid Collection. Let the user rename (e.g., “Jeff’s Orchid Collection”).
+Alt labels for nav/menu: Care Hub, Orchid Wellness, Continuum: My Collection (configurable).
+
+⸻
+
+Delivery Expectations
+    •    Each widget ships as a self-contained bundle + a React/Vue component (your choice) with a small vanilla JS wrapper for drop-in embeds.
+    •    Hub Shell composes widgets; each widget also runs alone with a single <script> include.
+    •    Provide a demo page for each widget + a full Hub demo.
+    •    Document events and embed options.
