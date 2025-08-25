@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% set title = "Enhanced Mapping Dashboard" %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.dashboard-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.dashboard-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: rgba(0, 212, 170, 0.1);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    height: 100%;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #00d4aa;
+}
+
+.chart-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    height: 400px;
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 5px;
+    height: 20px;
+    margin: 10px 0;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3"><i data-feather="activity"></i> <strong>Enhanced Mapping Dashboard</strong></h1>
+            <p class="lead text-muted">Comprehensive analytics and insights from advanced orchid biodiversity analysis</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalHotspots">{{ summary_stats.total_hotspots|default('--') }}</div>
+                    <h6 class="text-muted mb-0">Biodiversity Hotspots</h6>
+                    <small class="text-success">Identified by clustering</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="habitatTypes">{{ summary_stats.habitat_types|default('--') }}</div>
+                    <h6 class="text-muted mb-0">Habitat Types</h6>
+                    <small class="text-success">Ecological categories</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="regionsAnalyzed">{{ summary_stats.regions_analyzed|default('--') }}</div>
+                    <h6 class="text-muted mb-0">Regions Analyzed</h6>
+                    <small class="text-success">Global coverage</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="diverseHabitat">{{ summary_stats.most_diverse_habitat|default('--')|title }}</div>
+                    <h6 class="text-muted mb-0">Most Diverse</h6>
+                    <small class="text-success">Habitat type</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <h4 class="mb-3"><i data-feather="bar-chart"></i> Biodiversity Hotspots</h4>
+                    <div class="chart-container">
+                        <canvas id="hotspotsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <h4 class="mb-3"><i data-feather="pie-chart"></i> Habitat Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="habitatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="dashboard-card">
+                    <h4 class="mb-3"><i data-feather="trending-up"></i> Regional Diversity Analysis</h4>
+                    <div class="chart-container">
+                        <canvas id="diversityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <h4 class="mb-3"><i data-feather="star"></i> Top Biodiversity Hotspots</h4>
+                    <div id="hotspotsTable">
+                        {% if comprehensive_data and comprehensive_data.biodiversity_hotspots %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Location</th>
+                                        <th>Species</th>
+                                        <th>Specimens</th>
+                                        <th>Diversity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for hotspot in comprehensive_data.biodiversity_hotspots[:10] %}
+                                    <tr>
+                                        <td>{{ hotspot.center_lat|round(2) }}, {{ hotspot.center_lng|round(2) }}</td>
+                                        <td><span class="text-success">{{ hotspot.unique_species }}</span></td>
+                                        <td>{{ hotspot.total_specimens }}</td>
+                                        <td>{{ (hotspot.diversity_index * 100)|round(1) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <div class="loading-skeleton"></div>
+                            <div class="loading-skeleton"></div>
+                            <div class="loading-skeleton"></div>
+                            <p>Loading biodiversity data...</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-card">
+                    <h4 class="mb-3"><i data-feather="layers"></i> Habitat Analysis</h4>
+                    <div id="habitatTable">
+                        {% if comprehensive_data and comprehensive_data.habitat_correlations and comprehensive_data.habitat_correlations.habitat_breakdown %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Habitat Type</th>
+                                        <th>Specimens</th>
+                                        <th>Species</th>
+                                        <th>% of Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for habitat_type, data in comprehensive_data.habitat_correlations.habitat_breakdown.items() %}
+                                    <tr>
+                                        <td>{{ habitat_type|replace('_', ' ')|title }}</td>
+                                        <td>{{ data.specimen_count }}</td>
+                                        <td><span class="text-info">{{ data.unique_species }}</span></td>
+                                        <td>{{ data.percentage_of_total|round(1) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <div class="loading-skeleton"></div>
+                            <div class="loading-skeleton"></div>
+                            <div class="loading-skeleton"></div>
+                            <p>Loading habitat analysis...</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a href="/enhanced-mapping" class="btn btn-outline-light me-3">
+                <i data-feather="arrow-left"></i> Back to Analytics
+            </a>
+            <a href="/enhanced-mapping/biodiversity-hotspots" class="btn btn-success me-3">
+                <i data-feather="map-pin"></i> View Hotspots
+            </a>
+            <a href="/enhanced-mapping/species-density" class="btn btn-primary">
+                <i data-feather="activity"></i> Density Maps
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    initializeDashboard();
+});
+
+function initializeDashboard() {
+    // Initialize charts with sample data or loading states
+    initHotspotsChart();
+    initHabitatChart();
+    initDiversityChart();
+    
+    // Load real data
+    loadDashboardData();
+}
+
+function initHotspotsChart() {
+    const ctx = document.getElementById('hotspotsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Loading...'],
+            datasets: [{
+                label: 'Species Count',
+                data: [0],
+                backgroundColor: 'rgba(0, 212, 170, 0.6)',
+                borderColor: 'rgba(0, 212, 170, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#ffffff' }
+                },
+                x: {
+                    ticks: { color: '#ffffff' }
+                }
+            }
+        }
+    });
+}
+
+function initHabitatChart() {
+    const ctx = document.getElementById('habitatChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Loading...'],
+            datasets: [{
+                data: [100],
+                backgroundColor: ['rgba(0, 212, 170, 0.6)'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            }
+        }
+    });
+}
+
+function initDiversityChart() {
+    const ctx = document.getElementById('diversityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Loading...'],
+            datasets: [{
+                label: 'Regional Diversity',
+                data: [0],
+                borderColor: 'rgba(0, 212, 170, 1)',
+                backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#ffffff' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#ffffff' }
+                },
+                x: {
+                    ticks: { color: '#ffffff' }
+                }
+            }
+        }
+    });
+}
+
+async function loadDashboardData() {
+    try {
+        const response = await fetch('/enhanced-mapping/api/comprehensive-analysis');
+        if (response.ok) {
+            const data = await response.json();
+            console.log('📊 Dashboard data loaded successfully', data);
+        } else {
+            console.warn('Dashboard data not available yet');
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
+</script>
+{% endblock %}
