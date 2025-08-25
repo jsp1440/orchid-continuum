@@ -415,17 +415,27 @@ class GaryBotanicalScraper:
         return images
     
     def extract_comprehensive_content(self, soup):
-        """Extract ALL textual content with botanical relevance"""
+        """Extract ALL botanical content with detailed field mapping"""
         content = {
             'description': '',
             'characteristics': '',
             'references': '',
             'etymology': '',
             'distribution': '',
-            'cultivation': ''
+            'cultivation': '',
+            'common_names': '',
+            'name_derivation': '',
+            'native_distribution': '',
+            'environmental_zones': '',
+            'leaf_shape': '',
+            'leaf_description': '',
+            'flower_description': '',
+            'plant_size': '',
+            'botanical_features': '',
+            'growth_habit': ''
         }
         
-        # Method 1: Structured content (dt/dd pairs)
+        # Method 1: Structured content (dt/dd pairs) - Enhanced for more fields
         definitions = soup.find_all(['dt', 'dd'])
         current_term = None
         for element in definitions:
@@ -434,63 +444,103 @@ class GaryBotanicalScraper:
             elif element.name == 'dd' and current_term:
                 text = element.get_text(strip=True)
                 
-                if any(key in current_term for key in ['description', 'character']):
+                # Map terms to our new database fields
+                if any(key in current_term for key in ['common name', 'vernacular', 'popular name']):
+                    content['common_names'] += f" {text}"
+                elif any(key in current_term for key in ['derivation', 'etymology', 'meaning', 'named after']):
+                    content['etymology'] += f" {text}"
+                    content['name_derivation'] += f" {text}"
+                elif any(key in current_term for key in ['distribution', 'found in', 'native to', 'occurs in']):
+                    content['distribution'] += f" {text}"
+                    content['native_distribution'] += f" {text}"
+                elif any(key in current_term for key in ['habitat', 'environment', 'climate', 'elevation']):
+                    content['environmental_zones'] += f" {text}"
+                elif any(key in current_term for key in ['leaf', 'leaves', 'foliage']):
+                    content['leaf_description'] += f" {text}"
+                    # Extract leaf shape if mentioned
+                    shape_keywords = ['linear', 'oval', 'oblong', 'lanceolate', 'elliptic', 'ovate']
+                    for shape in shape_keywords:
+                        if shape in text.lower():
+                            content['leaf_shape'] = shape
+                elif any(key in current_term for key in ['flower', 'bloom', 'inflorescence', 'petals']):
+                    content['flower_description'] += f" {text}"
+                elif any(key in current_term for key in ['size', 'height', 'length', 'dimension']):
+                    content['plant_size'] += f" {text}"
+                elif any(key in current_term for key in ['growth', 'habit', 'form', 'type']):
+                    content['growth_habit'] += f" {text}"
+                elif any(key in current_term for key in ['description', 'character']):
                     content['description'] += f" {text}"
+                    content['botanical_features'] += f" {text}"
                 elif any(key in current_term for key in ['reference', 'citation']):
                     content['references'] += f" {text}"
-                elif 'etymology' in current_term:
-                    content['etymology'] += f" {text}"
-                elif any(key in current_term for key in ['distribution', 'habitat']):
-                    content['distribution'] += f" {text}"
                 elif any(key in current_term for key in ['cultivation', 'culture']):
                     content['cultivation'] += f" {text}"
         
-        # Method 2: Paragraph content
+        # Method 2: Enhanced paragraph analysis with keyword mapping
         paragraphs = soup.find_all('p')
-        botanical_text = []
         for p in paragraphs:
             text = p.get_text(strip=True)
-            # Filter for botanical content
-            botanical_keywords = [
-                'species', 'genus', 'family', 'flower', 'leaf', 'root',
-                'habitat', 'distribution', 'cultivation', 'growth',
-                'pseudobulb', 'inflorescence', 'epiphyte', 'terrestrial'
-            ]
+            text_lower = text.lower()
             
-            if (len(text) > 50 and 
-                any(keyword in text.lower() for keyword in botanical_keywords) and
-                not any(skip in text.lower() for skip in ['click', 'next', 'copyright', 'menu'])):
-                botanical_text.append(text)
+            if len(text) > 50 and not any(skip in text_lower for skip in ['click', 'next', 'copyright', 'menu']):
+                # Common names detection
+                if any(phrase in text_lower for phrase in ['commonly known as', 'also called', 'popular name']):
+                    content['common_names'] += f" {text}"
+                
+                # Distribution detection
+                if any(phrase in text_lower for phrase in ['found in', 'native to', 'distributed', 'endemic to']):
+                    content['native_distribution'] += f" {text}"
+                
+                # Habitat/environment detection
+                if any(phrase in text_lower for phrase in ['grows in', 'habitat', 'elevation', 'climate']):
+                    content['environmental_zones'] += f" {text}"
+                
+                # Botanical description
+                if any(keyword in text_lower for keyword in ['flower', 'leaf', 'pseudobulb', 'root', 'stem']):
+                    content['botanical_features'] += f" {text}"
+                
+                # General botanical content
+                botanical_keywords = [
+                    'species', 'genus', 'family', 'epiphyte', 'terrestrial',
+                    'inflorescence', 'petals', 'sepals', 'labellum'
+                ]
+                if any(keyword in text_lower for keyword in botanical_keywords):
+                    content['description'] += f" {text}"
         
-        content['description'] = ' '.join(botanical_text[:3])  # First 3 relevant paragraphs
-        
-        # Method 3: List content (botanical characteristics)
-        lists = soup.find_all(['ul', 'ol'])
-        list_items = []
-        for ul in lists:
-            items = ul.find_all('li')
-            for li in items:
-                text = li.get_text(strip=True)
-                if len(text) > 20 and len(text) < 200:  # Reasonable characteristic length
-                    list_items.append(text)
-        
-        content['characteristics'] = ' | '.join(list_items[:5])
-        
-        # Method 4: Tables (for structured botanical data)
+        # Method 3: Table analysis for structured data
         tables = soup.find_all('table')
-        table_data = []
         for table in tables:
             rows = table.find_all('tr')
             for row in rows:
                 cells = row.find_all(['td', 'th'])
                 if len(cells) >= 2:
-                    key = cells[0].get_text(strip=True)
+                    key = cells[0].get_text(strip=True).lower()
                     value = cells[1].get_text(strip=True)
-                    if key and value and len(value) > 5:
-                        table_data.append(f"{key}: {value}")
+                    
+                    if key and value and len(value) > 3:
+                        # Map table data to specific fields
+                        if any(term in key for term in ['common', 'popular', 'vernacular']):
+                            content['common_names'] += f" {value}"
+                        elif any(term in key for term in ['distribution', 'range', 'native']):
+                            content['native_distribution'] += f" {value}"
+                        elif any(term in key for term in ['habitat', 'environment', 'climate']):
+                            content['environmental_zones'] += f" {value}"
+                        elif any(term in key for term in ['leaf', 'foliage']):
+                            content['leaf_description'] += f" {value}"
+                        elif any(term in key for term in ['flower', 'bloom', 'inflorescence']):
+                            content['flower_description'] += f" {value}"
+                        elif any(term in key for term in ['size', 'height', 'dimension']):
+                            content['plant_size'] += f" {value}"
+                        elif any(term in key for term in ['growth', 'habit', 'form']):
+                            content['growth_habit'] += f" {value}"
+                        else:
+                            content['characteristics'] += f" {key}: {value}"
         
-        if table_data:
-            content['characteristics'] += ' | ' + ' | '.join(table_data[:3])
+        # Clean up fields (remove extra spaces, limit length)
+        for field_key in content:
+            content[field_key] = content[field_key].strip()
+            if len(content[field_key]) > 500:  # Reasonable field length
+                content[field_key] = content[field_key][:500] + "..."
         
         return content
     
@@ -608,18 +658,26 @@ class GaryBotanicalScraper:
         return ". ".join(parts)
     
     def save_to_database(self, orchid_data):
-        """Save the complete orchid data to database"""
+        """Save complete orchid data with all botanical fields"""
         session = self.Session()
         try:
             insert_query = text("""
                 INSERT INTO orchid_record (
                     scientific_name, display_name, genus, species, 
                     photographer, ingestion_source, ai_description,
-                    image_url, region, created_at
+                    image_url, region, created_at,
+                    common_names, name_derivation, native_distribution,
+                    environmental_zones, leaf_shape, leaf_description,
+                    flower_description, plant_size, botanical_features,
+                    native_habitat, leaf_form, growth_habit
                 ) VALUES (
                     :scientific_name, :display_name, :genus, :species,
                     :photographer, :ingestion_source, :ai_description,
-                    :image_url, :region, :created_at
+                    :image_url, :region, :created_at,
+                    :common_names, :name_derivation, :native_distribution,
+                    :environmental_zones, :leaf_shape, :leaf_description,
+                    :flower_description, :plant_size, :botanical_features,
+                    :native_habitat, :leaf_form, :growth_habit
                 )
             """)
             
@@ -633,7 +691,20 @@ class GaryBotanicalScraper:
                 'ai_description': orchid_data.get('ai_description'),
                 'image_url': orchid_data.get('image_url'),
                 'region': orchid_data.get('region'),
-                'created_at': datetime.now()
+                'created_at': datetime.now(),
+                # New botanical fields
+                'common_names': orchid_data.get('common_names', ''),
+                'name_derivation': orchid_data.get('name_derivation', ''),
+                'native_distribution': orchid_data.get('native_distribution', ''),
+                'environmental_zones': orchid_data.get('environmental_zones', ''),
+                'leaf_shape': orchid_data.get('leaf_shape', ''),
+                'leaf_description': orchid_data.get('leaf_description', ''),
+                'flower_description': orchid_data.get('flower_description', ''),
+                'plant_size': orchid_data.get('plant_size', ''),
+                'botanical_features': orchid_data.get('botanical_features', ''),
+                'native_habitat': orchid_data.get('native_habitat', ''),
+                'leaf_form': orchid_data.get('leaf_form', ''),
+                'growth_habit': orchid_data.get('growth_habit', '')
             })
             
             session.commit()
