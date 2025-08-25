@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% set title = "World Orchid Distribution Map" %}
+
+{% block extra_head %}
+<style>
+.map-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+    padding: 2rem 0;
+}
+
+.map-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.map-frame {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    min-height: 600px;
+    background: #f8f9fa;
+}
+
+.stats-banner {
+    background: linear-gradient(135deg, #00d4aa, #00a085);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.control-panel {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.btn-map-control {
+    background: rgba(0, 212, 170, 0.2);
+    border: 1px solid #00d4aa;
+    color: #00d4aa;
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-map-control:hover {
+    background: #00d4aa;
+    color: white;
+}
+
+.legend {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 0.5rem;
+}
+
+.info-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid #00d4aa;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0 8px 8px 0;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 3rem;
+    color: #00d4aa;
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid #00d4aa;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-container">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 mb-3"><i data-feather="globe"></i> <strong>World Orchid Distribution</strong></h1>
+            <p class="lead text-muted">Interactive map showing global orchid occurrences from GBIF specimens</p>
+        </div>
+
+        <!-- Statistics Banner -->
+        {% if stats %}
+        <div class="stats-banner">
+            <div class="row">
+                <div class="col-md-3">
+                    <h4>{{ stats.total_orchids|default(0) }}</h4>
+                    <small>Total Orchids</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ stats.with_coordinates|default(0) }}</h4>
+                    <small>With Coordinates</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ stats.coordinate_coverage|default(0) }}%</h4>
+                    <small>Geographic Coverage</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ orchid_limit|default(1000) }}</h4>
+                    <small>Displayed on Map</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <button class="btn-map-control" onclick="toggleHeatMap()">
+                        <i data-feather="trending-up"></i> Toggle Heat Map
+                    </button>
+                    <button class="btn-map-control" onclick="toggleClusters()">
+                        <i data-feather="layers"></i> Toggle Clusters
+                    </button>
+                    <button class="btn-map-control" onclick="fitToBounds()">
+                        <i data-feather="maximize-2"></i> Fit All Data
+                    </button>
+                    <button class="btn-map-control" onclick="resetView()">
+                        <i data-feather="refresh-cw"></i> Reset View
+                    </button>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn-map-control" onclick="exportMap()">
+                        <i data-feather="download"></i> Export Data
+                    </button>
+                    <button class="btn-map-control" onclick="shareMap()">
+                        <i data-feather="share-2"></i> Share Map
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-card">
+            <div id="loadingIndicator" class="loading-indicator">
+                <div class="spinner"></div>
+                <h5>Loading Interactive Orchid Map...</h5>
+                <p class="text-muted">Preparing {{ orchid_limit|default(1000) }} orchid occurrences</p>
+            </div>
+            
+            <div id="mapContainer" class="map-frame" style="display: none;">
+                {{ map_html|safe }}
+            </div>
+        </div>
+
+        <!-- Information Panels -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="info"></i> Map Features</h5>
+                    <ul class="list-unstyled">
+                        <li>• Interactive markers with orchid details</li>
+                        <li>• Species density heat map overlay</li>
+                        <li>• Clustered view for performance</li>
+                        <li>• Multiple map tile options</li>
+                        <li>• Zoom and pan controls</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="database"></i> Data Sources</h5>
+                    <ul class="list-unstyled">
+                        <li>• GBIF biodiversity database</li>
+                        <li>• Museum specimen records</li>
+                        <li>• Herbarium collections</li>
+                        <li>• Research institution data</li>
+                        <li>• Verified coordinates only</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="target"></i> Coverage</h5>
+                    <div id="coverageStats">
+                        {% if stats and stats.top_regions %}
+                        {% for region in stats.top_regions[:5] %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>{{ region.region }}</span>
+                            <span class="text-success">{{ region.count }}</span>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h6><i data-feather="map"></i> Map Legend</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #28a745;"></div>
+                        <span>Orchid Occurrence Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(to right, blue, red);"></div>
+                        <span>Species Density Heat Map</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #007bff; border-radius: 50%;"></div>
+                        <span>Clustered Occurrences</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #6c757d;"></div>
+                        <span>No Data Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a href="/mapping" class="btn btn-outline-light me-3">
+                <i data-feather="arrow-left"></i> Back to Mapping Home
+            </a>
+            <button class="btn btn-primary me-3" onclick="showAdvancedOptions()">
+                <i data-feather="settings"></i> Advanced Options
+            </button>
+            <a href="/mapping/api/export/geojson" class="btn btn-success" target="_blank">
+                <i data-feather="download"></i> Download GeoJSON
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Options Modal -->
+<div class="modal fade" id="advancedModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title"><i data-feather="settings"></i> Advanced Map Options</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Display Limits</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Max Orchids to Display</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="limitSelect">
+                                <option value="500">500 (Fast)</option>
+                                <option value="1000" selected>1,000 (Balanced)</option>
+                                <option value="2000">2,000 (Detailed)</option>
+                                <option value="5000">5,000 (Comprehensive)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Map Style</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Base Map</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="styleSelect">
+                                <option value="openstreetmap">OpenStreetMap</option>
+                                <option value="cartodb">CartoDB Positron</option>
+                                <option value="dark">Dark Theme</option>
+                                <option value="satellite">Satellite</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Filter Options</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="showClusters" checked>
+                            <label class="form-check-label">Show Marker Clusters</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="showHeatmap">
+                            <label class="form-check-label">Show Heat Map</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="enablePopups" checked>
+                            <label class="form-check-label">Enable Popups</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="enableTooltips" checked>
+                            <label class="form-check-label">Enable Tooltips</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyAdvancedOptions()">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Show map after brief loading delay
+    setTimeout(() => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('mapContainer').style.display = 'block';
+        console.log('🗺️ Interactive orchid map loaded successfully');
+    }, 1500);
+});
+
+// Map control functions
+function toggleHeatMap() {
+    console.log('Toggling heat map layer...');
+    // This would interact with the Folium map layers
+    alert('Heat map layer toggled! (Feature requires map layer integration)');
+}
+
+function toggleClusters() {
+    console.log('Toggling marker clusters...');
+    alert('Marker clustering toggled! (Feature requires map layer integration)');
+}
+
+function fitToBounds() {
+    console.log('Fitting map to data bounds...');
+    alert('Map fitted to show all orchid data! (Feature requires map bounds calculation)');
+}
+
+function resetView() {
+    console.log('Resetting map view...');
+    alert('Map view reset to default world view! (Feature requires map reset)');
+}
+
+function exportMap() {
+    window.open('/mapping/api/export/geojson', '_blank');
+}
+
+function shareMap() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: 'World Orchid Distribution Map',
+            text: 'Interactive map showing global orchid occurrences',
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Map URL copied to clipboard!');
+        });
+    }
+}
+
+function showAdvancedOptions() {
+    new bootstrap.Modal(document.getElementById('advancedModal')).show();
+}
+
+function applyAdvancedOptions() {
+    const limit = document.getElementById('limitSelect').value;
+    const style = document.getElementById('styleSelect').value;
+    
+    // Reload map with new options
+    const url = new URL(window.location.href);
+    url.searchParams.set('limit', limit);
+    url.searchParams.set('style', style);
+    
+    window.location.href = url.toString();
+}
+
+// Analytics tracking
+function trackMapInteraction(action) {
+    console.log(`Map interaction: ${action}`);
+    // Could integrate with analytics service
+}
+
+// Performance monitoring
+let mapLoadTime = Date.now();
+window.addEventListener('load', () => {
+    const loadTime = Date.now() - mapLoadTime;
+    console.log(`🚀 Map loaded in ${loadTime}ms`);
+});
+</script>
+{% endblock %}

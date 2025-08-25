@@ -27,6 +27,8 @@ from scraping_dashboard import scraping_dashboard
 from vigilant_monitor import vigilant_monitor
 from gbif_routes import gbif_bp
 from ai_orchid_routes import ai_orchid_bp
+from geographic_mapping_routes import geo_mapping_bp
+from enhanced_mapping_routes import enhanced_mapping_bp
 import os
 import json
 import logging
@@ -51,6 +53,12 @@ app.register_blueprint(gbif_bp)
 
 # Register AI orchid identification routes
 app.register_blueprint(ai_orchid_bp)
+
+# Register geographic mapping routes
+app.register_blueprint(geo_mapping_bp)
+
+# Register enhanced mapping analytics routes
+app.register_blueprint(enhanced_mapping_bp)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
