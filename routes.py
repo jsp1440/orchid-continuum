@@ -1063,11 +1063,11 @@ def orchid_detail(id):
     orchid.view_count += 1
     db.session.commit()
     
-    # Get related orchids (same genus)
+    # Get related orchids (same genus) with Google Drive images only
     related_orchids = OrchidRecord.query.filter(
         OrchidRecord.genus == orchid.genus,
         OrchidRecord.id != orchid.id,
-        OrchidRecord.image_url.isnot(None)
+        OrchidRecord.google_drive_id.isnot(None)
     ).limit(4).all()
     
     return render_template('orchid_detail.html', orchid=orchid, related_orchids=related_orchids)

@@ -340,9 +340,11 @@
                 {% for related in related_orchids %}
                 <div class="col-md-6 col-lg-3">
                     <div class="card border-0 shadow-sm h-100">
-                        {% if related.image_url %}
-                            <img src="{{ related.image_url }}" class="card-img-top" alt="{{ related.display_name }}"
-                                 style="height: 200px; object-fit: cover;">
+                        {% if related.google_drive_id %}
+                            <img src="/api/drive-photo/{{ related.google_drive_id }}" class="card-img-top" alt="{{ related.display_name }}"
+                                 style="height: 200px; object-fit: cover;"
+                                 onerror="this.src='/static/images/fcos_placeholder_rect.png';"
+                                 onload="console.log('✅ Related orchid loaded:', '{{ related.display_name }}');">
                         {% else %}
                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                  style="height: 200px;">
