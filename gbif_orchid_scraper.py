@@ -144,9 +144,16 @@ class GBIFOrchidIntegrator:
             genus = occurrence.get('genus', '')
             specific_epithet = occurrence.get('specificEpithet', '')
             
-            if not scientific_name or not genus:
-                logger.warning("❌ Skipping occurrence - missing taxonomic data")
+            # Be more flexible with GBIF data - just need scientific name
+            if not scientific_name:
+                logger.warning("❌ Skipping occurrence - no scientific name")
                 return None
+                
+            # Extract genus from scientific name if not provided separately
+            if not genus and scientific_name:
+                genus_parts = scientific_name.split()
+                if len(genus_parts) >= 1:
+                    genus = genus_parts[0]
             
             # Build species name
             species_name = f"{genus} {specific_epithet}" if specific_epithet else genus
@@ -225,7 +232,7 @@ class GBIFOrchidIntegrator:
                 existing = None
                 if orchid_data.get('gbif_occurrence_id'):
                     existing = OrchidRecord.query.filter_by(
-                        source_url=orchid_data['source_url']
+                        image_url=orchid_data['source_url']
                     ).first()
                 
                 if existing:
