@@ -109,8 +109,9 @@ class VigilantMonitor:
                 # Test basic query
                 orchid_count = OrchidRecord.query.count()
                 
-                # Test database write capability
-                db.session.execute("SELECT 1")
+                # Test database write capability (fix SQL syntax)
+                from sqlalchemy import text
+                db.session.execute(text("SELECT 1"))
                 db.session.commit()
                 
                 logger.info(f"✅ DB Health: {orchid_count} orchids, connection stable")
@@ -123,36 +124,59 @@ class VigilantMonitor:
             return False
     
     def _verify_image_display(self) -> bool:
-        """Verify that images are loading correctly"""
+        """Verify that REAL GALLERY images are loading correctly"""
         try:
-            # Test a few random Google Drive images
-            test_ids = [
-                '185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I',
-                '1q-MPKVUQgmzDmcLUvvSYXVs4krh5yUb7'
-            ]
+            # Test the actual gallery/recent additions that users see
+            response = requests.get('http://localhost:5000/api/recent-orchids', timeout=10)
+            if response.status_code != 200:
+                logger.error(f"❌ Gallery API failed: {response.status_code}")
+                self.stats['image_issues'] += 1
+                return False
             
+            recent_orchids = response.json()
+            if not recent_orchids or len(recent_orchids) == 0:
+                logger.error("❌ No recent orchids found in gallery")
+                self.stats['image_issues'] += 1
+                return False
+            
+            # Test actual orchid images from the gallery
             working_images = 0
-            for drive_id in test_ids:
+            test_count = min(5, len(recent_orchids))  # Test up to 5 recent orchids
+            
+            for orchid in recent_orchids[:test_count]:
                 try:
-                    response = requests.get(f'http://localhost:5000/api/drive-photo/{drive_id}', timeout=10)
-                    if response.status_code == 200 and len(response.content) > 1000:  # Valid image
-                        working_images += 1
-                except:
-                    pass
+                    if orchid.get('google_drive_file_id'):
+                        # Test Google Drive image
+                        img_response = requests.get(f"http://localhost:5000/api/drive-photo/{orchid['google_drive_file_id']}", timeout=10)
+                        if img_response.status_code == 200 and len(img_response.content) > 1000:
+                            working_images += 1
+                        else:
+                            logger.warning(f"⚠️ Failed to load image for orchid {orchid.get('id', 'unknown')}: {img_response.status_code}")
+                    elif orchid.get('photo_url'):
+                        # Test direct photo URL
+                        img_response = requests.get(orchid['photo_url'], timeout=10)
+                        if img_response.status_code == 200 and len(img_response.content) > 1000:
+                            working_images += 1
+                        else:
+                            logger.warning(f"⚠️ Failed to load photo URL for orchid {orchid.get('id', 'unknown')}: {img_response.status_code}")
+                    else:
+                        logger.warning(f"⚠️ Orchid {orchid.get('id', 'unknown')} has no image source")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error testing orchid image: {e}")
             
-            success_rate = (working_images / len(test_ids)) * 100
+            success_rate = (working_images / test_count) * 100 if test_count > 0 else 0
             
-            if success_rate >= 50:  # At least 50% working
-                logger.info(f"✅ Images: {success_rate:.0f}% working ({working_images}/{len(test_ids)})")
+            if success_rate >= 70:  # At least 70% of gallery images working
+                logger.info(f"✅ REAL Gallery Images: {success_rate:.0f}% working ({working_images}/{test_count})")
                 return True
             else:
-                logger.warning(f"⚠️ Images: Only {success_rate:.0f}% working ({working_images}/{len(test_ids)})")
+                logger.error(f"❌ REAL Gallery Images: Only {success_rate:.0f}% working ({working_images}/{test_count}) - USERS CAN'T SEE PHOTOS!")
                 self.stats['image_issues'] += 1
                 self._reinitialize_image_connections()
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ IMAGE CHECK FAILED: {e}")
+            logger.error(f"❌ GALLERY IMAGE CHECK FAILED: {e}")
             self.stats['image_issues'] += 1
             return False
     
@@ -187,8 +211,9 @@ class VigilantMonitor:
             with app.app_context():
                 db.session.close()
                 db.session.remove()
-                # Reconnect
-                db.session.execute("SELECT 1")
+                # Reconnect (fix SQL syntax)
+                from sqlalchemy import text
+                db.session.execute(text("SELECT 1"))
                 db.session.commit()
                 
             self.stats['connection_resets'] += 1
