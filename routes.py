@@ -22,6 +22,7 @@ from photo_editor_routes import photo_editor_bp
 from weather_service import WeatherService, get_coordinates_from_location
 from orchid_atlas import atlas_bp
 from darwin_core_exporter import DarwinCoreExporter
+from weather_habitat_routes import register_weather_habitat_routes
 import os
 import json
 import logging
@@ -34,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 # Register the Atlas blueprint
 app.register_blueprint(atlas_bp)
+
+# Register weather habitat comparison routes
+register_weather_habitat_routes(app)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
