@@ -75,7 +75,7 @@ def api_status():
         
         status = {
             'api_connected': test_response.status_code == 200,
-            'api_key_configured': bool(integrator.api_key),
+            'api_key_configured': False,  # GBIF uses public API
             'total_orchid_occurrences': test_response.json() if test_response.status_code == 200 else 0
         }
         

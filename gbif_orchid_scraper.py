@@ -34,20 +34,14 @@ class GBIFOrchidIntegrator:
     
     def __init__(self):
         self.base_url = "https://api.gbif.org/v1"
-        self.api_key = os.environ.get('GBIF_API_KEY')
+        # GBIF API is mostly public access - no auth needed for most endpoints
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'The Orchid Continuum - Five Cities Orchid Society/1.0',
             'Accept': 'application/json'
         })
         
-        if self.api_key:
-            self.session.headers.update({
-                'Authorization': f'Bearer {self.api_key}'
-            })
-            logger.info("🔑 GBIF API key configured")
-        else:
-            logger.warning("⚠️ No GBIF API key found - using public access")
+        logger.info("🌍 GBIF API configured - using public access (no key required)")
     
     def search_orchid_occurrences(self, limit: int = 100, offset: int = 0, 
                                 country: Optional[str] = None) -> Dict[str, Any]:
@@ -239,26 +233,17 @@ class GBIFOrchidIntegrator:
                     return False
                 
                 # Create new OrchidRecord
-                orchid = OrchidRecord(
-                    scientific_name=orchid_data['scientific_name'],
-                    genus=orchid_data['genus'],
-                    species=orchid_data['species'],
-                    common_name=orchid_data['common_name'],
-                    family=orchid_data['family'],
-                    country=orchid_data['country'],
-                    location=orchid_data['location'],
-                    habitat=orchid_data['habitat'],
-                    elevation=orchid_data.get('elevation'),
-                    date_collected=orchid_data.get('date_collected'),
-                    collector=orchid_data['collector'],
-                    identified_by=orchid_data['identified_by'],
-                    institution=orchid_data['institution'],
-                    catalog_number=orchid_data['catalog_number'],
-                    data_source=orchid_data['data_source'],
-                    source_url=orchid_data['source_url'],
-                    notes=f"GBIF ID: {orchid_data.get('gbif_id', 'N/A')} | Basis: {orchid_data.get('basis_of_record', 'N/A')}",
-                    created_at=datetime.now()
-                )
+                orchid = OrchidRecord()
+                orchid.display_name = orchid_data['scientific_name'] 
+                orchid.scientific_name = orchid_data['scientific_name']
+                orchid.genus = orchid_data['genus']
+                orchid.species = orchid_data['species']
+                orchid.region = orchid_data['country']
+                orchid.native_habitat = orchid_data['location']
+                orchid.cultural_notes = f"GBIF ID: {orchid_data.get('gbif_id', 'N/A')} | Institution: {orchid_data['institution']} | Basis: {orchid_data.get('basis_of_record', 'N/A')} | Common: {orchid_data['common_name']}"
+                orchid.ingestion_source = 'gbif'
+                orchid.image_url = orchid_data['source_url']  # GBIF URL for reference
+                orchid.created_at = datetime.now()
                 
                 db.session.add(orchid)
                 db.session.commit()
@@ -388,8 +373,7 @@ def run_gbif_collection(max_records: int = 1000, country: Optional[str] = None):
     logger.info("🌍 GBIF ORCHID INTEGRATION SYSTEM")
     logger.info("=" * 50)
     
-    if not integrator.api_key:
-        logger.warning("⚠️ Running without API key - limited access")
+    logger.info("🔓 Using GBIF public API - full access available")
     
     stats = integrator.collect_orchid_batch(
         batch_size=100,

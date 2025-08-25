@@ -25,6 +25,7 @@ from darwin_core_exporter import DarwinCoreExporter
 from weather_habitat_routes import register_weather_habitat_routes
 from scraping_dashboard import scraping_dashboard
 from vigilant_monitor import vigilant_monitor
+from gbif_routes import gbif_bp
 import os
 import json
 import logging
@@ -43,6 +44,9 @@ app.register_blueprint(atlas_bp)
 
 # Register weather habitat comparison routes
 register_weather_habitat_routes(app)
+
+# Register GBIF integration routes
+app.register_blueprint(gbif_bp)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
