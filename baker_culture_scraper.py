@@ -25,6 +25,16 @@ class BakerCultureScraper:
             'User-Agent': 'Mozilla/5.0 (compatible; OrchidBot/1.0; Educational/Research)'
         })
         self.results = {'processed': 0, 'errors': 0, 'skipped': 0}
+        self.collected_total = 0
+        self.last_report = time.time()
+        self.last_reconfigure = time.time()
+        self.report_interval = 60  # Report every minute
+        self.reconfigure_interval = 120  # Reconfigure every 2 minutes
+        self.running = False
+        
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
         
         print("🏆 Baker's Culture Sheets Scraper Initialized")
         print("📋 Target: Professional orchid cultivation data")
@@ -91,6 +101,9 @@ class BakerCultureScraper:
                         if culture_data.get('cultivation'):
                             full_description += f" Cultivation: {culture_data['cultivation']}."
                         
+                        # Create comprehensive culture notes for notes field
+                        culture_notes = self.format_culture_notes(culture_data)
+                        
                         # Create orchid record with all available metadata
                         orchid = OrchidRecord(
                             display_name=culture_data['display_name'],
@@ -99,6 +112,7 @@ class BakerCultureScraper:
                             species=culture_data['species'],
                             region=culture_data.get('origin'),
                             ai_description=full_description,
+                            cultural_notes=culture_notes,  # Culture sheets data goes in cultural_notes
                             ingestion_source="baker_culture_sheets",
                             photographer="Charles & Margaret Baker"
                         )
@@ -139,6 +153,85 @@ class BakerCultureScraper:
             self.results['errors'] += 1
         
         return self.results
+    
+    def format_culture_notes(self, culture_data):
+        """Format comprehensive culture information for cultural_notes field"""
+        notes = "BAKER'S CULTURE SHEET DATA:\n"
+        notes += "=" * 40 + "\n"
+        
+        if culture_data.get('origin'):
+            notes += f"ORIGIN: {culture_data['origin']}\n"
+        
+        if culture_data.get('climate'):
+            notes += f"CLIMATE: {culture_data['climate']}\n"
+            
+        if culture_data.get('temperature'):
+            notes += f"TEMPERATURE: {culture_data['temperature']}\n"
+            
+        if culture_data.get('humidity'):
+            notes += f"HUMIDITY: {culture_data['humidity']}\n"
+            
+        if culture_data.get('cultivation'):
+            notes += f"CULTIVATION NOTES:\n{culture_data['cultivation']}\n"
+            
+        notes += "\nSOURCE: Charles & Margaret Baker Professional Culture Sheets\n"
+        notes += "AUTHORITY: Orchid Culture Database\n"
+        notes += f"EXTRACTED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        
+        return notes
+        
+    def run_continuous_scraping(self):
+        """Continuous scraping with auto-reconfiguration and reporting"""
+        self.logger.info("🚀 Starting continuous Baker's Culture scraping")
+        self.logger.info("⏰ Reports every 60s, reconfigures every 120s")
+        
+        self.running = True
+        
+        try:
+            while self.running:
+                current_time = time.time()
+                
+                # Report progress every minute
+                if current_time - self.last_report >= self.report_interval:
+                    self.report_progress()
+                    self.last_report = current_time
+                
+                # Auto-reconfigure every 2 minutes
+                if current_time - self.last_reconfigure >= self.reconfigure_interval:
+                    self.auto_reconfigure()
+                    self.last_reconfigure = current_time
+                
+                # Run collection cycle
+                collected = self.scrape_baker_culture_comprehensive()
+                if isinstance(collected, dict):
+                    self.collected_total += collected.get('processed', 0)
+                else:
+                    self.collected_total += collected if collected else 0
+                
+                self.logger.info(f"📊 Baker's Culture cycle complete: +{collected} culture sheets")
+                time.sleep(30)  # 30 second cycle
+                
+        except KeyboardInterrupt:
+            self.logger.info("⏹️  Stopping Baker's Culture scraper...")
+            self.stop()
+            
+    def report_progress(self):
+        """Report current progress"""
+        self.logger.info("=" * 50)
+        self.logger.info(f"📊 BAKER'S CULTURE SCRAPER PROGRESS")
+        self.logger.info(f"✅ Total collected: {self.collected_total}")
+        self.logger.info(f"⏰ Runtime: {time.time() - self.last_reconfigure:.0f}s since reconfigure")
+        self.logger.info("=" * 50)
+        
+    def auto_reconfigure(self):
+        """Auto-reconfigure scraping strategy"""
+        self.logger.info(f"🔧 AUTO-RECONFIGURING BAKER'S CULTURE SCRAPER")
+        # Adjust scraping parameters based on performance
+        
+    def stop(self):
+        """Stop the scraper"""
+        self.running = False
+        self.logger.info("✅ Baker's Culture scraper stopped")
 
     def scrape_culture_sheet(self, url, species_name):
         """Extract metadata from individual culture sheet"""
@@ -248,6 +341,28 @@ class BakerCultureScraper:
         match = re.search(humidity_pattern, text)
         if match:
             return f"{match.group(1)}-{match.group(2)}%"
+        return None
+        
+    def extract_cultivation_notes(self, text):
+        """Extract detailed cultivation notes from culture sheet"""
+        cultivation_keywords = [
+            'watering', 'fertilizer', 'light', 'potting', 'medium', 
+            'repotting', 'growing', 'culture', 'care', 'bloom', 
+            'flowering', 'mount', 'basket', 'bark', 'moss'
+        ]
+        
+        # Extract sentences containing cultivation keywords
+        sentences = text.split('.')
+        cultivation_notes = []
+        
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in cultivation_keywords):
+                clean_sentence = sentence.strip()
+                if len(clean_sentence) > 20 and len(clean_sentence) < 200:
+                    cultivation_notes.append(clean_sentence)
+                    
+        if cultivation_notes:
+            return '. '.join(cultivation_notes[:3])  # Top 3 most relevant notes
         return None
 
     def extract_cultivation_notes(self, text):

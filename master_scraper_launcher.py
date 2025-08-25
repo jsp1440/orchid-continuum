@@ -30,11 +30,14 @@ class MasterScraperLauncher:
         self.running = False
         
         # Initialize all scraper systems
+        from baker_culture_scraper import BakerCultureScraper
+        
         self.scraper_systems = {
             'unified_controller': UnifiedScraperController(),
             'comprehensive': ComprehensiveOrchidScraper(),
             'ecuagenera': EcuageneraScraper(),
-            'working': WorkingScraper()
+            'working': WorkingScraper(),
+            'baker_culture': BakerCultureScraper()
         }
         
         logger.info(f"✅ Initialized {len(self.scraper_systems)} scraper systems")
