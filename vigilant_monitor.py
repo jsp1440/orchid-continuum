@@ -153,8 +153,10 @@ class VigilantMonitor:
                         else:
                             logger.warning(f"⚠️ Failed to load image for orchid {orchid.get('id', 'unknown')}: {img_response.status_code}")
                     elif orchid.get('photo_url'):
-                        # Test direct photo URL
-                        img_response = requests.get(orchid['photo_url'], timeout=10)
+                        # Test image proxy (what users actually see)
+                        from urllib.parse import quote_plus
+                        proxy_url = f"http://localhost:5000/api/proxy-image?url={quote_plus(orchid['photo_url'])}"
+                        img_response = requests.get(proxy_url, timeout=10)
                         if img_response.status_code == 200 and len(img_response.content) > 1000:
                             working_images += 1
                         else:

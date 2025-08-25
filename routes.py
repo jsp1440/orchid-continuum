@@ -2310,6 +2310,53 @@ def api_recent_orchids():
         logger.error(f"Error in recent orchids API: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ==============================================================================
+# IMAGE PROXY - Bypass CORS issues for external orchid images
+# ==============================================================================
+
+@app.route('/api/proxy-image')
+def proxy_image():
+    """Proxy external images to bypass CORS restrictions"""
+    image_url = request.args.get('url')
+    if not image_url:
+        return abort(400, "Missing URL parameter")
+    
+    # Security: Only allow known orchid image domains
+    allowed_domains = [
+        'andysorchids.com',
+        'garyyonggee.com', 
+        'orchids.yonggee.name',
+        'drive.google.com',
+        'lh3.googleusercontent.com'
+    ]
+    
+    from urllib.parse import urlparse
+    parsed_url = urlparse(image_url)
+    if not any(domain in parsed_url.netloc for domain in allowed_domains):
+        logger.warning(f"Blocked proxy request for unauthorized domain: {parsed_url.netloc}")
+        return abort(403, "Domain not allowed")
+    
+    try:
+        # Fetch the image with timeout
+        response = requests.get(image_url, timeout=10, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; Five Cities Orchid Society/1.0)'
+        })
+        response.raise_for_status()
+        
+        # Return the image with proper headers
+        return Response(
+            response.content,
+            content_type=response.headers.get('Content-Type', 'image/jpeg'),
+            headers={
+                'Cache-Control': 'public, max-age=3600',  # Cache for 1 hour
+                'X-Image-Source': 'Proxied External'
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Image proxy error for {image_url}: {e}")
+        return abort(404, "Image not found")
+
 # Auto-start vigilant monitoring
 try:
     vigilant_monitor.start_vigilant_monitoring()
