@@ -458,6 +458,61 @@ def index():
                              featured_orchids=[],
                              stats=fallback_stats)
 
+@app.route('/api/baker-extrapolation/analyze')
+def analyze_baker_extrapolation():
+    """API endpoint to analyze Baker culture extrapolation opportunities"""
+    try:
+        from baker_extrapolation_system import baker_extrapolation
+        
+        report = baker_extrapolation.generate_extrapolation_report()
+        return jsonify({
+            'success': True,
+            'report': report,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in Baker extrapolation analysis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/baker-extrapolation/batch-genus/<genus_name>')
+def batch_extrapolate_genus(genus_name):
+    """API endpoint to batch extrapolate culture data for a genus"""
+    try:
+        from baker_extrapolation_system import baker_extrapolation
+        
+        limit = request.args.get('limit', 50, type=int)
+        results = baker_extrapolation.batch_extrapolate_genus(genus_name, limit)
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in batch genus extrapolation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/baker-extrapolation/by-climate/<climate>')
+def extrapolate_by_climate(climate):
+    """API endpoint to extrapolate by climate preference"""
+    try:
+        from baker_extrapolation_system import baker_extrapolation
+        
+        limit = request.args.get('limit', 100, type=int)
+        results = baker_extrapolation.extrapolate_by_climate(climate, limit)
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in climate extrapolation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/ai/baker-weather-advice', methods=['POST'])
 def baker_weather_advice():
     """API endpoint for AI-powered Baker culture weather advice"""
@@ -475,8 +530,20 @@ def baker_weather_advice():
         if not orchid:
             return jsonify({'success': False, 'error': 'Orchid not found'})
         
-        # Generate AI advice using Baker culture data
+        # Generate AI advice using Baker culture data (including extrapolated)
+        from orchid_ai import extrapolate_baker_culture_data
+        
+        # Try direct Baker advice first, then extrapolated
         advice = get_weather_based_care_advice(orchid, weather_data, forecast_data)
+        
+        # If no direct advice, try extrapolation
+        if not advice:
+            extrapolated_data = extrapolate_baker_culture_data(orchid)
+            if extrapolated_data:
+                # Generate weather advice based on extrapolated data
+                temp_orchid = orchid
+                temp_orchid.cultural_notes = f"EXTRAPOLATED BAKER DATA: {json.dumps(extrapolated_data)}"
+                advice = get_weather_based_care_advice(temp_orchid, weather_data, forecast_data)
         
         if advice:
             return jsonify({
@@ -971,6 +1038,11 @@ def orchid_detail(id):
 def mission():
     """Display mission statement and support information"""
     return render_template('mission.html')
+
+@app.route('/admin/baker-extrapolation')
+def admin_baker_extrapolation():
+    """Admin interface for Baker culture extrapolation system"""
+    return render_template('admin/baker_extrapolation.html')
 
 @app.route('/admin')
 def admin():
