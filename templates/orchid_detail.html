@@ -352,9 +352,15 @@
                             </div>
                         {% endif %}
                         <div class="card-body">
-                            <h6 class="card-title">{{ related.display_name }}</h6>
-                            {% if related.scientific_name %}
-                                <p class="text-muted small fst-italic">{{ related.scientific_name }}</p>
+                            <h6 class="card-title">
+                                {% if related.scientific_name %}
+                                    <em>{{ related.scientific_name }}</em>
+                                {% else %}
+                                    {{ related.display_name }}
+                                {% endif %}
+                            </h6>
+                            {% if related.display_name and related.scientific_name and related.display_name != related.scientific_name %}
+                                <p class="text-muted small">{{ related.display_name }}</p>
                             {% endif %}
                             <a href="{{ url_for('orchid_detail', id=related.id) }}" class="btn btn-sm btn-outline-primary">
                                 View Details
