@@ -9,6 +9,10 @@ from models import OrchidRecord, db
 from datetime import datetime
 import time
 import re
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class ComprehensiveOrchidScraper:
     def __init__(self):
@@ -102,11 +106,7 @@ class ComprehensiveOrchidScraper:
         
     def scrape_roberta_fox_comprehensive(self):
         """Comprehensive scraping of all Roberta Fox photo galleries"""
-import time
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+        
         base_url = "http://orchidcentral.org"
         
         # All the photo group URLs from orchidcentral.org
