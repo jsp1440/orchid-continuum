@@ -283,12 +283,12 @@
                              onerror="this.onerror=null; this.src='/static/images/fcos_placeholder_square.png'; this.alt='Orchid photo coming soon'; console.error('Recent orchid failed:', '{{ orchid.display_name }}');"
                              onload="console.log('✅ Recent orchid loaded:', '{{ orchid.display_name }}');">
                     {% elif orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' %}
-                        <img data-src="/api/proxy-image?url={{ orchid.image_url|urlencode }}" 
-                             src="/static/images/fcos_placeholder_square.png"
-                             class="card-img-top lazy" 
+                        <img src="/api/proxy-image?url={{ orchid.image_url|urlencode }}" 
+                             class="card-img-top" 
                              alt="{{ orchid.display_name }}"
                              style="height: 120px; width: 100%; object-fit: cover;"
-                             onload="console.log('✅ LAZY LOAD SUCCESS:', '{{ orchid.display_name }}');">
+                             onload="console.log('✅ DIRECT SUCCESS:', '{{ orchid.display_name }}'); this.style.border='3px solid green';"
+                             onerror="console.error('❌ DIRECT FAILED:', '{{ orchid.display_name }}'); this.style.border='3px solid red'; this.src='/static/images/fcos_placeholder_square.png';">
                     {% else %}
                         <img src="/static/images/fcos_placeholder_square.png" 
                              class="card-img-top" 
