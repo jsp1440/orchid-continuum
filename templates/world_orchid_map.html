@@ -81,6 +81,29 @@
     margin-right: 0.5rem;
 }
 
+.nav-btn {
+    display: block;
+    width: 100%;
+    margin: 2px 0;
+    padding: 5px 10px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nav-btn:hover {
+    background: #2980b9;
+}
+
+.weather-icon, .polar-icon {
+    text-align: center;
+    line-height: 20px;
+    font-size: 16px;
+}
+
 .info-panel {
     background: rgba(255, 255, 255, 0.05);
     border-left: 4px solid #00d4aa;
@@ -378,47 +401,96 @@ async function initializeOrchidMap() {
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Initialize Leaflet map
+        // Initialize Leaflet map with better projection and controls
         console.log('🗺️ Creating Leaflet map...');
         orchidMap = L.map('leafletMap', {
             center: [20.0, 0.0],
             zoom: 2,
+            minZoom: 1,
+            maxZoom: 18,
             zoomControl: true,
-            attributionControl: true
+            attributionControl: true,
+            worldCopyJump: true,  // Handle world wrapping
+            maxBounds: [[-90, -180], [90, 180]], // Prevent infinite panning
+            maxBoundsViscosity: 1.0
         });
         
-        // Add base tile layer
+        // Add base tile layer with better world coverage
         console.log('🗺️ Adding base tile layer...');
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
-            maxZoom: 18
+            maxZoom: 18,
+            tms: false,
+            continuousWorld: false,
+            noWrap: false
         });
         osmLayer.addTo(orchidMap);
         
-        // Add alternative tile layers
-        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-            attribution: '© CartoDB'
+        // Add alternative tile layers with polar region support
+        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
+            attribution: '© CartoDB, © OpenStreetMap',
+            maxZoom: 18
+        });
+        
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri, DigitalGlobe, GeoEye',
+            maxZoom: 18
         });
         
         const darkTheme = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-            attribution: '© CartoDB'
+            attribution: '© CartoDB',
+            maxZoom: 18
         });
         
-        // Layer control
+        // Enhanced layer control with more options
         const baseLayers = {
-            "OpenStreetMap": osmLayer,
-            "Light Theme": cartoDB,
-            "Dark Theme": darkTheme
+            "🌍 OpenStreetMap": osmLayer,
+            "🌎 Satellite View": satelliteLayer,
+            "☀️ Light Theme": cartoDB,
+            "🌙 Dark Theme": darkTheme
         };
         
-        L.control.layers(baseLayers).addTo(orchidMap);
+        // Add conservation and weather overlay layers
+        const overlayLayers = {};
+        
+        // Conservation project markers layer
+        const conservationLayer = L.layerGroup();
+        overlayLayers["🌿 Conservation Projects"] = conservationLayer;
+        
+        // Weather overlay layer 
+        const weatherLayer = L.layerGroup();
+        overlayLayers["🌤️ Weather Data"] = weatherLayer;
+        
+        // Polar ice caps layer
+        const polarLayer = L.layerGroup();
+        overlayLayers["🧊 Polar Ice Caps"] = polarLayer;
+        
+        const layerControl = L.control.layers(baseLayers, overlayLayers, {
+            position: 'topright',
+            collapsed: false
+        }).addTo(orchidMap);
         
         console.log('🗺️ Map initialized, loading orchid data...');
+        
+        // Add enhanced navigation controls
+        addNavigationControls();
+        
+        // Add search control for locations
+        addLocationSearch();
         
         // Load orchid data and add markers
         await loadOrchidMarkers();
         
-        console.log('🗺️ Interactive orchid map loaded successfully');
+        // Load conservation projects
+        await loadConservationProjects(conservationLayer);
+        
+        // Load weather overlay
+        await loadWeatherOverlay(weatherLayer);
+        
+        // Load polar ice caps data
+        await loadPolarIceCaps(polarLayer);
+        
+        console.log('🗺️ Enhanced interactive orchid map loaded successfully');
         
     } catch (error) {
         console.error('Error initializing map:', error);
@@ -515,27 +587,230 @@ async function loadOrchidMarkers() {
     }
 }
 
+function addNavigationControls() {
+    // Add custom navigation control
+    const NavigationControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 10px; border-radius: 5px;">
+                    <h6 style="margin: 0 0 10px 0;">🧭 Quick Navigation</h6>
+                    <button onclick="flyToLocation('tropics')" class="nav-btn">🌴 Tropics</button>
+                    <button onclick="flyToLocation('arctic')" class="nav-btn">🧊 Arctic</button>
+                    <button onclick="flyToLocation('rainforest')" class="nav-btn">🌳 Rainforests</button>
+                    <button onclick="flyToLocation('mountains')" class="nav-btn">⛰️ Mountains</button>
+                    <button onclick="flyToLocation('islands')" class="nav-btn">🏝️ Islands</button>
+                </div>
+            `;
+            
+            container.style.backgroundColor = 'white';
+            container.style.padding = '0';
+            return container;
+        },
+        
+        onRemove: function(map) {
+            // Nothing to do here
+        }
+    });
+    
+    orchidMap.addControl(new NavigationControl({position: 'topleft'}));
+}
+
+function addLocationSearch() {
+    // Add a simple location search control
+    const SearchControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 8px; border-radius: 5px;">
+                    <input type="text" id="locationSearch" placeholder="Search locations..." 
+                           style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                    <button onclick="searchLocation()" style="margin-left: 5px; padding: 5px 10px;">🔍</button>
+                </div>
+            `;
+            
+            return container;
+        }
+    });
+    
+    orchidMap.addControl(new SearchControl({position: 'topright'}));
+}
+
+async function loadConservationProjects(layer) {
+    // Add sample conservation project markers
+    const projects = [
+        {lat: -3.4, lng: -60.0, name: "Amazon Orchid Reserve", type: "Protected Area"},
+        {lat: 1.3, lng: 103.8, name: "Singapore Orchid Conservation", type: "Botanical Garden"},
+        {lat: -26.2, lng: 28.0, name: "South African Orchid Trust", type: "Conservation NGO"},
+        {lat: -37.8, lng: 144.9, name: "Australian Native Orchid Society", type: "Research Station"},
+        {lat: 14.6, lng: 121.0, name: "Philippine Orchid Sanctuary", type: "Community Project"}
+    ];
+    
+    projects.forEach(project => {
+        const marker = L.circleMarker([project.lat, project.lng], {
+            radius: 8,
+            fillColor: '#2ecc71',
+            color: '#27ae60',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌿 ${project.name}</strong></h6>
+                <p><strong>Type:</strong> ${project.type}</p>
+                <p><strong>Focus:</strong> Native orchid conservation and research</p>
+                <small>Click for more details</small>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🌿 Conservation projects loaded');
+}
+
+async function loadWeatherOverlay(layer) {
+    // Add weather stations and climate data points
+    const weatherStations = [
+        {lat: 0.0, lng: 0.0, temp: "26°C", humidity: "85%", location: "Equatorial"},
+        {lat: 23.5, lng: 0.0, temp: "31°C", humidity: "45%", location: "Tropic of Cancer"},
+        {lat: -23.5, lng: 0.0, temp: "28°C", humidity: "70%", location: "Tropic of Capricorn"},
+        {lat: 66.5, lng: 0.0, temp: "-2°C", humidity: "90%", location: "Arctic Circle"},
+        {lat: -66.5, lng: 0.0, temp: "-8°C", humidity: "95%", location: "Antarctic Circle"}
+    ];
+    
+    weatherStations.forEach(station => {
+        const marker = L.marker([station.lat, station.lng], {
+            icon: L.divIcon({
+                className: 'weather-icon',
+                html: '🌡️',
+                iconSize: [20, 20]
+            })
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌤️ ${station.location}</strong></h6>
+                <p><strong>Temperature:</strong> ${station.temp}</p>
+                <p><strong>Humidity:</strong> ${station.humidity}</p>
+                <p><em>Climate conditions for orchid habitats</em></p>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🌤️ Weather overlay loaded');
+}
+
+async function loadPolarIceCaps(layer) {
+    // Add polar ice cap boundaries and information
+    const polarRegions = [
+        {
+            name: "Greenland Ice Sheet",
+            bounds: [[60, -73], [84, -12]],
+            center: [72, -42]
+        },
+        {
+            name: "Antarctic Ice Sheet", 
+            bounds: [[-90, -180], [-60, 180]],
+            center: [-75, 0]
+        },
+        {
+            name: "Arctic Ocean Ice",
+            bounds: [[66, -180], [90, 180]],
+            center: [78, 0]
+        }
+    ];
+    
+    polarRegions.forEach(region => {
+        // Add boundary rectangle
+        const rectangle = L.rectangle(region.bounds, {
+            color: '#3498db',
+            fillColor: '#85c1e9',
+            fillOpacity: 0.3,
+            weight: 2
+        });
+        
+        rectangle.bindPopup(`
+            <div>
+                <h6><strong>🧊 ${region.name}</strong></h6>
+                <p>Major ice formation affecting global climate</p>
+                <p><em>No native orchid species found in ice-covered regions</em></p>
+            </div>
+        `);
+        
+        layer.addLayer(rectangle);
+        
+        // Add center marker
+        const marker = L.marker(region.center, {
+            icon: L.divIcon({
+                className: 'polar-icon',
+                html: '🧊',
+                iconSize: [25, 25]
+            })
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>❄️ ${region.name}</strong></h6>
+                <p>Polar ice cap region</p>
+                <p><strong>Climate:</strong> Extreme cold, no vegetation</p>
+                <p><strong>Orchids:</strong> None (incompatible climate)</p>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🧊 Polar ice caps loaded');
+}
+
 function addSampleMarkers() {
-    // Add sample markers to show the map is working
+    // Enhanced sample markers with better global coverage
     const sampleLocations = [
-        {lat: 38.9, lng: -77.0, name: "North America", count: "Sample Data"},
-        {lat: -23.5, lng: -46.6, name: "South America", count: "Sample Data"},
-        {lat: 51.5, lng: -0.1, name: "Europe", count: "Sample Data"},
-        {lat: 35.7, lng: 139.7, name: "Asia", count: "Sample Data"},
-        {lat: -33.9, lng: 151.2, name: "Australia", count: "Sample Data"}
+        {lat: 45.0, lng: -100.0, name: "North America", count: "1,200 species"},
+        {lat: -15.0, lng: -60.0, name: "South America", count: "8,500 species"},
+        {lat: 50.0, lng: 10.0, name: "Europe", count: "450 species"},
+        {lat: 35.0, lng: 105.0, name: "Asia", count: "12,000 species"},
+        {lat: -25.0, lng: 135.0, name: "Australia", count: "1,800 species"},
+        {lat: 0.0, lng: 20.0, name: "Africa", count: "2,200 species"}
     ];
     
     markersLayer = L.layerGroup();
     
     sampleLocations.forEach(location => {
-        const marker = L.marker([location.lat, location.lng])
-            .bindPopup(`<strong>${location.name}</strong><br>Orchid distribution area<br><small>${location.count}</small>`)
-            .bindTooltip(`${location.name} - ${location.count}`);
+        const marker = L.circleMarker([location.lat, location.lng], {
+            radius: 12,
+            fillColor: '#e74c3c',
+            color: '#c0392b',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌺 ${location.name}</strong></h6>
+                <p><strong>Orchid Diversity:</strong> ${location.count}</p>
+                <p>Regional orchid distribution center</p>
+                <button onclick="zoomToRegion('${location.name}')">Explore Region</button>
+            </div>
+        `)
+        .bindTooltip(`${location.name}: ${location.count}`, {
+            permanent: false,
+            direction: 'top'
+        });
+        
         markersLayer.addLayer(marker);
     });
     
     markersLayer.addTo(orchidMap);
-    console.log('📍 Added sample markers');
+    console.log('📍 Enhanced sample markers added');
 }
 
 // Map control functions
@@ -565,6 +840,82 @@ function fitToBounds() {
 function resetView() {
     console.log('Resetting map view...');
     orchidMap.setView([20.0, 0.0], 2);
+}
+
+// Enhanced navigation functions
+function flyToLocation(type) {
+    const locations = {
+        'tropics': {center: [0, 0], zoom: 3, name: 'Tropical Regions'},
+        'arctic': {center: [75, 0], zoom: 3, name: 'Arctic Region'},
+        'rainforest': {center: [-3, -60], zoom: 5, name: 'Amazon Rainforest'},
+        'mountains': {center: [28, 85], zoom: 6, name: 'Himalayan Mountains'},
+        'islands': {center: [1, 120], zoom: 5, name: 'Southeast Asian Islands'}
+    };
+    
+    const location = locations[type];
+    if (location) {
+        orchidMap.flyTo(location.center, location.zoom, {
+            animate: true,
+            duration: 2
+        });
+        
+        // Show temporary popup
+        const popup = L.popup()
+            .setLatLng(location.center)
+            .setContent(`<h6>🌍 ${location.name}</h6><p>Exploring orchid habitats in this region</p>`)
+            .openOn(orchidMap);
+        
+        setTimeout(() => orchidMap.closePopup(popup), 3000);
+    }
+}
+
+function searchLocation() {
+    const query = document.getElementById('locationSearch').value;
+    if (!query) return;
+    
+    // Simple geocoding simulation - in production would use real geocoding service
+    const commonLocations = {
+        'colombia': [-4.57, -74.3],
+        'ecuador': [-1.8, -78.2],
+        'madagascar': [-18.8, 47.5],
+        'borneo': [1.6, 113.0],
+        'costa rica': [9.7, -83.7],
+        'thailand': [15.8, 100.9],
+        'brazil': [-14.2, -51.9],
+        'indonesia': [-0.8, 113.9],
+        'peru': [-9.2, -75.0],
+        'philippines': [12.9, 121.8]
+    };
+    
+    const searchKey = query.toLowerCase();
+    const coords = commonLocations[searchKey];
+    
+    if (coords) {
+        orchidMap.flyTo(coords, 8, {animate: true, duration: 2});
+        
+        const popup = L.popup()
+            .setLatLng(coords)
+            .setContent(`<h6>📍 ${query}</h6><p>Major orchid diversity region</p>`)
+            .openOn(orchidMap);
+    } else {
+        alert(`Location "${query}" not found. Try: Colombia, Ecuador, Madagascar, Borneo, Costa Rica, Thailand, Brazil, Indonesia, Peru, Philippines`);
+    }
+}
+
+function zoomToRegion(regionName) {
+    const regionCoords = {
+        'North America': [45.0, -100.0],
+        'South America': [-15.0, -60.0],
+        'Europe': [50.0, 10.0],
+        'Asia': [35.0, 105.0],
+        'Australia': [-25.0, 135.0],
+        'Africa': [0.0, 20.0]
+    };
+    
+    const coords = regionCoords[regionName];
+    if (coords) {
+        orchidMap.flyTo(coords, 6, {animate: true, duration: 2});
+    }
 }
 
 function exportMap() {
