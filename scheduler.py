@@ -30,11 +30,11 @@ class OrchidScheduler:
             logger.warning("Scheduler is already running")
             return
             
-        logger.info("Starting orchid record scheduler - updates every 15 minutes")
+        logger.info("Starting orchid record scheduler - updates every 90 seconds")
         self.is_running = True
         
         # Schedule tasks
-        schedule.every(15).minutes.do(self.update_orchid_records)
+        schedule.every(90).seconds.do(self.update_orchid_records)
         schedule.every().hour.do(self.update_orchid_metadata)
         schedule.every(6).hours.do(self.run_maintenance_tasks)
         schedule.every().day.at("03:00").do(self.full_database_refresh)
@@ -50,14 +50,14 @@ class OrchidScheduler:
         while self.is_running:
             try:
                 schedule.run_pending()
-                time.sleep(60)  # Check every minute
+                time.sleep(9)  # Check every 9 seconds for reinitialize
             except Exception as e:
                 logger.error(f"Scheduler error: {e}")
                 time.sleep(60)
                 
     def update_orchid_records(self):
-        """Main update function - runs every 15 minutes"""
-        logger.info("🔄 Starting 15-minute orchid record update")
+        """Main update function - runs every 90 seconds"""
+        logger.info("🔄 Starting 90-second orchid record update")
         
         with app.app_context():
             try:

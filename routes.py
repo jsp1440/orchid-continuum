@@ -23,6 +23,8 @@ from weather_service import WeatherService, get_coordinates_from_location
 from orchid_atlas import atlas_bp
 from darwin_core_exporter import DarwinCoreExporter
 from weather_habitat_routes import register_weather_habitat_routes
+from scraping_dashboard import scraping_dashboard
+from vigilant_monitor import vigilant_monitor
 import os
 import json
 import logging
@@ -2146,3 +2148,137 @@ try:
     logger.info("AOS-Baker Culture Sheet system registered successfully")
 except Exception as e:
     logger.error(f"Failed to register culture sheet system: {str(e)}")
+
+# ==============================================================================
+# ADMIN SCRAPING DASHBOARD ROUTES - Real-time monitoring and control
+# ==============================================================================
+
+@app.route('/admin/scraping/dashboard-stats')
+def scraping_dashboard_stats():
+    """Get real-time scraping dashboard statistics"""
+    try:
+        stats = scraping_dashboard.get_dashboard_stats()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Dashboard stats error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/scraping/start', methods=['POST'])
+def start_methodical_scraping():
+    """Start methodical one-plant-at-a-time scraping"""
+    try:
+        success = scraping_dashboard.start_methodical_scraping()
+        if success:
+            return jsonify({'success': True, 'message': 'Methodical scraping started'})
+        else:
+            return jsonify({'success': False, 'error': 'Scraping already running'})
+    except Exception as e:
+        logger.error(f"Start scraping error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/scraping/stop', methods=['POST'])
+def stop_scraping():
+    """Stop all scraping operations"""
+    try:
+        scraping_dashboard.stop_scraping()
+        return jsonify({'success': True, 'message': 'Scraping stopped'})
+    except Exception as e:
+        logger.error(f"Stop scraping error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/scraping/manual-trigger', methods=['POST'])
+def manual_trigger_scraper():
+    """Manually trigger a specific scraper"""
+    try:
+        data = request.get_json()
+        scraper_name = data.get('scraper')
+        
+        if not scraper_name:
+            return jsonify({'success': False, 'error': 'Scraper name required'}), 400
+        
+        result = scraping_dashboard.manual_trigger_scraper(scraper_name)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Manual trigger error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ==============================================================================
+# VIGILANT MONITORING ROUTES - 30-second checks and auto-recovery
+# ==============================================================================
+
+@app.route('/admin/vigilant/start', methods=['POST'])
+def start_vigilant_monitoring():
+    """Start vigilant 30-second monitoring"""
+    try:
+        success = vigilant_monitor.start_vigilant_monitoring()
+        if success:
+            return jsonify({'success': True, 'message': 'Vigilant monitoring started'})
+        else:
+            return jsonify({'success': False, 'error': 'Monitoring already running'})
+    except Exception as e:
+        logger.error(f"Start monitoring error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/vigilant/stop', methods=['POST'])
+def stop_vigilant_monitoring():
+    """Stop vigilant monitoring"""
+    try:
+        vigilant_monitor.stop_monitoring()
+        return jsonify({'success': True, 'message': 'Vigilant monitoring stopped'})
+    except Exception as e:
+        logger.error(f"Stop monitoring error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/vigilant/stats')
+def vigilant_monitor_stats():
+    """Get vigilant monitoring statistics"""
+    try:
+        stats = vigilant_monitor.get_monitor_stats()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Monitor stats error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/vigilant/force-backup', methods=['POST'])
+def force_database_backup():
+    """Force immediate database backup"""
+    try:
+        result = vigilant_monitor.force_backup()
+        backup_url = vigilant_monitor.get_backup_download_url()
+        
+        return jsonify({
+            'success': True, 
+            'message': result,
+            'backup_url': backup_url
+        })
+    except Exception as e:
+        logger.error(f"Force backup error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/download-backup/<filename>')
+def download_backup(filename):
+    """Download database backup file"""
+    try:
+        from pathlib import Path
+        backup_path = Path('database_backups') / filename
+        
+        if backup_path.exists() and backup_path.name.startswith('orchid_db_backup_'):
+            return send_file(backup_path, as_attachment=True)
+        else:
+            return "Backup file not found", 404
+            
+    except Exception as e:
+        logger.error(f"Download backup error: {e}")
+        return f"Error downloading backup: {e}", 500
+
+# ==============================================================================
+# VIGILANT MONITOR AUTO-START - Start vigilant monitoring on app startup
+# ==============================================================================
+
+# Auto-start vigilant monitoring
+try:
+    vigilant_monitor.start_vigilant_monitoring()
+    logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
+except Exception as e:
+    logger.error(f"Failed to auto-start vigilant monitor: {e}")
