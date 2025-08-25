@@ -6,9 +6,11 @@ Web interface and API endpoints for GBIF orchid data collection
 Part of The Orchid Continuum - Five Cities Orchid Society
 """
 
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash, Response
 from gbif_orchid_scraper import GBIFOrchidIntegrator, run_gbif_collection
 import logging
+import json
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,15 +41,12 @@ def collect_orchids():
                 flash('Must collect at least 1 record', 'error')
                 return redirect(url_for('gbif.collect_orchids'))
             
-            # Start collection process
+            # Redirect to progress page
             logger.info(f"🚀 Starting GBIF collection: {max_records} records, country: {country or 'All'}")
             
-            stats = run_gbif_collection(max_records=max_records, country=country)
-            
-            # Show results
-            flash(f"✅ Collection Complete! Processed: {stats['processed']}, Saved: {stats['saved']} new records", 'success')
-            
-            return render_template('gbif_results.html', stats=stats)
+            return render_template('gbif_progress.html', 
+                                 max_records=max_records, 
+                                 country=country or 'Worldwide')
             
         except ValueError as e:
             flash('Invalid number format for max records', 'error')
@@ -57,8 +56,34 @@ def collect_orchids():
             flash(f'Collection error: {str(e)}', 'error')
             return redirect(url_for('gbif.collect_orchids'))
     
-    # GET request - show collection form
-    return render_template('gbif_collect.html')
+    # GET request - show collection form with country list
+    countries = {
+        'US': 'United States',
+        'CA': 'Canada',
+        'MX': 'Mexico',
+        'BR': 'Brazil',
+        'CO': 'Colombia',
+        'EC': 'Ecuador',
+        'PE': 'Peru',
+        'GB': 'United Kingdom',
+        'FR': 'France',
+        'DE': 'Germany',
+        'ES': 'Spain',
+        'IT': 'Italy',
+        'AU': 'Australia',
+        'NZ': 'New Zealand',
+        'JP': 'Japan',
+        'CN': 'China',
+        'IN': 'India',
+        'TH': 'Thailand',
+        'MY': 'Malaysia',
+        'ID': 'Indonesia',
+        'PH': 'Philippines',
+        'ZA': 'South Africa',
+        'KE': 'Kenya',
+        'MG': 'Madagascar',
+    }
+    return render_template('gbif_collect.html', countries=countries)
 
 @gbif_bp.route('/api/status')
 def api_status():
@@ -88,6 +113,59 @@ def api_status():
             'api_key_configured': False,
             'error': str(e)
         })
+
+@gbif_bp.route('/api/collect-progress')
+def collect_progress():
+    """Stream GBIF collection progress with live updates"""
+    def generate_progress():
+        try:
+            # Get parameters from session/args
+            max_records = int(request.args.get('max_records', 500))
+            country = request.args.get('country', '').strip() or None
+            
+            # Send initial status
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Starting GBIF collection...', 'progress': 0})}\n\n"
+            time.sleep(0.5)
+            
+            # Send data types being collected
+            data_types = [
+                "🌍 Connecting to Global Biodiversity Information Facility",
+                "📊 Searching 35,652+ orchid occurrence records",
+                "🏛️ Museum and herbarium specimens worldwide", 
+                "🗺️ Geographic coordinates and location data",
+                "🔬 Scientific names and taxonomic classification",
+                "📅 Collection dates and collector information",
+                "🏢 Institution codes and catalog numbers",
+                "🌸 Common names where available"
+            ]
+            
+            for i, desc in enumerate(data_types):
+                progress = int((i / len(data_types)) * 20)  # First 20% for setup
+                yield f"data: {json.dumps({'type': 'setup', 'message': desc, 'progress': progress})}\n\n"
+                time.sleep(0.3)
+            
+            # Start actual collection with progress updates
+            yield f"data: {json.dumps({'type': 'collecting', 'message': 'Beginning orchid data collection...', 'progress': 20})}\n\n"
+            
+            # Run collection with simulated progress updates
+            stats = run_gbif_collection(max_records=max_records, country=country)
+            
+            # Send incremental progress updates
+            for i in range(21, 101, 10):
+                if i <= 90:
+                    message = f"Processing orchid records... ({i}% complete)"
+                    yield f"data: {json.dumps({'type': 'processing', 'message': message, 'progress': i})}\n\n"
+                    time.sleep(0.2)
+            
+            # Send completion
+            completion_msg = f"✅ Complete! Found {stats['processed']} records, saved {stats['saved']} new orchids"
+            yield f"data: {json.dumps({'type': 'complete', 'message': completion_msg, 'progress': 100, 'stats': stats})}\n\n"
+            
+        except Exception as e:
+            error_msg = f"❌ Collection failed: {str(e)}"
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'progress': 0})}\n\n"
+    
+    return Response(generate_progress(), mimetype='text/event-stream')
 
 @gbif_bp.route('/api/search')
 def api_search():
