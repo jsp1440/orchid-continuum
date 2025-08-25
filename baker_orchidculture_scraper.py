@@ -70,6 +70,24 @@ class BakerOrchidCultureScraper:
                 'species': 'Orchid Daylength Database',
                 'genus': 'Multiple',
                 'type': 'daylength_database'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/humidity.html',
+                'species': 'Orchid Humidity Guide',
+                'genus': 'Multiple',
+                'type': 'technical_guide'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/lightlevel.html',
+                'species': 'Orchid Light Levels Guide',
+                'genus': 'Multiple',  
+                'type': 'technical_guide'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/favorites.html',
+                'species': 'Orchid Research Links Database',
+                'genus': 'Multiple',
+                'type': 'research_database'
             }
         ]
     
