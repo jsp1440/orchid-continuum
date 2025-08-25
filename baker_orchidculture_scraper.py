@@ -58,6 +58,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Dendrobium',
                 'genus': 'Dendrobium',
                 'type': 'genus_comprehensive'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/fragrance.html',
+                'species': 'Orchid Fragrance Database',
+                'genus': 'Multiple',
+                'type': 'fragrance_database'
             }
         ]
     
