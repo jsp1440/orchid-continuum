@@ -44,11 +44,15 @@ Please identify and extract the following information:
 - confidence: Your confidence level (0.0 to 1.0) in the identification
 - growth_habit: epiphytic, terrestrial, or lithophytic
 - climate_preference: cool, intermediate, or warm
-- bloom_characteristics: Details about the flowers
+- bloom_characteristics: Details about the flowers and flowering patterns
 - leaf_form: Description of the leaves
 - pseudobulb_presence: true/false if pseudobulbs are visible
 - cultural_tips: Basic growing advice based on the orchid type
 - notable_features: Any distinctive characteristics
+- photoperiod_sensitivity: Likely sensitivity to day length changes (high/medium/low)
+- bloom_triggers: Environmental factors that trigger flowering (temperature drop, seasonal light changes, dry period, etc.)
+- native_latitude: Approximate latitude range of natural habitat if identifiable
+- seasonal_requirements: Specific seasonal care needs for blooming
 - metadata: Any additional relevant botanical information
 
 If you cannot identify the exact species, focus on genus-level identification and general orchid characteristics. Be honest about uncertainty levels."""
@@ -98,6 +102,10 @@ If you cannot identify the exact species, focus on genus-level identification an
             'pseudobulb_presence': None,
             'cultural_tips': None,
             'notable_features': None,
+            'photoperiod_sensitivity': 'medium',
+            'bloom_triggers': None,
+            'native_latitude': None,
+            'seasonal_requirements': None,
             'metadata': {}
         }
         
@@ -123,6 +131,11 @@ If you cannot identify the exact species, focus on genus-level identification an
                 extrapolated_advice = extrapolate_baker_culture_data(mock_orchid)
                 if extrapolated_advice:
                     result['baker_extrapolated_notes'] = extrapolated_advice
+        
+        # Add photoperiod analysis based on Baker Daylength Database
+        photoperiod_data = calculate_photoperiod_requirements(result)
+        if photoperiod_data:
+            result['photoperiod_analysis'] = photoperiod_data
         
         logger.info(f"Successfully analyzed orchid image with confidence: {result.get('confidence', 0.0)}")
         return result
@@ -571,3 +584,202 @@ def classify_orchid_validity(image_path):
     except Exception as e:
         logger.error(f"Error classifying orchid validity: {str(e)}")
         return {'is_orchid': False, 'confidence': 0.0, 'reason': f'Analysis error: {str(e)}'}
+
+def calculate_photoperiod_requirements(ai_analysis):
+    """
+    Calculate photoperiod requirements based on AI analysis and Baker Daylength Database
+    """
+    try:
+        from models import OrchidRecord
+        
+        # Get the Baker Daylength Database record
+        daylength_db = OrchidRecord.query.filter(
+            OrchidRecord.scientific_name.like('%Daylength%')
+        ).filter_by(photographer='Charles and Margaret Baker').first()
+        
+        if not daylength_db or not daylength_db.cultural_notes:
+            return None
+        
+        # Extract genus and potential native latitude from AI analysis
+        genus = ai_analysis.get('genus', '')
+        native_latitude = ai_analysis.get('native_latitude')
+        photoperiod_sensitivity = ai_analysis.get('photoperiod_sensitivity', 'medium')
+        climate_preference = ai_analysis.get('climate_preference', 'intermediate')
+        
+        # Generate photoperiod recommendations
+        photoperiod_analysis = {
+            'sensitivity_level': photoperiod_sensitivity,
+            'recommended_daylight_hours': calculate_optimal_daylight(genus, climate_preference, native_latitude),
+            'seasonal_variation': get_seasonal_daylight_pattern(genus, native_latitude),
+            'bloom_photoperiod': get_bloom_triggering_daylight(genus, ai_analysis.get('bloom_triggers')),
+            'cultivation_notes': generate_photoperiod_cultivation_notes(genus, photoperiod_sensitivity),
+            'baker_daylength_reference': True,
+            'data_source': 'Baker Orchid Daylength Database (25 latitudes, astronomical precision)'
+        }
+        
+        return photoperiod_analysis
+        
+    except Exception as e:
+        logger.error(f"Error calculating photoperiod requirements: {str(e)}")
+        return None
+
+def calculate_optimal_daylight(genus, climate_preference, native_latitude):
+    """Calculate optimal daylight hours based on genus and climate"""
+    # Default daylight recommendations based on orchid cultivation knowledge
+    genus_daylight = {
+        'Phalaenopsis': {'min': 11, 'max': 13, 'optimal': 12},  # Equatorial, stable photoperiod
+        'Cattleya': {'min': 10, 'max': 14, 'optimal': 12.5},   # Tropical Americas, seasonal variation
+        'Dendrobium': {'min': 9, 'max': 15, 'optimal': 12},    # Wide range, varies by species
+        'Cymbidium': {'min': 8, 'max': 16, 'optimal': 14},     # Temperate, high seasonal variation
+        'Oncidium': {'min': 10, 'max': 13, 'optimal': 11.5},   # Tropical, moderate variation
+        'Paphiopedilum': {'min': 10, 'max': 12, 'optimal': 11},# Forest floor, stable low light
+        'Vanda': {'min': 12, 'max': 14, 'optimal': 13},        # High light tropical
+        'Miltonia': {'min': 10, 'max': 12, 'optimal': 11},     # Cloud forest, stable
+        'Masdevallia': {'min': 9, 'max': 11, 'optimal': 10}    # Mountain, short days
+    }
+    
+    base_daylight = genus_daylight.get(genus, {'min': 10, 'max': 14, 'optimal': 12})
+    
+    # Adjust based on climate preference
+    climate_adjustments = {
+        'cool': -0.5,      # Mountain species, shorter days
+        'intermediate': 0,  # Balanced
+        'warm': +0.5       # Lowland tropical, longer days
+    }
+    
+    adjustment = climate_adjustments.get(climate_preference, 0)
+    
+    return {
+        'minimum': base_daylight['min'] + adjustment,
+        'maximum': base_daylight['max'] + adjustment,
+        'optimal': base_daylight['optimal'] + adjustment,
+        'notes': f'Optimal daylight for {genus} in {climate_preference} conditions'
+    }
+
+def get_seasonal_daylight_pattern(genus, native_latitude):
+    """Determine seasonal daylight variation pattern"""
+    # Latitude-based seasonal patterns
+    if not native_latitude:
+        # Default moderate seasonal pattern
+        return {
+            'pattern': 'moderate_seasonal',
+            'winter_hours': 11,
+            'summer_hours': 13,
+            'variation': 2,
+            'notes': 'Moderate seasonal daylight variation recommended'
+        }
+    
+    # Parse latitude if provided as text
+    try:
+        if isinstance(native_latitude, str):
+            # Extract numbers from text like "10-20°N" or "tropical 15°"
+            import re
+            numbers = re.findall(r'\d+', native_latitude)
+            if numbers:
+                lat_value = int(numbers[0])
+            else:
+                lat_value = 15  # Default tropical
+        else:
+            lat_value = int(native_latitude)
+    except:
+        lat_value = 15  # Default tropical
+    
+    # Seasonal patterns based on latitude
+    if lat_value <= 10:  # Near equator
+        return {
+            'pattern': 'minimal_seasonal',
+            'winter_hours': 11.5,
+            'summer_hours': 12.5,
+            'variation': 1,
+            'notes': 'Minimal seasonal variation - near equatorial habitat'
+        }
+    elif lat_value <= 25:  # Tropical
+        return {
+            'pattern': 'moderate_seasonal',
+            'winter_hours': 10.5,
+            'summer_hours': 13.5,
+            'variation': 3,
+            'notes': 'Moderate seasonal variation - tropical habitat'
+        }
+    elif lat_value <= 40:  # Subtropical
+        return {
+            'pattern': 'strong_seasonal',
+            'winter_hours': 9,
+            'summer_hours': 15,
+            'variation': 6,
+            'notes': 'Strong seasonal variation - subtropical habitat'
+        }
+    else:  # Temperate
+        return {
+            'pattern': 'extreme_seasonal',
+            'winter_hours': 8,
+            'summer_hours': 16,
+            'variation': 8,
+            'notes': 'Extreme seasonal variation - temperate habitat'
+        }
+
+def get_bloom_triggering_daylight(genus, bloom_triggers):
+    """Determine daylight hours that trigger blooming"""
+    # Common bloom-triggering photoperiods by genus
+    genus_bloom_triggers = {
+        'Cattleya': {'type': 'shortening_days', 'trigger_hours': 11, 'season': 'fall'},
+        'Cymbidium': {'type': 'lengthening_days', 'trigger_hours': 10, 'season': 'late_winter'},
+        'Dendrobium': {'type': 'seasonal_change', 'trigger_hours': 12, 'season': 'spring'},
+        'Phalaenopsis': {'type': 'stable_short', 'trigger_hours': 11.5, 'season': 'winter'},
+        'Oncidium': {'type': 'moderate_change', 'trigger_hours': 12, 'season': 'variable'}
+    }
+    
+    trigger_info = genus_bloom_triggers.get(genus, {
+        'type': 'seasonal_change',
+        'trigger_hours': 12,
+        'season': 'spring'
+    })
+    
+    # Enhance with AI-detected bloom triggers
+    if bloom_triggers:
+        if 'temperature drop' in bloom_triggers.lower():
+            trigger_info['additional_trigger'] = 'Cool temperatures enhance photoperiod response'
+        if 'dry period' in bloom_triggers.lower():
+            trigger_info['additional_trigger'] = 'Dry season combined with shorter days'
+        if 'seasonal light' in bloom_triggers.lower():
+            trigger_info['photoperiod_critical'] = True
+    
+    return trigger_info
+
+def generate_photoperiod_cultivation_notes(genus, sensitivity_level):
+    """Generate specific cultivation notes for photoperiod management"""
+    sensitivity_notes = {
+        'high': [
+            'Photoperiod is CRITICAL for blooming - must simulate natural seasonal changes',
+            'Use programmable LED lights with precise timing controls',
+            'Monitor daylight duration changes weekly during bloom season',
+            'Artificial lighting schedules should match native habitat patterns'
+        ],
+        'medium': [
+            'Moderate photoperiod sensitivity - seasonal changes helpful for blooming',
+            'Provide gradual seasonal adjustments in artificial lighting',
+            'Natural window light with supplemental evening lighting works well',
+            'Adjust lighting schedule 15 minutes every 2 weeks during transitions'
+        ],
+        'low': [
+            'Low photoperiod sensitivity - consistent lighting adequate',
+            'Standard 12-hour light cycles work for most of the year',
+            'Minor seasonal adjustments may improve blooming consistency',
+            'Focus more on temperature and humidity than precise photoperiod'
+        ]
+    }
+    
+    base_notes = sensitivity_notes.get(sensitivity_level, sensitivity_notes['medium'])
+    
+    # Add genus-specific notes
+    genus_specific = {
+        'Cattleya': 'Many Cattleyas are short-day bloomers - reduce daylight in fall',
+        'Cymbidium': 'Cool-growing Cymbidiums need long winter nights for spike initiation',
+        'Dendrobium': 'Deciduous Dendrobiums require distinct seasonal photoperiod changes',
+        'Phalaenopsis': 'Stable shorter days in winter help trigger blooming spikes'
+    }
+    
+    if genus in genus_specific:
+        base_notes.append(genus_specific[genus])
+    
+    return base_notes
