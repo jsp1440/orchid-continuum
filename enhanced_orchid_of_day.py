@@ -82,8 +82,9 @@ class EnhancedOrchidOfDay:
                 # Has proper name (not just "Unknown Orchid")
                 OrchidRecord.display_name != 'Unknown Orchid',
                 OrchidRecord.display_name.isnot(None),
-                # Has genus information
+                # Has BOTH genus AND species information
                 OrchidRecord.genus.isnot(None),
+                OrchidRecord.species.isnot(None),
                 # Not rejected
                 OrchidRecord.validation_status != 'rejected'
             ).all()
