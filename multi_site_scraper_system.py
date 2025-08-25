@@ -68,6 +68,38 @@ class MultiSiteScraperSystem:
                     'oncidium/index.html', 'phalaenopsis/index.html'
                 ],
                 'photographer': 'Internet Orchid Species'
+            },
+            'orchids_com': {
+                'base_url': 'https://orchids.com',
+                'pages': [
+                    'catalog/cattleya-orchids', 'catalog/dendrobium-orchids',
+                    'catalog/phalaenopsis-orchids', 'catalog/cymbidium-orchids',
+                    'catalog/oncidium-orchids', 'catalog/vanda-orchids',
+                    'catalog/paphiopedilum-orchids', 'catalog/species-orchids',
+                    'catalog/miniature-orchids', 'catalog/fragrant-orchids',
+                    'catalog/award-winners', 'catalog/new-arrivals'
+                ],
+                'photographer': 'Orchids.com'
+            },
+            'ecuagenera': {
+                'base_url': 'https://ecuagenera.com',
+                'pages': [
+                    'en/catalog/orchids', 'en/catalog/masdevallia',
+                    'en/catalog/dracula', 'en/catalog/pleurothallis',
+                    'en/catalog/maxillaria', 'en/catalog/oncidium',
+                    'en/catalog/cattleya', 'en/catalog/dendrobium'
+                ],
+                'photographer': 'Ecuagenera'
+            },
+            'andys_orchids': {
+                'base_url': 'https://andysorchids.com',
+                'pages': [
+                    'catalog/species-orchids', 'catalog/bulbophyllum',
+                    'catalog/dendrobium', 'catalog/coelogyne',
+                    'catalog/maxillaria', 'catalog/pleurothallis',
+                    'catalog/masdevallia', 'catalog/oncidium-species'
+                ],
+                'photographer': "Andy's Orchids"
             }
         }
         
