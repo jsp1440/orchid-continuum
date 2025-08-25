@@ -64,6 +64,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Orchid Fragrance Database',
                 'genus': 'Multiple',
                 'type': 'fragrance_database'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/daylength.html',
+                'species': 'Orchid Daylength Database',
+                'genus': 'Multiple',
+                'type': 'daylength_database'
             }
         ]
     
