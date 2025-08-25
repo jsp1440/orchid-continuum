@@ -513,6 +513,42 @@ def extrapolate_by_climate(climate):
         logger.error(f"Error in climate extrapolation: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/baker-extrapolation/regional-analysis')
+def regional_extrapolation_analysis():
+    """API endpoint for endemic region extrapolation analysis"""
+    try:
+        from endemic_region_extrapolator import endemic_extrapolator
+        
+        report = endemic_extrapolator.generate_regional_extrapolation_report()
+        return jsonify({
+            'success': True,
+            'report': report,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in regional analysis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/baker-extrapolation/by-region/<region>')
+def extrapolate_by_region(region):
+    """API endpoint to extrapolate by endemic region"""
+    try:
+        from endemic_region_extrapolator import endemic_extrapolator
+        
+        limit = request.args.get('limit', 50, type=int)
+        results = endemic_extrapolator.batch_extrapolate_region(region, limit)
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in regional extrapolation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/ai/baker-weather-advice', methods=['POST'])
 def baker_weather_advice():
     """API endpoint for AI-powered Baker culture weather advice"""

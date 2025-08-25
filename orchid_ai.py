@@ -192,8 +192,28 @@ def extrapolate_baker_culture_data(target_orchid):
                 OrchidRecord.growth_habit == target_orchid.growth_habit
             ).limit(3).all()
         
+        # Strategy 4: Find Baker culture sheets from same geographic region (endemic area)
+        endemic_matches = []
+        if hasattr(target_orchid, 'region') and target_orchid.region:
+            # Find Baker orchids from same region
+            endemic_matches = OrchidRecord.query.filter(
+                OrchidRecord.photographer.like('%Baker%'),
+                OrchidRecord.region == target_orchid.region
+            ).limit(5).all()
+            
+            # Also try broader geographic matching (continent/area)
+            if not endemic_matches and target_orchid.region:
+                # Extract broader geographic terms
+                region_keywords = extract_geographic_keywords(target_orchid.region)
+                for keyword in region_keywords:
+                    broader_matches = OrchidRecord.query.filter(
+                        OrchidRecord.photographer.like('%Baker%'),
+                        OrchidRecord.region.like(f'%{keyword}%')
+                    ).limit(3).all()
+                    endemic_matches.extend(broader_matches)
+        
         # Combine and analyze all relevant Baker data
-        all_relevant = genus_matches + climate_matches + growth_matches
+        all_relevant = genus_matches + climate_matches + growth_matches + endemic_matches
         if not all_relevant:
             return None
             
@@ -217,6 +237,36 @@ def extrapolate_baker_culture_data(target_orchid):
         logger.error(f"Error extrapolating Baker culture data: {str(e)}")
         return None
 
+def extract_geographic_keywords(region_text):
+    """Extract broader geographic keywords for matching"""
+    if not region_text:
+        return []
+    
+    keywords = []
+    region_lower = region_text.lower()
+    
+    # Major geographic regions
+    continent_mappings = {
+        'south america': ['south america', 'brazil', 'ecuador', 'colombia', 'peru', 'venezuela'],
+        'central america': ['central america', 'costa rica', 'panama', 'guatemala', 'mexico'],
+        'africa': ['africa', 'madagascar', 'kenya', 'tanzania', 'south africa'],
+        'asia': ['asia', 'thailand', 'vietnam', 'malaysia', 'indonesia', 'philippines'],
+        'oceania': ['australia', 'new guinea', 'pacific', 'oceania']
+    }
+    
+    for continent, countries in continent_mappings.items():
+        if any(country in region_lower for country in countries):
+            keywords.append(continent)
+            break
+    
+    # Extract country names and major terms
+    geographic_terms = ['america', 'asia', 'africa', 'tropical', 'subtropical', 'temperate', 'mountain', 'coastal']
+    for term in geographic_terms:
+        if term in region_lower:
+            keywords.append(term)
+    
+    return list(set(keywords))
+
 def get_relationship_type(target_orchid, baker_orchid):
     """Determine the taxonomic/ecological relationship between orchids"""
     target_genus = target_orchid.scientific_name.split(' ')[0] if target_orchid.scientific_name else ''
@@ -224,10 +274,18 @@ def get_relationship_type(target_orchid, baker_orchid):
     
     if target_genus == baker_genus:
         return 'same_genus'
+    elif hasattr(target_orchid, 'region') and hasattr(baker_orchid, 'region') and target_orchid.region == baker_orchid.region:
+        return 'same_region'
     elif target_orchid.climate_preference == baker_orchid.climate_preference:
         return 'similar_climate'
     elif target_orchid.growth_habit == baker_orchid.growth_habit:
         return 'similar_growth'
+    elif hasattr(target_orchid, 'region') and hasattr(baker_orchid, 'region'):
+        # Check for broader geographic relationship
+        target_keywords = extract_geographic_keywords(target_orchid.region)
+        baker_keywords = extract_geographic_keywords(baker_orchid.region)
+        if any(keyword in baker_keywords for keyword in target_keywords):
+            return 'endemic_region'
     else:
         return 'general_orchid'
 
@@ -241,11 +299,20 @@ def synthesize_baker_recommendations(target_orchid, cultural_insights):
 
 Create extrapolated growing recommendations for the target orchid based on related Baker culture data.
 
-Consider:
+Consider in order of priority:
 - Taxonomic relationships (same genus = highest priority)
+- Geographic/endemic relationships (same region = high priority - Baker's regional expertise)
+- Broader geographic area relationships (endemic to similar regions)
 - Climate preference similarities
 - Growth habit similarities
 - Common patterns across related species
+
+Baker's regional expertise is particularly valuable - orchids from the same geographic area often share:
+- Seasonal rainfall patterns
+- Temperature variations
+- Humidity cycles
+- Local growing conditions
+- Regional cultivation techniques
 
 Provide practical, actionable advice focusing on:
 - Temperature and climate needs
@@ -253,8 +320,9 @@ Provide practical, actionable advice focusing on:
 - Watering patterns
 - Light requirements
 - Seasonal care adjustments
+- Regional growing considerations
 
-Be conservative - only extrapolate what can be reasonably inferred from the related species data."""
+Be conservative but recognize that Baker's geographic expertise applies broadly to endemic orchids."""
 
         target_info = {
             'name': target_orchid.display_name,
@@ -304,18 +372,27 @@ def calculate_extrapolation_confidence(target_orchid, cultural_insights):
     for insight in cultural_insights:
         relationship = insight.get('relationship', '')
         if relationship == 'same_genus':
-            confidence += 0.4
+            confidence += 0.4  # Highest confidence
+        elif relationship == 'same_region':
+            confidence += 0.35  # High confidence for same endemic region
+        elif relationship == 'endemic_region':
+            confidence += 0.3   # Good confidence for broader geographic area
         elif relationship == 'similar_climate':
-            confidence += 0.3
+            confidence += 0.25  # Medium confidence
         elif relationship == 'similar_growth':
-            confidence += 0.2
+            confidence += 0.2   # Lower confidence
         else:
-            confidence += 0.1
+            confidence += 0.1   # Minimal confidence
     
     # Cap at 1.0 and adjust based on number of sources
     confidence = min(confidence, 1.0)
     if len(cultural_insights) >= 3:
         confidence *= 1.1  # Boost for multiple sources
+    
+    # Extra boost for endemic relationships (Baker's regional expertise)
+    endemic_relationships = [i for i in cultural_insights if i.get('relationship') in ['same_region', 'endemic_region']]
+    if len(endemic_relationships) >= 2:
+        confidence *= 1.15  # Baker's regional expertise is highly valuable
     
     return min(confidence, 0.95)  # Conservative maximum
 

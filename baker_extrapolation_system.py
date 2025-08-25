@@ -59,6 +59,12 @@ class BakerExtrapolationSystem:
                 if baker.climate_preference:
                     baker_climates.add(baker.climate_preference)
             
+            # Track covered regions
+            baker_regions = set()
+            for baker in baker_records:
+                if baker.region:
+                    baker_regions.add(baker.region)
+            
             # Analyze extrapolation potential for each orphan record
             for record in records_needing_culture:
                 if record.scientific_name:
@@ -69,6 +75,11 @@ class BakerExtrapolationSystem:
                         extrapolation_opportunities['same_genus'] += 1
                         extrapolation_opportunities['genus_coverage'][genus] = \
                             extrapolation_opportunities['genus_coverage'].get(genus, 0) + 1
+                    
+                    # Same/similar region opportunity (endemic area)
+                    if record.region in baker_regions:
+                        extrapolation_opportunities['endemic_region'] = \
+                            extrapolation_opportunities.get('endemic_region', 0) + 1
                     
                     # Similar climate opportunity
                     if record.climate_preference in baker_climates:
@@ -220,14 +231,21 @@ class BakerExtrapolationSystem:
         recommendations = []
         
         same_genus = coverage_analysis.get('same_genus', 0)
+        endemic_region = coverage_analysis.get('endemic_region', 0)
         similar_climate = coverage_analysis.get('similar_climate', 0)
         total_candidates = coverage_analysis.get('total_candidates', 0)
         
         if same_genus > 0:
             recommendations.append(f"High-confidence extrapolation possible for {same_genus} orchids in same genera as Baker species")
         
+        if endemic_region > 0:
+            recommendations.append(f"Regional expertise extrapolation possible for {endemic_region} orchids endemic to same areas as Baker species")
+        
         if similar_climate > 50:
             recommendations.append(f"Climate-based extrapolation could benefit {similar_climate} orchids with similar growing conditions")
+        
+        if endemic_region > same_genus:
+            recommendations.append("Geographic relationships provide broader coverage than taxonomic relationships - Baker's regional expertise is highly valuable")
         
         if total_candidates > 1000:
             recommendations.append("Large-scale extrapolation system recommended for comprehensive coverage")
