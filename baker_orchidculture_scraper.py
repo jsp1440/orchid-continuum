@@ -52,6 +52,12 @@ class BakerOrchidCultureScraper:
                 'species': 'Coelogyne',
                 'genus': 'Coelogyne',
                 'type': 'genus_comprehensive'
+            },
+            {
+                'url': 'https://www.orchidculture.com/COD/FREE/Den_Art.html',
+                'species': 'Dendrobium',
+                'genus': 'Dendrobium',
+                'type': 'genus_comprehensive'
             }
         ]
     
@@ -151,6 +157,12 @@ class BakerOrchidCultureScraper:
         elif 'Vietnam' in text and 'Annam' in text:
             habitat_info['location'] = 'Vietnam (formerly Annam)'
             habitat_info['country'] = 'Vietnam'
+        elif 'Philippines' in text and 'Luzon' in text:
+            habitat_info['location'] = 'Philippines (Luzon)'
+            habitat_info['country'] = 'Philippines'
+        elif 'southeast Asia' in text and 'Indonesia' in text:
+            habitat_info['location'] = 'Southeast Asia (Indonesia)'
+            habitat_info['country'] = 'Indonesia'
         
         # Extract latitude if mentioned
         lat_match = re.search(r'(\d+\.?\d*)°N\s*Latitude', text)
