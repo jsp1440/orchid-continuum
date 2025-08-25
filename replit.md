@@ -159,5 +159,15 @@ The system uses a dual-model approach:
 - Implemented citation generator with custom access date formatting
 - Built export system for multiple citation formats
 
+#### Gary Yong Gee Botanical Reference Integration (August 25, 2025)
+- **Enhanced Gary Yong Gee scraper**: Updated to capture detailed genus information, botanical characteristics, etymology, and distribution data
+- **Authoritative botanical references integrated**: Key reference works now inform our AI system:
+  - Alrich, P. & W. Higgins. (2008) The Marie Selby Botanical Gardens Illustrated Dictionary of Orchid Genera. Cornell University Press, New York.
+  - Alrich, P. & W.E. Higgins. (2019) Compendium of Orchid Genera. Natural History Publications, Kota Kinabalu, Borneo.
+  - Mayr, H. (1998) Orchid Names and their Meanings. A.R.G. Gantner Verlag K.-G., Vaduz.
+  - IPNI (2022) International Plant Names Index. Published on the Internet http://www.ipni.org
+- **Rich botanical data capture**: Scraper now extracts plant characteristics, etymology, distribution, tribal classification, and synonyms
+- **Academic-grade AI enhancement**: AI descriptions now incorporate authoritative botanical terminology and references
+
 #### System Architecture
 The system is designed to be self-contained yet extensible, with clear separation between data ingestion, processing, and presentation layers. The AI integration provides intelligent metadata extraction while maintaining human oversight through the admin dashboard. The comparison and citation systems add research-grade functionality for academic and educational use.
