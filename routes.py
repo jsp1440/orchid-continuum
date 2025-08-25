@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response
+from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
@@ -26,6 +26,7 @@ from weather_habitat_routes import register_weather_habitat_routes
 from scraping_dashboard import scraping_dashboard
 from vigilant_monitor import vigilant_monitor
 from gbif_routes import gbif_bp
+from ai_orchid_routes import ai_orchid_bp
 import os
 import json
 import logging
@@ -47,6 +48,9 @@ register_weather_habitat_routes(app)
 
 # Register GBIF integration routes
 app.register_blueprint(gbif_bp)
+
+# Register AI orchid identification routes
+app.register_blueprint(ai_orchid_bp)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
