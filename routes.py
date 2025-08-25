@@ -379,10 +379,13 @@ def index():
             logger.error(f"Error fetching recent orchids: {str(e)}")
             db.session.rollback()
         
-        # Get featured orchids with error handling
+        # Get featured orchids with Google Drive images only
         featured_orchids = []
         try:
-            featured_orchids = OrchidRecord.query.filter_by(is_featured=True).limit(4).all()
+            featured_orchids = OrchidRecord.query.filter(
+                OrchidRecord.is_featured == True,
+                OrchidRecord.google_drive_id.isnot(None)
+            ).limit(4).all()
         except Exception as e:
             logger.error(f"Error fetching featured orchids: {str(e)}")
             db.session.rollback()
