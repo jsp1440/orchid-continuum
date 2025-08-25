@@ -33,6 +33,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_
 from io import BytesIO
 from googleapiclient.http import MediaIoBaseDownload
+import issue_reports
+import chris_howard_reimport
 
 logger = logging.getLogger(__name__)
 
