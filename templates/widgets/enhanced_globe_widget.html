@@ -253,20 +253,20 @@
     <!-- Country Statistics Bar -->
     <div class="country-stats-bar">
         <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-value" id="total-countries-{{ widget_data.widget_id }}">{{ widget_data.countries_with_orchids|length if widget_data.countries_with_orchids else '0' }}</div>
+            <div class="stat-item" {% if not widget_data.countries_with_orchids or widget_data.countries_with_orchids|length == 0 %}style="display: none;"{% endif %}>
+                <div class="stat-value" id="total-countries-{{ widget_data.widget_id }}" title="{% if not widget_data.countries_with_orchids or widget_data.countries_with_orchids|length == 0 %}Not available for this view yet{% endif %}">{{ widget_data.countries_with_orchids|length if widget_data.countries_with_orchids else '—' }}</div>
                 <div class="stat-label">Countries</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="selected-country-orchids-{{ widget_data.widget_id }}">--</div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="selected-country-orchids-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
                 <div class="stat-label">Orchids</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="growing-season-{{ widget_data.widget_id }}">--</div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="growing-season-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
                 <div class="stat-label">Season</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="local-time-{{ widget_data.widget_id }}">--:--</div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="local-time-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
                 <div class="stat-label">Local Time</div>
             </div>
         </div>
@@ -1839,7 +1839,27 @@
     
     function selectRandomCountry() {
         const markers = document.querySelectorAll('.geo-marker');
+        if (markers.length === 0) return;
+        
         const randomMarker = markers[Math.floor(Math.random() * markers.length)];
+        
+        // Highlight the marker briefly
+        randomMarker.style.transform = 'scale(2)';
+        randomMarker.style.zIndex = '100';
+        randomMarker.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)';
+        
+        // Highlight matching legend item
+        const legendMarkers = document.querySelectorAll('.legend-marker');
+        legendMarkers.forEach(marker => {
+            if (marker.classList.contains(randomMarker.classList[1])) {
+                marker.parentElement.style.transform = 'scale(1.1)';
+                marker.parentElement.style.backgroundColor = 'rgba(74, 144, 226, 0.2)';
+                setTimeout(() => {
+                    marker.parentElement.style.transform = '';
+                    marker.parentElement.style.backgroundColor = '';
+                }, 2000);
+            }
+        });
         
         const feature = {
             name: randomMarker.dataset.feature,
@@ -1847,7 +1867,15 @@
             info: randomMarker.dataset.info
         };
         
+        // Show feature information
         explainGeoFeature(feature);
+        
+        // Reset marker after delay
+        setTimeout(() => {
+            randomMarker.style.transform = '';
+            randomMarker.style.zIndex = '';
+            randomMarker.style.boxShadow = '';
+        }, 2000);
     }
     
     function explainGeoFeature(feature) {
@@ -1940,8 +1968,12 @@
     function startDemoTour() {
         const markers = document.querySelectorAll('.geo-marker');
         let currentIndex = 0;
+        let isRunning = false;
         
         if (markers.length === 0) return;
+        if (isRunning) return;
+        
+        isRunning = true;
         
         // Update demo button text
         const demoBtn = document.getElementById(`demo-mode-${widgetId}`);
@@ -1953,6 +1985,7 @@
                 // Demo complete
                 demoBtn.textContent = '🎬 Demo Tour';
                 demoBtn.disabled = false;
+                isRunning = false;
                 
                 // Show completion message
                 document.getElementById(`current-location-${widgetId}`).innerHTML = `
@@ -1975,26 +2008,45 @@
                 info: marker.dataset.info
             };
             
+            // Reset any previous marker highlights
+            document.querySelectorAll('.geo-marker').forEach(m => {
+                m.style.transform = '';
+                m.style.zIndex = '';
+                m.style.boxShadow = '';
+            });
+            
             // Highlight the current marker
-            marker.style.transform = 'scale(2)';
+            marker.style.transform = 'scale(2.5)';
             marker.style.zIndex = '100';
+            marker.style.boxShadow = '0 0 25px rgba(255, 255, 255, 1)';
             
             // Show feature information
             explainGeoFeature(feature);
             
-            // Add demo counter
-            const locationEl = document.getElementById(`current-location-${widgetId}`);
-            const demoCounter = `
-                <div style="position: absolute; top: 10px; right: 10px; background: #4a90e2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9em;">
-                    Demo ${currentIndex + 1}/${markers.length}
-                </div>
-            `;
-            locationEl.innerHTML = demoCounter + locationEl.innerHTML;
-            
-            // Reset marker after delay
+            // Add demo counter to info panel
             setTimeout(() => {
-                marker.style.transform = '';
-                marker.style.zIndex = '';
+                const locationEl = document.getElementById(`current-location-${widgetId}`);
+                if (locationEl) {
+                    const demoCounter = document.createElement('div');
+                    demoCounter.style.cssText = `
+                        position: absolute; 
+                        top: 10px; 
+                        right: 10px; 
+                        background: #4a90e2; 
+                        color: white; 
+                        padding: 5px 10px; 
+                        border-radius: 15px; 
+                        font-size: 0.9em;
+                        z-index: 10;
+                    `;
+                    demoCounter.textContent = `Demo ${currentIndex + 1}/${markers.length}`;
+                    locationEl.style.position = 'relative';
+                    locationEl.appendChild(demoCounter);
+                }
+            }, 100);
+            
+            // Auto advance after 3 seconds
+            setTimeout(() => {
                 currentIndex++;
                 showNextFeature();
             }, 3000);
@@ -2003,9 +2055,51 @@
         showNextFeature();
     }
     
+    function showSpeedToast(message) {
+        // Remove existing toast
+        const existingToast = document.getElementById(`speed-toast-${widgetId}`);
+        if (existingToast) existingToast.remove();
+        
+        // Create toast
+        const toast = document.createElement('div');
+        toast.id = `speed-toast-${widgetId}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(74, 144, 226, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+    
     function updateRotationSpeed() {
         const speedControl = document.getElementById(`rotation-speed-${widgetId}`);
         rotationSpeed = parseFloat(speedControl.value);
+        
+        // Show speed confirmation toast
+        showSpeedToast(`Auto-rotation: ${rotationSpeed}×`);
+        
         updateLastInteraction();
         
         const globe = document.getElementById(`earth-globe-${widgetId}`);
