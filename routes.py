@@ -2091,11 +2091,22 @@ try:
     app.register_blueprint(game_infrastructure_bp)
     app.register_blueprint(orchid_memory_bp)
     app.register_blueprint(rebus_puzzle_bp)
+    
+    from professor_bloombot_curator import bloombot_curator_bp
+    from member_personalization import member_personalization_bp
+    from orchid_care_manager import orchid_care_manager_bp
+    app.register_blueprint(bloombot_curator_bp)
+    app.register_blueprint(member_personalization_bp)
+    app.register_blueprint(orchid_care_manager_bp)
+    
     logger.info("Visitor Teasers System registered successfully")
     logger.info("Visitor Demo System registered successfully")
     logger.info("Game Infrastructure registered successfully")
     logger.info("Memory Game System registered successfully") 
     logger.info("Rebus Puzzle System registered successfully")
+    logger.info("Professor BloomBot Curator registered successfully")
+    logger.info("Member Personalization System registered successfully")
+    logger.info("Orchid Care Manager registered successfully")
 except ImportError as e:
     logger.warning(f"Visitor Teasers System not available: {e}")
 
