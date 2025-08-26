@@ -100,15 +100,20 @@ class GameAnalytics:
     def log_widget_usage(user_id, widget_name, action='view'):
         """Log widget usage"""
         try:
+            # Use None for anonymous users instead of 'anonymous' string
+            # to avoid foreign key constraint issues
+            activity_user_id = user_id if user_id and user_id != 'anonymous' else None
+            
             activity = UserActivity(
-                user_id=user_id or 'anonymous',
+                user_id=activity_user_id,
                 activity_type=f'widget_{action}',
                 points_earned=2,
                 details=json.dumps({
                     'widget_name': widget_name,
                     'action': action,
                     'timestamp': datetime.now().isoformat(),
-                    'user_agent': request.headers.get('User-Agent', 'unknown')
+                    'user_agent': request.headers.get('User-Agent', 'unknown'),
+                    'is_anonymous': activity_user_id is None
                 })
             )
             db.session.add(activity)
@@ -150,9 +155,9 @@ class GameAnalytics:
                     'daily_usage': {}
                 },
                 'users': {
-                    'unique_players': len(set(a.user_id for a in game_activities + widget_activities)),
-                    'anonymous_users': len([a for a in game_activities + widget_activities if a.user_id == 'anonymous']),
-                    'registered_users': len([a for a in game_activities + widget_activities if a.user_id != 'anonymous'])
+                    'unique_players': len(set(a.user_id for a in game_activities + widget_activities if a.user_id)),
+                    'anonymous_users': len([a for a in game_activities + widget_activities if a.user_id is None]),
+                    'registered_users': len([a for a in game_activities + widget_activities if a.user_id is not None])
                 }
             }
             
