@@ -1,264 +1,255 @@
 #!/usr/bin/env python3
 """
-Targeted Orchid GBIF Collection
+Targeted Orchid GBIF Importer
 ==============================
-Precisely targeted search for actual orchid species with images
-Focuses on known orchid genera and scientific validation
+Ultra-focused orchid import system that ensures we only get actual orchids
+Uses multiple validation layers to guarantee orchid species only
 """
 
 import requests
 import json
 import logging
 import time
+from datetime import datetime
 from typing import Dict, List, Optional, Any
+from app import app, db
+from models import OrchidRecord
+from sqlalchemy import func
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class TargetedOrchidGBIF:
     """
-    Precisely targeted orchid collection from GBIF
-    Focus on verified orchid genera and species
+    Laser-focused GBIF integration that ONLY imports verified orchid species
     """
     
     def __init__(self):
         self.base_url = "https://api.gbif.org/v1"
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Five Cities Orchid Society - Targeted Collection/1.0',
+            'User-Agent': 'Five Cities Orchid Society - Targeted Import/1.0',
             'Accept': 'application/json'
         })
         
-        # Known major orchid genera for targeted searching
-        self.major_orchid_genera = [
-            'Phalaenopsis', 'Cattleya', 'Dendrobium', 'Oncidium', 'Cymbidium',
-            'Paphiopedilum', 'Vanda', 'Orchis', 'Ophrys', 'Epidendrum',
-            'Brassia', 'Miltonia', 'Odontoglossum', 'Masdevallia', 'Bulbophyllum',
-            'Vanilla', 'Cypripedium', 'Laelia', 'Encyclia', 'Brassavola',
-            'Aerides', 'Angraecum', 'Ascocenda', 'Bletilla', 'Calanthe',
-            'Coelogyne', 'Dactylorhiza', 'Doritaenopsis', 'Grammatophyllum',
-            'Lycaste', 'Maxillaria', 'Mormodes', 'Neottia', 'Platanthera',
-            'Pleurothallis', 'Renanthera', 'Rhynchostylis', 'Sobralia',
-            'Stanhopea', 'Zygopetalum'
+        # Verified orchid genera with high GBIF representation
+        self.verified_orchid_genera = [
+            'Cattleya', 'Phalaenopsis', 'Dendrobium', 'Oncidium', 'Cymbidium',
+            'Orchis', 'Ophrys', 'Epidendrum', 'Bulbophyllum', 'Masdevallia',
+            'Paphiopedilum', 'Vanda', 'Aerangis', 'Angraecum', 'Brassia',
+            'Laelia', 'Miltonia', 'Odontoglossum', 'Vanilla', 'Pleurothallis'
         ]
         
-        logger.info("🎯 Targeted Orchid GBIF collector initialized")
-        logger.info(f"🌺 Targeting {len(self.major_orchid_genera)} major orchid genera")
+        logger.info("🎯 Targeted Orchid GBIF Importer initialized")
     
-    def search_genus_images(self, genus: str, limit: int = 50) -> Dict[str, Any]:
+    def get_verified_orchid_records(self, genus: str, limit: int = 50) -> List[Dict]:
         """
-        Search for images of a specific orchid genus
+        Get verified orchid records for a specific genus
+        Uses multiple validation steps to ensure orchid authenticity
         """
         try:
+            # Search specifically for the genus with orchid validation
             params = {
                 'genus': genus,
                 'mediaType': 'StillImage',
                 'hasCoordinate': 'true',
-                'limit': min(limit, 300)
+                'limit': limit,
+                'family': 'Orchidaceae'  # Double-check family
             }
             
-            response = self.session.get(f"{self.base_url}/occurrence/search", 
-                                       params=params, timeout=20)
-            response.raise_for_status()
+            response = self.session.get(
+                f"{self.base_url}/occurrence/search",
+                params=params,
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                logger.warning(f"❌ Search failed for {genus}: {response.status_code}")
+                return []
             
             data = response.json()
-            return data
+            results = data.get('results', [])
+            
+            # Filter to ensure we only get actual orchids
+            verified_orchids = []
+            for record in results:
+                if self._is_verified_orchid(record, genus):
+                    verified_orchids.append(record)
+            
+            logger.info(f"✅ {genus}: Found {len(verified_orchids)} verified orchid records")
+            return verified_orchids
             
         except Exception as e:
-            logger.error(f"❌ Error searching {genus}: {e}")
-            return {}
+            logger.error(f"❌ Error getting {genus} records: {e}")
+            return []
     
-    def verify_orchid_record(self, occurrence: Dict[str, Any]) -> bool:
+    def _is_verified_orchid(self, record: Dict, expected_genus: str) -> bool:
         """
-        Verify that a record is actually an orchid
+        Multi-layer validation to ensure this is actually an orchid
         """
-        family = occurrence.get('family', '').lower()
-        scientific_name = occurrence.get('scientificName', '').lower()
+        # Check 1: Scientific name must contain expected genus
+        scientific_name = record.get('scientificName', '').lower()
+        if expected_genus.lower() not in scientific_name:
+            return False
         
-        # Check if family is Orchidaceae
-        if 'orchidaceae' in family:
-            return True
+        # Check 2: Family must be Orchidaceae (if provided)
+        family = record.get('family', '').lower()
+        if family and 'orchidaceae' not in family:
+            return False
         
-        # Check if scientific name contains orchid terms
-        orchid_terms = ['orchid', 'orchidaceae']
-        if any(term in scientific_name for term in orchid_terms):
-            return True
+        # Check 3: Genus field must match
+        genus = record.get('genus', '').lower()
+        if genus and genus != expected_genus.lower():
+            return False
         
-        # Check if genus is in our known list
-        genus = occurrence.get('genus', '')
-        if genus in self.major_orchid_genera:
-            return True
+        # Check 4: Must have images
+        media = record.get('media', [])
+        if not media:
+            return False
         
-        return False
+        # Check 5: Scientific name should have species (genus + species)
+        name_parts = scientific_name.split()
+        if len(name_parts) < 2:
+            return False
+        
+        return True
     
-    def process_orchid_record(self, occurrence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def import_targeted_orchids(self, max_per_genus: int = 20, max_total: int = 500) -> Dict:
         """
-        Process a verified orchid occurrence into our format
+        Import a targeted batch of verified orchids
         """
-        try:
-            # Verify it's actually an orchid
-            if not self.verify_orchid_record(occurrence):
-                return None
-            
-            # Extract media
-            media_list = occurrence.get('media', [])
-            if not media_list:
-                return None
-            
-            primary_image = None
-            for media in media_list:
-                if media.get('type') == 'StillImage':
-                    primary_image = {
-                        'url': media.get('identifier'),
-                        'title': media.get('title', ''),
-                        'creator': media.get('creator', ''),
-                        'license': media.get('license', ''),
-                        'publisher': media.get('publisher', '')
-                    }
-                    break
-            
-            if not primary_image:
-                return None
-            
-            # Extract orchid data
-            scientific_name = occurrence.get('scientificName', '')
-            genus = occurrence.get('genus', '')
-            species = occurrence.get('specificEpithet', '')
-            
-            # Geographic data
-            country = occurrence.get('country', '')
-            latitude = occurrence.get('decimalLatitude')
-            longitude = occurrence.get('decimalLongitude')
-            locality = occurrence.get('locality', '')
-            
-            # Collection data
-            collector = occurrence.get('recordedBy', '')
-            institution = occurrence.get('institutionCode', '')
-            catalog_number = occurrence.get('catalogNumber', '')
-            
-            record = {
-                'scientific_name': scientific_name,
-                'genus': genus,
-                'species': species,
-                'family': 'Orchidaceae',
-                'country': country,
-                'locality': locality,
-                'latitude': latitude,
-                'longitude': longitude,
-                'collector': collector,
-                'institution': institution,
-                'catalog_number': catalog_number,
-                'gbif_id': occurrence.get('gbifID'),
-                'gbif_key': occurrence.get('key'),
-                'dataset_key': occurrence.get('datasetKey'),
-                'source_url': f"https://www.gbif.org/occurrence/{occurrence.get('key')}",
-                'image_url': primary_image['url'],
-                'image_title': primary_image['title'],
-                'image_creator': primary_image['creator'],
-                'image_license': primary_image['license'],
-                'image_publisher': primary_image['publisher'],
-                'basis_of_record': occurrence.get('basisOfRecord', ''),
-                'event_date': occurrence.get('eventDate'),
-                'coordinate_precision': occurrence.get('coordinateUncertaintyInMeters'),
-                'elevation': occurrence.get('elevation'),
-                'habitat': occurrence.get('habitat', ''),
-                'data_source': 'GBIF Targeted Orchid'
-            }
-            
-            return record
-            
-        except Exception as e:
-            logger.error(f"❌ Error processing orchid record: {e}")
-            return None
-    
-    def collect_targeted_orchids(self, max_per_genus: int = 20, 
-                               max_total: int = 500) -> Dict[str, Any]:
-        """
-        Collect verified orchid records with images from known genera
-        """
-        stats = {
-            'genera_searched': 0,
-            'genera_with_results': 0,
-            'total_found': 0,
-            'verified_orchids': 0,
-            'with_images': 0,
-            'records': []
+        results = {
+            'imported': 0,
+            'skipped': 0,
+            'errors': 0,
+            'genera_processed': 0
         }
         
-        logger.info(f"🚀 Starting targeted orchid collection")
-        logger.info(f"   🎯 Max per genus: {max_per_genus}")
-        logger.info(f"   📊 Max total: {max_total}")
+        logger.info(f"🚀 Starting targeted orchid import (max {max_total} total)")
         
-        collected = 0
-        
-        for genus in self.major_orchid_genera:
-            if collected >= max_total:
-                break
-            
-            logger.info(f"🔍 Searching genus: {genus}")
-            stats['genera_searched'] += 1
-            
-            # Search for this genus
-            response = self.search_genus_images(genus, max_per_genus)
-            
-            if not response or 'results' not in response:
-                logger.warning(f"   ⚠️ No data for {genus}")
-                continue
-            
-            occurrences = response['results']
-            genus_count = response.get('count', 0)
-            
-            if not occurrences:
-                logger.info(f"   ❌ No images for {genus}")
-                continue
-            
-            stats['genera_with_results'] += 1
-            stats['total_found'] += genus_count
-            
-            logger.info(f"   ✅ Found {len(occurrences)} {genus} records ({genus_count:,} total)")
-            
-            # Process each occurrence
-            genus_verified = 0
-            for occurrence in occurrences:
-                if collected >= max_total:
+        with app.app_context():
+            for genus in self.verified_orchid_genera:
+                if results['imported'] >= max_total:
                     break
                 
-                # Process the record
-                record = self.process_orchid_record(occurrence)
+                logger.info(f"🔍 Processing genus: {genus}")
                 
-                if record:
-                    stats['verified_orchids'] += 1
-                    stats['with_images'] += 1
-                    stats['records'].append(record)
-                    genus_verified += 1
-                    collected += 1
+                # Get verified records for this genus
+                records = self.get_verified_orchid_records(genus, max_per_genus)
+                
+                for record in records:
+                    if results['imported'] >= max_total:
+                        break
                     
-                    logger.info(f"      🌺 {record['scientific_name']}")
+                    try:
+                        # Check if we already have this GBIF record
+                        gbif_id = record.get('gbifID')
+                        if gbif_id:
+                            existing = OrchidRecord.query.filter_by(gbif_id=gbif_id).first()
+                            if existing:
+                                results['skipped'] += 1
+                                continue
+                        
+                        # Create new orchid record
+                        orchid = self._create_orchid_from_gbif(record)
+                        if orchid:
+                            db.session.add(orchid)
+                            results['imported'] += 1
+                            logger.info(f"  ✅ Imported: {orchid.genus} {orchid.species}")
+                        else:
+                            results['errors'] += 1
+                    
+                    except Exception as e:
+                        logger.error(f"  ❌ Error importing record: {e}")
+                        results['errors'] += 1
+                
+                results['genera_processed'] += 1
+                
+                # Commit every genus to avoid losing progress
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    logger.error(f"❌ Commit error for {genus}: {e}")
+                    db.session.rollback()
+        
+        logger.info(f"🎉 Import complete: {results['imported']} imported, {results['skipped']} skipped, {results['errors']} errors")
+        return results
+    
+    def _create_orchid_from_gbif(self, record: Dict) -> Optional[OrchidRecord]:
+        """
+        Create an OrchidRecord from a GBIF record
+        """
+        try:
+            orchid = OrchidRecord()
             
-            logger.info(f"   📋 {genus}: {genus_verified} verified orchids collected")
-            time.sleep(0.3)  # Rate limiting
-        
-        logger.info(f"🎯 TARGETED COLLECTION COMPLETE!")
-        logger.info(f"   🔍 Genera searched: {stats['genera_searched']}")
-        logger.info(f"   ✅ Genera with results: {stats['genera_with_results']}")
-        logger.info(f"   📊 Total found: {stats['total_found']:,}")
-        logger.info(f"   🌺 Verified orchids: {stats['verified_orchids']}")
-        logger.info(f"   📸 With images: {stats['with_images']}")
-        
-        return stats
+            # Basic taxonomy
+            scientific_name = record.get('scientificName', '')
+            orchid.scientific_name = scientific_name
+            orchid.genus = record.get('genus', '')
+            orchid.species = record.get('species', '')
+            
+            # Display name
+            if orchid.genus and orchid.species:
+                orchid.display_name = f"{orchid.genus} {orchid.species}"
+            else:
+                orchid.display_name = scientific_name
+            
+            # Geographic data
+            orchid.region = record.get('country', '')
+            orchid.native_habitat = record.get('locality', '')
+            if record.get('decimalLatitude') and record.get('decimalLongitude'):
+                lat = record.get('decimalLatitude')
+                lon = record.get('decimalLongitude')
+                if orchid.native_habitat:
+                    orchid.native_habitat += f" (Lat: {lat}, Lon: {lon})"
+                else:
+                    orchid.native_habitat = f"Coordinates: {lat}, {lon}"
+            
+            # Image data
+            media = record.get('media', [])
+            if media and len(media) > 0:
+                # Use the first image
+                image_info = media[0]
+                image_url = image_info.get('identifier')
+                if image_url:
+                    orchid.image_url = image_url
+            
+            # Metadata and source info
+            institution = record.get('institutionCode', '') or record.get('publishingOrganization', '')
+            collector = record.get('recordedBy', '')
+            date = record.get('eventDate', '')
+            
+            orchid.ai_description = f"GBIF specimen from {institution}. "
+            if collector:
+                orchid.ai_description += f"Collected by {collector}. "
+            if date:
+                orchid.ai_description += f"Collection date: {date}. "
+            if orchid.native_habitat:
+                orchid.ai_description += f"Location: {orchid.native_habitat}."
+            
+            # Source tracking
+            orchid.data_source = 'GBIF Targeted Import'
+            orchid.gbif_id = record.get('gbifID')
+            orchid.validation_status = 'validated'
+            
+            # Collection details
+            orchid.collector = collector
+            orchid.collection_date = date
+            
+            return orchid
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating orchid record: {e}")
+            return None
 
-def test_targeted_collection():
-    """Test the targeted orchid collection"""
-    collector = TargetedOrchidGBIF()
-    
-    # Test with a small sample first
-    results = collector.collect_targeted_orchids(
-        max_per_genus=5,
-        max_total=50
-    )
-    
+# Quick test function
+def run_targeted_import_test():
+    """Test the targeted import system"""
+    importer = TargetedOrchidGBIF()
+    results = importer.import_targeted_orchids(max_per_genus=5, max_total=25)
     return results
 
 if __name__ == "__main__":
-    test_results = test_targeted_collection()
-    print(json.dumps(test_results, indent=2, default=str))
+    with app.app_context():
+        results = run_targeted_import_test()
+        print(f"Test import results: {results}")
