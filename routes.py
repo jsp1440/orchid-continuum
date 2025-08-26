@@ -271,6 +271,53 @@ def test_international_scrapers():
     except Exception as e:
         return f"<h2>International Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
 
+@app.route('/test_enhanced_flowering_collection')
+def test_enhanced_flowering_collection():
+    """Test enhanced flowering and geographic collection"""
+    try:
+        from enhanced_flowering_geographic_scraper import FloweringGeographicScraper
+        
+        scraper = FloweringGeographicScraper()
+        
+        print("🌸📍 Testing enhanced flowering & geographic collection...")
+        results = scraper.run_enhanced_collection()
+        
+        db.session.commit()
+        
+        return f"""
+        <h2>🌸📍 Enhanced Flowering & Geographic Collection Results</h2>
+        <p><strong>Total Processed:</strong> {results['total_processed']}</p>
+        <p><strong>With Flowering Dates:</strong> {results['with_flowering_dates']}</p>
+        <p><strong>With Coordinates:</strong> {results['with_coordinates']}</p>
+        <p><strong>With BOTH (Target):</strong> {results['with_both']}</p>
+        <p><strong>Endemic Species:</strong> {results['endemic_species']}</p>
+        <p><strong>Cross-Latitude Candidates:</strong> {results['cross_latitude_candidates']}</p>
+        <p><a href="/database_metadata_report">View Full Database Report</a></p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Enhanced Collection Test Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
+@app.route('/database_metadata_report')
+def database_metadata_report():
+    """Show comprehensive database metadata completeness report"""
+    try:
+        from database_metadata_tracker import DatabaseMetadataTracker
+        
+        tracker = DatabaseMetadataTracker()
+        report = tracker.generate_progress_report()
+        
+        return f"""
+        <h2>📊 Database Metadata Completeness Report</h2>
+        <pre>{report}</pre>
+        <p><a href="/test_enhanced_flowering_collection">Run Enhanced Collection</a></p>
+        <p><a href="/admin">Back to Admin</a></p>
+        """
+        
+    except Exception as e:
+        return f"<h2>Database Report Error</h2><p>{str(e)}</p><p><a href='/admin'>Back to Admin</a></p>"
+
 @app.route('/test_ron_parsons')
 def test_ron_parsons():
     """Test Ron Parsons Flickr scraper"""
