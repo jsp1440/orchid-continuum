@@ -21,6 +21,44 @@ def orchid_quiz():
     """Orchid identification quiz game"""
     return render_template('games/orchid_quiz.html')
 
+def expand_orchid_name(name):
+    """Expand abbreviated orchid names to full names"""
+    if not name:
+        return name
+        
+    # Common orchid abbreviations to full names
+    abbreviations = {
+        'Bc ': 'Brassocattleya ',
+        'Blc ': 'Brassolaeliocattleya ',
+        'Lc ': 'Laeliocattleya ',
+        'Den ': 'Dendrobium ',
+        'Bulb ': 'Bulbophyllum ',
+        'Pos ': 'Posthia ',
+        'CT ': '',  # Remove "CT" prefix completely
+        'Onc ': 'Oncidium ',
+        'Paph ': 'Paphiopedilum ',
+        'Phrag ': 'Phragmipedium ',
+        'Cym ': 'Cymbidium ',
+        'Van ': 'Vanda ',
+        'Phal ': 'Phalaenopsis ',
+        'Coel ': 'Coelogyne ',
+        'Masd ': 'Masdevallia ',
+        'Max ': 'Maxillaria ',
+        'Epi ': 'Epidendrum ',
+        'Enc ': 'Encyclia ',
+        'Pot ': 'Potinara ',
+        'Slc ': 'Sophrolaeliocattleya ',
+        'Rlc ': 'Rhyncholaeliocattleya '
+    }
+    
+    expanded_name = name
+    for abbrev, full in abbreviations.items():
+        if expanded_name.startswith(abbrev):
+            expanded_name = full + expanded_name[len(abbrev):]
+            break
+    
+    return expanded_name.strip()
+
 @games_bp.route('/api/quiz-question')
 def get_quiz_question():
     """Get a random orchid for the quiz"""
@@ -40,18 +78,20 @@ def get_quiz_question():
         OrchidRecord.display_name.isnot(None)
     ).order_by(db.func.random()).limit(3).all()
     
-    # Create multiple choice options
-    options = [orchid.display_name]
+    # Create multiple choice options with expanded names
+    correct_name = expand_orchid_name(orchid.display_name)
+    options = [correct_name]
     for wrong in wrong_answers:
         if wrong.display_name:
-            options.append(wrong.display_name)
+            expanded_wrong = expand_orchid_name(wrong.display_name)
+            options.append(expanded_wrong)
     
     # Shuffle options
     random.shuffle(options)
     
     return jsonify({
         'image_url': orchid.image_url,
-        'correct_answer': orchid.display_name,
+        'correct_answer': correct_name,
         'options': options,
         'hint': f"This orchid is from the {orchid.genus} genus" if orchid.genus else "No hint available",
         'orchid_id': orchid.id
@@ -74,10 +114,11 @@ def get_memory_cards():
     
     cards = []
     for i, orchid in enumerate(orchids):
+        expanded_name = expand_orchid_name(orchid.display_name)
         card_data = {
             'id': i,
             'image_url': orchid.image_url,
-            'name': orchid.display_name,
+            'name': expanded_name,
             'pair_id': i  # Each orchid appears twice
         }
         # Add each card twice for matching pairs
@@ -138,8 +179,9 @@ def get_trivia_question():
         
         random.shuffle(options)
         
+        expanded_display_name = expand_orchid_name(orchid.display_name)
         return jsonify({
-            'question': f"What genus does '{orchid.display_name}' belong to?",
+            'question': f"What genus does '{expanded_display_name}' belong to?",
             'correct_answer': orchid.genus,
             'options': options,
             'image_url': orchid.image_url
@@ -158,16 +200,18 @@ def get_trivia_question():
         
         random.shuffle(options)
         
+        expanded_display_name = expand_orchid_name(orchid.display_name)
         return jsonify({
-            'question': f"Where is '{orchid.display_name}' originally from?",
+            'question': f"Where is '{expanded_display_name}' originally from?",
             'correct_answer': orchid.region,
             'options': options,
             'image_url': orchid.image_url
         })
     
     else:  # photographer
+        expanded_display_name = expand_orchid_name(orchid.display_name)
         return jsonify({
-            'question': f"Who photographed this '{orchid.display_name}'?",
+            'question': f"Who photographed this '{expanded_display_name}'?",
             'correct_answer': orchid.photographer,
             'options': [orchid.photographer, "Ron Parsons", "Gary Yong Gee", "Roberta Fox"],
             'image_url': orchid.image_url
