@@ -68,9 +68,9 @@ class EnhancedOrchidOfDay:
             seed = int(today.strftime("%Y%m%d"))
             random.seed(seed)
             
-            # Get orchids with rich metadata and real images
+            # Strict filtering: Get orchids with complete metadata and real images
             rich_orchids = OrchidRecord.query.filter(
-                # Has real image
+                # Has real high-resolution image
                 or_(
                     OrchidRecord.google_drive_id.isnot(None),
                     and_(
@@ -78,37 +78,52 @@ class EnhancedOrchidOfDay:
                         OrchidRecord.image_url != '/static/images/orchid_placeholder.svg'
                     )
                 ),
-                # Has AI description (metadata)
+                # Has BOTH genus AND species information (fully spelled out)
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.species.isnot(None),
+                # No single letter abbreviations
+                ~OrchidRecord.genus.like('%.'),
+                ~OrchidRecord.species.like('%.'),
+                # Has country/region of origin
+                or_(
+                    OrchidRecord.region.isnot(None),
+                    OrchidRecord.native_habitat.isnot(None)
+                ),
+                # Has substantial metadata/description
                 OrchidRecord.ai_description.isnot(None),
                 # Has proper name (not just "Unknown Orchid")
                 OrchidRecord.display_name != 'Unknown Orchid',
                 OrchidRecord.display_name.isnot(None),
-                # Has BOTH genus AND species information
-                OrchidRecord.genus.isnot(None),
-                OrchidRecord.species.isnot(None),
                 # Not rejected
                 OrchidRecord.validation_status != 'rejected'
             ).all()
             
-            # Filter for orchids with valid taxonomic names
-            valid_taxonomic_orchids = []
+            # Filter for orchids with complete metadata and valid taxonomic names
+            complete_orchids = []
             for orchid in rich_orchids:
+                # Check for complete metadata requirements
+                has_country = orchid.region or (orchid.native_habitat and any(
+                    country in (orchid.native_habitat or '').lower() 
+                    for country in ['brazil', 'colombia', 'ecuador', 'peru', 'venezuela', 
+                                   'madagascar', 'thailand', 'malaysia', 'indonesia', 'philippines',
+                                   'australia', 'new zealand', 'china', 'india', 'mexico', 'usa',
+                                   'costa rica', 'panama', 'guatemala', 'honduras', 'nicaragua']
+                ))
+                
+                has_metadata = orchid.ai_description and len(orchid.ai_description) > 100
+                has_habitat_info = orchid.native_habitat and len(orchid.native_habitat) > 20
+                
                 # Expand the name and check if it's taxonomically valid
                 expanded_name = orchid_name_utils.expand_orchid_name(orchid.display_name or "")
                 
-                if orchid_name_utils.is_valid_taxonomic_name(expanded_name):
+                if (orchid_name_utils.is_valid_taxonomic_name(expanded_name) and 
+                    has_country and has_metadata and has_habitat_info):
                     # Update the orchid's display name to expanded version
                     orchid.expanded_display_name = expanded_name
-                    valid_taxonomic_orchids.append(orchid)
+                    complete_orchids.append(orchid)
             
-            # Further filter for orchids with substantive descriptions
-            substantial_orchids = [
-                o for o in valid_taxonomic_orchids 
-                if o.ai_description and len(o.ai_description) > 50
-            ]
-            
-            # Use substantial orchids if available, otherwise fall back to valid taxonomic ones
-            candidate_orchids = substantial_orchids if substantial_orchids else valid_taxonomic_orchids
+            # Use only complete orchids that meet all criteria
+            candidate_orchids = complete_orchids
             
             if candidate_orchids:
                 selected = random.choice(candidate_orchids)
@@ -120,7 +135,7 @@ class EnhancedOrchidOfDay:
                 logger.info(f"Enhanced orchid of day selected: {selected.expanded_display_name} (ID: {selected.id})")
                 return selected
             
-            logger.warning("No orchids with valid taxonomic names found for enhanced feature")
+            logger.warning("No orchids found that meet complete metadata requirements for enhanced feature")
             return None
             
         except Exception as e:
