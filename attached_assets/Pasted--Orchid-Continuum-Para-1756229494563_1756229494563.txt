@@ -1,0 +1,413 @@
+/* ======================================================================
+   Orchid Continuum — Parallel Photoperiod & Habitat Comparator (All-in-One)
+   - Modes: "seasonal" (default), "photoperiod", "calendar", "parallel35"
+   - Elevation temp adjustment, solar-time alignment, hemisphere offset
+   - Confidence scoring + badges + plain-English insights
+   - Strict Orchid-of-the-Day filter (complete species/hybrid rules)
+   ====================================================================== */
+
+// ─────────────────────────────────────────────────────────────
+// TYPES (keep or remove if plain JS)
+// ─────────────────────────────────────────────────────────────
+type LatLonElev = { lat: number; lon: number; elev?: number }; // meters
+type ClimatePoint = { t: number; rh: number };                 // °C and %RH
+type HourlySeries = Array<{ hour: string; local: ClimatePoint; habitat: ClimatePoint }>;
+type SeasonalBand = Array<{ month: number; min: number; max: number; mean: number }>;
+type Mode = "calendar" | "seasonal" | "photoperiod" | "parallel35";
+type Badge = string;
+
+type CompareOutput = {
+  mode: Mode;
+  badges: Badge[];
+  confidence: "High" | "Medium" | "Low";
+  hourly?: HourlySeries;
+  seasonal?: SeasonalBand;
+  deltas?: { tC: number; rhPct: number };
+  insights: string[];
+  details: {
+    hemisphereOffsetMonths?: number;
+    solarAligned?: boolean;
+    elevationAdjustmentC?: number;
+    stationDistanceKm?: number;
+    habitatDateUsed?: string;
+    latBandUsed?: number;
+  };
+};
+
+// Replace with your real data fetchers
+type ClimateAPI = {
+  // 24 hourly points for a given (lat,lon,elev,dateISO). Local time is OK.
+  getHourly(latlon: LatLonElev, isoDate: string): Promise<ClimatePoint[]>;
+  // Monthly normals for (lat,lon,elev). tmin/tmax/rh/precip per month 1..12
+  getMonthlyNormals(latlon: LatLonElev): Promise<Array<{month:number; tmin:number; tmax:number; rh:number; precip:number}>>;
+  // Nearest station meta for confidence
+  nearestStationMeta(latlon: LatLonElev): Promise<{ distanceKm: number; elev?: number }>;
+};
+
+// ─────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────
+const toRad = (d:number)=> d*Math.PI/180;
+const mean  = (arr:number[]) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+const round = (x:number,d=0)=> Math.round(x*10**d)/10**d;
+
+// Daylength approximation (horticultural-grade). Swap w/ NOAA calc if desired.
+function approximateDaylengthHours(lat:number, date: Date): number {
+  const start = new Date(Date.UTC(date.getUTCFullYear(),0,0));
+  const N = Math.floor((+date - +start)/86400000);
+  const decl = 23.44 * Math.PI/180 * Math.sin(2*Math.PI*(N-80)/365);
+  const phi = toRad(lat);
+  const cosH = -Math.tan(phi) * Math.tan(decl);
+  if (cosH <= -1) return 24;
+  if (cosH >=  1) return 0;
+  const H = Math.acos(cosH);
+  return 2 * H * 180/Math.PI / 15;
+}
+
+// Align “solar noon” by longitude (~15° = 1 hour)
+function solarHourOffsetHours(userLon:number, habitatLon:number): number {
+  return (habitatLon - userLon) / 15;
+}
+
+// Opposite hemispheres? (coarse 6-month hint)
+function hemisphereOffsetMonths(userLat:number, habitatLat:number): number {
+  if (userLat === 0 || habitatLat === 0) return 0;
+  const opposite = (userLat > 0 && habitatLat < 0) || (userLat < 0 && habitatLat > 0);
+  return opposite ? 6 : 0;
+}
+
+// Environmental distance over monthly normals (weighted Euclidean)
+function monthDistance(a:{tmin:number;tmax:number;rh:number;precip:number},
+                       b:{tmin:number;tmax:number;rh:number;precip:number}): number {
+  const dtmin = a.tmin - b.tmin;
+  const dtmax = a.tmax - b.tmax;
+  const drh   = a.rh   - b.rh;
+  const dpp   = a.precip - b.precip;
+  return Math.sqrt( (dtmin*dtmin)*0.5 + (dtmax*dtmax)*0.5 + (drh*drh)*0.2 + (dpp*dpp)*0.1 );
+}
+
+// Dry adiabatic lapse temp adjustment (approx). Positive = LOCAL raised to compare to habitat.
+function elevationAdjustC(localElev:number|undefined, habitatElev:number|undefined): number {
+  if (localElev==null || habitatElev==null) return 0;
+  const deltaKm = (habitatElev - localElev)/1000;
+  const lapseCperKm = 9.8;
+  return deltaKm * lapseCperKm;
+}
+
+// Circular shift of hourly habitat series
+function shiftSeries(arr: ClimatePoint[], hours: number): ClimatePoint[] {
+  const n = arr.length || 24;
+  const out = new Array(n);
+  for (let i=0;i<n;i++) out[(i+hours+n)%n] = arr[i];
+  return out as ClimatePoint[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODES — main orchestration
+// ─────────────────────────────────────────────────────────────
+export async function compareHabitat(
+  climate: ClimateAPI,
+  user: LatLonElev,
+  habitat: LatLonElev,
+  dateISO: string,           // e.g., "2025-08-26"
+  mode: Mode = "seasonal"
+): Promise<CompareOutput> {
+
+  const date = new Date(dateISO);
+  const badges: Badge[] = [];
+  const details: CompareOutput["details"] = {};
+  let confidence: CompareOutput["confidence"] = "High";
+  const insights: string[] = [];
+
+  // Confidence inputs
+  const userStation = await climate.nearestStationMeta(user);
+  const habStation  = await climate.nearestStationMeta(habitat);
+  const elevAdjC    = elevationAdjustC(user.elev, habitat.elev);
+  details.stationDistanceKm = habStation.distanceKm;
+  details.elevationAdjustmentC = elevAdjC;
+
+  // Heuristic confidence
+  const distPenalty = habStation.distanceKm > 150 ? 1 : 0;
+  const elevPenalty = Math.abs(elevAdjC) > 4 ? 1 : 0;
+  const penalties = distPenalty + elevPenalty;
+  confidence = penalties === 0 ? "High" : penalties === 1 ? "Medium" : "Low";
+
+  if (mode === "calendar") {
+    badges.push("Calendar mode");
+    return runCalendarMode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
+  }
+  if (mode === "photoperiod") {
+    badges.push("Photoperiod aligned");
+    return runPhotoperiodMode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
+  }
+  if (mode === "parallel35") {
+    badges.push("35th Parallel comparator");
+    return runParallel35Mode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
+  }
+  // default
+  badges.push("Seasonal aligned");
+  return runSeasonalMode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
+}
+
+// ── Calendar (raw today-vs-today)
+async function runCalendarMode(
+  climate: ClimateAPI,
+  user: LatLonElev, habitat: LatLonElev, date: Date,
+  badges: Badge[], confidence: CompareOutput["confidence"],
+  details: CompareOutput["details"], insights: string[],
+  elevAdjC: number
+): Promise<CompareOutput> {
+  const userHourly = await climate.getHourly(user, date.toISOString());
+  const habHourly  = await climate.getHourly(habitat, date.toISOString());
+
+  const hourly: HourlySeries = userHourly.map((pt, i) => ({
+    hour: `${i}:00`,
+    local:   { t: pt.t + elevAdjC, rh: pt.rh },
+    habitat: habHourly[i] ?? habHourly[habHourly.length-1]
+  }));
+
+  const dailyLocalMeanT = mean(hourly.map(h=>h.local.t));
+  const dailyLocalMeanRH= mean(hourly.map(h=>h.local.rh));
+  const dailyHabMeanT   = mean(hourly.map(h=>h.habitat.t));
+  const dailyHabMeanRH  = mean(hourly.map(h=>h.habitat.rh));
+
+  const deltas = { tC: round(dailyLocalMeanT - dailyHabMeanT,1),
+                   rhPct: round(dailyLocalMeanRH - dailyHabMeanRH,1) };
+
+  insights.push(`Today vs. today: ΔT=${deltas.tC}°C, ΔRH=${deltas.rhPct}%.`);
+  return { mode:"calendar", badges, confidence, hourly, deltas, insights, details };
+}
+
+// ── Seasonal (recommended default)
+async function runSeasonalMode(
+  climate: ClimateAPI,
+  user: LatLonElev, habitat: LatLonElev, date: Date,
+  badges: Badge[], confidence: CompareOutput["confidence"],
+  details: CompareOutput["details"], insights: string[],
+  elevAdjC: number
+): Promise<CompareOutput> {
+
+  const userNormals = await climate.getMonthlyNormals(user);
+  const habNormals  = await climate.getMonthlyNormals(habitat);
+
+  const m = date.getMonth()+1;
+  const uM = userNormals.find(n=>n.month===m)!;
+
+  // Best habitat month analog
+  let best = { month: 1, dist: Number.POSITIVE_INFINITY };
+  for (const h of habNormals) {
+    const d = monthDistance(uM, h);
+    if (d < best.dist) best = { month: h.month, dist: d };
+  }
+
+  const hemisOffset = hemisphereOffsetMonths(user.lat, habitat.lat);
+  if (hemisOffset) badges.push(`Hemisphere offset ~${hemisOffset} months`);
+  details.hemisphereOffsetMonths = hemisOffset;
+
+  // Hourly (today) for visual overlay
+  const userHourly = await climate.getHourly(user, date.toISOString());
+  const habHourly  = await climate.getHourly(habitat, date.toISOString());
+  const hourly: HourlySeries = userHourly.map((pt, i) => ({
+    hour: `${i}:00`,
+    local:   { t: pt.t + elevAdjC, rh: pt.rh },
+    habitat: habHourly[i] ?? habHourly[habHourly.length-1]
+  }));
+
+  const seasonal: SeasonalBand = habNormals.map(h => {
+    const mid = (h.tmin + h.tmax)/2;
+    return { month: h.month, min: h.tmin, max: h.tmax, mean: mid };
+  });
+
+  const uMean = (uM.tmin+uM.tmax)/2 + elevAdjC;
+  const hBest = habNormals.find(h=>h.month===best.month)!;
+  const hMean = (hBest.tmin+hBest.tmax)/2;
+
+  const deltas = { tC: round(uMean - hMean,1), rhPct: round(uM.rh - hBest.rh,1) };
+  insights.push(`Seasonal analog (your M${m} vs habitat M${best.month}): ΔT=${deltas.tC}°C, ΔRH=${deltas.rhPct}%.`);
+  return { mode:"seasonal", badges, confidence, hourly, seasonal, deltas, insights, details };
+}
+
+// ── Photoperiod (precise circadian alignment)
+async function runPhotoperiodMode(
+  climate: ClimateAPI,
+  user: LatLonElev, habitat: LatLonElev, date: Date,
+  badges: Badge[], confidence: CompareOutput["confidence"],
+  details: CompareOutput["details"], insights: string[],
+  elevAdjC: number
+): Promise<CompareOutput> {
+
+  const userDL = approximateDaylengthHours(user.lat, date);
+  // Find habitat date with closest daylength
+  let bestDate = new Date(date);
+  let bestDelta = Number.POSITIVE_INFINITY;
+  for (let k=-183; k<=183; k++) {
+    const d = new Date(date); d.setUTCDate(d.getUTCDate()+k);
+    const dl = approximateDaylengthHours(habitat.lat, d);
+    const delta = Math.abs(dl - userDL);
+    if (delta < bestDelta) { bestDelta = delta; bestDate = d; }
+  }
+
+  const userHourly = await climate.getHourly(user, date.toISOString());
+  const habHourlyRaw  = await climate.getHourly(habitat, bestDate.toISOString());
+
+  const shiftH = solarHourOffsetHours(user.lon, habitat.lon);
+  details.habitatDateUsed = bestDate.toISOString().slice(0,10);
+  details.solarAligned = true;
+  badges.push("Solar time aligned");
+
+  const habHourly = shiftSeries(habHourlyRaw, Math.round(shiftH));
+
+  const hourly: HourlySeries = userHourly.map((pt, i) => ({
+    hour: `${i}:00`,
+    local:   { t: pt.t + elevAdjC, rh: pt.rh },
+    habitat: habHourly[i] ?? habHourly[habHourly.length-1]
+  }));
+
+  const uMeanT = mean(hourly.map(h=>h.local.t));
+  const hMeanT = mean(hourly.map(h=>h.habitat.t));
+  const uMeanRH= mean(hourly.map(h=>h.local.rh));
+  const hMeanRH= mean(hourly.map(h=>h.habitat.rh));
+  const deltas = { tC: round(uMeanT - hMeanT,1), rhPct: round(uMeanRH - hMeanRH,1) };
+
+  insights.push(`Photoperiod match (equal daylength & solar hour). Habitat date: ${details.habitatDateUsed}. ΔT=${deltas.tC}°C, ΔRH=${deltas.rhPct}%.`);
+  return { mode:"photoperiod", badges, confidence, hourly, deltas, insights, details };
+}
+
+// ── 35th-Parallel special (decorated seasonal with parallel insights)
+async function runParallel35Mode(
+  climate: ClimateAPI,
+  user: LatLonElev, habitat: LatLonElev, date: Date,
+  badges: Badge[], confidence: CompareOutput["confidence"],
+  details: CompareOutput["details"], insights: string[],
+  elevAdjC: number
+): Promise<CompareOutput> {
+
+  details.latBandUsed = 35;
+
+  const orchidNear35 = Math.abs(habitat.lat) >= 32 && Math.abs(habitat.lat) <= 38;
+  const growerNear35 = Math.abs(user.lat)    >= 32 && Math.abs(user.lat)    <= 38;
+  if (orchidNear35) badges.push("Native to ~35° latitude");
+  if (growerNear35) badges.push("You grow at ~35° latitude");
+
+  const seasonal = await runSeasonalMode(climate, user, habitat, date, [...badges], confidence, {...details}, [], elevAdjC);
+
+  insights.push("35th Parallel insight: coastal fog, tempered seasonality, and altitudinal niches often shape orchid habitats near 35°. Consider humidity support during dry, breezy periods.");
+  return { ...seasonal, mode:"parallel35", badges: seasonal.badges, insights: [...seasonal.insights, ...insights] };
+}
+
+// ─────────────────────────────────────────────────────────────
+// INSIGHTS GENERATOR
+// ─────────────────────────────────────────────────────────────
+export function buildInsightCopy(out: CompareOutput, orchidName: string): string {
+  const { mode, deltas } = out;
+  const base = (deltas) ? `ΔT=${deltas.tC}°C, ΔRH=${deltas.rhPct}%` : ``;
+
+  if (mode === "seasonal")
+    return `${orchidName}: Seasonal analog shows ${base}. Consider brief humidity support during warmest hours.`;
+
+  if (mode === "photoperiod")
+    return `${orchidName}: Photoperiod & solar-hour aligned shows ${base}. Align misting with early morning peak demand.`;
+
+  if (mode === "parallel35")
+    return `${orchidName}: 35th-Parallel insight active. ${base} Coastal-fog style humidity is often beneficial near 35°.`;
+
+  return `${orchidName}: Calendar snapshot shows ${base}. Seasonal or photoperiod modes offer fairer alignment.`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORCHID OF THE DAY — STRICT FILTERS
+// ─────────────────────────────────────────────────────────────
+type OrchidRecord = {
+  id: string;
+  genus: string;             // full (e.g., "Laelia", NOT "L.")
+  species: string;           // e.g., "anceps"
+  hybrid?: { fullName: string; parentage?: string };
+  imageUrl?: string;
+  originCountry?: string;
+  discoveredYear?: number;   // or registeredYear for hybrids
+  growthType?: "epiphytic" | "lithophytic" | "terrestrial";
+  habitatNotes?: string;     // altitude, forest, region
+  notableFeatures?: string;  // fragrance, morphology, etc.
+  source?: string;           // attribution (photographer, collection)
+};
+
+function hasAbbrev(name:string){ return /\b[A-Z]\.\b/.test(name); }
+
+export function isCompleteSpecies(r:OrchidRecord): boolean {
+  if (!r.genus || !r.species) return false;
+  if (hasAbbrev(r.genus)) return false;
+  if (!r.imageUrl) return false;
+  if (!r.originCountry) return false;
+  if (!r.discoveredYear) return false;
+  if (!r.habitatNotes && !r.notableFeatures) return false;
+  if (!r.source) return false;
+  return true;
+}
+
+export function isCompleteHybrid(r:OrchidRecord): boolean {
+  if (!r.hybrid?.fullName) return false;
+  if (!r.hybrid?.parentage) return false;
+  if (hasAbbrev(r.hybrid.fullName)) return false;
+  if (!r.imageUrl) return false;
+  if (!r.source) return false;
+  return true;
+}
+
+export function pickOrchidOfTheDay(pool: OrchidRecord[], allowHybrids=false): OrchidRecord | null {
+  const species = pool.filter(isCompleteSpecies);
+  if (species.length > 0) {
+    const idx = Math.floor(Math.random()*species.length);
+    return species[idx];
+  }
+  if (allowHybrids) {
+    const hybrids = pool.filter(isCompleteHybrid);
+    if (hybrids.length > 0) {
+      const idx = Math.floor(Math.random()*hybrids.length);
+      return hybrids[idx];
+    }
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXAMPLE GLUE (wire this to your real climate API + UI)
+// ─────────────────────────────────────────────────────────────
+/*
+const climate: ClimateAPI = {
+  async getHourly(loc, isoDate) {
+    // TODO: replace with real fetch; return 24 points
+    // Example stub (flat 20°C, 60% RH):
+    return Array.from({length:24}, (_,i)=>({ t: 20 + Math.sin(i/24*Math.PI*2)*3, rh: 60 - Math.cos(i/24*Math.PI*2)*5 }));
+  },
+  async getMonthlyNormals(loc) {
+    // TODO: replace with real normals
+    return Array.from({length:12}, (_,k)=>({
+      month:k+1, tmin: 10+Math.sin((k/12)*Math.PI*2)*3, tmax: 22+Math.sin((k/12)*Math.PI*2)*3, rh: 60, precip: 30
+    }));
+  },
+  async nearestStationMeta(loc) {
+    // TODO: replace with real station lookup
+    return { distanceKm: 25, elev: loc.elev ?? 50 };
+  }
+};
+
+async function demo() {
+  const userLoc    = { lat: 35.312, lon: -120.832, elev: 30 };   // Los Osos, CA (example)
+  const habitatLoc = { lat: -34.9,  lon: 150.6,    elev: 200 };  // NSW, AU (example)
+
+  const out = await compareHabitat(climate, userLoc, habitatLoc, new Date().toISOString().slice(0,10), "seasonal");
+  console.log(out.badges, out.confidence, out.deltas);
+  console.log(buildInsightCopy(out, "Laelia anceps"));
+
+  // Orchid of the Day pick:
+  const pool: OrchidRecord[] = [
+    { id:"1", genus:"Laelia", species:"anceps", imageUrl:"/img/1.jpg", originCountry:"Mexico", discoveredYear:1836, habitatNotes:"oak-pine forest, 1200–1800 m", source:"FCOS Library" },
+    { id:"2", genus:"L.", species:"gouldiana", imageUrl:"/img/2.jpg", originCountry:"Mexico", discoveredYear:1862, source:"FCOS Library" } // rejected (abbrev)
+  ];
+  const ootd = pickOrchidOfTheDay(pool);
+  console.log("OOTD:", ootd);
+}
+// demo();
+*/
+
+// ======================================================================
