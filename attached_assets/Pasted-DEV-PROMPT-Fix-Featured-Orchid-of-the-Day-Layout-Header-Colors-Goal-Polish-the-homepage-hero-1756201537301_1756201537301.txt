@@ -1,0 +1,94 @@
+DEV PROMPT — Fix “Featured Orchid of the Day” Layout + Header Colors
+
+Goal: Polish the homepage hero section and the “Featured Orchid of the Day” card so all key content is above the fold, looks cohesive with FCOS branding, and the logo is clearly visible.
+
+1) Header / Brand Bar (top of page)
+    •    Swap colors: Make the page header background = off-white/cream and the site title/subtitle text = FCOS purple so the logo pops.
+    •    Keep nav/utility icons legible (aim for 4.5:1 contrast).
+    •    Add 16–24px vertical padding so the header breathes on mobile and desktop.
+
+If the project uses theme tokens, set:
+
+:root {
+  --brand-purple: var(--colorPurple, #6B3FA0);
+  --brand-cream: var(--colorCream, #FBF8F3);
+  --brand-text: var(--brand-purple);
+}
+.header { background: var(--brand-cream); color: var(--brand-text); }
+
+Featured Orchid Card — visual hierarchy & composition
+
+Component name: FeaturedOrchidCard
+
+Required layout (desktop ≥ 1024px):
+    •    A two-column layout inside the card.
+    •    Left column: image (fixed aspect 4:3 or 1:1), haiku under the image as a caption block.
+    •    Right column:
+    •    “ORCHID OF THE DAY” badge/eyebrow
+    •    H1 title (bigger, centered within the right column)
+    •    A small spacer (12–16px)
+    •    Country & Habitat line
+    •    About This Orchid paragraph
+    •    Notable Features (one concise line)
+    •    Primary button “More Info & Full Details”
+    •    Ensure all of the above (including the button) fits above the fold on common laptop screens (1366×768). Use a max-height guard and let non-essential text truncate with “…”.
+
+Mobile (≤ 768px):
+    •    Single-column stack: image → haiku caption → eyebrow → title → meta → about → notable → button.
+    •    Keep the primary button visible without scrolling whenever possible.
+
+Card theming:
+    •    Card background = FCOS purple; card text = white (inside the main card body).
+    •    Use a lighter inner panel (very light purple/neutral) behind the Haiku to read like a caption.
+    •    Make the “ORCHID OF THE DAY” eyebrow a pill with slightly darker purple and all-caps.
+
+3) Typography & spacing
+    •    Title (h1 in the card): 28–34px on desktop, 22–26px on mobile; centered within the card content area.
+    •    Eyebrow/badge: 12–13px, letter-spaced +2%.
+    •    Body text: 16–17px (desktop), 15–16px (mobile).
+    •    Use consistent spacing scale: 8/12/16/24/32 px.
+    •    Add a clear 12–16px spacer between the centered title and the Latin name block.
+
+4) Don’t split “Notable Features” at the fold
+    •    Prevent the “Notable Features” line + button from being cut off.
+    •    If vertical space is tight, truncate the About paragraph to 2–3 lines with CSS line-clamp so that Notable Features + Button remain visible.
+
+5) Accessibility
+    •    Maintain minimum contrast ratio 4.5:1 for text on purple.
+    •    Button has aria-label="More Info about {genus species}".
+    •    Image uses meaningful alt.
+
+6) Example structure & CSS (adapt to the project’s components)
+
+<section class="featured-orchid">
+  <div class="fo-card">
+    <div class="fo-left">
+      <img class="fo-img" src="{img}" alt="Flower of {genus} {species}">
+      <figure class="fo-haiku">
+        <figcaption>
+          High in ancient trees<br/>
+          Life dances with morning mist<br/>
+          Sky gardens flourish
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="fo-right">
+      <div class="fo-eyebrow">ORCHID OF THE DAY</div>
+      <h1 class="fo-title">Epidendrum longipetalum</h1>
+      <div class="fo-meta">📍 Country: Diverse | 🌿 Habitat: Rainforest → Montane</div>
+      <p class="fo-about clamp-3">
+        Meet Epidendrum longipetalum… (keep concise; clamp to 3 lines on tight screens)
+      </p>
+      <p class="fo-notable">There are more orchid species than bird and mammal species combined—over 30,000 known varieties!</p>
+      <a class="fo-btn" href="{detailsUrl}">More Info & Full Details</a>
+    </div>
+  </div>
+</section>
+I 7) Acceptance criteria
+    •    Header uses cream background + purple text, and the logo is clearly visible.
+    •    Featured card uses purple background + white text, title is centered and larger, haiku sits under the image on the left, and Notable Features + button are visible without scrolling on common laptop screens.
+    •    On mobile, the stack is clean; button remains easy to reach; no content is awkwardly cut off.
+    •    Contrast and alt text meet accessibility standards.
+
+Please implement exactly as specified, reusing existing theme tokens if available, and keep all current data bindings intact. Return a preview link when done.
