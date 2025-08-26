@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% set page_title = "Orchid Debugger Dashboard - Five Cities Orchid Society" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary mb-3">
+                    <i data-feather="search" class="me-3"></i>Orchid Debugger System
+                </h1>
+                <p class="lead text-muted">Help verify orchid identifications and improve database quality</p>
+            </div>
+
+            {% if not is_debugger %}
+            <!-- Registration Section -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-8">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="mb-0"><i data-feather="user-check" class="me-2"></i>Become an Orchid Debugger</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="text-success">What Debuggers Do:</h5>
+                                    <ul class="mb-3">
+                                        <li><strong>Verify Identifications:</strong> Check orchid names and classifications for accuracy</li>
+                                        <li><strong>Flag Mislabeled Plants:</strong> Report orchids that may be incorrectly identified</li>
+                                        <li><strong>Improve Database Quality:</strong> Help ensure reliable information for all users</li>
+                                        <li><strong>Earn Points & Badges:</strong> Get recognized for your contributions to the community</li>
+                                    </ul>
+                                    
+                                    <h5 class="text-success">Requirements:</h5>
+                                    <ul class="mb-4">
+                                        <li>FCOS membership or registered account</li>
+                                        <li>Basic orchid identification knowledge</li>
+                                        <li>Commitment to accurate, helpful feedback</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i data-feather="award" style="width: 80px; height: 80px; color: #28a745;" class="mb-3"></i>
+                                    <h6 class="text-success">Earn Recognition</h6>
+                                    <p class="small">Get points and badges for quality contributions</p>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button id="registerDebugger" class="btn btn-primary btn-lg">
+                                    <i data-feather="user-plus" class="me-2"></i>Sign Up as Debugger
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+
+            <!-- Debugger Dashboard -->
+            <div class="row mb-4">
+                <!-- Statistics -->
+                <div class="col-lg-4">
+                    <div class="card bg-light">
+                        <div class="card-header">
+                            <h4 class="text-primary mb-0"><i data-feather="bar-chart" class="me-2"></i>Your Stats</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h3 class="text-success mb-1">{{ stats.verifications_made or 0 }}</h3>
+                                        <small class="text-muted">Verifications</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h3 class="text-warning mb-1">{{ stats.flags_submitted or 0 }}</h3>
+                                    <small class="text-muted">Flags Submitted</small>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <h4 class="text-primary mb-1">{{ stats.total_points or 0 }}</h4>
+                                <small class="text-muted">Total Points Earned</small>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-success" style="width: {{ (stats.badge_progress or 0) % 100 }}%"></div>
+                                </div>
+                                <small class="text-muted">Progress to next badge</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="text-primary mb-0"><i data-feather="help-circle" class="me-2"></i>How It Works</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success"><i data-feather="check-circle" class="me-1"></i> Verify Correct IDs</h6>
+                                    <p class="small mb-3">Click "Verify" if the orchid identification looks correct. Earn 1 point per verification.</p>
+                                    
+                                    <h6 class="text-warning"><i data-feather="flag" class="me-1"></i> Flag Problems</h6>
+                                    <p class="small mb-3">Click "Flag" if you think an orchid is mislabeled. Include your suggested correction.</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-info"><i data-feather="eye-off" class="me-1"></i> Orchid of the Day</h6>
+                                    <p class="small mb-3">Flagged orchids are removed from "Orchid of the Day" eligibility until reviewed.</p>
+                                    
+                                    <h6 class="text-primary"><i data-feather="award" class="me-1"></i> Earn Badges</h6>
+                                    <p class="small mb-3">Reach point milestones to unlock debugger badges and recognition.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orchids for Verification -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-primary mb-0">
+                        <i data-feather="search" class="me-2"></i>Orchids Needing Verification
+                        <span class="badge bg-secondary ms-2">{{ orchids|length }}</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if orchids %}
+                    <div class="row" id="verification-grid">
+                        {% for orchid in orchids %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border verification-card" data-orchid-id="{{ orchid.id }}">
+                                <!-- Orchid Image -->
+                                {% if orchid.google_drive_id %}
+                                <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                                     class="card-img-top" style="height: 200px; object-fit: cover;" 
+                                     alt="{{ orchid.display_name }}">
+                                {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <i data-feather="camera" style="width: 48px; height: 48px; color: #ccc;"></i>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Orchid Details -->
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary mb-2">{{ orchid.display_name }}</h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        <strong>Genus:</strong> {{ orchid.genus or 'Unknown' }}<br>
+                                        <strong>Species:</strong> {{ orchid.species or 'Unknown' }}<br>
+                                        <strong>Region:</strong> {{ orchid.region or 'Unknown' }}
+                                    </p>
+                                    
+                                    {% if orchid.ai_analysis %}
+                                    <div class="small text-muted mb-3">
+                                        <strong>AI Confidence:</strong> 
+                                        <span class="badge bg-info">{{ orchid.ai_analysis.get('confidence', 'Unknown') }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="card-footer bg-light">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-success btn-sm verify-btn" 
+                                                data-orchid-id="{{ orchid.id }}">
+                                            <i data-feather="check" class="me-1"></i>Verify Correct
+                                        </button>
+                                        <button class="btn btn-warning btn-sm flag-btn" 
+                                                data-orchid-id="{{ orchid.id }}"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#flagModal">
+                                            <i data-feather="flag" class="me-1"></i>Flag as Incorrect
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i data-feather="check-circle" style="width: 64px; height: 64px; color: #28a745;" class="mb-3"></i>
+                        <h5 class="text-success">All Caught Up!</h5>
+                        <p class="text-muted">No orchids currently need verification. Check back later!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Flag Modal -->
+<div class="modal fade" id="flagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Flag Orchid as Incorrect</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="flagForm">
+                    <input type="hidden" id="flagOrchidId" name="orchid_id">
+                    
+                    <div class="mb-3">
+                        <label for="flagReason" class="form-label">Reason for Flag <span class="text-danger">*</span></label>
+                        <select class="form-select" id="flagReason" name="reason" required>
+                            <option value="">Select a reason...</option>
+                            <option value="Wrong genus">Wrong genus</option>
+                            <option value="Wrong species">Wrong species</option>
+                            <option value="Hybrid mislabeled">Hybrid mislabeled</option>
+                            <option value="Variety incorrect">Variety incorrect</option>
+                            <option value="Not an orchid">Not an orchid</option>
+                            <option value="Other">Other (specify below)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="suggestedCorrection" class="form-label">Suggested Correction</label>
+                        <input type="text" class="form-control" id="suggestedCorrection" 
+                               name="suggested_correction" 
+                               placeholder="e.g., Phalaenopsis amabilis instead of Dendrobium...">
+                        <div class="form-text">Optional: What do you think the correct identification should be?</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="submitFlag">
+                    <i data-feather="flag" class="me-1"></i>Submit Flag
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Register as debugger
+    const registerBtn = document.getElementById('registerDebugger');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+            fetch('/debugger/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Registration failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Registration failed');
+            });
+        });
+    }
+    
+    // Verify orchid buttons
+    document.querySelectorAll('.verify-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orchidId = this.dataset.orchidId;
+            
+            fetch('/debugger/verify', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    orchid_id: orchidId,
+                    verification_type: 'correct'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove card from view
+                    const card = document.querySelector(`[data-orchid-id="${orchidId}"]`);
+                    card.style.opacity = '0.5';
+                    card.innerHTML = '<div class="card-body text-center"><i data-feather="check-circle" class="text-success mb-2" style="width: 48px; height: 48px;"></i><h6 class="text-success">Verified!</h6></div>';
+                    feather.replace();
+                    
+                    // Update stats (simple increment)
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    alert(data.message || 'Verification failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Verification failed');
+            });
+        });
+    });
+    
+    // Flag orchid buttons
+    document.querySelectorAll('.flag-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orchidId = this.dataset.orchidId;
+            document.getElementById('flagOrchidId').value = orchidId;
+        });
+    });
+    
+    // Submit flag
+    document.getElementById('submitFlag')?.addEventListener('click', function() {
+        const form = document.getElementById('flagForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            orchid_id: formData.get('orchid_id'),
+            reason: formData.get('reason'),
+            suggested_correction: formData.get('suggested_correction')
+        };
+        
+        if (!data.reason) {
+            alert('Please select a reason for flagging');
+            return;
+        }
+        
+        fetch('/debugger/flag', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('flagModal')).hide();
+                
+                // Update card
+                const card = document.querySelector(`[data-orchid-id="${data.orchid_id || formData.get('orchid_id')}"]`);
+                if (card) {
+                    card.style.opacity = '0.5';
+                    card.innerHTML = '<div class="card-body text-center"><i data-feather="flag" class="text-warning mb-2" style="width: 48px; height: 48px;"></i><h6 class="text-warning">Flagged for Review</h6></div>';
+                    feather.replace();
+                }
+                
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                alert(data.message || 'Flag submission failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Flag submission failed');
+        });
+    });
+    
+    // Initialize feather icons
+    feather.replace();
+});
+</script>
+{% endblock %}

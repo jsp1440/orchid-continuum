@@ -2046,6 +2046,14 @@ try:
 except ImportError as e:
     logger.warning(f"AI Widget Builder not available: {e}")
 
+# Register Orchid Debugger System
+try:
+    from orchid_debugger_system import debugger_bp
+    app.register_blueprint(debugger_bp)
+    logger.info("Orchid Debugger System registered successfully")
+except ImportError as e:
+    logger.warning(f"Orchid Debugger System not available: {e}")
+
 # Register main widget system blueprint
 try:
     from widget_system import widget_bp
@@ -2490,6 +2498,42 @@ def discovery_widget():
         'message': 'Professor BloomBot is analyzing orchid patterns...',
         'icon': 'search'
     })
+
+# FCOS Pages Routes
+@app.route('/fcos/merchandise')
+def fcos_merchandise_page():
+    """FCOS merchandise page"""
+    return render_template('fcos_pages/fcos_merchandise.html')
+
+@app.route('/fcos/member-benefits')
+def fcos_member_benefits_page():
+    """FCOS member benefits page"""
+    return render_template('fcos_pages/member_benefits.html')
+
+@app.route('/fcos/orchid-fest-2025')
+def fcos_orchid_fest_page():
+    """FCOS OrchidFest 2025 page"""
+    return render_template('fcos_pages/orchid_fest_2025.html')
+
+@app.route('/fcos/top-10-tips')
+def fcos_top_tips_page():
+    """FCOS top 10 orchid tips page"""
+    return render_template('fcos_pages/top_10_orchid_tips.html')
+
+@app.route('/fcos/how-to-join')
+def fcos_how_to_join_page():
+    """FCOS how to join page"""
+    return render_template('fcos_pages/how_to_join.html')
+
+@app.route('/fcos/guest-information')
+def fcos_guest_info_page():
+    """FCOS guest information page"""
+    return render_template('fcos_pages/guest_information.html')
+
+@app.route('/fcos/additional-information')
+def fcos_additional_info_page():
+    """FCOS additional information page"""
+    return render_template('fcos_pages/additional_fcos_information.html')
 
 # Register AOS-Baker Culture Sheet System
 try:
