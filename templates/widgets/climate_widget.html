@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Habitat Comparator - {{ widget_data.orchid.display_name if widget_data.orchid else 'Orchid Continuum' }}</title>
+    
+    <!-- Bootstrap CSS with dark theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Climate Comparator JS -->
+    <script src="/static/js/orchid-climate-comparator.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e9ecef;
+            min-height: 100vh;
+        }
+        
+        .widget-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .orchid-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+        
+        .orchid-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #6f42c1;
+        }
+        
+        .orchid-info h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        
+        .orchid-info p {
+            margin: 0;
+            color: #adb5bd;
+            font-style: italic;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(111, 66, 193, 0.3);
+            border-color: #6f42c1;
+        }
+        
+        .mode-btn.active {
+            background: #6f42c1;
+            border-color: #6f42c1;
+            color: #fff;
+        }
+        
+        .parallel35-badge {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(111, 66, 193, 0.2);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(111, 66, 193, 0.5);
+        }
+        
+        .climate-chart {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #climateCanvas {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            border-radius: 8px;
+        }
+        
+        .insights {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .insights h5 {
+            color: #28a745;
+            margin-bottom: 0.5rem;
+        }
+        
+        .insights ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+        
+        .insights li {
+            margin-bottom: 0.5rem;
+            color: #e9ecef;
+        }
+        
+        .location-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .location-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .location-card h6 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 0.25rem solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #6f42c1;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        .home-btn {
+            background: rgba(111, 66, 193, 0.2);
+            border: 1px solid #6f42c1;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .home-btn:hover {
+            background: rgba(111, 66, 193, 0.3);
+            color: #fff;
+            text-decoration: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .widget-container {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .orchid-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .location-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .mode-selector {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        {% if widget_data.error %}
+            <div class="alert alert-warning" role="alert">
+                <i data-feather="alert-triangle"></i>
+                {{ widget_data.error }}
+            </div>
+        {% else %}
+            <!-- Orchid Header -->
+            <div class="orchid-header">
+                {% if widget_data.orchid.image_url %}
+                    <img src="{{ widget_data.orchid.image_url }}" alt="{{ widget_data.orchid.display_name }}" class="orchid-image">
+                {% endif %}
+                <div class="orchid-info">
+                    <h2>{{ widget_data.orchid.display_name }}</h2>
+                    <p>{{ widget_data.orchid.scientific_name }}</p>
+                    {% if widget_data.both_near_35 %}
+                        <span class="parallel35-badge">🌍 35th Parallel Connection!</span>
+                    {% elif widget_data.parallel35_connection %}
+                        <span class="parallel35-badge">🌍 35th Parallel Region</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+                {% for mode in widget_data.comparison_modes %}
+                    <button class="mode-btn {% if mode.id == widget_data.mode %}active{% endif %}" 
+                            onclick="switchMode('{{ mode.id }}')" 
+                            title="{{ mode.description }}">
+                        {{ mode.name }}
+                    </button>
+                {% endfor %}
+            </div>
+            
+            <!-- Badges -->
+            <div class="badges" id="badgeContainer">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Location Info -->
+            <div class="location-info">
+                <div class="location-card">
+                    <h6><i data-feather="home"></i> Your Location</h6>
+                    <p>{{ "%.2f"|format(widget_data.user_location.lat) }}°N, {{ "%.2f"|format(widget_data.user_location.lon) }}°W</p>
+                    <p>Elevation: {{ widget_data.user_location.elev }}m</p>
+                </div>
+                <div class="location-card">
+                    <h6><i data-feather="map-pin"></i> Orchid Habitat</h6>
+                    <p>{{ "%.2f"|format(widget_data.orchid.habitat_location.lat) }}°, {{ "%.2f"|format(widget_data.orchid.habitat_location.lon) }}°</p>
+                    <p>Elevation: {{ widget_data.orchid.habitat_location.elev }}m</p>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Analyzing climate patterns...</p>
+            </div>
+            
+            <!-- Climate Chart -->
+            <div class="climate-chart" id="chartContainer" style="display: none;">
+                <canvas id="climateCanvas"></canvas>
+            </div>
+            
+            <!-- Insights -->
+            <div class="insights" id="insightsContainer" style="display: none;">
+                <h5><i data-feather="lightbulb"></i> Climate Insights</h5>
+                <ul id="insightsList">
+                    <!-- Populated by JavaScript -->
+                </ul>
+            </div>
+        {% endif %}
+        
+        <!-- Navigation -->
+        <a href="/" class="home-btn">
+            <i data-feather="home"></i>
+            Back to Homepage
+        </a>
+    </div>
+    
+    <script>
+        // Initialize icons
+        feather.replace();
+        
+        // Widget data from server
+        const widgetData = {{ widget_data | tojson }};
+        let currentMode = '{{ widget_data.mode }}';
+        let climateAPI = new OrchidClimateComparator.MockClimateAPI();
+        
+        // Initialize widget
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!widgetData.error) {
+                runClimateComparison();
+            }
+        });
+        
+        async function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update active button
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Show loading
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('chartContainer').style.display = 'none';
+            document.getElementById('insightsContainer').style.display = 'none';
+            
+            // Run comparison
+            await runClimateComparison();
+        }
+        
+        async function runClimateComparison() {
+            try {
+                const userLocation = {
+                    lat: widgetData.user_location.lat,
+                    lon: widgetData.user_location.lon,
+                    elev: widgetData.user_location.elev
+                };
+                
+                const habitatLocation = {
+                    lat: widgetData.orchid.habitat_location.lat,
+                    lon: widgetData.orchid.habitat_location.lon,
+                    elev: widgetData.orchid.habitat_location.elev
+                };
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                const result = await OrchidClimateComparator.compareHabitat(
+                    climateAPI,
+                    userLocation,
+                    habitatLocation,
+                    today,
+                    currentMode
+                );
+                
+                // Update badges
+                updateBadges(result.badges);
+                
+                // Update insights
+                updateInsights(result.insights);
+                
+                // Render chart
+                OrchidClimateComparator.renderClimateChart('climateCanvas', result);
+                
+                // Show results
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'block';
+                document.getElementById('insightsContainer').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Climate comparison failed:', error);
+                document.getElementById('loadingState').innerHTML = '<p>Climate comparison failed. Please try again.</p>';
+            }
+        }
+        
+        function updateBadges(badges) {
+            const container = document.getElementById('badgeContainer');
+            container.innerHTML = badges.map(badge => 
+                `<span class="badge">${badge}</span>`
+            ).join('');
+        }
+        
+        function updateInsights(insights) {
+            const list = document.getElementById('insightsList');
+            list.innerHTML = insights.map(insight => 
+                `<li>${insight}</li>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>

@@ -27,7 +27,8 @@ class OrchidWidgetSystem:
             'mission': 'Mission & Support Widget',
             'map': 'World Map Widget',
             'weather': 'Orchid Weather Comparison Widget',
-            'enhanced_globe': 'Enhanced Globe Weather Widget'
+            'enhanced_globe': 'Enhanced Globe Weather Widget',
+            'climate': 'Climate Habitat Comparator Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -48,6 +49,8 @@ class OrchidWidgetSystem:
             return self._get_weather_data(**kwargs)
         elif widget_type == 'enhanced_globe':
             return self._get_enhanced_globe_data(**kwargs)
+        elif widget_type == 'climate':
+            return self._get_climate_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -401,6 +404,61 @@ class OrchidWidgetSystem:
         }
         
         return widget_data
+    
+    def _get_climate_data(self, orchid_id=None, mode="seasonal", user_lat=None, user_lon=None, **kwargs):
+        """Get climate comparison data for widget"""
+        # Get orchid habitat data
+        orchid = None
+        if orchid_id:
+            orchid = OrchidRecord.query.get(orchid_id)
+        
+        if not orchid:
+            # Get a featured or random orchid with location data
+            orchid = OrchidRecord.query.filter(
+                OrchidRecord.decimal_latitude.isnot(None),
+                OrchidRecord.decimal_longitude.isnot(None)
+            ).first()
+        
+        if not orchid:
+            return {'error': 'No orchid with habitat location found'}
+        
+        # Default user location (San Francisco for demo)
+        user_location = {
+            'lat': float(user_lat) if user_lat else 37.7749,
+            'lon': float(user_lon) if user_lon else -122.4194,
+            'elev': 50  # meters
+        }
+        
+        # Orchid habitat location
+        habitat_location = {
+            'lat': float(orchid.decimal_latitude),
+            'lon': float(orchid.decimal_longitude), 
+            'elev': 100  # Default elevation for now
+        }
+        
+        # Check if this is a 35th parallel orchid
+        orchid_near_35 = abs(habitat_location['lat']) >= 32 and abs(habitat_location['lat']) <= 38
+        user_near_35 = abs(user_location['lat']) >= 32 and abs(user_location['lat']) <= 38
+        
+        return {
+            'orchid': {
+                'id': orchid.id,
+                'display_name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'image_url': orchid.image_url,
+                'habitat_location': habitat_location
+            },
+            'user_location': user_location,
+            'mode': mode,
+            'parallel35_connection': orchid_near_35 or user_near_35,
+            'both_near_35': orchid_near_35 and user_near_35,
+            'comparison_modes': [
+                {'id': 'calendar', 'name': 'Calendar (Raw)', 'description': 'Direct day-to-day comparison'},
+                {'id': 'seasonal', 'name': 'Seasonal (Default)', 'description': 'Hemisphere-adjusted seasonal comparison'},
+                {'id': 'photoperiod', 'name': 'Photoperiod', 'description': 'Solar time and daylight matched'},
+                {'id': 'parallel35', 'name': '35th Parallel', 'description': 'Special mode for 35°N latitude orchids'}
+            ]
+        }
 
 # Initialize widget system
 widget_system = OrchidWidgetSystem()
