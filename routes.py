@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
                    User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert)
+from image_recovery_system import get_image_with_recovery, get_image_recovery_stats
 from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
@@ -2380,10 +2381,19 @@ def proxy_image():
         'garyyonggee.com', 
         'orchids.yonggee.name',
         'drive.google.com',
+        'drive.usercontent.google.com',
         'lh3.googleusercontent.com',
+        'lh4.googleusercontent.com',
+        'lh5.googleusercontent.com',
+        'lh6.googleusercontent.com',
         'www.gbif.org',  # GBIF occurrence images
         'gbif.org',      # GBIF images
-        'api.gbif.org'   # GBIF API images
+        'api.gbif.org',  # GBIF API images
+        'images.gbif.org',  # GBIF image server
+        'inaturalist-open-data.s3.amazonaws.com',  # iNaturalist images
+        'static.inaturalist.org',  # iNaturalist static images
+        'www.inaturalist.org',  # iNaturalist main site
+        'inaturalist.org'  # iNaturalist alternative
     ]
     
     from urllib.parse import urlparse
@@ -2411,7 +2421,47 @@ def proxy_image():
         
     except Exception as e:
         logger.error(f"Image proxy error for {image_url}: {e}")
+        # Try image recovery system as fallback
+        try:
+            orchid_id = request.args.get('orchid_id')
+            recovery_url, source_type = get_image_with_recovery(image_url, orchid_id)
+            if source_type != 'placeholder':
+                return redirect(recovery_url)
+        except:
+            pass
         return abort(404, "Image not found")
+
+# Image recovery stats endpoint
+@app.route('/api/image-recovery-stats')
+def image_recovery_stats():
+    """Get image recovery system statistics"""
+    try:
+        stats = get_image_recovery_stats()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error getting image recovery stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Enhanced image route with recovery
+@app.route('/api/enhanced-image')
+def enhanced_image():
+    """Enhanced image endpoint with comprehensive fallback"""
+    image_url = request.args.get('url')
+    orchid_id = request.args.get('orchid_id')
+    
+    if not image_url:
+        return abort(400, "Missing URL parameter")
+    
+    try:
+        recovery_url, source_type = get_image_with_recovery(image_url, orchid_id)
+        return jsonify({
+            'url': recovery_url,
+            'source': source_type,
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Enhanced image error: {e}")
+        return jsonify({'error': str(e), 'success': False}), 500
 
 # Auto-start vigilant monitoring
 try:
