@@ -88,6 +88,38 @@ class UserActivity(db.Model):
     
     user = db.relationship('User', backref='activities')
 
+class GameScore(db.Model):
+    """Game scores and completion records"""
+    __tablename__ = 'game_scores'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    game_type = db.Column(String, nullable=False)  # memory, rebus, etc.
+    difficulty = db.Column(String, nullable=True)  # easy, medium, hard
+    score = db.Column(Integer, nullable=False)
+    time_taken = db.Column(Integer, nullable=False)  # seconds
+    moves_made = db.Column(Integer, nullable=False)
+    game_metadata = db.Column(JSON, nullable=True)  # Additional game-specific data
+    created_at = db.Column(DateTime, default=datetime.now)
+    
+    user = db.relationship('User', backref='game_scores')
+
+class UserBadge(db.Model):
+    """User badge achievements"""
+    __tablename__ = 'user_badges'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    badge_type = db.Column(String, nullable=False)  # memory_game, exploration, etc.
+    badge_key = db.Column(String, nullable=False)  # specific badge identifier
+    badge_data = db.Column(JSON, nullable=False)  # Badge name, description, icon, etc.
+    earned_at = db.Column(DateTime, default=datetime.now)
+    
+    user = db.relationship('User', backref='badges')
+    
+    # Ensure unique badge per user
+    __table_args__ = (db.UniqueConstraint('user_id', 'badge_type', 'badge_key'),)
+
 class OAuth(db.Model):
     """OAuth tokens for authentication"""
     id = db.Column(Integer, primary_key=True)
