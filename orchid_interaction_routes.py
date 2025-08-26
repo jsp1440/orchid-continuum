@@ -233,10 +233,10 @@ def orchid_explorer_widget():
           "basemap": {
             "type": "raster",
             "tiles": [
-              "https://tile.gbif.org/3857/omt/{z}/{x}/{y}.png?style=gbif-light"
+              "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             ],
             "tileSize": 256,
-            "attribution": "© GBIF, OpenMapTiles © OpenStreetMap contributors"
+            "attribution": "© OpenStreetMap contributors"
           }
         },
         "layers": [
