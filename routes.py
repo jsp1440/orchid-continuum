@@ -2074,10 +2074,8 @@ try:
     app.register_blueprint(orchid_memory_bp)
     app.register_blueprint(rebus_puzzle_bp)
     
-    from professor_bloombot_curator import bloombot_curator_bp
     from member_personalization import member_personalization_bp
     from orchid_care_manager import orchid_care_manager_bp
-    app.register_blueprint(bloombot_curator_bp)
     app.register_blueprint(member_personalization_bp)
     app.register_blueprint(orchid_care_manager_bp)
     
