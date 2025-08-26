@@ -113,8 +113,8 @@ class ValidatedOrchidOfDay:
                                    'costa rica', 'panama', 'guatemala', 'honduras', 'nicaragua']
                 ))
                 
-                has_metadata = orchid.ai_description and len(orchid.ai_description) > 100
-                has_habitat_info = orchid.native_habitat and len(orchid.native_habitat) > 20
+                has_metadata = orchid.ai_description and len(orchid.ai_description) > 50  # Relaxed from 100 to 50
+                has_habitat_info = orchid.native_habitat and len(orchid.native_habitat) > 10  # Relaxed from 20 to 10
                 
                 # Expand the name and check if it's taxonomically valid
                 expanded_name = orchid_name_utils.expand_orchid_name(orchid.display_name or "")

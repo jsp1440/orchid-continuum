@@ -46,7 +46,7 @@ def get_orchid_of_the_day():
                 OrchidRecord.region.isnot(None),
                 OrchidRecord.native_habitat.isnot(None)
             ),
-            # Has substantial metadata/description
+            # Has metadata/description (relaxed requirement)
             OrchidRecord.ai_description.isnot(None),
             # Has proper name (not just "Unknown Orchid")
             OrchidRecord.display_name != 'Unknown Orchid',
