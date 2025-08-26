@@ -167,15 +167,39 @@ def get_trivia_question():
     question_type = random.choice(question_types)
     
     if question_type == 'genus':
-        # Get other genera as wrong answers
+        # Get other genera as wrong answers (exclude invalid genus names)
         other_genera = db.session.query(OrchidRecord.genus).filter(
             OrchidRecord.genus != orchid.genus,
-            OrchidRecord.genus.isnot(None)
-        ).distinct().limit(3).all()
+            OrchidRecord.genus.isnot(None),
+            ~OrchidRecord.genus.like('BOLD%'),  # Exclude BOLD identifiers
+            ~OrchidRecord.genus.like('%:%'),    # Exclude any with colons
+            ~OrchidRecord.genus.like('%[0-9]%'),# Exclude any with numbers
+            OrchidRecord.genus.op('~')('^[A-Z][a-z]+$')  # Must be proper genus format
+        ).distinct().limit(10).all()
         
-        options = [orchid.genus]
+        # Filter to get only valid genus names
+        valid_genera = []
         for genus_tuple in other_genera:
-            options.append(genus_tuple[0])
+            genus_name = genus_tuple[0]
+            # Additional validation: proper genus format (Capitalized, letters only)
+            if (genus_name and 
+                len(genus_name) > 2 and 
+                genus_name[0].isupper() and 
+                genus_name[1:].islower() and 
+                genus_name.isalpha() and
+                'BOLD' not in genus_name and
+                ':' not in genus_name):
+                valid_genera.append(genus_name)
+        
+        # Take first 3 valid genera
+        options = [orchid.genus] + valid_genera[:3]
+        
+        # If we don't have enough valid genera, add some common ones
+        if len(options) < 4:
+            common_genera = ['Cattleya', 'Dendrobium', 'Phalaenopsis', 'Oncidium', 'Cymbidium', 'Paphiopedilum']
+            for genus in common_genera:
+                if genus not in options and len(options) < 4:
+                    options.append(genus)
         
         random.shuffle(options)
         
