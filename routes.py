@@ -2179,6 +2179,25 @@ def standalone_orchid_of_day_widget():
                          standalone=True,
                          title="Orchid of the Day")
 
+@app.route('/widget/climate')
+def standalone_climate_widget():
+    """Standalone Climate Habitat Comparator Widget for embedding"""
+    from widget_system import widget_system
+    orchid_id = request.args.get('orchid_id', None)
+    mode = request.args.get('mode', 'seasonal')
+    user_lat = request.args.get('user_lat', None)
+    user_lon = request.args.get('user_lon', None)
+    
+    widget_data = widget_system.get_widget_data('climate', 
+                                              orchid_id=orchid_id,
+                                              mode=mode,
+                                              user_lat=user_lat,
+                                              user_lon=user_lon)
+    
+    return render_template('widgets/climate_widget.html', 
+                         widget_data=widget_data, 
+                         standalone=True)
+
 # Register media migration system
 try:
     from media_migration_system import migration_bp
