@@ -987,3 +987,120 @@ class GalleryConfiguration(db.Model):
     
     def __repr__(self):
         return f'<Gallery {self.gallery_name}>'
+
+# ==============================================================================
+# MEMBER FEEDBACK AND BETA TESTING SYSTEM
+# ==============================================================================
+
+class MemberFeedback(db.Model):
+    """Member feedback for beta testing and data accuracy verification"""
+    __tablename__ = 'member_feedback'
+    
+    id = db.Column(Integer, primary_key=True)
+    member_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=True)
+    
+    # Feedback details
+    feedback_type = db.Column(String, nullable=False)  # 'photo_mismatch', 'data_error', 'widget_bug', 'general'
+    severity = db.Column(String, default='medium')  # 'low', 'medium', 'high', 'critical'
+    description = db.Column(Text, nullable=False)
+    suggested_correction = db.Column(Text, nullable=True)
+    
+    # System context
+    page_url = db.Column(String, nullable=True)
+    widget_type = db.Column(String, nullable=True)  # 'featured', 'gallery', 'discovery', 'orchid_of_day'
+    browser_info = db.Column(Text, nullable=True)
+    screenshot_url = db.Column(String, nullable=True)
+    
+    # Resolution tracking
+    status = db.Column(String, default='open')  # 'open', 'in_progress', 'resolved', 'closed'
+    assigned_to = db.Column(String, db.ForeignKey('users.id'), nullable=True)
+    resolution_notes = db.Column(Text, nullable=True)
+    ai_attempted_fix = db.Column(Boolean, default=False)
+    ai_fix_details = db.Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.now)
+    resolved_at = db.Column(DateTime, nullable=True)
+    updated_at = db.Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+class PhotoFlag(db.Model):
+    """Photo flagging system for immediate issue reporting"""
+    __tablename__ = 'photo_flags'
+    
+    id = db.Column(Integer, primary_key=True)
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    flagger_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    
+    # Flag details
+    flag_reason = db.Column(String, nullable=False)  # 'wrong_species', 'mislabeled', 'poor_quality', 'duplicate', 'inappropriate'
+    confidence_level = db.Column(String, default='medium')  # 'low', 'medium', 'high'
+    expert_notes = db.Column(Text, nullable=True)
+    
+    # Auto-resolution tracking
+    ai_reviewed = db.Column(Boolean, default=False)
+    ai_confidence = db.Column(Float, nullable=True)  # 0.0 to 1.0
+    ai_suggested_species = db.Column(String, nullable=True)
+    ai_analysis_notes = db.Column(Text, nullable=True)
+    
+    # Status
+    status = db.Column(String, default='pending')  # 'pending', 'validated', 'rejected', 'fixed'
+    verified_by = db.Column(String, db.ForeignKey('users.id'), nullable=True)
+    verification_notes = db.Column(Text, nullable=True)
+    
+    created_at = db.Column(DateTime, default=datetime.now)
+    resolved_at = db.Column(DateTime, nullable=True)
+
+class WidgetStatus(db.Model):
+    """Real-time widget performance monitoring"""
+    __tablename__ = 'widget_status'
+    
+    id = db.Column(Integer, primary_key=True)
+    widget_name = db.Column(String, nullable=False)  # 'featured', 'gallery', 'discovery', 'orchid_of_day'
+    
+    # Performance metrics
+    status = db.Column(String, default='healthy')  # 'healthy', 'degraded', 'down'
+    response_time_ms = db.Column(Integer, nullable=True)
+    success_rate = db.Column(Float, default=100.0)  # 0.0 to 100.0
+    error_count = db.Column(Integer, default=0)
+    last_error = db.Column(Text, nullable=True)
+    
+    # Content metrics
+    images_loaded = db.Column(Integer, default=0)
+    images_failed = db.Column(Integer, default=0)
+    data_freshness = db.Column(DateTime, nullable=True)
+    
+    # System info
+    server_load = db.Column(Float, nullable=True)
+    memory_usage = db.Column(Float, nullable=True)
+    
+    last_checked = db.Column(DateTime, default=datetime.now)
+    created_at = db.Column(DateTime, default=datetime.now)
+
+class ExpertVerification(db.Model):
+    """Expert member verification of orchid data accuracy"""
+    __tablename__ = 'expert_verifications'
+    
+    id = db.Column(Integer, primary_key=True)
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    expert_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    
+    # Verification details
+    verification_status = db.Column(String, nullable=False)  # 'verified', 'needs_correction', 'disputed'
+    expertise_areas = db.Column(JSON, nullable=True)  # ['taxonomy', 'habitat', 'morphology', 'cultivation']
+    confidence_score = db.Column(Float, nullable=True)  # 0.0 to 1.0
+    
+    # Field-specific verifications
+    scientific_name_verified = db.Column(Boolean, default=None, nullable=True)
+    common_name_verified = db.Column(Boolean, default=None, nullable=True)
+    habitat_verified = db.Column(Boolean, default=None, nullable=True)
+    geographic_range_verified = db.Column(Boolean, default=None, nullable=True)
+    morphology_verified = db.Column(Boolean, default=None, nullable=True)
+    
+    # Notes and corrections
+    expert_notes = db.Column(Text, nullable=True)
+    suggested_corrections = db.Column(JSON, nullable=True)
+    references_cited = db.Column(Text, nullable=True)
+    
+    verified_at = db.Column(DateTime, default=datetime.now)
+    updated_at = db.Column(DateTime, default=datetime.now, onupdate=datetime.now)
