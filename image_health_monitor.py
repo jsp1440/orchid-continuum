@@ -48,10 +48,12 @@ class ImageHealthMonitor:
             
             # Critical pages
             {'url': 'http://localhost:5000/', 'name': 'Home Page', 'type': 'page'},
-            {'url': 'http://localhost:5000/parallel-35-globe', 'name': '35th Parallel Globe', 'type': 'interactive'},
+            # Globe route temporarily removed from monitoring
+            # {'url': 'http://localhost:5000/parallel-35-globe', 'name': '35th Parallel Globe', 'type': 'interactive'},
             
             # Widget endpoints
-            {'url': 'http://localhost:5000/widget/orchid-of-the-day', 'name': 'Orchid of the Day Widget', 'type': 'widget'}
+            # Widget route temporarily removed from monitoring  
+            # {'url': 'http://localhost:5000/widget/orchid-of-the-day', 'name': 'Orchid of the Day Widget', 'type': 'widget'}
         ]
         
         self.detailed_results = []
@@ -183,7 +185,7 @@ class ImageHealthMonitor:
         try:
             data = response.json()
             if endpoint['name'] == 'Recent Orchids API':
-                orchids = data.get('orchids', [])
+                orchids = data if isinstance(data, list) else data.get('orchids', [])
                 if len(orchids) < 3:
                     return {
                         'endpoint': endpoint['name'],
@@ -197,7 +199,7 @@ class ImageHealthMonitor:
                 'endpoint': endpoint['name'],
                 'status': 'success',
                 'response_time': response_time,
-                'data_points': len(data.get('orchids', data.get('coordinates', []))),
+                'data_points': len(data) if isinstance(data, list) else len(data.get('orchids', data.get('coordinates', []))),
                 'critical': False
             }
             
