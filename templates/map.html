@@ -60,7 +60,7 @@
                 
                 <div class="card-body p-0">
                     <!-- Responsive map container -->
-                    <div id="orchid-map" class="mobile-map-container"></div>
+                    <div id="orchid-map" class="mobile-map-container" style="height: 600px; width: 100%;"></div>
                 </div>
                 
                 <!-- Mobile stats bar -->
@@ -255,22 +255,43 @@ document.addEventListener('DOMContentLoaded', function() {
         tapTolerance: 15
     }).setView([0, 0], isMobile ? 1 : 2);
     
-    // Satellite base layer (ESRI World Imagery)
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles © Esri — Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-        maxZoom: 18
+    // Primary reliable tile layer - CartoDB for smooth rendering
+    const satelliteLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© CartoDB, © OpenStreetMap contributors',
+        maxZoom: 15,
+        noWrap: false,  // Allow seamless world wrapping
+        crossOrigin: false,  // Better compatibility
+        detectRetina: true,  // Sharp tiles on high-DPI displays
+        updateWhenZooming: false,  // Smoother zoom experience
+        keepBuffer: 4,  // Keep more tiles in memory for smooth panning
+        updateWhenIdle: true,  // Only update when zoom/pan stops
+        bounds: [[-85.051129, -180], [85.051129, 180]]  // Mercator projection bounds
     });
     
     // Street map layer
     const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
-        maxZoom: 18
+        maxZoom: 15,
+        noWrap: false,
+        crossOrigin: false,
+        detectRetina: true,
+        updateWhenZooming: false,
+        keepBuffer: 4,
+        updateWhenIdle: true,
+        bounds: [[-85.051129, -180], [85.051129, 180]]
     });
     
-    // Terrain layer
-    const terrainLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles © Esri — Source: US National Park Service',
-        maxZoom: 8
+    // Alternative CartoDB layer
+    const terrainLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© CartoDB, © OpenStreetMap',
+        maxZoom: 15,
+        noWrap: false,
+        crossOrigin: false,
+        detectRetina: true,
+        updateWhenZooming: false,
+        keepBuffer: 4,
+        updateWhenIdle: true,
+        bounds: [[-85.051129, -180], [85.051129, 180]]
     });
     
     // Add satellite layer as default
