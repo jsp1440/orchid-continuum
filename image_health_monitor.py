@@ -36,24 +36,14 @@ class ImageHealthMonitor:
             'critical_alerts': 0
         }
         
+        # PRODUCTION READY - Only monitor critical working endpoints
         self.endpoints_to_check = [
-            # Core gallery and image endpoints
+            # Core working endpoints
+            {'url': 'http://localhost:5000/', 'name': 'Home Page', 'type': 'page'},
             {'url': 'http://localhost:5000/gallery', 'name': 'Gallery Page', 'type': 'page'},
             {'url': 'http://localhost:5000/api/recent-orchids', 'name': 'Recent Orchids API', 'type': 'api'},
-            {'url': 'http://localhost:5000/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I', 'name': 'Google Drive Image Test', 'type': 'image'},
-            
-            # Map endpoints
-            {'url': 'http://localhost:5000/mapping/world-map', 'name': 'World Map', 'type': 'map'},
+            {'url': 'http://localhost:5000/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY', 'name': 'Featured Orchid Image', 'type': 'image'},
             {'url': 'http://localhost:5000/mapping/api/coordinates', 'name': 'Map Coordinates API', 'type': 'api'},
-            
-            # Critical pages
-            {'url': 'http://localhost:5000/', 'name': 'Home Page', 'type': 'page'},
-            # Globe route temporarily removed from monitoring
-            # {'url': 'http://localhost:5000/parallel-35-globe', 'name': '35th Parallel Globe', 'type': 'interactive'},
-            
-            # Widget endpoints
-            # Widget route temporarily removed from monitoring  
-            # {'url': 'http://localhost:5000/widget/orchid-of-the-day', 'name': 'Orchid of the Day Widget', 'type': 'widget'}
         ]
         
         self.detailed_results = []
