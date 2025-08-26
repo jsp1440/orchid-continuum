@@ -115,3 +115,10 @@ try:
     print("System Monitor Dashboard initialized")
 except Exception as e:
     print(f"System Monitor Dashboard initialization error: {e}")
+
+try:
+    from orchid_games import games_bp
+    app.register_blueprint(games_bp)
+    print("Orchid Games system initialized")
+except Exception as e:
+    print(f"Orchid Games initialization error: {e}")
