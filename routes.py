@@ -42,8 +42,17 @@ from io import BytesIO
 from googleapiclient.http import MediaIoBaseDownload
 import issue_reports
 import chris_howard_reimport
+from image_health_monitor import start_image_monitoring
+from database_backup_system import create_database_backups, get_backup_orchids
 
 logger = logging.getLogger(__name__)
+
+# Start comprehensive image monitoring every 30 seconds
+try:
+    monitoring_thread = start_image_monitoring()
+    logger.info("🔍 Started comprehensive image monitoring every 30 seconds")
+except Exception as e:
+    logger.error(f"Failed to start monitoring: {e}")
 
 # Register the Atlas blueprint
 app.register_blueprint(atlas_bp)
@@ -870,20 +879,49 @@ def gallery():
         if orchids.total < 3:
             raise Exception("Insufficient orchids in database")
         
-        # Ensure Google Drive images are prioritized
+        # FORCE only Google Drive images - block all external URLs
         working_orchids = []
         for orchid in orchids.items:
-            if hasattr(orchid, 'google_drive_id') and orchid.google_drive_id:
+            # Only include orchids with Google Drive IDs - these ALWAYS work
+            if hasattr(orchid, 'google_drive_id') and orchid.google_drive_id and str(orchid.google_drive_id).strip():
                 working_orchids.append(orchid)
         
-        # If too few Google Drive images, supplement with failsafe
-        if len(working_orchids) < 6:
-            logging.warning(f"Only {len(working_orchids)} Google Drive images available, supplementing with failsafe")
-            from photo_failsafe_system import get_photos_guaranteed
-            backup_photos, _ = get_photos_guaranteed(12 - len(working_orchids))
+        # ALWAYS ensure we have enough photos - NEVER show empty gallery
+        if len(working_orchids) < 12:
+            logging.warning(f"⚠️ Gallery protection: Only {len(working_orchids)} Google Drive images, filling remaining {12 - len(working_orchids)} slots")
             
-            # Mix real orchids with backup photos for a complete gallery
-            orchids.items = working_orchids + backup_photos[:12-len(working_orchids)]
+            # Get more Google Drive orchids from database
+            additional_orchids = OrchidRecord.query.filter(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.google_drive_id != '',
+                ~OrchidRecord.id.in_([o.id for o in working_orchids])
+            ).limit(12 - len(working_orchids)).all()
+            
+            working_orchids.extend(additional_orchids)
+            
+            # If still not enough, use failsafe system
+            if len(working_orchids) < 6:
+                from photo_failsafe_system import get_photos_guaranteed
+                backup_photos, _ = get_photos_guaranteed(12 - len(working_orchids))
+                
+                # Convert backup photos to orchid-like objects for template compatibility
+                class MockOrchid:
+                    def __init__(self, photo_data):
+                        self.id = photo_data.get('id', f'backup_{len(working_orchids)}')
+                        self.display_name = photo_data.get('common_name', 'Beautiful Orchid')
+                        self.scientific_name = photo_data.get('scientific_name', 'Orchidaceae sp.')
+                        self.genus = photo_data.get('scientific_name', 'Unknown').split()[0]
+                        self.google_drive_id = 'failsafe'
+                        self.ai_description = photo_data.get('description', 'Stunning orchid specimen')
+                        self.created_at = datetime.now()
+                        self.backup_image_url = photo_data.get('image_url')
+                
+                mock_orchids = [MockOrchid(photo) for photo in backup_photos]
+                working_orchids.extend(mock_orchids)
+        
+        # Update the pagination object with working orchids only
+        orchids.items = working_orchids[:12]  # Limit to 12 for clean gallery
+        orchids.total = len(working_orchids)
         
         # Get filter options
         genera = db.session.query(OrchidRecord.genus).distinct().filter(
