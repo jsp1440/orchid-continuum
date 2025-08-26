@@ -221,6 +221,93 @@
             to { transform: rotate(360deg); }
         }
         
+        /* Orbit controls styling */
+        .orbit-controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .orbit-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .orbit-controls label:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .orbit-controls input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #6f42c1;
+        }
+        
+        .orbit-controls input[type="range"] {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        
+        .orbit-controls input[type="range"]:hover {
+            opacity: 1;
+        }
+        
+        .orbit-controls input[type="range"]:focus {
+            outline: 2px solid #6f42c1;
+            outline-offset: 2px;
+        }
+        
+        /* High contrast for accessibility */
+        .orbit-controls input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6f42c1;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        
+        .orbit-controls input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6f42c1;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        
+        /* Canvas accessibility */
+        #orbitCanvas {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        
+        #orbitCanvas:focus {
+            outline: 2px solid #6f42c1;
+            outline-offset: 2px;
+        }
+        
+        /* Enhanced color contrast for orbit elements */
+        .lat-line-35 {
+            stroke: #ff6b6b;
+            stroke-width: 3;
+        }
+        
+        .lat-line-other {
+            stroke: #ffffff;
+            stroke-width: 2;
+        }
+        
         @media (max-width: 768px) {
             .widget-container {
                 margin: 0.5rem;
@@ -238,6 +325,19 @@
             
             .mode-selector {
                 justify-content: center;
+            }
+            
+            .orbit-controls {
+                padding: 0.75rem;
+            }
+            
+            .orbit-controls > div {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            #orbitCanvas {
+                height: 250px;
             }
         }
     </style>
@@ -275,6 +375,9 @@
                         {{ mode.name }}
                     </button>
                 {% endfor %}
+                <button class="mode-btn" onclick="switchMode('orbit')" title="Earth orbital visualization with seasonal sun-ray dynamics">
+                    Orbit & Rays
+                </button>
             </div>
             
             <!-- Badges -->
@@ -305,6 +408,48 @@
             <!-- Climate Chart -->
             <div class="climate-chart" id="chartContainer" style="display: none;">
                 <canvas id="climateCanvas"></canvas>
+            </div>
+            
+            <!-- Orbit & Rays View -->
+            <div class="climate-chart" id="orbitContainer" style="display: none;">
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <button class="mode-btn active" onclick="setOrbitView('charts')" id="chartsViewBtn">Charts</button>
+                        <button class="mode-btn" onclick="setOrbitView('orbit')" id="orbitViewBtn">Orbit & Rays</button>
+                    </div>
+                    
+                    <!-- Orbit Controls -->
+                    <div id="orbitControls" style="display: none; margin-bottom: 1rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                            <label style="color: #fff;">
+                                <input type="checkbox" id="lat0Checkbox" onchange="toggleLatLine(0)"> 0° (Equator)
+                            </label>
+                            <label style="color: #fff;">
+                                <input type="checkbox" id="lat23Checkbox" onchange="toggleLatLine(23.4)"> 23.4° (Tropic)
+                            </label>
+                            <label style="color: #fff;">
+                                <input type="checkbox" id="lat35Checkbox" onchange="toggleLatLine(35)"> 35° (Parallel)
+                            </label>
+                            <label style="color: #fff;">
+                                <input type="checkbox" id="lat50Checkbox" onchange="toggleLatLine(50)"> 50° (Temperate)
+                            </label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                            <label style="color: #fff; min-width: 100px;">Day of Year:</label>
+                            <input type="range" id="daySlider" min="0" max="365" value="0" style="flex: 1;" 
+                                   oninput="updateOrbitDay(this.value)" onchange="updateOrbitDay(this.value)">
+                            <span id="dayValue" style="color: #fff; min-width: 60px;">Jan 1</span>
+                            <button class="mode-btn" onclick="toggleAnimation()" id="playBtn" style="padding: 0.25rem 0.75rem;">▶</button>
+                        </div>
+                        
+                        <div id="orbitCaption" style="color: #adb5bd; font-size: 0.9rem; margin-bottom: 1rem;">
+                            Solar declination: 0°, Daylength at focus: 12.0 hours
+                        </div>
+                    </div>
+                </div>
+                <canvas id="orbitCanvas" width="600" height="400" style="width: 100%; max-width: 600px; height: auto;" 
+                        tabindex="0" role="img" aria-label="Interactive Earth orbital visualization showing seasonal positions and solar dynamics"></canvas>
             </div>
             
             <!-- Insights -->
@@ -346,13 +491,29 @@
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Show loading
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('chartContainer').style.display = 'none';
-            document.getElementById('insightsContainer').style.display = 'none';
-            
-            // Run comparison
-            await runClimateComparison();
+            // Show/hide appropriate containers
+            if (mode === 'orbit') {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'none';
+                document.getElementById('orbitContainer').style.display = 'block';
+                document.getElementById('insightsContainer').style.display = 'block';
+                
+                // Run orbit comparison for insights
+                await runClimateComparison();
+                
+                // Initialize orbit view
+                setOrbitView('charts'); // Start with charts view
+                
+            } else {
+                // Show loading
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('chartContainer').style.display = 'none';
+                document.getElementById('orbitContainer').style.display = 'none';
+                document.getElementById('insightsContainer').style.display = 'none';
+                
+                // Run comparison
+                await runClimateComparison();
+            }
         }
         
         async function runClimateComparison() {
@@ -412,6 +573,157 @@
                 `<li>${insight}</li>`
             ).join('');
         }
+        
+        // Orbit view functions
+        function setOrbitView(view) {
+            const chartsBtn = document.getElementById('chartsViewBtn');
+            const orbitBtn = document.getElementById('orbitViewBtn');
+            const orbitControls = document.getElementById('orbitControls');
+            const climateCanvas = document.getElementById('climateCanvas');
+            const orbitCanvas = document.getElementById('orbitCanvas');
+            
+            // Update button states
+            chartsBtn.classList.toggle('active', view === 'charts');
+            orbitBtn.classList.toggle('active', view === 'orbit');
+            
+            if (view === 'orbit') {
+                // Show orbit controls and canvas
+                orbitControls.style.display = 'block';
+                climateCanvas.style.display = 'none';
+                orbitCanvas.style.display = 'block';
+                
+                // Initialize orbit visualization
+                const today = new Date();
+                const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+                updateOrbitDay(dayOfYear);
+                
+            } else {
+                // Show charts
+                orbitControls.style.display = 'none';
+                climateCanvas.style.display = 'block';
+                orbitCanvas.style.display = 'none';
+            }
+        }
+        
+        function toggleLatLine(latitude) {
+            const checkbox = document.getElementById(`lat${latitude === 23.4 ? '23' : latitude}Checkbox`);
+            
+            if (checkbox.checked) {
+                window.enabledLatLines.add(latitude);
+            } else {
+                window.enabledLatLines.delete(latitude);
+            }
+            
+            // If 35° is selected, enable parallel35 mode
+            if (latitude === 35 && checkbox.checked) {
+                window.focusLatitude = 35;
+                // Could trigger parallel35 mode for the current orchid here
+            }
+            
+            // Re-render orbit
+            const canvas = document.getElementById('orbitCanvas');
+            if (canvas && window.currentDayOfYear !== undefined) {
+                OrchidClimateComparator.renderOrbit(canvas, window.currentDayOfYear);
+                OrchidClimateComparator.updateOrbitCaption(window.currentDayOfYear);
+            }
+        }
+        
+        function updateOrbitDay(dayOfYear) {
+            window.currentDayOfYear = parseInt(dayOfYear);
+            
+            // Update slider and day display
+            const slider = document.getElementById('daySlider');
+            const dayValue = document.getElementById('dayValue');
+            
+            if (slider) slider.value = dayOfYear;
+            if (dayValue) {
+                const date = new Date(2024, 0, 1 + parseInt(dayOfYear));
+                dayValue.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            
+            // Render orbit
+            const canvas = document.getElementById('orbitCanvas');
+            if (canvas) {
+                OrchidClimateComparator.renderOrbit(canvas, parseInt(dayOfYear));
+                OrchidClimateComparator.updateOrbitCaption(parseInt(dayOfYear));
+            }
+        }
+        
+        function toggleAnimation() {
+            const playBtn = document.getElementById('playBtn');
+            
+            if (window.orbitAnimationRunning) {
+                // Stop animation
+                if (window.orbitAnimationId) {
+                    cancelAnimationFrame(window.orbitAnimationId);
+                }
+                window.orbitAnimationRunning = false;
+                playBtn.textContent = '▶';
+            } else {
+                // Start animation
+                window.orbitAnimationRunning = true;
+                playBtn.textContent = '⏸';
+                animateOrbit();
+            }
+        }
+        
+        function animateOrbit() {
+            if (!window.orbitAnimationRunning) return;
+            
+            window.currentDayOfYear = (window.currentDayOfYear + 1) % 365;
+            updateOrbitDay(window.currentDayOfYear);
+            
+            // Target 30 fps (throttled for performance)
+            setTimeout(() => {
+                window.orbitAnimationId = requestAnimationFrame(animateOrbit);
+            }, 33); // ~30 fps
+        }
+        
+        // Initialize global variables for orbit
+        window.orbitAnimationId = null;
+        window.orbitAnimationRunning = false;
+        window.currentDayOfYear = 0;
+        window.focusLatitude = 35;
+        window.enabledLatLines = new Set([35]);
+        
+        // Keyboard controls for accessibility
+        document.addEventListener('keydown', function(event) {
+            if (currentMode !== 'orbit') return;
+            
+            const orbitContainer = document.getElementById('orbitContainer');
+            if (!orbitContainer || orbitContainer.style.display === 'none') return;
+            
+            switch(event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    updateOrbitDay(Math.max(0, window.currentDayOfYear - 1));
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    updateOrbitDay(Math.min(365, window.currentDayOfYear + 1));
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    updateOrbitDay(Math.max(0, window.currentDayOfYear - 30));
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    updateOrbitDay(Math.min(365, window.currentDayOfYear + 30));
+                    break;
+                case ' ':
+                    event.preventDefault();
+                    toggleAnimation();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    updateOrbitDay(0);
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    updateOrbitDay(365);
+                    break;
+            }
+        });
     </script>
 </body>
 </html>
