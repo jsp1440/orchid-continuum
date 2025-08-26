@@ -64,6 +64,7 @@ class OrchidScheduler:
                 # Run various update tasks
                 self.run_scrapers()
                 self.update_geographic_data()
+                self.run_enhanced_flowering_collection()
                 self.refresh_orchid_of_day()
                 self.update_ai_metadata()
                 
@@ -92,6 +93,20 @@ class OrchidScheduler:
                 
         except Exception as e:
             logger.warning(f"Scraper error (will retry next cycle): {e}")
+    
+    def run_enhanced_flowering_collection(self):
+        """Run enhanced flowering and geographic data collection"""
+        try:
+            from enhanced_flowering_geographic_scraper import FloweringGeographicScraper
+            scraper = FloweringGeographicScraper()
+            
+            logger.info("Running enhanced flowering & geographic collection...")
+            results = scraper.run_enhanced_collection()
+            
+            logger.info(f"Enhanced collection results: {results['with_both']} records with both flowering dates and coordinates")
+            
+        except Exception as e:
+            logger.warning(f"Enhanced collection error (will retry next cycle): {e}")
             
     def update_geographic_data(self):
         """Update geographic and location data for orchids"""
