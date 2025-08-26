@@ -2070,6 +2070,23 @@ try:
 except ImportError as e:
     logger.warning(f"Admin Monitoring Dashboard not available: {e}")
 
+# Register member authentication system
+try:
+    from member_authentication import register_member_authentication
+    register_member_authentication()
+    logger.info("Member Authentication System registered successfully")
+except ImportError as e:
+    logger.warning(f"Member Authentication System not available: {e}")
+
+# Register visitor teasers
+try:
+    from visitor_teasers import register_visitor_teasers, add_membership_filters
+    register_visitor_teasers()
+    add_membership_filters(app)
+    logger.info("Visitor Teasers System registered successfully")
+except ImportError as e:
+    logger.warning(f"Visitor Teasers System not available: {e}")
+
 # PRODUCTION-READY INDIVIDUAL WIDGET ROUTES FOR NEON ONE INTEGRATION
 @app.route('/widget/featured')
 def standalone_featured_widget():
