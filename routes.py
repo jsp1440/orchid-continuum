@@ -2054,6 +2054,22 @@ try:
 except ImportError as e:
     logger.warning(f"Widget System not available: {e}")
 
+# Register member feedback system
+try:
+    from member_feedback_system import register_feedback_system
+    register_feedback_system()
+    logger.info("Member Feedback System registered successfully")
+except ImportError as e:
+    logger.warning(f"Member Feedback System not available: {e}")
+
+# Register admin monitoring dashboard
+try:
+    from admin_monitoring_dashboard import register_monitoring_system
+    register_monitoring_system()
+    logger.info("Admin Monitoring Dashboard registered successfully")
+except ImportError as e:
+    logger.warning(f"Admin Monitoring Dashboard not available: {e}")
+
 # PRODUCTION-READY INDIVIDUAL WIDGET ROUTES FOR NEON ONE INTEGRATION
 @app.route('/widget/featured')
 def standalone_featured_widget():
