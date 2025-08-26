@@ -2902,8 +2902,14 @@ def submit_workshop_registration():
             primary_interest=data.get('interests', ''),
             special_needs=data.get('specialNeeds', ''),
             workshop_date=datetime.strptime(data.get('workshopDate'), '%Y-%m-%d').date(),
-            amount_paid=data.get('amount', 10.00)
+            amount_paid=data.get('amount', 10.00),
+            payment_status=data.get('paymentStatus', 'pending'),
+            payment_method=data.get('paymentMethod', 'cash')
         )
+        
+        # Add PayPal transaction details if provided
+        if data.get('paymentId'):
+            registration.notes = f"PayPal Transaction ID: {data.get('paymentId')}"
         
         # Check capacity (limit to 20)
         current_count = WorkshopRegistration.query.filter_by(

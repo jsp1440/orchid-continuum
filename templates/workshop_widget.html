@@ -306,11 +306,61 @@
                         <textarea class="form-control" id="specialNeeds" rows="2" placeholder="Any accessibility needs or dietary restrictions for refreshments?"></textarea>
                     </div>
 
+                    <!-- Payment Method Selection -->
+                    <div class="mb-4">
+                        <h5>💳 Payment Method</h5>
+                        <div class="payment-options">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentChoice" id="payOnline" value="online" checked>
+                                <label class="form-check-label" for="payOnline">
+                                    <strong>Pay Online with PayPal</strong> - $10.39 (includes fees)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentChoice" id="payLater" value="later">
+                                <label class="form-check-label" for="payLater">
+                                    <strong>Pay at Workshop</strong> - $10.00 (cash, check, or Venmo)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="text-center">
-                        <button type="submit" class="btn btn-register btn-lg">
+                        <!-- Register and Pay Later Button -->
+                        <button type="submit" class="btn btn-register btn-lg" id="registerLaterBtn" style="display: none;">
                             <i data-feather="calendar-plus"></i>
-                            Register for Workshop - $10
+                            Register Now - Pay at Workshop
                         </button>
+                        
+                        <!-- PayPal Payment Section -->
+                        <div id="paypalSection">
+                            <button type="submit" class="btn btn-register btn-lg mb-3" id="registerOnlineBtn">
+                                <i data-feather="calendar-plus"></i>
+                                Register and Continue to Payment
+                            </button>
+                            
+                            <!-- PayPal Button Container -->
+                            <div id="paypal-button-container" style="display: none; margin-top: 20px;">
+                                <p class="text-muted mb-3">Complete your registration with secure PayPal payment:</p>
+                                
+                                <!-- PayPal Form -->
+                                <form action="https://www.paypal.com/donate" method="post" target="_blank" id="paypalForm">
+                                    <input type="hidden" name="business" value="fivecitiesorchids@gmail.com" />
+                                    <input type="hidden" name="item_name" value="FCOS Orchid Workshop Registration - September 28, 2025" />
+                                    <input type="hidden" name="amount" value="10.39" />
+                                    <input type="hidden" name="currency_code" value="USD" />
+                                    <input type="hidden" name="return" value="https://fivecitiesorchids.org/workshop-success" />
+                                    <input type="hidden" name="cancel_return" value="https://fivecitiesorchids.org/workshop-cancelled" />
+                                    
+                                    <button type="submit" class="btn btn-success btn-lg w-100">
+                                        <i data-feather="credit-card"></i>
+                                        Pay $10.39 with PayPal
+                                    </button>
+                                </form>
+                                
+                                <p class="text-muted mt-2"><small>You'll be redirected to PayPal to complete payment securely</small></p>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -371,6 +421,25 @@
             orchidDetails.style.display = this.checked ? 'block' : 'none';
         });
 
+        // Handle payment method selection
+        document.querySelectorAll('input[name="paymentChoice"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const registerLaterBtn = document.getElementById('registerLaterBtn');
+                const paypalSection = document.getElementById('paypalSection');
+                
+                if (this.value === 'later') {
+                    registerLaterBtn.style.display = 'block';
+                    paypalSection.style.display = 'none';
+                } else {
+                    registerLaterBtn.style.display = 'none';
+                    paypalSection.style.display = 'block';
+                }
+            });
+        });
+
+        // Store registration data globally
+        let pendingRegistration = null;
+
         // Form submission
         document.getElementById('workshopRegistration').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -389,35 +458,117 @@
                 specialNeeds: document.getElementById('specialNeeds').value,
                 registrationDate: new Date().toISOString(),
                 workshopDate: '2025-09-28',
-                amount: 10.00
+                amount: document.querySelector('input[name="paymentChoice"]:checked').value === 'online' ? 10.39 : 10.00,
+                paymentMethod: document.querySelector('input[name="paymentChoice"]:checked').value
             };
 
+            const paymentChoice = document.querySelector('input[name="paymentChoice"]:checked').value;
+            
+            if (paymentChoice === 'later') {
+                // Direct registration without payment
+                submitRegistration(formData);
+            } else {
+                // Store data and show PayPal
+                pendingRegistration = formData;
+                showPayPalButton();
+            }
+        });
+
+        function submitRegistration(formData, paymentData = null) {
             // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
+            const submitBtn = document.querySelector('#workshopRegistration button[type="submit"]:not([style*="display: none"])');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i data-feather="loader"></i> Processing...';
             submitBtn.disabled = true;
             feather.replace();
 
-            // Simulate processing (replace with actual payment processing)
-            setTimeout(() => {
-                alert('Registration submitted successfully! You will receive a confirmation email shortly.\n\nPayment can be made at the workshop or via Venmo @FCOSworkshops');
-                
-                // Reset form
-                this.reset();
-                document.getElementById('orchidDetails').style.display = 'none';
-                
-                // Update registration count (simulate)
-                const currentCount = parseInt(document.getElementById('registrationStatus').textContent.match(/\d+/)[0]) + 1;
-                const spotsLeft = 20 - currentCount;
-                document.getElementById('registrationStatus').innerHTML = `✅ ${spotsLeft} spots available (${currentCount} of 20 registered)`;
-                
+            // Add payment data if provided
+            if (paymentData) {
+                formData.paymentId = paymentData.id;
+                formData.paymentStatus = 'paid';
+                formData.paymentMethod = 'paypal';
+            } else {
+                formData.paymentStatus = 'pending';
+            }
+
+            // Submit to server
+            fetch('/api/workshop-registration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(paymentData ? 
+                        'Payment successful! Registration confirmed. You will receive a confirmation email shortly.' :
+                        'Registration submitted successfully! You will receive a confirmation email. Payment due at workshop ($10 cash/check).'
+                    );
+                    
+                    // Reset form
+                    document.getElementById('workshopRegistration').reset();
+                    document.getElementById('orchidDetails').style.display = 'none';
+                    document.getElementById('paypal-button-container').style.display = 'none';
+                    
+                    // Reset payment method to default
+                    document.getElementById('payOnline').checked = true;
+                    document.getElementById('registerLaterBtn').style.display = 'none';
+                    document.getElementById('paypalSection').style.display = 'block';
+                    
+                    // Update registration count
+                    updateRegistrationCount();
+                } else {
+                    alert('Registration failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Registration failed. Please try again.');
+            })
+            .finally(() => {
                 // Reset button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
                 feather.replace();
-            }, 2000);
-        });
+            });
+        }
+
+        function showPayPalButton() {
+            const container = document.getElementById('paypal-button-container');
+            container.style.display = 'block';
+            
+            // Add event listener to PayPal form submission
+            document.getElementById('paypalForm').addEventListener('submit', function() {
+                // Mark registration as payment pending
+                pendingRegistration.paymentStatus = 'pending';
+                pendingRegistration.paymentMethod = 'paypal';
+                
+                // Submit registration to database
+                submitRegistration(pendingRegistration);
+                
+                // Inform user they'll be redirected
+                setTimeout(() => {
+                    alert('Registration saved! You\'ll now be redirected to PayPal to complete payment.');
+                }, 100);
+            });
+            
+            feather.replace(); // Refresh icons
+        }
+
+        function updateRegistrationCount() {
+            fetch('/api/workshop-stats')
+            .then(response => response.json())
+            .then(data => {
+                const spotsLeft = data.spots_available;
+                const confirmed = data.confirmed_registrations;
+                document.getElementById('registrationStatus').innerHTML = `✅ ${spotsLeft} spots available (${confirmed} of 20 registered)`;
+            })
+            .catch(error => {
+                console.error('Failed to update registration count:', error);
+            });
+        }
 
         // Update countdown timer
         function updateCountdown() {
