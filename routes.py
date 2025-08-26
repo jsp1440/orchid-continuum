@@ -29,6 +29,7 @@ from gbif_routes import gbif_bp
 from ai_orchid_routes import ai_orchid_bp
 from geographic_mapping_routes import geo_mapping_bp
 from enhanced_mapping_routes import enhanced_mapping_bp
+from admin_orchid_approval import orchid_approval_bp
 import os
 import json
 import logging
@@ -59,6 +60,9 @@ app.register_blueprint(geo_mapping_bp)
 
 # Register enhanced mapping analytics routes
 app.register_blueprint(enhanced_mapping_bp)
+
+# Register Admin Orchid Approval routes
+app.register_blueprint(orchid_approval_bp)
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
@@ -380,8 +384,8 @@ def index():
     """Homepage with enhanced orchid of the day and advanced features"""
     try:
         # Get enhanced orchid of the day
-        from enhanced_orchid_of_day import EnhancedOrchidOfDay
-        enhanced_system = EnhancedOrchidOfDay()
+        from enhanced_orchid_of_day import ValidatedOrchidOfDay
+        enhanced_system = ValidatedOrchidOfDay()
         orchid_of_day_enhanced = enhanced_system.get_enhanced_orchid_of_day()
         
         # Fallback to basic orchid of day if enhanced fails

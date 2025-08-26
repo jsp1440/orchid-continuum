@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """
-Enhanced Orchid of the Day System
-Creates rich, engaging daily features with scientific stories, creative elements, and expanded metadata
+Validated Orchid of the Day System
+Admin-controlled orchid selection with proper taxonomy validation and pre-approval workflow
 
 Features:
-- Scientific accuracy with rich metadata
-- Creative haiku and artistic reflections
-- Expandable detailed information
-- Conservation and discovery stories
-- Pollinator and ecological connections
+- Admin pre-approval required for all orchids
+- Proper taxonomic validation (no BOLD IDs, DNA barcodes, etc.)
+- Special FCOS display ID numbering system
+- Scheduled orchid rotation at midnight daily
+- Gallery management with named collections
 """
 
-import random
-from datetime import date
-from models import OrchidRecord, db
-from sqlalchemy import or_, and_
+from flask import Flask
+from app import db
+from models import OrchidApproval, GalleryType, ApprovalStatus
+from models import OrchidRecord
+from datetime import datetime, date, timedelta
+from sqlalchemy import and_, or_, func
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
-class EnhancedOrchidOfDay:
+
+class ValidatedOrchidOfDay:
     """Enhanced Orchid of the Day with rich storytelling and metadata"""
     
     def __init__(self):
