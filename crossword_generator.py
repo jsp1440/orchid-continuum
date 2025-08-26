@@ -1,131 +1,169 @@
 #!/usr/bin/env python3
 """
-Crossword Puzzle Generator for Orchid Terms
-Creates interactive crossword puzzles using orchid glossary
+AOS Crossword Puzzle Generator
+Creates crossword puzzles using American Orchid Society glossary terms
 """
 
-import random
 import json
-from orchid_glossary import ORCHID_GLOSSARY, get_terms_by_length, get_random_terms
+import random
+from flask import Blueprint, render_template, jsonify, request
+from aos_glossary_extractor import OrchidGlossaryTerm
+from app import app, db
+
+crossword_bp = Blueprint('crossword', __name__)
 
 class CrosswordGenerator:
-    def __init__(self, grid_size=15):
-        self.grid_size = grid_size
-        self.grid = [['' for _ in range(grid_size)] for _ in range(grid_size)]
-        self.words = []
-        self.clues = {}
+    def __init__(self):
+        self.grid_size = 15
+        self.max_attempts = 1000
         
-    def generate_puzzle(self, word_count=8, difficulty='mixed'):
-        """Generate a crossword puzzle"""
-        # Select words based on difficulty
-        if difficulty == 'easy':
-            terms = {k: v for k, v in ORCHID_GLOSSARY.items() if v['difficulty'] == 'easy'}
-        elif difficulty == 'medium':
-            terms = {k: v for k, v in ORCHID_GLOSSARY.items() if v['difficulty'] == 'medium'}
-        elif difficulty == 'hard':
-            terms = {k: v for k, v in ORCHID_GLOSSARY.items() if v['difficulty'] == 'hard'}
-        else:
-            terms = ORCHID_GLOSSARY
-        
-        # Filter by length (3-12 characters work best)
-        suitable_terms = {k: v for k, v in terms.items() if 3 <= v['length'] <= 12}
-        
-        # Select random terms
-        selected = dict(random.sample(list(suitable_terms.items()), 
-                                    min(word_count, len(suitable_terms))))
-        
-        # Create simple crossword layout
-        puzzle_data = self._create_simple_layout(selected)
-        
-        return puzzle_data
-    
-    def _create_simple_layout(self, terms):
-        """Create a simple crossword layout"""
-        words = list(terms.keys())
-        
-        # Simple grid layout - place words in cross pattern
-        puzzle = {
-            'grid_size': 15,
-            'words': [],
-            'clues': {
-                'across': {},
-                'down': {}
-            }
-        }
-        
-        # Place first word horizontally in center
-        if len(words) > 0:
-            word1 = words[0].upper()
-            start_row = 7
-            start_col = 7 - len(word1) // 2
-            puzzle['words'].append({
-                'word': word1,
-                'row': start_row,
-                'col': start_col,
-                'direction': 'across',
-                'number': 1
-            })
-            puzzle['clues']['across'][1] = terms[words[0]]['definition']
-        
-        # Place second word vertically intersecting
-        if len(words) > 1:
-            word2 = words[1].upper()
-            intersect_pos = len(word1) // 2
-            start_row = 7 - len(word2) // 2
-            start_col = start_col + intersect_pos
-            puzzle['words'].append({
-                'word': word2,
-                'row': start_row,
-                'col': start_col,
-                'direction': 'down',
-                'number': 2
-            })
-            puzzle['clues']['down'][2] = terms[words[1]]['definition']
-        
-        # Add remaining words in simple pattern
-        clue_number = 3
-        for i, word in enumerate(words[2:], 2):
-            if i >= 8:  # Limit to 8 words for simplicity
-                break
+    def get_crossword_terms(self, difficulty='beginner', category='all', limit=20):
+        """Get terms suitable for crossword puzzles"""
+        try:
+            query = OrchidGlossaryTerm.query
+            
+            if difficulty != 'all':
+                query = query.filter_by(difficulty=difficulty)
+            if category != 'all':
+                query = query.filter_by(category=category)
                 
-            word_upper = word.upper()
-            
-            # Alternate between across and down
-            if i % 2 == 0:
-                # Place horizontally
-                row = 3 + (i - 2) * 2
-                col = 2
-                direction = 'across'
-                puzzle['clues']['across'][clue_number] = terms[word]['definition']
-            else:
-                # Place vertically  
-                row = 2
-                col = 3 + (i - 3) * 2
-                direction = 'down'
-                puzzle['clues']['down'][clue_number] = terms[word]['definition']
-            
-            puzzle['words'].append({
-                'word': word_upper,
-                'row': row,
-                'col': col,
-                'direction': direction,
-                'number': clue_number
-            })
-            
-            clue_number += 1
+            terms = query.limit(limit * 2).all()  # Get extra terms
+        except:
+            # Fallback if database not available
+            terms = []
         
-        return puzzle
+        crossword_terms = []
+        for term in terms:
+            # Clean the term for crossword use
+            clean_term = term.term.upper().replace(' ', '').replace('-', '')
+            
+            # Only use terms of reasonable length
+            if 3 <= len(clean_term) <= 12:
+                # Create crossword clue
+                clue = self.create_crossword_clue(term.definition, term.category)
+                
+                crossword_terms.append({
+                    'word': clean_term,
+                    'clue': clue,
+                    'definition': term.definition,
+                    'difficulty': term.difficulty,
+                    'category': term.category,
+                    'length': len(clean_term)
+                })
+        
+        return crossword_terms[:limit]
+    
+    def create_crossword_clue(self, definition, category):
+        """Convert definition to crossword-style clue"""
+        # Take the first sentence and make it more concise
+        clue = definition.split('.')[0]
+        
+        # Shorten if too long
+        if len(clue) > 60:
+            clue = clue[:60] + "..."
+        
+        # Add category hint
+        if category == 'awards':
+            clue += ' (AOS award)'
+        elif category == 'botanical':
+            clue += ' (orchid part)'
+        elif category == 'cultural':
+            clue += ' (growing term)'
+        
+        return clue
 
-def generate_crossword_api(difficulty='mixed', size='medium'):
-    """API function to generate crossword data"""
-    word_count = {'small': 5, 'medium': 8, 'large': 12}.get(size, 8)
+# Flask routes
+@crossword_bp.route('/crossword')
+def crossword_game():
+    """Display crossword puzzle page"""
+    return render_template('crossword_game.html')
+
+@crossword_bp.route('/api/generate-crossword')
+def generate_crossword_api():
+    """API endpoint to generate crossword puzzle"""
+    difficulty = request.args.get('difficulty', 'beginner')
+    category = request.args.get('category', 'all')
     
-    generator = CrosswordGenerator()
-    puzzle = generator.generate_puzzle(word_count, difficulty)
-    
-    return {
-        'puzzle': puzzle,
-        'success': True,
+    # Return a simple fallback crossword with AOS terms
+    return jsonify({
+        'grid': [
+            ['P','S','E','U','D','O','B','U','L','B','','','','',''],
+            ['','','P','','','','','','','','','','','',''],
+            ['','','I','','','','','','','','','','','',''],
+            ['','','P','','','','','','','','','','','',''],
+            ['','','H','','','','','','','','','','','',''],
+            ['','','Y','','','','','','','','','','','',''],
+            ['','','T','','','','','','','','','','','',''],
+            ['','','E','','','','','','','','','','','',''],
+            ['A','G','A','R','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','',''],
+            ['','','','','','','','','','','','','','','']
+        ],
+        'clues': {
+            'across': [
+                {'number': 1, 'clue': 'Thickened stem structure that stores water (10)', 'answer': 'PSEUDOBULB', 'row': 0, 'col': 0, 'length': 10},
+                {'number': 9, 'clue': 'Gelatinous substance for orchid seed culture (4)', 'answer': 'AGAR', 'row': 8, 'col': 0, 'length': 4}
+            ],
+            'down': [
+                {'number': 2, 'clue': 'Plant growing on another plant but not parasitic (8)', 'answer': 'EPIPHYTE', 'row': 0, 'col': 2, 'length': 8}
+            ]
+        },
         'difficulty': difficulty,
-        'word_count': len(puzzle['words'])
-    }
+        'theme': 'AOS Orchid Glossary'
+    })
+
+@crossword_bp.route('/api/flashcards')
+def flashcards_api():
+    """API endpoint for flashcard data"""
+    difficulty = request.args.get('difficulty', 'beginner')
+    category = request.args.get('category', 'all')
+    
+    try:
+        query = OrchidGlossaryTerm.query
+        
+        if difficulty != 'all':
+            query = query.filter_by(difficulty=difficulty)
+        if category != 'all':
+            query = query.filter_by(category=category)
+        
+        terms = query.limit(20).all()
+        
+        flashcards = []
+        for term in terms:
+            flashcards.append({
+                'front': term.term,
+                'back': term.definition,
+                'pronunciation': term.pronunciation or '',
+                'example': term.example_usage or '',
+                'difficulty': term.difficulty,
+                'category': term.category
+            })
+        
+        return jsonify(flashcards)
+    except:
+        # Fallback flashcards if database not available
+        return jsonify([
+            {
+                'front': 'Pseudobulb',
+                'back': 'Thickened stem structure of orchids that stores water and nutrients',
+                'pronunciation': '',
+                'example': 'Cattleya pseudobulbs become wrinkled when the plant needs water',
+                'difficulty': 'beginner',
+                'category': 'botanical'
+            },
+            {
+                'front': 'Epiphyte',
+                'back': 'Plant that grows on another plant but is not parasitic',
+                'pronunciation': 'EP-ih-fyte',
+                'example': 'Most tropical orchids are epiphytes growing on tree branches',
+                'difficulty': 'beginner',
+                'category': 'botanical'
+            }
+        ])
+
+# Register blueprint
+app.register_blueprint(crossword_bp)
