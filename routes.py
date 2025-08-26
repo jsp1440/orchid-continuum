@@ -2526,24 +2526,42 @@ def api_recent_orchids():
         with_coordinates = request.args.get('with_coordinates', 'false').lower() == 'true'
         limit = int(request.args.get('limit', 20))
         
-        # Build query with image filter
-        query = OrchidRecord.query.filter(
-            or_(
-                OrchidRecord.google_drive_id.isnot(None),
+        # Build query with image filter - PRIORITIZE Google Drive images
+        google_drive_query = OrchidRecord.query.filter(
+            OrchidRecord.google_drive_id.isnot(None)
+        )
+        
+        external_url_query = OrchidRecord.query.filter(
+            and_(
+                OrchidRecord.google_drive_id.is_(None),
                 OrchidRecord.image_url.isnot(None)
             )
         )
         
         # Add coordinate filter if requested
         if with_coordinates:
-            query = query.filter(
+            google_drive_query = google_drive_query.filter(
+                and_(
+                    OrchidRecord.decimal_latitude.isnot(None),
+                    OrchidRecord.decimal_longitude.isnot(None)
+                )
+            )
+            external_url_query = external_url_query.filter(
                 and_(
                     OrchidRecord.decimal_latitude.isnot(None),
                     OrchidRecord.decimal_longitude.isnot(None)
                 )
             )
         
-        recent_orchids = query.order_by(OrchidRecord.created_at.desc()).limit(limit).all()
+        # Get recent orchids - prioritize Google Drive images (80%), then external (20%)
+        google_drive_limit = int(limit * 0.8)
+        external_limit = limit - google_drive_limit
+        
+        google_drive_orchids = google_drive_query.order_by(OrchidRecord.created_at.desc()).limit(google_drive_limit).all()
+        external_orchids = external_url_query.order_by(OrchidRecord.created_at.desc()).limit(external_limit).all()
+        
+        # Combine and sort by creation date
+        recent_orchids = sorted(google_drive_orchids + external_orchids, key=lambda x: x.created_at, reverse=True)[:limit]
         
         orchids_data = []
         for orchid in recent_orchids:
