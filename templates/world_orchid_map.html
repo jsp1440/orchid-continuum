@@ -147,6 +147,16 @@
     overflow: hidden !important;
 }
 
+/* Orchid marker styling */
+.orchid-marker {
+    background: none !important;
+    border: none !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-size: 20px;
+    text-align: center;
+    line-height: 24px;
+}
+
 /* ANTI-FRAGMENTATION: Prevent tile gaps and ensure smooth rendering */
 .leaflet-tile-container {
     pointer-events: none;
@@ -599,52 +609,73 @@ async function initializeOrchidMap() {
 
 async function loadOrchidMarkers() {
     try {
-        // Fetch orchid coordinate data
-        const response = await fetch('/mapping/api/coordinates');
+        console.log('🌺 Loading real orchid data with images...');
+        
+        // Fetch actual orchid records with images
+        const response = await fetch('/api/recent-orchids?limit=50&with_coordinates=true');
         const data = await response.json();
         
-        if (data.success && data.coordinates) {
+        if (data && data.length > 0) {
             // Create markers layer group
             markersLayer = L.layerGroup();
             
             let markerCount = 0;
             
-            // Add markers for each region
-            data.coordinates.forEach(region => {
-                // Create marker with custom popup
-                const marker = L.marker([region.lat, region.lng], {
-                    title: `${region.region}: ${region.orchid_count} orchids`
-                });
-                
-                // Create detailed popup content
-                const popupContent = `
-                    <div style="max-width: 300px;">
-                        <h5><strong>${region.region}</strong></h5>
-                        <p><strong>Orchid Count:</strong> ${region.orchid_count.toLocaleString()}</p>
-                        <p><strong>Unique Genera:</strong> ${region.unique_genera}</p>
-                        <p><strong>Unique Species:</strong> ${region.unique_species}</p>
-                        <hr>
-                        <h6>Sample Species:</h6>
-                        <ul style="margin: 0; padding-left: 1rem;">
-                `;
-                
-                let finalPopup = popupContent;
-                
-                // Add sample species (limit to 5)
-                if (region.sample_orchids && region.sample_orchids.length > 0) {
-                    region.sample_orchids.slice(0, 5).forEach(orchid => {
-                        finalPopup += `<li><em>${orchid.scientific_name}</em></li>`;
-                    });
+            // Add markers for each orchid with coordinates
+            data.forEach(orchid => {
+                // Skip orchids without coordinates
+                if (!orchid.decimal_latitude || !orchid.decimal_longitude) {
+                    return;
                 }
                 
-                finalPopup += `
-                        </ul>
-                        <small class="text-muted">Regional distribution data</small>
+                // Create custom orchid icon
+                const orchidIcon = L.divIcon({
+                    className: 'orchid-marker',
+                    html: '🌺',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                
+                // Create marker with orchid location
+                const marker = L.marker([orchid.decimal_latitude, orchid.decimal_longitude], {
+                    icon: orchidIcon,
+                    title: orchid.scientific_name || orchid.display_name
+                });
+                
+                // Get image URL - prefer Google Drive, fallback to image_url
+                let imageUrl = null;
+                if (orchid.google_drive_id) {
+                    imageUrl = `/api/drive-photo/${orchid.google_drive_id}`;
+                } else if (orchid.image_url && !orchid.image_url.includes('gbif.org')) {
+                    imageUrl = orchid.image_url;
+                } else if (orchid.image_filename) {
+                    imageUrl = `/static/uploads/${orchid.image_filename}`;
+                }
+                
+                // Create detailed popup with orchid image
+                const popupContent = `
+                    <div style="max-width: 280px; text-align: center;">
+                        ${imageUrl ? `
+                            <img src="${imageUrl}" alt="${orchid.scientific_name || orchid.display_name}" 
+                                 style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
+                                 onerror="this.style.display='none'">
+                        ` : ''}
+                        <h6><strong>${orchid.scientific_name || orchid.display_name}</strong></h6>
+                        ${orchid.genus ? `<p><em>Genus:</em> ${orchid.genus}</p>` : ''}
+                        ${orchid.country ? `<p><strong>Location:</strong> ${orchid.country}</p>` : ''}
+                        ${orchid.collector ? `<p><strong>Collector:</strong> ${orchid.collector}</p>` : ''}
+                        ${orchid.event_date ? `<p><strong>Date:</strong> ${orchid.event_date}</p>` : ''}
+                        ${orchid.data_source ? `<p><small><em>Source:</em> ${orchid.data_source}</small></p>` : ''}
+                        <div style="margin-top: 10px;">
+                            <a href="/orchid/${orchid.id}" target="_blank" class="btn btn-sm btn-primary">
+                                View Details
+                            </a>
+                        </div>
                     </div>
                 `;
                 
-                marker.bindPopup(finalPopup);
-                marker.bindTooltip(`${region.region}: ${region.orchid_count} orchids`);
+                marker.bindPopup(popupContent);
+                marker.bindTooltip(orchid.scientific_name || orchid.display_name);
                 
                 markersLayer.addLayer(marker);
                 markerCount++;
@@ -653,7 +684,7 @@ async function loadOrchidMarkers() {
             // Add markers to map
             markersLayer.addTo(orchidMap);
             
-            console.log(`📍 Added ${markerCount} regional markers to map`);
+            console.log(`🌺 Added ${markerCount} orchid markers with images to map`);
             
             // Fit map to show all markers
             if (markerCount > 0) {
@@ -661,9 +692,9 @@ async function loadOrchidMarkers() {
             }
             
         } else {
-            console.warn('No coordinate data available');
+            console.warn('No orchid data with coordinates available');
             
-            // Add sample markers if no data
+            // Add sample markers if no real data
             addSampleMarkers();
         }
         
