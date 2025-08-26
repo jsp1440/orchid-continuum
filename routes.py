@@ -169,6 +169,17 @@ def process_bloombot_intent():
         logging.error(f"Error processing BloomBot intent: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/data/35p_species.json')
+def serve_35p_species_json():
+    """Serve 35th parallel species JSON data"""
+    try:
+        with open('data/35p_species.json', 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        logging.error(f"Error serving species JSON: {e}")
+        return jsonify({'error': 'Species data not found'}), 404
+
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
     """Test Gary Yong Gee scraper with limited scope"""

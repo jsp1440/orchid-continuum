@@ -159,6 +159,18 @@ The system uses a dual-model approach:
 - Implemented citation generator with custom access date formatting
 - Built export system for multiple citation formats
 
+#### 35th Parallel Educational Globe System (August 26, 2025)
+- **Complete interactive 3D globe** with 35th parallel overlay and orchid hotspots across 5 continents
+- **Lesson side panel** with 4 educational tabs: Intro, Regions, Activity, and Demo
+- **14 real orchid species cards** with detailed botanical information, habitats, and conservation status
+- **Guided demo tour** with 10-step automated narration (5-minute journey from North Carolina to Australia)
+- **Professor BloomBot AI integration** with natural language intent processing for educational control
+- **Collection scanner tool** that analyzes user orchids for 35°N latitude connections and relationships
+- **Toast notification system** for user feedback ("35th Parallel mode enabled", "Demo Tour started", etc.)
+- **Interactive species cards** with symbiosis, pollinator, status, and map pin action buttons
+- **Mobile-optimized design** with touch-friendly controls and responsive layout
+- **Real botanical data** including Platanthera ciliaris, Cypripedium californicum, Ophrys apifera, and more
+
 #### Gary Yong Gee Botanical Reference Integration (August 25, 2025)
 - **Enhanced Gary Yong Gee scraper**: Updated to capture detailed genus information, botanical characteristics, etymology, and distribution data
 - **Authoritative botanical references integrated**: Key reference works now inform our AI system:
