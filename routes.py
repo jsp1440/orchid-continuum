@@ -2060,6 +2060,69 @@ try:
 except ImportError as e:
     logger.warning(f"Member Authentication System not available: {e}")
 
+# Neon One CRM Integration Routes
+@app.route('/api/neon-member-lookup/<email>')
+def neon_member_lookup(email):
+    """API endpoint to lookup member in Neon One CRM"""
+    try:
+        from neon_one_integration import fcos_automation
+        member = fcos_automation.neon.get_member_by_email(email)
+        if member:
+            return jsonify({
+                'found': True,
+                'member': {
+                    'account_id': member.account_id,
+                    'name': f"{member.first_name} {member.last_name}",
+                    'membership_status': member.membership_status,
+                    'membership_level': member.membership_level
+                }
+            })
+        return jsonify({'found': False})
+    except Exception as e:
+        logger.error(f"Neon One member lookup error: {e}")
+        return jsonify({
+            'found': False,
+            'error': 'Member lookup service unavailable'
+        }), 500
+
+@app.route('/admin/neon-one-dashboard')
+@admin_required
+def admin_neon_one_dashboard():
+    """Neon One CRM integration dashboard"""
+    return render_template('admin/neon_one_dashboard.html')
+
+@app.route('/admin/neon-workshop-reminders/<workshop_date>')
+@admin_required
+def admin_send_workshop_reminders(workshop_date):
+    """Admin endpoint to send workshop reminders via Neon One"""
+    try:
+        from neon_one_integration import fcos_automation
+        results = fcos_automation.send_workshop_reminders(workshop_date)
+        return jsonify({
+            'success': True,
+            'reminder_results': results
+        })
+    except Exception as e:
+        logger.error(f"Workshop reminders error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/admin/neon-engagement-report')
+@admin_required
+def admin_engagement_report():
+    """Admin endpoint for member engagement report"""
+    try:
+        from neon_one_integration import fcos_automation
+        report = fcos_automation.generate_member_engagement_report()
+        return jsonify(report)
+    except Exception as e:
+        logger.error(f"Engagement report error: {e}")
+        return jsonify({
+            'error': 'Report generation failed'
+        }), 500
+
 # Register visitor teasers
 try:
     from visitor_teasers import register_visitor_teasers, add_membership_filters
@@ -2922,6 +2985,14 @@ def submit_workshop_registration():
         
         db.session.add(registration)
         db.session.commit()
+        
+        # Trigger Neon One CRM integration
+        try:
+            from neon_one_integration import fcos_automation
+            sync_results = fcos_automation.process_workshop_registration(registration)
+            logger.info(f"Neon One sync results: {sync_results}")
+        except Exception as e:
+            logger.warning(f"Neon One integration failed: {e}")
         
         return jsonify({
             'success': True,
