@@ -57,6 +57,15 @@ class OrchidRecord(db.Model):
     # Geographic and habitat data
     region = db.Column(String(100))
     native_habitat = db.Column(Text)
+    decimal_latitude = db.Column(Float, nullable=True)
+    decimal_longitude = db.Column(Float, nullable=True)
+    country = db.Column(String(100), nullable=True)
+    state_province = db.Column(String(100), nullable=True)
+    locality = db.Column(String(200), nullable=True)
+    collector = db.Column(String(200), nullable=True)
+    collection_number = db.Column(String(100), nullable=True)
+    event_date = db.Column(String(50), nullable=True)
+    data_source = db.Column(String(100), nullable=True)
     
     # Growing characteristics
     bloom_time = db.Column(String(100))
