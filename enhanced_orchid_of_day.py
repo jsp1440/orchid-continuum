@@ -23,6 +23,9 @@ import random
 logger = logging.getLogger(__name__)
 
 
+# Export alias for backwards compatibility
+EnhancedOrchidOfDay = None  # Will be set below
+
 class ValidatedOrchidOfDay:
     """Enhanced Orchid of the Day with rich storytelling and metadata"""
     
@@ -684,6 +687,9 @@ class ValidatedOrchidOfDay:
             'threats': [],
             'conservation_message': "All orchids benefit from habitat conservation and sustainable cultivation practices."
         }
+
+# Create the alias for backwards compatibility
+EnhancedOrchidOfDay = ValidatedOrchidOfDay
 
 if __name__ == "__main__":
     # Test the enhanced system
