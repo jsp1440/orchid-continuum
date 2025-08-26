@@ -83,6 +83,10 @@ app.register_blueprint(globe_weather_bp)
 from orchid_mycorrhizal_routes import mycorrhizal_map_bp
 app.register_blueprint(mycorrhizal_map_bp)
 
+# Register Botany Lab Stats & Imports system
+from botany_lab_stats import register_botany_lab_routes
+register_botany_lab_routes(app)
+
 # Register 35th Parallel Globe System
 from parallel_35_globe_system import Parallel35GlobeSystem, ProfessorBloomBot
 
