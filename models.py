@@ -1173,3 +1173,29 @@ class ExpertVerification(db.Model):
     
     verified_at = db.Column(DateTime, default=datetime.now)
     updated_at = db.Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+class WorkshopRegistration(db.Model):
+    __tablename__ = 'workshop_registrations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20))
+    experience_level = db.Column(db.String(50))  # 'beginner', 'intermediate', 'experienced'
+    member_status = db.Column(db.String(50), nullable=False)  # 'current', 'former', 'non-member'
+    bringing_orchid = db.Column(db.Boolean, default=False)
+    orchid_type = db.Column(db.String(100))
+    primary_interest = db.Column(db.String(100))  # 'traditional', 'semi-hydro', 'both', 'learning'
+    special_needs = db.Column(db.Text)
+    workshop_date = db.Column(db.Date, nullable=False)
+    amount_paid = db.Column(db.Float, default=10.00)
+    payment_status = db.Column(db.String(50), default='pending')  # 'pending', 'paid', 'refunded'
+    payment_method = db.Column(db.String(50))  # 'cash', 'venmo', 'check', 'online'
+    registration_status = db.Column(db.String(50), default='confirmed')  # 'confirmed', 'waitlist', 'cancelled'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    notes = db.Column(db.Text)  # Admin notes
+    
+    def __repr__(self):
+        return f'<WorkshopRegistration {self.first_name} {self.last_name} - {self.workshop_date}>'
