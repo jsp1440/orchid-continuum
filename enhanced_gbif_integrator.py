@@ -90,27 +90,35 @@ class EnhancedGBIFIntegrator:
         Access the 15,431+ orchid photos available on GBIF
         """
         try:
-            # Try multiple search approaches for maximum coverage
+            # Use targeted orchid genus search for better filtering
+            orchid_genera = [
+                'Cattleya', 'Phalaenopsis', 'Dendrobium', 'Oncidium', 'Cymbidium',
+                'Orchis', 'Ophrys', 'Epidendrum', 'Bulbophyllum', 'Masdevallia',
+                'Paphiopedilum', 'Vanda', 'Aerangis', 'Angraecum', 'Brassia'
+            ]
+            
             search_methods = [
-                # Method 1: Family text parameter (most reliable)
+                # Method 1: Genus-specific search (most reliable for orchids)
                 {
+                    'genus': ','.join(orchid_genera[:5]),  # Multiple genera
                     'family': 'Orchidaceae',
                     'mediaType': 'StillImage',
                     'hasCoordinate': 'true',
                     'limit': min(limit, 300),
                     'offset': offset
                 },
-                # Method 2: Text query for orchids
+                # Method 2: Single genus with high occurrence rate
                 {
-                    'q': 'Orchidaceae',
-                    'mediaType': 'StillImage', 
+                    'genus': 'Cattleya',
+                    'mediaType': 'StillImage',
                     'hasCoordinate': 'true',
                     'limit': min(limit, 300),
                     'offset': offset
                 },
-                # Method 3: Family key if available
+                # Method 3: Family key with additional genus filter
                 {
                     'familyKey': self.orchidaceae_family_key,
+                    'genus': 'Phalaenopsis',
                     'mediaType': 'StillImage',
                     'hasCoordinate': 'true', 
                     'limit': min(limit, 300),
