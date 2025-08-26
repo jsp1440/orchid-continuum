@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>35th Parallel Orchid Globe - Five Cities Orchid Society</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0c1821, #1a252f);
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .globe-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #globe-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        #globe-canvas:active {
+            cursor: grabbing;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .widget-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .widget-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .widget-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        .widget-btn.active {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .widget-btn.tour {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        
+        .widget-btn.list {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        
+        .widget-btn.scan {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+        
+        .widget-btn.help {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        
+        .lesson-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 600px;
+            width: 90%;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .lesson-panel.active {
+            display: block;
+            animation: slideUpFade 0.5s ease-out;
+        }
+        
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        .lesson-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .lesson-description {
+            color: #ecf0f1;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        .lesson-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .progress-indicator {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            color: #bdc3c7;
+        }
+        
+        .lesson-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .lesson-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .lesson-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4);
+        }
+        
+        .hotspot-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border: 2px solid white;
+        }
+        
+        .hotspot-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        
+        .hotspot-marker.active {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .orchid-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            color: white;
+            z-index: 10000;
+            max-width: 500px;
+            width: 90%;
+            display: none;
+            border: 3px solid #9b59b6;
+        }
+        
+        .orchid-card.active {
+            display: block;
+            animation: fadeInScale 0.6s ease-out;
+        }
+        
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .orchid-card-header {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            padding: 20px;
+            border-radius: 17px 17px 0 0;
+            text-align: center;
+        }
+        
+        .orchid-card-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+        
+        .orchid-card-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .orchid-card-body {
+            padding: 25px;
+        }
+        
+        .orchid-detail {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .orchid-label {
+            font-weight: bold;
+            color: #9b59b6;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .orchid-text {
+            color: #ecf0f1;
+            line-height: 1.4;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .species-list-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .species-list-content {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+        }
+        
+        .species-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .collection-scan-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .collection-scan-content {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+        }
+        
+        .scan-result {
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(39, 174, 96, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .instructions-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .instructions-content {
+            background: #2c3e50;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            color: white;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .ui-overlay {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 15px;
+            }
+            
+            .widget-toolbar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .widget-btn {
+                flex: 1;
+                min-width: 0;
+                padding: 10px 8px;
+                font-size: 0.8rem;
+            }
+            
+            .lesson-panel {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                transform: none;
+                padding: 20px;
+            }
+            
+            .hotspot-marker {
+                width: 24px;
+                height: 24px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark position-absolute w-100" style="z-index: 1001;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="/static/images/orchid_continuum_transparent_logo.png" alt="Five Cities Orchid Society" height="40">
+                35th Parallel Globe
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i data-feather="home"></i> Home
+                </a>
+                <a class="nav-link" href="/mahjong">
+                    <i data-feather="layers"></i> Games
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="globe-container">
+        <!-- 3D Globe Canvas -->
+        <canvas id="globe-canvas"></canvas>
+        
+        <!-- UI Overlay with Widget Toolbar -->
+        <div class="ui-overlay">
+            <div class="widget-toolbar">
+                <button class="widget-btn" id="btn-35p-trail" onclick="ui.toggle_35p_on()">
+                    🌐 35th Parallel Trail
+                </button>
+                <button class="widget-btn tour" id="btn-demo-tour" onclick="ui.run_demo_35p()">
+                    🎥 Demo Tour
+                </button>
+                <button class="widget-btn list" id="btn-list-orchids" onclick="ui.open_list_view('orchids_35N')">
+                    📋 List 35°N Orchids
+                </button>
+                <button class="widget-btn scan" id="btn-scan-collection" onclick="ui.run_collection_scan_35N()">
+                    🧪 Check My Collection
+                </button>
+                <button class="widget-btn help" id="btn-how-to-use" onclick="ui.show_instructions()">
+                    ❓How to Use
+                </button>
+            </div>
+            
+            <!-- Professor BloomBot Status -->
+            <div id="bloombot-status" style="margin-top: 15px; padding: 10px; background: rgba(155,89,182,0.2); border-radius: 8px; text-align: center; font-size: 0.9rem; color: #9b59b6;">
+                🤖 Professor BloomBot Ready
+            </div>
+        </div>
+        
+        <!-- Lesson Panel for Tour Mode -->
+        <div class="lesson-panel" id="lesson-panel">
+            <div class="lesson-title" id="lesson-title">Welcome to the 35th Parallel</div>
+            <div class="lesson-description" id="lesson-description">
+                Discover amazing orchid diversity along this latitude line!
+            </div>
+            <div class="lesson-progress">
+                <div class="progress-indicator" id="progress-indicator">
+                    Step 1 of 7
+                </div>
+                <div class="lesson-controls">
+                    <button class="lesson-btn" onclick="ui.advance_tour()">Next</button>
+                    <button class="lesson-btn" onclick="ui.exit_tour()" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Exit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orchid Detail Card -->
+    <div class="orchid-card" id="orchid-card">
+        <button class="close-btn" onclick="ui.close_orchid_card()">×</button>
+        <div class="orchid-card-header">
+            <h3 class="orchid-card-title" id="orchid-title">Orchid Name</h3>
+            <p class="orchid-card-subtitle" id="orchid-subtitle">Common Name</p>
+        </div>
+        <div class="orchid-card-body" id="orchid-details">
+            <!-- Dynamic orchid details will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Species List Modal -->
+    <div class="species-list-modal" id="species-list-modal">
+        <div class="species-list-content">
+            <h3 style="color: #f39c12; margin-bottom: 20px;">📋 Orchids Along the 35th Parallel</h3>
+            <div id="species-list-content">
+                <!-- Dynamic species list will be inserted here -->
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="lesson-btn" onclick="ui.close_species_list()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Scan Modal -->
+    <div class="collection-scan-modal" id="collection-scan-modal">
+        <div class="collection-scan-content">
+            <h3 style="color: #27ae60; margin-bottom: 20px;">🧪 Collection Scan Results</h3>
+            <div id="collection-scan-content">
+                <!-- Dynamic scan results will be inserted here -->
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="lesson-btn" onclick="ui.close_collection_scan()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div class="instructions-modal" id="instructions-modal">
+        <div class="instructions-content">
+            <h3 style="color: #95a5a6; margin-bottom: 20px;">📖 How to Use the Globe</h3>
+            <div id="instructions-text">
+                📖 How to Use the Globe
+
+🌍 Spin: Drag to rotate
+🔎 Zoom: Pinch or scroll
+🎯 Hotspots: Tap colored dots
+
+Legend:
+🟢 Rainforest | 🟤 Mountain
+🟠 Desert | 🟣 Climate Zone
+🌸 Orchid Hotspot
+
+Tools:
+🎲 Random → Jump anywhere
+🎥 Demo Tour → Guided walk
+🌞/🌙 Day/Night → Sunlight view
+🌐 35th Parallel → Orchid trail
+⏩ Speed → Rotation control
+
+💡 Tip: Some hotspots show orchid cards with photos, pollinators, and fun facts!
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="lesson-btn" onclick="ui.close_instructions()">Got It!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Globe system and UI controller
+        const globeSystem = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            globe: null,
+            controls: null,
+            hotspots: [],
+            currentTourStep: 0,
+            mode: 'normal', // normal, 35p_overlay, tour
+            
+            init() {
+                this.setupThreeJS();
+                this.createGlobe();
+                this.loadHotspots();
+                this.animate();
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        ui.exitAll();
+                    }
+                });
+                
+                console.log('🌍 35th Parallel Globe System initialized');
+            },
+            
+            setupThreeJS() {
+                const canvas = document.getElementById('globe-canvas');
+                
+                // Scene
+                this.scene = new THREE.Scene();
+                
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(
+                    75, 
+                    window.innerWidth / window.innerHeight, 
+                    0.1, 
+                    1000
+                );
+                this.camera.position.z = 3;
+                
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: true 
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setClearColor(0x000000, 0);
+                
+                // Controls
+                this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.dampingFactor = 0.05;
+                this.controls.enableZoom = true;
+                this.controls.autoRotate = true;
+                this.controls.autoRotateSpeed = 0.5;
+                
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                this.scene.add(directionalLight);
+                
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            },
+            
+            createGlobe() {
+                // Create sphere geometry
+                const geometry = new THREE.SphereGeometry(1, 64, 32);
+                
+                // Create material with earth-like appearance
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x2E7D32,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                // Create globe mesh
+                this.globe = new THREE.Mesh(geometry, material);
+                this.scene.add(this.globe);
+                
+                // Add atmosphere effect
+                const atmosphereGeometry = new THREE.SphereGeometry(1.1, 64, 32);
+                const atmosphereMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x87CEEB,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+                this.scene.add(atmosphere);
+            },
+            
+            loadHotspots() {
+                // Sample hotspot data (in real implementation, load from server)
+                const hotspotData = [
+                    { lat: 35.4, lng: -119.2, name: 'California Sierra', color: 0x4CAF50, icon: '🏔️' },
+                    { lat: 35.1, lng: 33.4, name: 'Cyprus Mediterranean', color: 0x9C27B0, icon: '🌿' },
+                    { lat: 35.7, lng: 139.7, name: 'Japan Honshu', color: 0xFF5722, icon: '🗾' },
+                    { lat: 35.5, lng: -84.3, name: 'Tennessee Appalachian', color: 0x2196F3, icon: '🏔️' },
+                    { lat: 35.2, lng: -5.0, name: 'Morocco Atlas', color: 0xFF9800, icon: '⛰️' }
+                ];
+                
+                hotspotData.forEach((hotspot, index) => {
+                    this.addHotspot(hotspot, index);
+                });
+            },
+            
+            addHotspot(hotspotData, index) {
+                // Convert lat/lng to 3D coordinates
+                const phi = (90 - hotspotData.lat) * Math.PI / 180;
+                const theta = (hotspotData.lng + 180) * Math.PI / 180;
+                const radius = 1.05;
+                
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.cos(phi);
+                const z = radius * Math.sin(phi) * Math.sin(theta);
+                
+                // Create hotspot marker
+                const geometry = new THREE.SphereGeometry(0.02, 16, 8);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: hotspotData.color,
+                    emissive: hotspotData.color,
+                    emissiveIntensity: 0.3
+                });
+                
+                const marker = new THREE.Mesh(geometry, material);
+                marker.position.set(x, y, z);
+                marker.userData = { 
+                    ...hotspotData, 
+                    index: index,
+                    type: 'hotspot'
+                };
+                
+                this.scene.add(marker);
+                this.hotspots.push(marker);
+                
+                // Add click interaction
+                marker.addEventListener = (event, callback) => {
+                    // In a real implementation, use raycasting for click detection
+                };
+            },
+            
+            show35pOverlay() {
+                this.mode = '35p_overlay';
+                
+                // Add 35th parallel line
+                const points = [];
+                for (let lng = -180; lng <= 180; lng += 2) {
+                    const phi = (90 - 35) * Math.PI / 180;
+                    const theta = (lng + 180) * Math.PI / 180;
+                    const radius = 1.02;
+                    
+                    const x = radius * Math.sin(phi) * Math.cos(theta);
+                    const y = radius * Math.cos(phi);
+                    const z = radius * Math.sin(phi) * Math.sin(theta);
+                    
+                    points.push(new THREE.Vector3(x, y, z));
+                }
+                
+                const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMaterial = new THREE.LineBasicMaterial({ 
+                    color: 0xFFD700,
+                    linewidth: 3
+                });
+                
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                line.userData = { type: '35p_line' };
+                this.scene.add(line);
+                
+                // Highlight hotspots
+                this.hotspots.forEach(hotspot => {
+                    hotspot.material.emissiveIntensity = 0.6;
+                    hotspot.scale.set(1.5, 1.5, 1.5);
+                });
+                
+                ui.updateBloomBotStatus('🌐 35th parallel trail activated! Click hotspots to explore.');
+            },
+            
+            hide35pOverlay() {
+                this.mode = 'normal';
+                
+                // Remove parallel line
+                const line = this.scene.children.find(child => 
+                    child.userData && child.userData.type === '35p_line'
+                );
+                if (line) {
+                    this.scene.remove(line);
+                }
+                
+                // Reset hotspots
+                this.hotspots.forEach(hotspot => {
+                    hotspot.material.emissiveIntensity = 0.3;
+                    hotspot.scale.set(1, 1, 1);
+                });
+                
+                ui.updateBloomBotStatus('🤖 Professor BloomBot Ready');
+            },
+            
+            startTour() {
+                this.mode = 'tour';
+                this.currentTourStep = 0;
+                this.controls.autoRotate = false;
+                
+                const firstStep = demoTourSteps[0];
+                ui.showLessonPanel(firstStep);
+                this.animateToPosition(firstStep.camera);
+                
+                ui.updateBloomBotStatus('🎥 Starting guided tour of orchid hotspots!');
+            },
+            
+            advanceTour() {
+                this.currentTourStep++;
+                
+                if (this.currentTourStep < demoTourSteps.length) {
+                    const step = demoTourSteps[this.currentTourStep];
+                    ui.showLessonPanel(step);
+                    this.animateToPosition(step.camera);
+                } else {
+                    this.endTour();
+                }
+            },
+            
+            endTour() {
+                this.mode = 'normal';
+                this.controls.autoRotate = true;
+                ui.hideLessonPanel();
+                ui.updateBloomBotStatus('🎉 Tour complete! Explore freely or start another adventure.');
+            },
+            
+            animateToPosition(targetCamera) {
+                // Animate camera to target position (simplified)
+                const startPosition = this.camera.position.clone();
+                const targetPosition = new THREE.Vector3(
+                    targetCamera.lng * 0.02,
+                    targetCamera.lat * 0.02,
+                    targetCamera.zoom
+                );
+                
+                // Simple lerp animation (in real implementation, use Tween.js)
+                let progress = 0;
+                const animate = () => {
+                    progress += 0.02;
+                    if (progress <= 1) {
+                        this.camera.position.lerpVectors(startPosition, targetPosition, progress);
+                        requestAnimationFrame(animate);
+                    }
+                };
+                animate();
+            },
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+                
+                // Update hotspot positions for 2D overlay
+                this.updateHotspotMarkers();
+            },
+            
+            updateHotspotMarkers() {
+                // Convert 3D hotspot positions to 2D screen coordinates
+                // This would be used for HTML overlay markers
+                this.hotspots.forEach((hotspot, index) => {
+                    const vector = hotspot.position.clone();
+                    vector.project(this.camera);
+                    
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                    
+                    // Update HTML marker position if exists
+                    const htmlMarker = document.getElementById(`hotspot-marker-${index}`);
+                    if (htmlMarker) {
+                        htmlMarker.style.left = `${x}px`;
+                        htmlMarker.style.top = `${y}px`;
+                        htmlMarker.style.display = vector.z > 0 ? 'block' : 'none';
+                    }
+                });
+            }
+        };
+        
+        // UI Controller
+        const ui = {
+            toggle_35p_on() {
+                const btn = document.getElementById('btn-35p-trail');
+                
+                if (globeSystem.mode === '35p_overlay') {
+                    globeSystem.hide35pOverlay();
+                    btn.classList.remove('active');
+                    btn.textContent = '🌐 35th Parallel Trail';
+                } else {
+                    globeSystem.show35pOverlay();
+                    btn.classList.add('active');
+                    btn.textContent = '🌐 Hide Trail';
+                }
+            },
+            
+            run_demo_35p() {
+                globeSystem.startTour();
+            },
+            
+            open_list_view(type) {
+                if (type === 'orchids_35N') {
+                    this.showSpeciesList();
+                }
+            },
+            
+            run_collection_scan_35N() {
+                this.showCollectionScan();
+            },
+            
+            show_instructions() {
+                document.getElementById('instructions-modal').style.display = 'flex';
+            },
+            
+            close_instructions() {
+                document.getElementById('instructions-modal').style.display = 'none';
+            },
+            
+            showLessonPanel(step) {
+                const panel = document.getElementById('lesson-panel');
+                const title = document.getElementById('lesson-title');
+                const description = document.getElementById('lesson-description');
+                const progress = document.getElementById('progress-indicator');
+                
+                title.textContent = step.title;
+                description.textContent = step.description;
+                progress.textContent = `Step ${step.step} of 7`;
+                
+                panel.classList.add('active');
+            },
+            
+            hideLessonPanel() {
+                document.getElementById('lesson-panel').classList.remove('active');
+            },
+            
+            advance_tour() {
+                globeSystem.advanceTour();
+            },
+            
+            exit_tour() {
+                globeSystem.endTour();
+            },
+            
+            showSpeciesList() {
+                // Sample species data
+                const species = [
+                    {
+                        scientific: 'Piperia elegans',
+                        common: 'Elegant Rein Orchid',
+                        location: 'California Sierra Foothills',
+                        habitat: 'Oak woodlands and chaparral'
+                    },
+                    {
+                        scientific: 'Ophrys kotschyi',
+                        common: 'Cyprus Bee Orchid',
+                        location: 'Cyprus Mediterranean Hills',
+                        habitat: 'Rocky hillsides and pine forests'
+                    },
+                    {
+                        scientific: 'Cypripedium japonicum',
+                        common: 'Japanese Lady Slipper',
+                        location: 'Japan Honshu Forests',
+                        habitat: 'Deciduous forests with rich soil'
+                    }
+                ];
+                
+                const content = document.getElementById('species-list-content');
+                content.innerHTML = species.map(sp => `
+                    <div class="species-item">
+                        <h5 style="color: #f39c12;">${sp.scientific}</h5>
+                        <p style="color: #bdc3c7; margin: 5px 0;">${sp.common}</p>
+                        <p style="color: #ecf0f1; font-size: 0.9rem;">📍 ${sp.location}</p>
+                        <p style="color: #95a5a6; font-size: 0.8rem;">🏡 ${sp.habitat}</p>
+                    </div>
+                `).join('');
+                
+                document.getElementById('species-list-modal').style.display = 'flex';
+            },
+            
+            close_species_list() {
+                document.getElementById('species-list-modal').style.display = 'none';
+            },
+            
+            showCollectionScan() {
+                const content = document.getElementById('collection-scan-content');
+                content.innerHTML = `
+                    <div class="scan-result">
+                        <h5 style="color: #27ae60;">🎉 Collection Analysis Complete!</h5>
+                        <p>Scanned: <strong>3 orchid records</strong></p>
+                        <p>Direct matches: <strong>1 species</strong></p>
+                        <p>Related genera: <strong>2 species</strong></p>
+                    </div>
+                    <div style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+                        <h6 style="color: #3498db;">🔬 Scientific Insights</h6>
+                        <p style="color: #ecf0f1; font-size: 0.9rem;">
+                            Your collection shows interesting connections to 35°N orchid diversity! 
+                            The genera in your collection have close relatives adapted to similar 
+                            latitude climates worldwide.
+                        </p>
+                    </div>
+                `;
+                
+                document.getElementById('collection-scan-modal').style.display = 'flex';
+            },
+            
+            close_collection_scan() {
+                document.getElementById('collection-scan-modal').style.display = 'none';
+            },
+            
+            updateBloomBotStatus(message) {
+                document.getElementById('bloombot-status').textContent = message;
+            },
+            
+            exitAll() {
+                this.close_instructions();
+                this.close_species_list();
+                this.close_collection_scan();
+                this.close_orchid_card();
+                
+                if (globeSystem.mode === 'tour') {
+                    globeSystem.endTour();
+                }
+            },
+            
+            close_orchid_card() {
+                document.getElementById('orchid-card').classList.remove('active');
+            }
+        };
+        
+        // Demo tour data
+        const demoTourSteps = [
+            {
+                step: 1,
+                title: 'Welcome to the 35th Parallel Orchid Trail',
+                description: 'The 35th parallel runs through amazing orchid habitats worldwide. Let\'s explore!',
+                camera: { lat: 35.0, lng: 0.0, zoom: 3 }
+            },
+            {
+                step: 2,
+                title: 'California Sierra Foothills',
+                description: 'Our first stop: California\'s native orchids in oak woodlands and chaparral.',
+                camera: { lat: 35.4, lng: -119.2, zoom: 2 }
+            },
+            {
+                step: 3,
+                title: 'Mediterranean Cyprus',
+                description: 'Cyprus hosts endemic bee orchids that evolved unique pollination strategies.',
+                camera: { lat: 35.1, lng: 33.4, zoom: 2 }
+            },
+            {
+                step: 4,
+                title: 'Japan\'s Temperate Forests',
+                description: 'Honshu forests shelter ancient lady slippers that take decades to mature.',
+                camera: { lat: 35.7, lng: 139.7, zoom: 2 }
+            },
+            {
+                step: 5,
+                title: 'Appalachian Mountains',
+                description: 'Tennessee\'s forests hide some of North America\'s most spectacular orchids.',
+                camera: { lat: 35.5, lng: -84.3, zoom: 2 }
+            },
+            {
+                step: 6,
+                title: 'Atlas Mountain Springs',
+                description: 'Morocco\'s high altitude meadows burst with colorful marsh orchids.',
+                camera: { lat: 35.2, lng: -5.0, zoom: 2 }
+            },
+            {
+                step: 7,
+                title: 'Complete the Journey',
+                description: 'You\'ve explored orchid diversity across the 35th parallel! Click any hotspot to learn more.',
+                camera: { lat: 35.0, lng: 60.0, zoom: 3 }
+            }
+        ];
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            globeSystem.init();
+            console.log('🌍 35th Parallel Globe ready! Use toolbar to explore orchid hotspots.');
+        });
+    </script>
+</body>
+</html>

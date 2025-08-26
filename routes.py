@@ -73,6 +73,102 @@ app.register_blueprint(globe_weather_bp)
 from orchid_mycorrhizal_routes import mycorrhizal_map_bp
 app.register_blueprint(mycorrhizal_map_bp)
 
+# Register 35th Parallel Globe System
+from parallel_35_globe_system import Parallel35GlobeSystem, ProfessorBloomBot
+
+# Initialize globe system and BloomBot
+globe_system = Parallel35GlobeSystem()
+bloom_bot = ProfessorBloomBot(globe_system)
+
+@app.route('/35th-parallel-globe')
+def parallel_35_globe():
+    """35th Parallel Lesson Mode Globe"""
+    return render_template('parallel_35_globe.html')
+
+@app.route('/api/35p/hotspots')
+def get_35p_hotspots():
+    """API endpoint for hotspot data"""
+    try:
+        hotspots = globe_system.get_all_hotspots()
+        return jsonify({
+            'status': 'success',
+            'hotspots': hotspots
+        })
+    except Exception as e:
+        logging.error(f"Error getting hotspots: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/35p/tour/start', methods=['POST'])
+def start_35p_tour():
+    """Start guided demo tour"""
+    try:
+        tour_data = globe_system.start_demo_tour()
+        return jsonify({
+            'status': 'success',
+            'tour_data': tour_data
+        })
+    except Exception as e:
+        logging.error(f"Error starting tour: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/35p/tour/advance', methods=['POST'])
+def advance_35p_tour():
+    """Advance to next tour step"""
+    try:
+        step_data = globe_system.advance_tour_step()
+        return jsonify({
+            'status': 'success',
+            'step_data': step_data
+        })
+    except Exception as e:
+        logging.error(f"Error advancing tour: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/35p/toggle', methods=['POST'])
+def toggle_35p_overlay():
+    """Toggle 35th parallel overlay"""
+    try:
+        result = globe_system.toggle_35p_mode()
+        return jsonify({
+            'status': 'success',
+            'result': result
+        })
+    except Exception as e:
+        logging.error(f"Error toggling overlay: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/35p/orchids')
+def get_35p_orchids():
+    """Get list of orchids along 35th parallel"""
+    try:
+        orchid_list = globe_system.get_orchids_35n_list()
+        return jsonify({
+            'status': 'success',
+            'orchids': orchid_list,
+            'count': len(orchid_list)
+        })
+    except Exception as e:
+        logging.error(f"Error getting orchid list: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/35p/bloombot', methods=['POST'])
+def process_bloombot_intent():
+    """Process Professor BloomBot intent"""
+    try:
+        data = request.get_json()
+        intent_name = data.get('intent', '')
+        parameters = data.get('parameters', {})
+        
+        result = bloom_bot.process_intent(intent_name, parameters)
+        
+        return jsonify({
+            'status': 'success',
+            'result': result
+        })
+    except Exception as e:
+        logging.error(f"Error processing BloomBot intent: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
     """Test Gary Yong Gee scraper with limited scope"""

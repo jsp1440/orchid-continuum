@@ -1,0 +1,388 @@
+1.2 35th Parallel Overlay
+
+Implement ui.toggle_35p_on() and ui.toggle_35p_off():
+    •    Draw a glowing latitude line at 35°N.
+    •    Activate hotspot pins at regions listed in §4 seed data.
+    •    Open the lesson side panel (see 1.3).
+
+1.3 Lesson Side Panel (tabs)
+
+Create a right-side panel ui.open_sidepanel("35p_lesson") with four tabs:
+    •    Intro
+“A latitude line that links continents—and orchids. At ~35°N, daylength and seasons shape habitats from California fog belts to Mediterranean scrub, Japanese forests, and Australian woodlands.”
+    •    Regions
+“Tap a region to see species cards.” Buttons: California • Mediterranean • Japan • China • Australia
+    •    Activity
+“Check your orchids for 35°N ancestry: upload your list or scan your linked collection.”
+    •    Demo
+“Sit back for a 5-minute guided tour of orchids along the 35th parallel.”
+
+1.4 Toasts (short confirmations)
+    •    “35th Parallel mode enabled.”
+    •    “Demo Tour started—tap to pause.”
+    •    “Scan complete: 3 orchids from ~35°N.”
+
+⸻
+
+2) SPECIES CARDS (UI COMPONENT)
+
+Create a reusable “Orchid Hotspot Card” component with this structure.  
+
+Image (top) • Location • Scientific (italic) • Common name
+Appearance • Habitat • Pollinators • Adaptations • Status
+Fun fact (highlight box)
+Icon buttons: [🌱 Symbiosis] [🐝 Pollinator] [⚠ Status] [📍 Map Pin]
+
+Populate from the seed JSON in §4. Clicking 📍 recenters globe on the card’s coordinates.
+
+⸻
+
+3) DEMO TOUR (AUTOPLAY)
+
+Implement ui.run_demo_35p() using this storyboard timing (approx 20s per stop; total ~5m):
+
+Order: Intro → North Carolina (Platanthera ciliaris) → Tennessee/Arkansas (P. integrilabia) → Santa Barbara (Cypripedium californicum) → Central CA (Piperia elongata) → San Diego (Calochortus invenustus) → Mediterranean (Ophrys apifera, Orchis sancta, Orchis italica) → Japan (Cymbidium goeringii, Neofinetia falcata) → China (Dendrobium officinale) → Australia NSW (Pterostylis curta, Diuris sulphurea) → Victoria (Phalaenopsis amabilis) → Closing zoom-out.
+
+Show the narration captions we already drafted (keep to 1–2 lines visible per stop).
+
+⸻
+
+4) DATA: SEED JSON (CARDS + HOTSPOTS + LAT BANDS)
+
+Create/extend a data file (e.g., data/35p_species.json) and load it at startup:
+
+{
+  "lat_band_name": "35N",
+  "lat_min": 30,
+  "lat_max": 40,
+  "regions": ["california", "mediterranean", "japan", "china", "australia"],
+  "species": [
+    {
+      "card_id": "platanthera_ciliaris",
+      "genus": "Platanthera",
+      "species": "ciliaris",
+      "common_name": "Yellow Fringed Orchid",
+      "region": "north_america",
+      "coords": [34.9, -77.5],
+      "appearance": "Bright orange-yellow blooms with fringed petals",
+      "habitat": "Moist sandy wetlands",
+      "pollinators": "Butterflies",
+      "adaptations": "Fringed petals expand landing area",
+      "status": "Declining due to wetland loss",
+      "fun_fact": "Fiery color attracts long-tongued swallowtails.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 0,
+      "altitude_m_max": 300
+    },
+    {
+      "card_id": "platanthera_integrilabia",
+      "genus": "Platanthera",
+      "species": "integrilabia",
+      "common_name": "White Fringeless Orchid",
+      "region": "north_america",
+      "coords": [35.6, -86.6],
+      "appearance": "Small, delicate white flowers",
+      "habitat": "Seasonally flooded wetlands",
+      "pollinators": "Nocturnal moths",
+      "adaptations": "Tolerates fluctuating water levels",
+      "status": "Federally threatened",
+      "fun_fact": "Rediscovered after being thought extinct.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 150,
+      "altitude_m_max": 400
+    },
+    {
+      "card_id": "cypripedium_californicum",
+      "genus": "Cypripedium",
+      "species": "californicum",
+      "common_name": "California Lady’s Slipper",
+      "region": "california",
+      "coords": [34.4, -119.7],
+      "appearance": "White slipper blooms with green tinge",
+      "habitat": "Cool, moist riparian woodlands",
+      "pollinators": "Bees",
+      "adaptations": "Mycorrhizal nutrient uptake",
+      "status": "Rare; sensitive to disturbance",
+      "fun_fact": "California’s only native lady’s slipper orchid.",
+      "native_lat_min": 34,
+      "native_lat_max": 36,
+      "altitude_m_min": 100,
+      "altitude_m_max": 900
+    },
+    {
+      "card_id": "piperia_elongata",
+      "genus": "Piperia",
+      "species": "elongata",
+      "common_name": "Rein Orchid",
+      "region": "california",
+      "coords": [35.4, -120.8],
+      "appearance": "Tall spikes of greenish-white flowers",
+      "habitat": "Shaded coastal forests",
+      "pollinators": "Night-flying moths",
+      "adaptations": "Nocturnal fragrance",
+      "status": "Locally uncommon",
+      "fun_fact": "Name means “long,” for its tall spikes.",
+      "native_lat_min": 34,
+      "native_lat_max": 37,
+      "altitude_m_min": 0,
+      "altitude_m_max": 800
+    },
+    {
+      "card_id": "calochortus_invenustus",
+      "genus": "Calochortus",
+      "species": "invenustus",
+      "common_name": "San Diego Fairy Lantern",
+      "region": "california",
+      "coords": [32.9, -117.2],
+      "appearance": "Bell-shaped pink-white flowers",
+      "habitat": "Sandy, well-drained soils",
+      "pollinators": "Bees & small insects",
+      "adaptations": "Tolerant of drier soils",
+      "status": "Endemic; urban pressure",
+      "fun_fact": "Often grouped in orchid habitat studies.",
+      "native_lat_min": 32,
+      "native_lat_max": 35,
+      "altitude_m_min": 0,
+      "altitude_m_max": 400
+    },
+    {
+      "card_id": "ophrys_apifera",
+      "genus": "Ophrys",
+      "species": "apifera",
+      "common_name": "Bee Orchid",
+      "region": "mediterranean",
+      "coords": [37.9, 23.7],
+      "appearance": "Mimics female bees",
+      "habitat": "Rocky slopes, scrub",
+      "pollinators": "Solitary bees (Eucera)",
+      "adaptations": "Visual + pheromone mimicry; self-pollinates if needed",
+      "status": "Local declines",
+      "fun_fact": "In some regions, often self-pollinates.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 0,
+      "altitude_m_max": 1000
+    },
+    {
+      "card_id": "orchis_sancta",
+      "genus": "Orchis",
+      "species": "sancta",
+      "common_name": "Holy Orchid",
+      "region": "mediterranean",
+      "coords": [36.8, 27.1],
+      "appearance": "Purple with dark veining",
+      "habitat": "Sunlit rocky habitats",
+      "pollinators": "Bees & wasps",
+      "adaptations": "Strong fragrance",
+      "status": "Rare; habitat-limited",
+      "fun_fact": "Name reflects sacred associations.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 0,
+      "altitude_m_max": 800
+    },
+    {
+      "card_id": "orchis_italica",
+      "genus": "Orchis",
+      "species": "italica",
+      "common_name": "Naked Man Orchid",
+      "region": "mediterranean",
+      "coords": [38.7, -9.1],
+      "appearance": "Flowers like tiny human figures",
+      "habitat": "Open fields, scrublands",
+      "pollinators": "Generalist bees & insects",
+      "adaptations": "Visual mimicry",
+      "status": "Regionally stable",
+      "fun_fact": "Strong presence in S. Italy.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 0,
+      "altitude_m_max": 900
+    },
+    {
+      "card_id": "cymbidium_goeringii",
+      "genus": "Cymbidium",
+      "species": "goeringii",
+      "common_name": "Japanese Terrestrial Orchid",
+      "region": "japan",
+      "coords": [35.0, 135.8],
+      "appearance": "Elegant green-yellow flowers",
+      "habitat": "Humid, shaded forests",
+      "pollinators": "Bees & flies",
+      "adaptations": "Strong mycorrhizal reliance",
+      "status": "Habitat dependent",
+      "fun_fact": "Cherished for refinement.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 100,
+      "altitude_m_max": 1200
+    },
+    {
+      "card_id": "neofinetia_falcata",
+      "genus": "Neofinetia",
+      "species": "falcata",
+      "common_name": "Wind Orchid (Fūkiran)",
+      "region": "japan",
+      "coords": [34.7, 133.9],
+      "appearance": "White, spurred, fragrant at night",
+      "habitat": "Lowland epiphytic forests",
+      "pollinators": "Night moths",
+      "adaptations": "Powerful nocturnal fragrance",
+      "status": "Cultivated widely",
+      "fun_fact": "Once prized by samurai.",
+      "native_lat_min": 30,
+      "native_lat_max": 40,
+      "altitude_m_min": 0,
+      "altitude_m_max": 600
+    },
+    {
+      "card_id": "dendrobium_officinale",
+      "genus": "Dendrobium",
+      "species": "officinale",
+      "common_name": "Medicinal Dendrobium",
+      "region": "china",
+      "coords": [30.7, 119.3],
+      "appearance": "Small white-yellowish flowers",
+      "habitat": "Humid forests; epiphytic",
+      "pollinators": "Bees & flies",
+      "adaptations": "Medicinal compounds; fungi reliance",
+      "status": "Vulnerable to over-harvesting",
+      "fun_fact": "Called the ‘orchid of longevity’.",
+      "native_lat_min": 28,
+      "native_lat_max": 31,
+      "altitude_m_min": 200,
+      "altitude_m_max": 1500
+    },
+    {
+      "card_id": "pterostylis_curta",
+      "genus": "Pterostylis",
+      "species": "curta",
+      "common_name": "Blunt Greenhood",
+      "region": "australia",
+      "coords": [-34.7, 150.7],
+      "appearance": "Green-white translucent hood",
+      "habitat": "Shaded woodlands",
+      "pollinators": "Fungus gnats",
+      "adaptations": "Trap-pollination",
+      "status": "Stable but fragile",
+      "fun_fact": "One-way ‘gate’ for pollinators.",
+      "native_lat_min": -37,
+      "native_lat_max": -33,
+      "altitude_m_min": 50,
+      "altitude_m_max": 900
+    },
+    {
+      "card_id": "diuris_sulphurea",
+      "genus": "Diuris",
+      "species": "sulphurea",
+      "common_name": "Tiger Orchid",
+      "region": "australia",
+      "coords": [-35.2, 149.1],
+      "appearance": "Bright yellow with brown spots",
+      "habitat": "Grasslands & open woodlands",
+      "pollinators": "Native bees",
+      "adaptations": "Nectar mimicry",
+      "status": "Threatened by clearing",
+      "fun_fact": "‘Donkey Orchid’ for ear-like petals.",
+      "native_lat_min": -38,
+      "native_lat_max": -33,
+      "altitude_m_min": 100,
+      "altitude_m_max": 1000
+    },
+    {
+      "card_id": "phalaenopsis_amabilis",
+      "genus": "Phalaenopsis",
+      "species": "amabilis",
+      "common_name": "Moth Orchid",
+      "region": "australia",
+      "coords": [-38.1, 145.1],
+      "appearance": "Large white butterfly-like blooms",
+      "habitat": "Coastal forests, shaded edges",
+      "pollinators": "Bees & moths",
+      "adaptations": "Showy blossoms attract diverse pollinators",
+      "status": "Wild forms rare",
+      "fun_fact": "Ancestor of many houseplant hybrids.",
+      "native_lat_min": -39,
+      "native_lat_max": -34,
+      "altitude_m_min": 0,
+      "altitude_m_max": 600
+    }
+  ]
+}
+
+Note: South-hemisphere latitudes are negative; we include them because users often ask for “35th parallel” analogs in the south (optional to show). You can filter to 35°N only if desired.
+
+⸻
+
+5) DATABASE: FIELDS & QUERIES
+
+5.1 Add/ensure fields on orchids table
+    •    native_lat_min FLOAT
+    •    native_lat_max FLOAT
+    •    native_regions TEXT/JSON (e.g., [“mediterranean”])
+    •    altitude_m_min INT, altitude_m_max INT
+    •    pollinator_notes TEXT
+    •    card_id STRING (links to UI card)
+
+5.2 Dynamic list query (~35°N with buffer)
+
+SELECT genus, species, common_name, native_regions, altitude_m_min, altitude_m_max,
+       native_lat_min, native_lat_max, card_id
+FROM orchids
+WHERE (native_lat_min <= 35 AND native_lat_max >= 35)
+   OR (native_lat_min BETWEEN 30 AND 40)
+   OR (native_lat_max BETWEEN 30 AND 40)
+ORDER BY native_regions, genus, species;
+
+
+SELECT c.genus, c.species, o.native_regions, o.native_lat_min, o.native_lat_max, o.card_id
+FROM user_collection c
+JOIN orchids o
+  ON LOWER(c.genus)=LOWER(o.genus) AND LOWER(c.species)=LOWER(o.species)
+WHERE c.user_id = :user_id
+  AND (
+       (o.native_lat_min <= 35 AND o.native_lat_max >= 35) OR
+       (o.native_lat_min BETWEEN 30 AND 40) OR
+       (o.native_lat_max BETWEEN 30 AND 40)
+  );
+
+
+6) PROFESSOR BLOOMBOT (INTENTS & ACTIONS)
+
+Wire these intents to UI/DB actions:
+    •    lesson.35p.open → ui.toggle_35p_on(), ui.open_sidepanel("35p_lesson")
+Reply: “35th Parallel highlighted. Want the demo tour or to browse hotspots?”
+    •    lesson.35p.demo → ui.run_demo_35p()
+Reply: “Rolling! I’ll guide you eastward across the 35th Parallel—watch for species cards.”
+    •    lesson.35p.list_all → run query §5.2 + ui.open_list_view("orchids_35N")
+Reply: “Here’s a live list of orchids near ~35°N. Filter by region and open any species card.”
+    •    lesson.35p.my_collection → run query §5.3
+If linked: “You have N orchids from ~35°N: … Open on the map?”
+Else: “Upload or link your collection to scan for 35°N natives.”
+    •    lesson.35p.region(region) → ui.open_region_hotspots(region)
+Reply: “Here are {Region} hotspots along the 35th. Which card should I open?”
+    •    lesson.35p.species_card(card_id) → ui.open_species_card(card_id)
+Reply: “Opening the card for Genus species.”
+    •    lesson.35p.help → reply with quick tips:
+“Try: ‘Run the demo tour’ • ‘List orchids from the 35th’ • ‘Check my collection’ • ‘Show Japan at 35°N’ • ‘Open the Bee Orchid card’.”
+
+⸻
+
+7) ACCEPTANCE CRITERIA (TEST THIS)
+    •    Toggling 🌐 35th Parallel Trail shows a glowing 35°N line and enables hotspots.
+    •    Clicking region chips shows correct hotspots and opens card component with seed content.
+    •    Demo Tour rotates through all 14 stops with captions; “pause/stop” works.
+    •    List 35°N Orchids opens a table populated by DB query; clicking a row opens its card.
+    •    Check My Collection returns matches (or prompts to upload).
+    •    BloomBot phrases (“Explore the 35th parallel”, “Run the demo tour”, “List orchids from 35°N”, “Show Japan”) trigger the correct UI/DB actions.
+    •    Nothing existing is removed or broken.
+
+⸻
+
+8) NOTES
+    •    Keep performance smooth on mobile: lazy-load images in cards.
+    •    Use existing design system (colors/typography), minor additions ok.
+    •    If any species lacks an image, show a neutral illustration placeholder.
+    •    Keep all new code in modular files: lesson_35p/ folder recommended.
