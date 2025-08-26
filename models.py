@@ -5,7 +5,99 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 import enum
+import json
 
+# Gaming and User Management Models - Using unified User model below
+
+class MahjongGame(db.Model):
+    """Mahjong game sessions"""
+    __tablename__ = 'mahjong_games'
+    
+    id = db.Column(Integer, primary_key=True)
+    room_code = db.Column(String(6), unique=True, nullable=False)
+    host_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    max_players = db.Column(Integer, default=4)
+    current_players = db.Column(Integer, default=1)
+    game_state = db.Column(String, default='waiting')  # waiting, playing, finished
+    winner_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
+    game_duration = db.Column(Integer, default=0)  # seconds
+    created_at = db.Column(DateTime, default=datetime.now)
+    finished_at = db.Column(DateTime, nullable=True)
+    
+    # Game configuration
+    tile_set = db.Column(Text, default='{"layout": "classic", "theme": "orchid"}')
+    
+    # Use direct foreign key references since User.id is String
+    # host = db.relationship('User', foreign_keys=[host_user_id], backref='hosted_games')
+    # winner = db.relationship('User', foreign_keys=[winner_user_id], backref='won_games')
+
+class MahjongPlayer(db.Model):
+    """Players in Mahjong games"""
+    __tablename__ = 'mahjong_players'
+    
+    id = db.Column(Integer, primary_key=True)
+    game_id = db.Column(Integer, db.ForeignKey('mahjong_games.id'), nullable=False)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    player_position = db.Column(Integer, nullable=False)  # 1-4
+    score = db.Column(Integer, default=0)
+    tiles_matched = db.Column(Integer, default=0)
+    joined_at = db.Column(DateTime, default=datetime.now)
+    is_active = db.Column(Boolean, default=True)
+    
+    game = db.relationship('MahjongGame', backref='players')
+    user = db.relationship('User', backref='mahjong_sessions')
+
+class GameChatMessage(db.Model):
+    """Chat messages in game rooms"""
+    __tablename__ = 'game_chat_messages'
+    
+    id = db.Column(Integer, primary_key=True)
+    game_id = db.Column(Integer, db.ForeignKey('mahjong_games.id'), nullable=False)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(Text, nullable=False)
+    message_type = db.Column(String, default='chat')  # chat, system, emote
+    timestamp = db.Column(DateTime, default=datetime.now)
+    
+    game = db.relationship('MahjongGame', backref='chat_messages')
+    user = db.relationship('User', backref='chat_messages')
+
+class Badge(db.Model):
+    """Achievement badges for gamification"""
+    __tablename__ = 'badges'
+    
+    id = db.Column(String, primary_key=True)
+    name = db.Column(String, nullable=False)
+    description = db.Column(Text, nullable=False)
+    icon = db.Column(String, nullable=False)  # emoji or icon class
+    tier = db.Column(String, nullable=False)  # bronze, silver, gold, platinum
+    points_required = db.Column(Integer, default=0)
+    category = db.Column(String, nullable=False)  # gaming, exploration, social, learning
+    rarity = db.Column(String, default='common')  # common, rare, epic, legendary
+    created_at = db.Column(DateTime, default=datetime.now)
+
+class UserActivity(db.Model):
+    """Track user activities for gamification"""
+    __tablename__ = 'user_activities'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    activity_type = db.Column(String, nullable=False)  # page_visit, game_play, search, etc.
+    points_earned = db.Column(Integer, default=0)
+    details = db.Column(Text, nullable=True)  # JSON string with activity details
+    timestamp = db.Column(DateTime, default=datetime.now)
+    
+    user = db.relationship('User', backref='activities')
+
+class OAuth(db.Model):
+    """OAuth tokens for authentication"""
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'))
+    browser_session_key = db.Column(String, nullable=False)
+    provider = db.Column(String, nullable=False)
+    token = db.Column(Text, nullable=True)
+    user = db.relationship('User')
+
+# Orchid Database Models
 class OrchidTaxonomy(db.Model):
     """Master taxonomy table for orchid classification"""
     id = db.Column(Integer, primary_key=True)
@@ -197,16 +289,18 @@ class WidgetConfig(db.Model):
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class User(UserMixin, db.Model):
-    """User management system"""
-    id = db.Column(Integer, primary_key=True)
-    user_id = db.Column(String(20), unique=True, nullable=False)  # Distinctive user ID
-    email = db.Column(String(120), unique=True, nullable=False, index=True)
+    """Enhanced user management system with gamification"""
+    __tablename__ = 'users'
+    id = db.Column(String, primary_key=True)  # String ID for compatibility
+    user_id = db.Column(String(20), unique=True, nullable=True)  # Distinctive user ID
+    email = db.Column(String(120), unique=True, nullable=True, index=True)
     password_hash = db.Column(String(256))
     is_admin = db.Column(Boolean, default=False)
     
     # User profile
     first_name = db.Column(String(100))
     last_name = db.Column(String(100))
+    profile_image_url = db.Column(String(500), nullable=True)
     organization = db.Column(String(200))
     country = db.Column(String(100))
     orchid_interests = db.Column(Text, nullable=True)  # User's orchid interests/specialties
@@ -221,13 +315,87 @@ class User(UserMixin, db.Model):
     account_active = db.Column(Boolean, default=True)
     email_verified = db.Column(Boolean, default=False)
     
+    # Gamification fields
+    total_points = db.Column(Integer, default=0)
+    website_visits = db.Column(Integer, default=0)
+    last_visit = db.Column(DateTime, default=datetime.utcnow)
+    current_badge_tier = db.Column(String, default='Seedling')
+    badges_earned = db.Column(Text, default='[]')  # JSON string of badge IDs
+    
+    # Mahjong game stats
+    mahjong_games_played = db.Column(Integer, default=0)
+    mahjong_games_won = db.Column(Integer, default=0)
+    mahjong_best_time = db.Column(Integer, default=0)  # seconds
+    mahjong_total_score = db.Column(Integer, default=0)
+    
     # Timestamps
     created_at = db.Column(DateTime, default=datetime.utcnow)
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    uploads = db.relationship('UserUpload', backref='user', lazy=True)
-    orchid_records = db.relationship('OrchidRecord', backref='owner', lazy=True)
+    # Note: Relationships temporarily removed to fix foreign key conflicts
+    
+    def get_display_name(self):
+        """Return first name + last initial for leaderboards"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name[0]}."
+        elif self.first_name:
+            return self.first_name
+        else:
+            return "Anonymous Player"
+    
+    def get_badges(self):
+        """Get list of earned badges"""
+        try:
+            return json.loads(self.badges_earned or '[]')
+        except:
+            return []
+    
+    def add_badge(self, badge_id):
+        """Add a new badge to user's collection"""
+        badges = self.get_badges()
+        if badge_id not in badges:
+            badges.append(badge_id)
+            self.badges_earned = json.dumps(badges)
+            db.session.commit()
+    
+    def add_points(self, points, activity_type='general'):
+        """Add points and check for badge upgrades"""
+        self.total_points += points
+        
+        # Update badge tier based on total points
+        new_tier = self._calculate_badge_tier(self.total_points)
+        if new_tier != self.current_badge_tier:
+            self.current_badge_tier = new_tier
+            self.add_badge(f"tier_{new_tier.lower().replace(' ', '_')}")
+        
+        # Activity-specific badges
+        if activity_type == 'mahjong_win':
+            self.mahjong_games_won += 1
+            if self.mahjong_games_won == 1:
+                self.add_badge('first_mahjong_win')
+            elif self.mahjong_games_won == 10:
+                self.add_badge('mahjong_apprentice')
+            elif self.mahjong_games_won == 50:
+                self.add_badge('mahjong_master')
+        
+        db.session.commit()
+    
+    def _calculate_badge_tier(self, points):
+        """Calculate badge tier based on total points"""
+        if points >= 10000:
+            return 'Orchid Master'
+        elif points >= 5000:
+            return 'Expert Grower'
+        elif points >= 2000:
+            return 'Experienced Cultivator'
+        elif points >= 1000:
+            return 'Orchid Enthusiast'
+        elif points >= 500:
+            return 'Growing Hobbyist'
+        elif points >= 100:
+            return 'Budding Gardener'
+        else:
+            return 'Seedling'
     judgings = db.relationship('JudgingAnalysis', backref='user', lazy=True)
     certificates = db.relationship('Certificate', backref='user', lazy=True)
     locations = db.relationship('UserLocation', backref='user', lazy=True)
