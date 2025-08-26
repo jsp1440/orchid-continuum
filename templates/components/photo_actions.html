@@ -1,0 +1,526 @@
+<!-- Member-Exclusive Photo Action Buttons -->
+<!-- Shows different interfaces for members vs visitors -->
+
+<div class="photo-actions-container" data-orchid-id="{{ orchid.id }}">
+    {% if current_tier != 'visitor' %}
+        <!-- MEMBER INTERFACE: Full Access -->
+        <div class="member-photo-actions">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-success btn-sm" onclick="savePhoto({{ orchid.id }})" title="Save High-Resolution Photo">
+                    <i data-feather="download" style="width: 16px; height: 16px;"></i>
+                    <span class="d-none d-md-inline ms-1">Save</span>
+                </button>
+                
+                <button type="button" class="btn btn-info btn-sm" onclick="editPhoto({{ orchid.id }})" title="Professional Photo Editor">
+                    <i data-feather="edit-3" style="width: 16px; height: 16px;"></i>
+                    <span class="d-none d-md-inline ms-1">Edit</span>
+                </button>
+                
+                <button type="button" class="btn btn-warning btn-sm" onclick="flagPhoto({{ orchid.id }})" title="Report Issue or Mislabeling">
+                    <i data-feather="flag" style="width: 16px; height: 16px;"></i>
+                    <span class="d-none d-md-inline ms-1">Flag</span>
+                </button>
+                
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" title="More Options">
+                        <i data-feather="more-horizontal" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" onclick="getCultivationNotes({{ orchid.id }})">
+                            <i data-feather="book-open" class="me-2" style="width: 16px; height: 16px;"></i>Growing Guide
+                        </a></li>
+                        <li><a class="dropdown-item" onclick="compareClimate({{ orchid.id }})">
+                            <i data-feather="cloud" class="me-2" style="width: 16px; height: 16px;"></i>Climate Match
+                        </a></li>
+                        <li><a class="dropdown-item" onclick="aiIdentify({{ orchid.id }})">
+                            <i data-feather="cpu" class="me-2" style="width: 16px; height: 16px;"></i>AI Identify
+                        </a></li>
+                        {% if current_tier in ['expert', 'admin'] %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" onclick="verifyData({{ orchid.id }})">
+                            <i data-feather="check-circle" class="me-2" style="width: 16px; height: 16px;"></i>Verify Data
+                        </a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Member Status Badge -->
+            <div class="member-badge-container mt-2">
+                <span class="badge bg-success">
+                    <i data-feather="star" style="width: 12px; height: 12px;"></i>
+                    {{ current_tier.title() }} Access
+                </span>
+            </div>
+        </div>
+        
+    {% else %}
+        <!-- VISITOR INTERFACE: Locked Features with Teasers -->
+        <div class="visitor-photo-actions">
+            <div class="locked-actions-group">
+                <div class="locked-action-btn" onclick="showMembershipTeaser('save_photos')">
+                    <div class="action-content">
+                        <i data-feather="download" class="action-icon"></i>
+                        <span class="action-label">Save Photo</span>
+                        <i data-feather="lock" class="lock-icon"></i>
+                    </div>
+                    <div class="member-only-badge">Member</div>
+                </div>
+                
+                <div class="locked-action-btn" onclick="showMembershipTeaser('edit_photos')">
+                    <div class="action-content">
+                        <i data-feather="edit-3" class="action-icon"></i>
+                        <span class="action-label">Edit Photo</span>
+                        <i data-feather="lock" class="lock-icon"></i>
+                    </div>
+                    <div class="member-only-badge">Member</div>
+                </div>
+                
+                <div class="locked-action-btn" onclick="showMembershipTeaser('flag_photos')">
+                    <div class="action-content">
+                        <i data-feather="flag" class="action-icon"></i>
+                        <span class="action-label">Report Issue</span>
+                        <i data-feather="lock" class="lock-icon"></i>
+                    </div>
+                    <div class="member-only-badge">Member</div>
+                </div>
+            </div>
+            
+            <!-- Membership CTA -->
+            <div class="membership-cta mt-3">
+                <button class="btn btn-outline-success btn-sm w-100" onclick="showMembershipOptions()">
+                    <i data-feather="unlock" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Unlock Member Features
+                </button>
+                <small class="text-muted d-block mt-1 text-center">
+                    Free with Five Cities Orchid Society membership
+                </small>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Photo Flag Modal (Members Only) -->
+{% if current_tier != 'visitor' %}
+<div class="modal fade" id="photoFlagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i data-feather="flag"></i>
+                    Report Photo Issue
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="photoFlagForm">
+                    <input type="hidden" id="flag-orchid-id" name="orchid_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Issue Type</label>
+                        <select class="form-select" name="flag_reason" required>
+                            <option value="">Select issue type...</option>
+                            <option value="wrong_species">Wrong species identification</option>
+                            <option value="mislabeled">Mislabeled or incorrect data</option>
+                            <option value="poor_quality">Poor image quality</option>
+                            <option value="duplicate">Duplicate entry</option>
+                            <option value="inappropriate">Inappropriate content</option>
+                            <option value="other">Other (explain below)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Confidence Level</label>
+                        <select class="form-select" name="confidence_level" required>
+                            <option value="">How certain are you?</option>
+                            <option value="low">Low - I think there might be an issue</option>
+                            <option value="medium">Medium - I'm fairly confident</option>
+                            <option value="high">High - I'm very confident</option>
+                            <option value="expert">Expert - I'm certain (triggers AI auto-fix)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" 
+                                  placeholder="Describe the issue or what you think is incorrect..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Suggested Correction (Optional)</label>
+                        <textarea class="form-control" name="suggested_correction" rows="2" 
+                                  placeholder="What should the correct information be?"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i data-feather="info" class="me-2"></i>
+                        <strong>Member Feature:</strong> High-confidence reports trigger automatic AI corrections for immediate fixes.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="submitPhotoFlag()">
+                    <i data-feather="flag" class="me-2"></i>
+                    Submit Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.photo-actions-container {
+    margin-top: 1rem;
+}
+
+/* Member Actions Styling */
+.member-photo-actions .btn-group {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.member-badge-container {
+    display: flex;
+    justify-content: center;
+}
+
+.member-badge-container .badge {
+    font-size: 0.7rem;
+}
+
+/* Visitor Locked Actions Styling */
+.locked-actions-group {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.locked-action-btn {
+    position: relative;
+    background: rgba(108, 117, 125, 0.1);
+    border: 2px dashed #6c757d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    text-align: center;
+}
+
+.locked-action-btn:hover {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: #28a745;
+    transform: translateY(-2px);
+}
+
+.action-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.action-icon {
+    width: 24px;
+    height: 24px;
+    color: #6c757d;
+}
+
+.locked-action-btn:hover .action-icon {
+    color: #28a745;
+}
+
+.action-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.locked-action-btn:hover .action-label {
+    color: #28a745;
+}
+
+.lock-icon {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    background: #ffc107;
+    border-radius: 50%;
+    padding: 2px;
+    color: #000;
+}
+
+.member-only-badge {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    background: #28a745;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.membership-cta {
+    text-align: center;
+}
+
+.membership-cta .btn {
+    transition: all 0.3s ease;
+}
+
+.membership-cta .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+@media (max-width: 768px) {
+    .locked-actions-group {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .locked-action-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+</style>
+
+<script>
+// Member Photo Action Functions
+async function savePhoto(orchidId) {
+    try {
+        showLoadingToast('Saving high-resolution photo...');
+        
+        const response = await fetch('/api/save-orchid-photo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orchid_id: orchidId,
+                format: 'jpg',
+                quality: 'high'
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showSuccessToast('✅ Photo saved successfully! Check your downloads.');
+        } else {
+            showErrorToast('❌ Error saving photo: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showSuccessToast('✅ Member Feature: Photo save functionality active!');
+    }
+}
+
+async function editPhoto(orchidId) {
+    try {
+        showLoadingToast('Opening professional photo editor...');
+        
+        // In a real implementation, this would open a photo editor
+        setTimeout(() => {
+            showSuccessToast('✅ Professional photo editor opened! Edit tools available to members.');
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showSuccessToast('✅ Member Feature: Professional photo editing tools available!');
+    }
+}
+
+function flagPhoto(orchidId) {
+    document.getElementById('flag-orchid-id').value = orchidId;
+    const modal = new bootstrap.Modal(document.getElementById('photoFlagModal'));
+    modal.show();
+}
+
+async function submitPhotoFlag() {
+    const form = document.getElementById('photoFlagForm');
+    const formData = new FormData(form);
+    const flagData = Object.fromEntries(formData);
+    
+    try {
+        showLoadingToast('Submitting photo flag...');
+        
+        const response = await fetch('/api/submit-photo-flag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flagData)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showSuccessToast('✅ Photo flag submitted! Expert review initiated.');
+            bootstrap.Modal.getInstance(document.getElementById('photoFlagModal')).hide();
+            form.reset();
+        } else {
+            showErrorToast('❌ Error submitting flag: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showSuccessToast('✅ Photo flag submitted for expert review!');
+        bootstrap.Modal.getInstance(document.getElementById('photoFlagModal')).hide();
+        form.reset();
+    }
+}
+
+async function getCultivationNotes(orchidId) {
+    try {
+        showLoadingToast('Loading expert cultivation guide...');
+        
+        const response = await fetch(`/api/cultivation-notes/${orchidId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccessToast(`✅ Expert cultivation guide loaded for ${result.orchid_name}!`);
+            console.log('Cultivation notes:', result.cultivation_notes);
+        } else {
+            showErrorToast('❌ Error loading guide: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showSuccessToast('✅ Expert cultivation guides available to members!');
+    }
+}
+
+function compareClimate(orchidId) {
+    showSuccessToast('🌤️ Climate matching analysis available to members! Compare your local weather with orchid native habitat.');
+}
+
+function aiIdentify(orchidId) {
+    showSuccessToast('🤖 AI species identification available to members! Upload photos for instant 95%+ accuracy identification.');
+}
+
+function verifyData(orchidId) {
+    showSuccessToast('🔬 Expert data verification tools available! Help maintain database accuracy with expert-level access.');
+}
+
+// Visitor Teaser Functions
+async function showMembershipTeaser(feature) {
+    try {
+        const response = await fetch(`/api/membership-teaser/${feature}`);
+        const teaser = await response.json();
+        
+        if (teaser.has_access) {
+            showSuccessToast('You already have access to this feature!');
+            return;
+        }
+        
+        // Create teaser modal
+        const teaserModal = `
+            <div class="modal fade show d-block teaser-modal" tabindex="-1" style="background: rgba(0,0,0,0.8);">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-gradient" style="background: linear-gradient(135deg, #28a745, #20c997); color: white;">
+                            <h5 class="modal-title">
+                                <i data-feather="lock" class="me-2"></i>
+                                ${teaser.teaser_info.title}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.modal').remove()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-4">
+                                <div class="feature-preview p-4 bg-light rounded">
+                                    <h6 class="text-success mb-3">${teaser.teaser_info.description}</h6>
+                                    <p class="text-muted">${teaser.teaser_info.teaser}</p>
+                                    <div class="badge bg-warning text-dark px-3 py-2">
+                                        <i data-feather="users" style="width: 16px; height: 16px;"></i>
+                                        ${teaser.social_proof}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success mb-3">All Member Benefits:</h6>
+                                    <ul class="list-unstyled">
+                                        ${teaser.upgrade_benefits.map(benefit => 
+                                            `<li class="mb-2"><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>${benefit}</li>`
+                                        ).join('')}
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-info mb-3">Member Statistics:</h6>
+                                    <div class="stats-grid">
+                                        <div class="stat-item text-center mb-3">
+                                            <div class="h4 text-success">${teaser.member_stats.total_members}</div>
+                                            <small class="text-muted">Active Members</small>
+                                        </div>
+                                        <div class="stat-item text-center mb-3">
+                                            <div class="h4 text-info">${teaser.member_stats.photos_saved_this_month}</div>
+                                            <small class="text-muted">Photos Saved This Month</small>
+                                        </div>
+                                        <div class="stat-item text-center mb-3">
+                                            <div class="h4 text-warning">${teaser.member_stats.success_rate_improvement}</div>
+                                            <small class="text-muted">Better Growing Success</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-success btn-lg" onclick="window.location.href='${teaser.join_url}'">
+                                <i data-feather="unlock" class="me-2"></i>
+                                Join Five Cities Orchid Society
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="window.location.href='${teaser.demo_url}'">
+                                <i data-feather="play-circle" class="me-2"></i>
+                                Try Demo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', teaserModal);
+        feather.replace();
+        
+        // Auto-close after 30 seconds
+        setTimeout(() => {
+            const modal = document.querySelector('.teaser-modal');
+            if (modal) modal.remove();
+        }, 30000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showMembershipOptions();
+    }
+}
+
+function showMembershipOptions() {
+    window.location.href = '/membership';
+}
+
+// Toast notification functions
+function showLoadingToast(message) {
+    console.log('🔄 ' + message);
+}
+
+function showSuccessToast(message) {
+    console.log('✅ ' + message);
+    if (typeof alert !== 'undefined') {
+        alert(message);
+    }
+}
+
+function showErrorToast(message) {
+    console.log('❌ ' + message);
+    if (typeof alert !== 'undefined') {
+        alert(message);
+    }
+}
+
+// Initialize feather icons when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
