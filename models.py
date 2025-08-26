@@ -121,7 +121,7 @@ class OrchidRecord(db.Model):
     id = db.Column(Integer, primary_key=True)
     
     # User and source tracking
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
     
     # Taxonomy relationship
     taxonomy_id = db.Column(Integer, db.ForeignKey('orchid_taxonomy.id'), nullable=True)
@@ -396,6 +396,7 @@ class User(UserMixin, db.Model):
             return 'Budding Gardener'
         else:
             return 'Seedling'
+    # Relationships restored with correct foreign keys
     judgings = db.relationship('JudgingAnalysis', backref='user', lazy=True)
     certificates = db.relationship('Certificate', backref='user', lazy=True)
     locations = db.relationship('UserLocation', backref='user', lazy=True)
@@ -431,7 +432,7 @@ class User(UserMixin, db.Model):
 class PasswordResetToken(db.Model):
     """Password reset tokens for secure account recovery"""
     id = db.Column(Integer, primary_key=True)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
     token = db.Column(String(100), unique=True, nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow)
     expires_at = db.Column(DateTime, nullable=False)
@@ -498,7 +499,7 @@ class JudgingAnalysis(db.Model):
     
     # Relationships
     orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
     judging_standard_id = db.Column(Integer, db.ForeignKey('judging_standard.id'), nullable=False)
     
     # Analysis results
@@ -531,7 +532,7 @@ class Certificate(db.Model):
     
     # Relationships
     orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
     judging_analysis_id = db.Column(Integer, db.ForeignKey('judging_analysis.id'), nullable=True)
     
     # Certificate details
@@ -702,7 +703,7 @@ class UserLocation(db.Model):
     __tablename__ = 'user_locations'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=True)
     
     # Location details
     name = db.Column(db.String(200), nullable=False)  # User-friendly name
@@ -735,7 +736,7 @@ class WeatherAlert(db.Model):
     __tablename__ = 'weather_alerts'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=True)
     location_id = db.Column(db.Integer, db.ForeignKey('user_locations.id'), nullable=False)
     
     # Alert details
@@ -787,7 +788,7 @@ class UserOrchidCollection(db.Model):
     __tablename__ = 'user_orchid_collections'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     orchid_id = db.Column(db.Integer, db.ForeignKey('orchid_record.id'), nullable=False)
     
     # Collection details
