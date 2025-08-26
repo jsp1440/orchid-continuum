@@ -2869,7 +2869,21 @@ def proxy_image():
         'inaturalist-open-data.s3.amazonaws.com',  # iNaturalist images
         'static.inaturalist.org',  # iNaturalist static images
         'www.inaturalist.org',  # iNaturalist main site
-        'inaturalist.org'  # iNaturalist alternative
+        'inaturalist.org',  # iNaturalist alternative
+        'was.tacc.utexas.edu',  # University of Texas herbarium images
+        'procyon.acadiau.ca',  # Acadia University herbarium
+        'sernecportal.org',  # SERNEC portal images
+        'portal.torcherbarium.org',  # Toronto herbarium
+        'herbarium.depaul.edu',  # DePaul herbarium
+        'kiki.huh.harvard.edu',  # Harvard herbarium
+        'plants.jstor.org',  # JSTOR plant images
+        'cdn.plants.jstor.org',  # JSTOR CDN
+        'sweetgum.nybg.org',  # New York Botanical Garden
+        'specimens.kew.org',  # Kew Gardens specimens
+        'plants.usda.gov',  # USDA plant database
+        'dendrogeek.com',  # Orchid specialist site
+        'orchidspecies.com',  # Internet Orchid Species
+        'www.orchidspecies.com'  # Internet Orchid Species www
     ]
     
     from urllib.parse import urlparse
@@ -2879,11 +2893,18 @@ def proxy_image():
         return abort(403, "Domain not allowed")
     
     try:
-        # Fetch the image with timeout
-        response = requests.get(image_url, timeout=10, headers={
-            'User-Agent': 'Mozilla/5.0 (compatible; Five Cities Orchid Society/1.0)'
+        # Fetch the image with timeout and retries
+        response = requests.get(image_url, timeout=15, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; Five Cities Orchid Society/1.0)',
+            'Accept': 'image/*,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Cache-Control': 'no-cache'
         })
         response.raise_for_status()
+        
+        # Validate image content
+        if len(response.content) < 500:  # Too small to be a real image
+            raise ValueError("Image content too small")
         
         # Return the image with proper headers
         return Response(
@@ -2891,7 +2912,8 @@ def proxy_image():
             content_type=response.headers.get('Content-Type', 'image/jpeg'),
             headers={
                 'Cache-Control': 'public, max-age=3600',  # Cache for 1 hour
-                'X-Image-Source': 'Proxied External'
+                'X-Image-Source': 'Proxied External',
+                'Access-Control-Allow-Origin': '*'
             }
         )
         
@@ -2905,7 +2927,25 @@ def proxy_image():
                 return redirect(recovery_url)
         except:
             pass
-        return abort(404, "Image not found")
+            
+        # Final fallback: Return a proper placeholder image for broken links
+        # This ensures gallery never shows broken images to users
+        placeholder_svg = """<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="300" fill="#f8f9fa"/>
+            <rect x="50" y="50" width="300" height="200" fill="none" stroke="#dee2e6" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="200" y="130" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="14">🌺</text>
+            <text x="200" y="160" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="12">Orchid Image</text>
+            <text x="200" y="180" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="10">Temporarily Unavailable</text>
+        </svg>"""
+        
+        return Response(
+            placeholder_svg,
+            content_type='image/svg+xml',
+            headers={
+                'Cache-Control': 'public, max-age=300',  # Cache for 5 minutes only
+                'X-Image-Source': 'Fallback Placeholder'
+            }
+        )
 
 # Image recovery stats endpoint
 @app.route('/api/image-recovery-stats')
