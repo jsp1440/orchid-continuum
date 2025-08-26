@@ -254,12 +254,72 @@
     top: 50%;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    background: linear-gradient(45deg, #4a90e2, #2c5aa0);
+    --rotation-duration: 60s;
+    background: 
+        /* Ocean base */
+        radial-gradient(circle at 30% 40%, #1e6091 0%, #2980b9 50%, #3498db 100%),
+        /* Cloud layer */
+        radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.2) 0%, transparent 40%);
     border: 2px solid #ffffff20;
     box-shadow: 
         inset 0 0 30px rgba(0, 0, 0, 0.3),
-        0 0 40px rgba(74, 144, 226, 0.4);
-    animation: earthRotation 60s linear infinite;
+        0 0 40px rgba(52, 152, 219, 0.4),
+        inset -20px -10px 40px rgba(0, 50, 100, 0.4);
+    animation: earthRotation var(--rotation-duration) linear infinite;
+    overflow: hidden;
+}
+
+/* Add continent overlays */
+.earth-globe::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* North America */
+        radial-gradient(ellipse 40px 60px at 25% 35%, #27ae60 0%, #2ecc71 30%, transparent 50%),
+        /* South America */
+        radial-gradient(ellipse 25px 50px at 30% 65%, #27ae60 0%, #2ecc71 30%, transparent 50%),
+        /* Africa */
+        radial-gradient(ellipse 35px 55px at 50% 55%, #f39c12 0%, #e67e22 20%, #27ae60 40%, transparent 60%),
+        /* Europe */
+        radial-gradient(ellipse 20px 25px at 50% 30%, #27ae60 0%, #2ecc71 40%, transparent 60%),
+        /* Asia */
+        radial-gradient(ellipse 50px 45px at 70% 40%, #27ae60 0%, #2ecc71 30%, transparent 50%),
+        /* Australia */
+        radial-gradient(ellipse 20px 15px at 75% 70%, #e67e22 0%, #27ae60 40%, transparent 60%);
+    animation: continentRotation var(--rotation-duration) linear infinite;
+}
+
+/* Add mountain ranges and geographical features */
+.earth-globe::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Himalayas */
+        radial-gradient(ellipse 25px 8px at 68% 38%, rgba(139, 69, 19, 0.6) 0%, transparent 50%),
+        /* Andes */
+        radial-gradient(ellipse 8px 40px at 28% 60%, rgba(139, 69, 19, 0.5) 0%, transparent 50%),
+        /* Rocky Mountains */
+        radial-gradient(ellipse 15px 25px at 22% 40%, rgba(139, 69, 19, 0.4) 0%, transparent 50%),
+        /* Amazon Rainforest */
+        radial-gradient(ellipse 30px 25px at 32% 60%, rgba(34, 139, 34, 0.4) 0%, transparent 60%),
+        /* Sahara Desert */
+        radial-gradient(ellipse 35px 20px at 48% 45%, rgba(238, 203, 173, 0.5) 0%, transparent 60%),
+        /* Arctic ice */
+        radial-gradient(ellipse 60px 25px at 50% 15%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+        /* Antarctic ice */
+        radial-gradient(ellipse 50px 20px at 50% 85%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
+    animation: featuresRotation var(--rotation-duration) linear infinite;
 }
 
 .sun-sphere {
@@ -514,6 +574,16 @@
 @keyframes earthRotation {
     from { transform: translate(-50%, -50%) rotate(0deg); }
     to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes continentRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes featuresRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @keyframes solarPulse {
@@ -905,7 +975,17 @@
         updateLastInteraction();
         
         const globe = document.getElementById(`earth-globe-${widgetId}`);
-        globe.style.animationDuration = (60 / rotationSpeed) + 's';
+        const duration = (60 / rotationSpeed) + 's';
+        
+        // Update all Earth rotation animations to sync
+        globe.style.animationDuration = duration;
+        
+        // Update continent and feature animations
+        const continents = globe.querySelector('::before');
+        const features = globe.querySelector('::after');
+        
+        // Apply duration to pseudo-elements via CSS custom properties
+        globe.style.setProperty('--rotation-duration', duration);
     }
     
     function updateLastInteraction() {
