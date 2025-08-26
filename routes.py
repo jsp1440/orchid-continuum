@@ -2298,15 +2298,30 @@ def download_backup(filename):
 
 @app.route('/api/recent-orchids')
 def api_recent_orchids():
-    """API endpoint for recent orchids - used by vigilant monitor to test REAL gallery images"""
+    """API endpoint for recent orchids - supports coordinate filtering for mapping"""
     try:
-        # Get recent orchids with images (what users actually see)
-        recent_orchids = OrchidRecord.query.filter(
+        # Check if coordinates are required for mapping
+        with_coordinates = request.args.get('with_coordinates', 'false').lower() == 'true'
+        limit = int(request.args.get('limit', 20))
+        
+        # Build query with image filter
+        query = OrchidRecord.query.filter(
             or_(
                 OrchidRecord.google_drive_id.isnot(None),
                 OrchidRecord.image_url.isnot(None)
             )
-        ).order_by(OrchidRecord.created_at.desc()).limit(20).all()
+        )
+        
+        # Add coordinate filter if requested
+        if with_coordinates:
+            query = query.filter(
+                and_(
+                    OrchidRecord.decimal_latitude.isnot(None),
+                    OrchidRecord.decimal_longitude.isnot(None)
+                )
+            )
+        
+        recent_orchids = query.order_by(OrchidRecord.created_at.desc()).limit(limit).all()
         
         orchids_data = []
         for orchid in recent_orchids:
@@ -2314,8 +2329,18 @@ def api_recent_orchids():
                 'id': orchid.id,
                 'display_name': orchid.display_name or orchid.scientific_name or f"Orchid {orchid.id}",
                 'scientific_name': orchid.scientific_name,
-                'google_drive_file_id': orchid.google_drive_id,  # Template expects this name
-                'photo_url': orchid.image_url,  # Template expects image_url as photo_url
+                'genus': orchid.genus,
+                'google_drive_id': orchid.google_drive_id,
+                'google_drive_file_id': orchid.google_drive_id,  # Template backward compatibility
+                'image_url': orchid.image_url,
+                'photo_url': orchid.image_url,  # Template backward compatibility
+                'image_filename': orchid.image_filename,
+                'decimal_latitude': float(orchid.decimal_latitude) if orchid.decimal_latitude else None,
+                'decimal_longitude': float(orchid.decimal_longitude) if orchid.decimal_longitude else None,
+                'country': orchid.country,
+                'collector': orchid.collector,
+                'event_date': orchid.event_date,
+                'data_source': orchid.data_source,
                 'created_at': orchid.created_at.isoformat() if orchid.created_at else None
             }
             orchids_data.append(orchid_data)
