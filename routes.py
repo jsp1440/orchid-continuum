@@ -2376,7 +2376,10 @@ def proxy_image():
         'garyyonggee.com', 
         'orchids.yonggee.name',
         'drive.google.com',
-        'lh3.googleusercontent.com'
+        'lh3.googleusercontent.com',
+        'www.gbif.org',  # GBIF occurrence images
+        'gbif.org',      # GBIF images
+        'api.gbif.org'   # GBIF API images
     ]
     
     from urllib.parse import urlparse
