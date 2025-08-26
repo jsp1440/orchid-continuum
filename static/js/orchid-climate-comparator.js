@@ -143,6 +143,10 @@ export async function compareHabitat(
     badges.push("35th Parallel comparator");
     return runParallel35Mode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
   }
+  if (mode === "orbit") {
+    badges.push("Orbit & Rays visualization");
+    return runOrbitMode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
+  }
   // default
   badges.push("Seasonal aligned");
   return runSeasonalMode(climate, user, habitat, date, badges, confidence, details, insights, elevAdjC);
@@ -406,11 +410,221 @@ function renderSeasonalChart(ctx, width, height, seasonal) {
   ctx.stroke();
 }
 
+// ── Orbit Mode (Orbital visualization)
+async function runOrbitMode(
+  climate, user, habitat, date, badges, confidence, details, insights, elevAdjC
+) {
+  // For orbit mode, we return basic comparison data but the main visualization is handled separately
+  const userHourly = await climate.getHourly(user, date.toISOString());
+  const habHourly = await climate.getHourly(habitat, date.toISOString());
+
+  const hourly = userHourly.map((pt, i) => ({
+    hour: `${i}:00`,
+    local: { t: pt.t + elevAdjC, rh: pt.rh },
+    habitat: habHourly[i] ?? habHourly[habHourly.length - 1]
+  }));
+
+  insights.push("Orbital visualization shows Earth's seasonal positions and solar ray dynamics.");
+  insights.push("Use latitude lines to compare photoperiods at different latitudes.");
+  insights.push("The 35° parallel is highlighted for its seasonal richness and orchid diversity.");
+  
+  return { 
+    mode: "orbit", 
+    badges, 
+    confidence, 
+    hourly, 
+    insights, 
+    details,
+    orbitData: {
+      userLat: user.lat,
+      habitatLat: habitat.lat,
+      date: date
+    }
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// ORBITAL VISUALIZATION SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+// Global state for orbit animation
+let orbitAnimationId = null;
+let orbitAnimationRunning = false;
+let currentDayOfYear = 0;
+let focusLatitude = 35; // Default focus on 35th parallel
+let enabledLatLines = new Set([35]); // Default to 35° enabled
+
+// Solar declination calculation
+function solarDeclination(dayOfYear) {
+  return 23.44 * Math.sin(toRad((360 * (dayOfYear - 81)) / 365));
+}
+
+// Day of year to month/day string
+function dayOfYearToDate(dayOfYear) {
+  const date = new Date(2024, 0, 1 + dayOfYear);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Earth position on elliptical orbit
+function earthPosition(dayOfYear) {
+  // Approximate elliptical orbit (perihelion ≈ DOY 3, aphelion ≈ DOY 185)
+  const angle = toRad((dayOfYear / 365) * 360);
+  const a = 1.0; // Semi-major axis (normalized)
+  const e = 0.0167; // Earth's orbital eccentricity
+  const r = a * (1 - e * e) / (1 + e * Math.cos(angle));
+  
+  return {
+    x: r * Math.cos(angle),
+    y: r * Math.sin(angle),
+    angle: angle
+  };
+}
+
+// Render orbital visualization
+function renderOrbit(canvas, dayOfYear) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const scale = Math.min(width, height) / 3;
+  
+  // Clear canvas
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, width, height);
+  
+  // Draw orbital ellipse
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(centerX, centerY, scale, scale * 0.95, 0, 0, 2 * Math.PI);
+  ctx.stroke();
+  
+  // Draw sun at center
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+  ctx.fill();
+  
+  // Draw sun rays
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * 2 * Math.PI;
+    const x1 = centerX + Math.cos(angle) * 15;
+    const y1 = centerY + Math.sin(angle) * 15;
+    const x2 = centerX + Math.cos(angle) * 25;
+    const y2 = centerY + Math.sin(angle) * 25;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  
+  // Get Earth position
+  const earthPos = earthPosition(dayOfYear);
+  const earthX = centerX + earthPos.x * scale;
+  const earthY = centerY + earthPos.y * scale;
+  
+  // Draw Earth
+  ctx.save();
+  ctx.translate(earthX, earthY);
+  
+  // Earth rotation for axial tilt
+  const tilt = toRad(23.44);
+  ctx.rotate(earthPos.angle + tilt);
+  
+  // Draw Earth sphere
+  ctx.fillStyle = '#4a90e2';
+  ctx.beginPath();
+  ctx.arc(0, 0, 12, 0, 2 * Math.PI);
+  ctx.fill();
+  
+  // Draw latitude lines if enabled
+  const declination = solarDeclination(dayOfYear);
+  
+  enabledLatLines.forEach(lat => {
+    ctx.strokeStyle = lat === 35 ? '#ff6b6b' : 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = lat === focusLatitude ? 2 : 1;
+    
+    // Draw latitude line
+    const latRad = toRad(lat);
+    const y = -12 * Math.sin(latRad);
+    
+    ctx.beginPath();
+    ctx.moveTo(-12, y);
+    ctx.lineTo(12, y);
+    ctx.stroke();
+    
+    // Label latitude
+    ctx.fillStyle = lat === 35 ? '#ff6b6b' : '#fff';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${lat}°`, 14, y + 3);
+  });
+  
+  // Draw sun rays hitting Earth
+  const rayCount = 8;
+  for (let i = 0; i < rayCount; i++) {
+    const angle = (i / rayCount) * 2 * Math.PI;
+    const rayX = Math.cos(angle) * 30;
+    const rayY = Math.sin(angle) * 30;
+    
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-rayX, -rayY);
+    ctx.lineTo(rayX, rayY);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+  
+  // Draw orbital markers for key dates
+  const keyDates = [
+    { day: 0, label: 'Jan 1', color: '#fff' },
+    { day: 3, label: 'Perihelion', color: '#ff6b6b' },
+    { day: 80, label: 'Equinox', color: '#4ecdc4' },
+    { day: 185, label: 'Aphelion', color: '#ff6b6b' },
+    { day: 265, label: 'Equinox', color: '#4ecdc4' }
+  ];
+  
+  keyDates.forEach(marker => {
+    const pos = earthPosition(marker.day);
+    const x = centerX + pos.x * scale;
+    const y = centerY + pos.y * scale;
+    
+    ctx.fillStyle = marker.color;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Label
+    ctx.fillStyle = marker.color;
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(marker.label, x, y - 8);
+  });
+}
+
+// Update caption with declination and daylength
+function updateOrbitCaption(dayOfYear) {
+  const declination = solarDeclination(dayOfYear);
+  const daylength = approximateDaylengthHours(focusLatitude, new Date(2024, 0, 1 + dayOfYear));
+  
+  const caption = document.getElementById('orbitCaption');
+  if (caption) {
+    caption.textContent = `Solar declination: ${declination.toFixed(1)}°, Daylength at ${focusLatitude}°: ${daylength.toFixed(1)} hours`;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // GLOBAL EXPORTS
 // ─────────────────────────────────────────────────────────────
 window.OrchidClimateComparator = {
   MockClimateAPI,
   compareHabitat,
-  renderClimateChart
+  renderClimateChart,
+  renderOrbit,
+  updateOrbitCaption
 };
