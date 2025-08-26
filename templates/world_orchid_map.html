@@ -147,7 +147,7 @@
     overflow: hidden !important;
 }
 
-/* Prevent tile gaps and fragmentation */
+/* ANTI-FRAGMENTATION: Prevent tile gaps and ensure smooth rendering */
 .leaflet-tile-container {
     pointer-events: none;
     position: absolute;
@@ -156,12 +156,38 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: hidden;
+    transform: translateZ(0);  /* Force hardware acceleration */
 }
 
 .leaflet-tile {
     pointer-events: none;
     max-width: none !important;
     max-height: none !important;
+    border: none !important;
+    outline: none !important;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: hidden;
+    transform: translateZ(0);  /* Force hardware acceleration */
+}
+
+/* Fix for tile seams and gaps */
+.leaflet-tile-pane {
+    transform: translate3d(0,0,0);  /* Force hardware acceleration */
+}
+
+.leaflet-zoom-animated .leaflet-tile-container {
+    transition: none !important;  /* Disable transitions during zoom */
+}
+
+/* Ensure continuous world coverage */
+.leaflet-container {
+    background: #a5bfdd !important;
+    overflow: hidden !important;
+    image-rendering: auto;
 }
 </style>
 {% endblock %}
@@ -446,57 +472,67 @@ async function initializeOrchidMap() {
             maxBoundsViscosity: 0.5  // Smoother bounds interaction
         });
         
-        // Add base tile layer with seamless world coverage
+        // Add base tile layer with seamless world coverage - ANTI-FRAGMENTATION
         console.log('🗺️ Adding seamless world tile layer...');
+        
+        // Primary reliable tile layer - CartoDB for smooth rendering
+        const cartoDBPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB, © OpenStreetMap contributors',
+            maxZoom: 15,
+            noWrap: false,  // Allow seamless world wrapping
+            crossOrigin: false,  // Better compatibility
+            detectRetina: true,  // Sharp tiles on high-DPI displays
+            updateWhenZooming: false,  // Smoother zoom experience
+            keepBuffer: 4,  // Keep more tiles in memory for smooth panning
+            updateWhenIdle: true,  // Only update when zoom/pan stops
+            bounds: [[-85.051129, -180], [85.051129, 180]]  // Mercator projection bounds
+        });
+        
+        // Alternative reliable layers
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 15,
-            noWrap: false,  // Allow seamless world wrapping
-            crossOrigin: true,  // Better tile loading
-            detectRetina: true,  // Sharp tiles on high-DPI displays
-            updateWhenZooming: false,  // Smoother zoom experience
-            keepBuffer: 2  // Keep more tiles in memory for smooth panning
+            noWrap: false,
+            crossOrigin: false,
+            detectRetina: true,
+            updateWhenZooming: false,
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
         });
         
-        // Add alternative seamless tile layers
-        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
+        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             attribution: '© CartoDB, © OpenStreetMap',
             maxZoom: 15,
             noWrap: false,
-            crossOrigin: true,
+            crossOrigin: false,
             detectRetina: true,
             updateWhenZooming: false,
-            keepBuffer: 2
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
         });
         
-        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, DigitalGlobe, GeoEye',
-            maxZoom: 15,
-            noWrap: false,
-            crossOrigin: true,
-            detectRetina: true,
-            updateWhenZooming: false,
-            keepBuffer: 2
-        });
-        
-        const darkTheme = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+        const darkTheme = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '© CartoDB',
             maxZoom: 15,
             noWrap: false,
-            crossOrigin: true,
+            crossOrigin: false,
             detectRetina: true,
             updateWhenZooming: false,
-            keepBuffer: 2
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
         });
         
-        // Start with satellite view as the default base layer
-        satelliteLayer.addTo(orchidMap);
+        // Start with reliable CartoDB light theme to prevent fragmentation
+        cartoDBPositron.addTo(orchidMap);
         
         // Enhanced layer control with more options
         const baseLayers = {
-            "🌍 OpenStreetMap": osmLayer,
-            "🌎 Satellite View": satelliteLayer,
-            "☀️ Light Theme": cartoDB,
+            "🌍 Light Map": cartoDBPositron,
+            "🗺️ OpenStreetMap": osmLayer,
+            "☀️ Voyager Theme": cartoDB,
             "🌙 Dark Theme": darkTheme
         };
         
@@ -633,6 +669,7 @@ async function loadOrchidMarkers() {
         
     } catch (error) {
         console.error('Error loading orchid markers:', error);
+        console.log('📍 Loading sample markers as fallback...');
         addSampleMarkers();
     }
 }
