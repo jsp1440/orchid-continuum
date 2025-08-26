@@ -31,8 +31,16 @@ def get_orchid_of_the_day():
         
         # Get orchids with STRICT quality criteria (same as enhanced system)
         orchids = OrchidRecord.query.filter(
-            # PRIORITY: Google Drive images only (most reliable)
-            OrchidRecord.google_drive_id.isnot(None),
+            # PRIORITY: Reliable images (Google Drive OR working external URLs)
+            or_(
+                OrchidRecord.google_drive_id.isnot(None),
+                and_(
+                    OrchidRecord.image_url.isnot(None),
+                    OrchidRecord.image_url != '/static/images/orchid_placeholder.svg',
+                    OrchidRecord.image_url.notlike('%placeholder%'),
+                    OrchidRecord.image_url != ''
+                )
+            ),
             # Has BOTH genus AND species information (fully spelled out)
             OrchidRecord.genus.isnot(None),
             OrchidRecord.species.isnot(None),
