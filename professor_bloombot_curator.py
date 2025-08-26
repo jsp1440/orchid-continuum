@@ -236,19 +236,21 @@ def curator_page():
     """Professor BloomBot curator page"""
     theme = request.args.get('theme', 'random')
     
-    # Track visit for analytics
-    user_id = session.get('user_id', 'visitor')
-    try:
-        activity = UserActivity(
-            user_id=user_id,
-            activity_type='bloombot_curator_visit',
-            points_earned=2,
-            details=json.dumps({'theme': theme, 'visit_time': datetime.now().isoformat()})
-        )
-        db.session.add(activity)
-        db.session.commit()
-    except Exception as e:
-        logger.error(f"Error tracking curator visit: {e}")
+    # Track visit for analytics (only for registered users)
+    user_id = session.get('user_id')
+    if user_id and user_id != 'visitor':
+        try:
+            activity = UserActivity(
+                user_id=user_id,
+                activity_type='bloombot_curator_visit',
+                points_earned=2,
+                details=json.dumps({'theme': theme, 'visit_time': datetime.now().isoformat()})
+            )
+            db.session.add(activity)
+            db.session.commit()
+        except Exception as e:
+            logger.error(f"Error tracking curator visit: {e}")
+            db.session.rollback()
     
     # Get curated selection
     selection = professor_bloombot.get_curated_selection(theme)
@@ -268,7 +270,9 @@ def submit_feedback():
         feedback_text = data.get('feedback_text', '').strip()
         suggestion = data.get('suggestion', '').strip()
         
-        user_id = session.get('user_id', 'visitor')
+        user_id = session.get('user_id')
+        if not user_id or user_id == 'visitor':
+            return jsonify({'success': False, 'error': 'Please log in to submit feedback'}), 401
         
         # Validate inputs
         if not orchid_id or not feedback_type:
