@@ -877,7 +877,12 @@ def gallery():
         
         # Check if we have enough orchids for a good gallery
         if orchids.total < 3:
-            raise Exception("Insufficient orchids in database")
+            logger.warning(f"⚠️ Gallery filter returned {orchids.total} orchids for climate={climate}, genus={genus}, growth_habit={growth_habit}")
+            # Fall back to all orchids without filters if specific filter returns too few results
+            query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
+            orchids = query.order_by(OrchidRecord.created_at.desc()).paginate(
+                page=1, per_page=12, error_out=False
+            )
         
         # FORCE only Google Drive images - block all external URLs
         working_orchids = []
