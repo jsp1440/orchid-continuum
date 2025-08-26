@@ -861,8 +861,12 @@ def gallery():
         climate = request.args.get('climate', '')
         growth_habit = request.args.get('growth_habit', '')
         
-        # Filter for Google Drive images only
-        query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
+        # Filter for Google Drive images only - STRICT filtering to prevent blank images
+        query = OrchidRecord.query.filter(
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.google_drive_id != '',
+            OrchidRecord.google_drive_id != 'None'
+        )
         
         if genus:
             query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
@@ -879,7 +883,11 @@ def gallery():
         if orchids.total < 3:
             logger.warning(f"⚠️ Gallery filter returned {orchids.total} orchids for climate={climate}, genus={genus}, growth_habit={growth_habit}")
             # Fall back to all orchids without filters if specific filter returns too few results
-            query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
+            query = OrchidRecord.query.filter(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.google_drive_id != '',
+                OrchidRecord.google_drive_id != 'None'
+            )
             orchids = query.order_by(OrchidRecord.created_at.desc()).paginate(
                 page=1, per_page=12, error_out=False
             )
@@ -888,17 +896,19 @@ def gallery():
         working_orchids = []
         for orchid in orchids.items:
             # Only include orchids with Google Drive IDs - these ALWAYS work
-            if hasattr(orchid, 'google_drive_id') and orchid.google_drive_id and str(orchid.google_drive_id).strip():
+            if (hasattr(orchid, 'google_drive_id') and orchid.google_drive_id and 
+                str(orchid.google_drive_id).strip() and str(orchid.google_drive_id) != 'None'):
                 working_orchids.append(orchid)
         
         # ALWAYS ensure we have enough photos - NEVER show empty gallery
         if len(working_orchids) < 12:
             logging.warning(f"⚠️ Gallery protection: Only {len(working_orchids)} Google Drive images, filling remaining {12 - len(working_orchids)} slots")
             
-            # Get more Google Drive orchids from database
+            # Get more Google Drive orchids from database with STRICT filtering
             additional_orchids = OrchidRecord.query.filter(
                 OrchidRecord.google_drive_id.isnot(None),
                 OrchidRecord.google_drive_id != '',
+                OrchidRecord.google_drive_id != 'None',
                 ~OrchidRecord.id.in_([o.id for o in working_orchids])
             ).limit(12 - len(working_orchids)).all()
             
