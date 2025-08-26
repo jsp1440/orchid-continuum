@@ -38,6 +38,7 @@
                 
                 <!-- Day/Night Terminator -->
                 <div id="day-night-line-{{ widget_data.widget_id }}" class="day-night-line"></div>
+                <div id="day-night-overlay-{{ widget_data.widget_id }}" class="day-night-overlay" style="display: none;"></div>
                 
                 <!-- Country Highlights -->
                 <div id="country-highlights-{{ widget_data.widget_id }}" class="country-highlights"></div>
@@ -58,31 +59,76 @@
                 </select>
             </div>
 
-            <!-- Interactive Legend/Key -->
+            <!-- Status Strip with Usage Hints and Indicators -->
+            <div class="status-strip">
+                <div class="usage-hints">
+                    <span class="hint-item">👆 Tap markers</span>
+                    <span class="hint-item">🤏 Pinch to zoom</span>
+                    <span class="hint-item">👋 Drag to rotate</span>
+                </div>
+                <div class="quick-indicators">
+                    <span id="day-night-indicator-{{ widget_data.widget_id }}" class="indicator" title="Day/Night terminator">🌓 Day/Night</span>
+                    <span id="uv-indicator-{{ widget_data.widget_id }}" class="indicator" title="UV Index">☀️ UV 6</span>
+                    <span id="photoperiod-indicator-{{ widget_data.widget_id }}" class="indicator" title="Daylight hours">📅 12h</span>
+                </div>
+            </div>
+
+            <!-- Interactive Legend with Toggle Chips -->
             <div class="interactive-legend">
                 <div class="legend-header">
-                    <strong>📍 Click the Colored Dots on Earth to Learn!</strong>
+                    <strong>🎛️ Toggle Earth Features</strong>
+                    <button id="day-night-toggle-{{ widget_data.widget_id }}" class="day-night-btn">🌗 Day/Night</button>
                 </div>
                 <div class="legend-grid">
-                    <div class="legend-item">
+                    <div class="legend-chip active" data-type="forest" id="forest-chip-{{ widget_data.widget_id }}">
                         <div class="legend-marker forest"></div>
                         <span>🌳 Rainforests</span>
+                        <div class="chip-glow"></div>
                     </div>
-                    <div class="legend-item">
+                    <div class="legend-chip active" data-type="mountain" id="mountain-chip-{{ widget_data.widget_id }}">
                         <div class="legend-marker mountain"></div>
                         <span>🏔️ Mountains</span>
+                        <div class="chip-glow"></div>
                     </div>
-                    <div class="legend-item">
+                    <div class="legend-chip active" data-type="desert" id="desert-chip-{{ widget_data.widget_id }}">
                         <div class="legend-marker desert"></div>
                         <span>🏜️ Deserts</span>
+                        <div class="chip-glow"></div>
                     </div>
-                    <div class="legend-item">
+                    <div class="legend-chip active" data-type="climate-zone" id="climate-chip-{{ widget_data.widget_id }}">
                         <div class="legend-marker climate-zone"></div>
                         <span>🌡️ Climate Zones</span>
+                        <div class="chip-glow"></div>
                     </div>
-                    <div class="legend-item">
+                    <div class="legend-chip active" data-type="orchid-hotspot" id="hotspot-chip-{{ widget_data.widget_id }}">
                         <div class="legend-marker orchid-hotspot"></div>
                         <span>🌺 Orchid Hotspots</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Celestial Mini-Panel -->
+            <div class="celestial-panel">
+                <div class="celestial-item" title="UV radiation affects orchid pigmentation and flowering cycles">
+                    <div class="celestial-icon">☀️</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Sun</div>
+                        <div id="uv-data-{{ widget_data.widget_id }}" class="data-value">UV: 6 • Spots: 12</div>
+                    </div>
+                </div>
+                <div class="celestial-item" title="Moon phases influence orchid blooming patterns and sap flow">
+                    <div class="celestial-icon">🌙</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Moon</div>
+                        <div id="moon-data-{{ widget_data.widget_id }}" class="data-value">Waning • Tide: Low</div>
+                    </div>
+                </div>
+                <div class="celestial-item" title="Daylight duration triggers orchid seasonal responses">
+                    <div class="celestial-icon">🌍</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Earth</div>
+                        <div id="photoperiod-data-{{ widget_data.widget_id }}" class="data-value">12h 15m daylight</div>
                     </div>
                 </div>
             </div>
@@ -1089,6 +1135,200 @@
     transform: translateY(-2px);
 }
 
+/* Status Strip Styling */
+.status-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(52, 73, 94, 0.9), rgba(44, 62, 80, 0.8));
+    border-radius: 25px;
+    padding: 8px 15px;
+    margin: 10px 0;
+    font-size: 0.85em;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.usage-hints {
+    display: flex;
+    gap: 12px;
+}
+
+.hint-item {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.hint-item:hover {
+    opacity: 1;
+}
+
+.quick-indicators {
+    display: flex;
+    gap: 8px;
+}
+
+.indicator {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-size: 0.8em;
+    cursor: help;
+    transition: all 0.3s ease;
+}
+
+.indicator:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Legend Chip Styling */
+.legend-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.legend-chip:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.legend-chip.active {
+    border-color: #4a90e2;
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.legend-chip.inactive {
+    opacity: 0.5;
+    background: #f5f5f5;
+    border-color: #ddd;
+}
+
+.chip-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(74, 144, 226, 0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.legend-chip.active .chip-glow {
+    opacity: 1;
+}
+
+.day-night-btn {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 15px;
+}
+
+.day-night-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.day-night-btn.active {
+    background: linear-gradient(135deg, #e74c3c, #f39c12);
+}
+
+/* Day/Night Overlay */
+.day-night-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.4) 25%,
+        transparent 50%,
+        rgba(255, 255, 0, 0.1) 75%,
+        rgba(255, 255, 0, 0.2) 100%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+    animation: dayNightRotation 60s linear infinite;
+}
+
+@keyframes dayNightRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Celestial Panel Styling */
+.celestial-panel {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(135deg, rgba(25, 35, 45, 0.95), rgba(15, 25, 35, 0.9));
+    border-radius: 15px;
+    padding: 12px;
+    margin: 10px 0;
+    gap: 10px;
+}
+
+.celestial-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    cursor: help;
+    transition: all 0.3s ease;
+    flex: 1;
+    min-width: 0;
+}
+
+.celestial-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.celestial-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.celestial-data {
+    min-width: 0;
+    flex: 1;
+}
+
+.data-label {
+    font-size: 0.75em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.data-value {
+    font-size: 0.8em;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Educational Learning System */
 .educational-panel {
     background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(52, 152, 219, 0.1));
@@ -1560,6 +1800,15 @@
         
         // Setup tutorial functionality
         setupTutorial();
+        
+        // Setup legend chip toggles
+        setupLegendChips();
+        
+        // Setup day/night toggle
+        setupDayNightToggle();
+        
+        // Update celestial data
+        updateCelestialData();
         
         // Globe click handler
         globe.addEventListener('click', handleGlobeClick);
@@ -2091,6 +2340,108 @@
             toast.style.transform = 'translateX(100%)';
             setTimeout(() => toast.remove(), 300);
         }, 2000);
+    }
+    
+    function setupLegendChips() {
+        const chips = document.querySelectorAll('.legend-chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const isActive = chip.classList.contains('active');
+                const markerType = chip.dataset.type;
+                
+                if (isActive) {
+                    chip.classList.remove('active');
+                    chip.classList.add('inactive');
+                    hideMarkers(markerType);
+                } else {
+                    chip.classList.remove('inactive');
+                    chip.classList.add('active');
+                    showMarkers(markerType);
+                }
+            });
+        });
+    }
+    
+    function hideMarkers(type) {
+        const markers = document.querySelectorAll(`.geo-marker.${type}`);
+        markers.forEach(marker => {
+            marker.style.display = 'none';
+        });
+    }
+    
+    function showMarkers(type) {
+        const markers = document.querySelectorAll(`.geo-marker.${type}`);
+        markers.forEach(marker => {
+            marker.style.display = 'block';
+        });
+    }
+    
+    function setupDayNightToggle() {
+        const dayNightBtn = document.getElementById(`day-night-toggle-${widgetId}`);
+        const dayNightOverlay = document.getElementById(`day-night-overlay-${widgetId}`);
+        const dayNightIndicator = document.getElementById(`day-night-indicator-${widgetId}`);
+        
+        let isActive = false;
+        
+        dayNightBtn.addEventListener('click', () => {
+            isActive = !isActive;
+            
+            if (isActive) {
+                dayNightBtn.classList.add('active');
+                dayNightBtn.textContent = '🌞 Day/Night ON';
+                dayNightOverlay.style.display = 'block';
+                dayNightIndicator.textContent = '🌗 ON';
+                dayNightIndicator.style.background = 'rgba(231, 76, 60, 0.3)';
+            } else {
+                dayNightBtn.classList.remove('active');
+                dayNightBtn.textContent = '🌗 Day/Night';
+                dayNightOverlay.style.display = 'none';
+                dayNightIndicator.textContent = '🌓 Day/Night';
+                dayNightIndicator.style.background = 'rgba(255, 255, 255, 0.2)';
+            }
+        });
+    }
+    
+    function updateCelestialData() {
+        // Calculate realistic data based on current time and location
+        const now = new Date();
+        const hour = now.getHours();
+        
+        // UV Index (0-12 scale, varies by time of day)
+        let uvIndex = Math.max(0, Math.round(10 * Math.sin((hour - 6) * Math.PI / 12)));
+        if (hour < 6 || hour > 18) uvIndex = 0;
+        
+        // Sunspot count (realistic range 0-200)
+        const sunspots = Math.floor(Math.random() * 50) + 20;
+        
+        // Moon phase calculation
+        const phases = ['New', 'Waxing', 'Full', 'Waning'];
+        const phase = phases[Math.floor((now.getDate() / 7.5) % 4)];
+        
+        // Tide effect
+        const tides = ['High', 'Low', 'Rising', 'Falling'];
+        const tide = tides[Math.floor(Math.random() * 4)];
+        
+        // Photoperiod (daylight hours)
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        const latitude = 40; // Approximate mid-latitude
+        const declination = 23.45 * Math.sin(2 * Math.PI * (284 + dayOfYear) / 365);
+        const hourAngle = Math.acos(-Math.tan(latitude * Math.PI / 180) * Math.tan(declination * Math.PI / 180));
+        const daylightHours = 2 * hourAngle * 12 / Math.PI;
+        const hours = Math.floor(daylightHours);
+        const minutes = Math.floor((daylightHours - hours) * 60);
+        
+        // Update displays
+        document.getElementById(`uv-data-${widgetId}`).textContent = `UV: ${uvIndex} • Spots: ${sunspots}`;
+        document.getElementById(`moon-data-${widgetId}`).textContent = `${phase} • Tide: ${tide}`;
+        document.getElementById(`photoperiod-data-${widgetId}`).textContent = `${hours}h ${minutes}m daylight`;
+        
+        // Update quick indicators
+        document.getElementById(`uv-indicator-${widgetId}`).textContent = `☀️ UV ${uvIndex}`;
+        document.getElementById(`photoperiod-indicator-${widgetId}`).textContent = `📅 ${hours}h${minutes}m`;
+        
+        // Schedule next update
+        setTimeout(updateCelestialData, 60000); // Update every minute
     }
     
     function updateRotationSpeed() {
