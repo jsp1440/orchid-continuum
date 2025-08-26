@@ -238,8 +238,19 @@
 <script>
 // Load recent orchids dynamically
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/recent-orchids')
-        .then(response => response.json())
+    // Set a timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 8000)
+    );
+    
+    Promise.race([
+        fetch('/api/recent-orchids'),
+        timeoutPromise
+    ])
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
         .then(data => {
             const container = document.getElementById('recent-orchids-container');
             if (data.length > 0) {
@@ -249,8 +260,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="col-6 col-md-3">
                                 <div class="card h-100 border-0 shadow-sm">
                                     ${orchid.google_drive_id ? 
-                                        `<img src="/api/drive-photo/${orchid.google_drive_id}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="${orchid.display_name}">` :
-                                        '<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;"><i data-feather="camera" style="width: 48px; height: 48px; color: #ccc;"></i></div>'
+                                        `<img src="/api/drive-photo/${orchid.google_drive_id}" 
+                                             class="card-img-top" 
+                                             style="height: 200px; object-fit: cover;" 
+                                             alt="${orchid.display_name}"
+                                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\"card-img-top bg-light d-flex align-items-center justify-content-center\\" style=\\"height: 200px;\\"><i data-feather=\\"image\\" style=\\"width: 48px; height: 48px; color: #7A4B8E;\\"></i></div>'; feather.replace();">` :
+                                        '<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;"><i data-feather="image" style="width: 48px; height: 48px; color: #7A4B8E;"></i></div>'
                                     }
                                     <div class="card-body p-3">
                                         <h6 class="card-title mb-1" style="color: #7A4B8E;">${orchid.display_name}</h6>
@@ -269,8 +284,25 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error loading recent orchids:', error);
-            document.getElementById('recent-orchids-container').innerHTML = 
-                '<p class="text-center text-muted">Unable to load recent orchids.</p>';
+            document.getElementById('recent-orchids-container').innerHTML = `
+                <div class="row g-3">
+                    ${Array.from({length: 4}, (_, i) => `
+                        <div class="col-6 col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i data-feather="image" style="width: 48px; height: 48px; color: #7A4B8E;"></i>
+                                </div>
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-1" style="color: #7A4B8E;">Loading orchids...</h6>
+                                    <p class="card-text small text-muted mb-2">Please wait</p>
+                                    <button class="btn btn-sm btn-outline-primary" disabled>Loading...</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            feather.replace();
         });
 });
 </script>
