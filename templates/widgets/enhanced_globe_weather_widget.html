@@ -1,0 +1,977 @@
+<!-- Enhanced Interactive Globe Weather Widget with Solar System Integration -->
+<div id="enhanced-globe-weather-{{ widget_data.widget_id }}" class="enhanced-globe-weather-widget">
+    <div class="widget-header">
+        <h3>
+            <span class="globe-icon">🌍</span>
+            EARTH & SUN ORCHID CLIMATE
+        </h3>
+        <p class="widget-subtitle">Explore Global Orchid Habitats in Real-Time</p>
+        <div class="fcos-badge">FCOS</div>
+        <div class="solar-activity-indicator">
+            <span class="solar-icon">☀️</span>
+            <span id="solar-activity-{{ widget_data.widget_id }}">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Main Display Area -->
+    <div class="main-display-area">
+        <!-- Globe Container -->
+        <div class="globe-container">
+            <div id="earth-sun-scene-{{ widget_data.widget_id }}" class="earth-sun-scene">
+                <!-- Earth Globe -->
+                <div id="earth-globe-{{ widget_data.widget_id }}" class="earth-globe"></div>
+                
+                <!-- Sun -->
+                <div id="sun-sphere-{{ widget_data.widget_id }}" class="sun-sphere">
+                    <div class="sun-corona"></div>
+                    <div class="solar-rays"></div>
+                </div>
+                
+                <!-- Day/Night Terminator -->
+                <div id="day-night-line-{{ widget_data.widget_id }}" class="day-night-line"></div>
+                
+                <!-- Country Highlights -->
+                <div id="country-highlights-{{ widget_data.widget_id }}" class="country-highlights"></div>
+            </div>
+            
+            <!-- Globe Controls -->
+            <div class="globe-controls">
+                <button id="pause-rotation-{{ widget_data.widget_id }}" class="globe-btn">⏸️ Pause</button>
+                <button id="random-country-{{ widget_data.widget_id }}" class="globe-btn">🎲 Random</button>
+                <select id="rotation-speed-{{ widget_data.widget_id }}" class="speed-control">
+                    <option value="0.5">0.5x Speed</option>
+                    <option value="1" selected>1x Speed</option>
+                    <option value="2">2x Speed</option>
+                    <option value="5">5x Speed</option>
+                    <option value="10">10x Speed</option>
+                </select>
+            </div>
+            
+            <!-- Activity Status -->
+            <div class="activity-status">
+                <div id="rotation-status-{{ widget_data.widget_id }}" class="rotation-indicator">
+                    🔄 Auto-rotating
+                </div>
+                <div class="last-interaction">
+                    Last interaction: <span id="last-interaction-{{ widget_data.widget_id }}">now</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orchid Display Panel -->
+        <div class="orchid-display-panel">
+            <!-- Selected Orchid -->
+            <div id="selected-orchid-{{ widget_data.widget_id }}" class="selected-orchid">
+                <div class="orchid-image-container">
+                    <img id="orchid-image-{{ widget_data.widget_id }}" 
+                         src="{{ widget_data.orchids[0].image_url if widget_data.orchids else '/static/images/orchid_placeholder.svg' }}" 
+                         alt="Selected Orchid" class="current-orchid-image">
+                    <div class="image-overlay">
+                        <div class="country-badge" id="country-badge-{{ widget_data.widget_id }}">
+                            🌍 {{ widget_data.orchids[0].region if widget_data.orchids else 'Select Country' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="orchid-info">
+                    <h4 id="orchid-name-{{ widget_data.widget_id }}">
+                        {{ widget_data.orchids[0].display_name if widget_data.orchids else 'Select a country to explore orchids' }}
+                    </h4>
+                    <div id="scientific-name-{{ widget_data.widget_id }}" class="scientific-name">
+                        {{ widget_data.orchids[0].scientific_name if widget_data.orchids else '' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Climate Data Display -->
+            <div class="climate-data-display">
+                <div class="current-habitat-weather">
+                    <h5>Native Habitat Conditions</h5>
+                    <div id="habitat-weather-{{ widget_data.widget_id }}" class="weather-display">
+                        <div class="temp-display">--°C</div>
+                        <div class="humidity-display">--% humidity</div>
+                        <div class="photoperiod-display">-- hrs daylight</div>
+                    </div>
+                </div>
+                
+                <div class="solar-data-panel">
+                    <h6>☀️ Solar Conditions</h6>
+                    <div id="solar-data-{{ widget_data.widget_id }}" class="solar-metrics">
+                        <div class="solar-metric">
+                            <span class="metric-label">Solar Angle:</span>
+                            <span id="solar-angle-{{ widget_data.widget_id }}">--°</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">UV Index:</span>
+                            <span id="uv-index-{{ widget_data.widget_id }}">--</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">Day Length:</span>
+                            <span id="day-length-{{ widget_data.widget_id }}">-- hrs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growing Advice Panel -->
+            <div class="growing-advice-panel">
+                <div class="advice-header">
+                    <span class="advice-icon">💡</span>
+                    <span>Growing Advice</span>
+                </div>
+                <div id="ai-growing-advice-{{ widget_data.widget_id }}" class="advice-content">
+                    Click on a country to get specific growing advice for orchids from that region.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Country Statistics Bar -->
+    <div class="country-stats-bar">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="total-countries-{{ widget_data.widget_id }}">{{ widget_data.countries_with_orchids|length if widget_data.countries_with_orchids else '0' }}</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="selected-country-orchids-{{ widget_data.widget_id }}">--</div>
+                <div class="stat-label">Orchids</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="growing-season-{{ widget_data.widget_id }}">--</div>
+                <div class="stat-label">Season</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="local-time-{{ widget_data.widget_id }}">--:--</div>
+                <div class="stat-label">Local Time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Explored -->
+    <div class="exploration-breadcrumbs">
+        <span class="breadcrumb-label">Recently explored:</span>
+        <div id="breadcrumbs-{{ widget_data.widget_id }}" class="breadcrumbs-container">
+            <span class="breadcrumb-item">🌍 Start exploring</span>
+        </div>
+    </div>
+
+    <!-- Widget Footer -->
+    <div class="widget-footer">
+        <div class="data-sources">
+            Solar data: NOAA • Weather: OpenWeather • Orchids: Five Cities Orchid Society
+        </div>
+        <div class="last-updated">Updated: <span id="last-update-{{ widget_data.widget_id }}">now</span></div>
+        <div class="powered-by">Powered by FCOS Orchid Atlas</div>
+    </div>
+</div>
+
+<!-- Widget Styles -->
+<style>
+.enhanced-globe-weather-widget {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.widget-header {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 600;
+    background: linear-gradient(45deg, #ffd700, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.globe-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+.widget-subtitle {
+    margin: 8px 0;
+    color: #b8c5d1;
+    font-size: 0.9em;
+}
+
+.fcos-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #4a7c59;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.solar-activity-indicator {
+    background: rgba(255, 215, 0, 0.2);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.main-display-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.globe-container {
+    position: relative;
+}
+
+.earth-sun-scene {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: radial-gradient(circle, #001122 0%, #000011 100%);
+}
+
+.earth-globe {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: linear-gradient(45deg, #4a90e2, #2c5aa0);
+    border: 2px solid #ffffff20;
+    box-shadow: 
+        inset 0 0 30px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(74, 144, 226, 0.4);
+    animation: earthRotation 60s linear infinite;
+}
+
+.sun-sphere {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    right: 20px;
+    top: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffff00, #ff6600);
+    box-shadow: 0 0 20px #ffff00, 0 0 40px #ff6600;
+    animation: solarPulse 4s ease-in-out infinite;
+}
+
+.sun-corona {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: -10px;
+    left: -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 30%, rgba(255, 255, 0, 0.1) 70%);
+    animation: coronaRotation 20s linear infinite;
+}
+
+.solar-rays {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: -20px;
+    left: -20px;
+    background: conic-gradient(from 0deg, 
+        transparent 0deg, rgba(255, 255, 0, 0.3) 10deg, transparent 20deg,
+        transparent 30deg, rgba(255, 255, 0, 0.3) 40deg, transparent 50deg,
+        transparent 60deg, rgba(255, 255, 0, 0.3) 70deg, transparent 80deg,
+        transparent 90deg, rgba(255, 255, 0, 0.3) 100deg, transparent 110deg);
+    animation: raysRotation 30s linear infinite;
+}
+
+.globe-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.globe-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.globe-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.speed-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.activity-status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.8em;
+    color: #b8c5d1;
+}
+
+.orchid-display-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.orchid-image-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.current-orchid-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+}
+
+.country-badge {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    display: inline-block;
+}
+
+.orchid-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1em;
+    color: #ffd700;
+}
+
+.scientific-name {
+    font-style: italic;
+    color: #b8c5d1;
+    font-size: 0.9em;
+}
+
+.climate-data-display {
+    margin: 16px 0;
+}
+
+.current-habitat-weather h5 {
+    margin: 0 0 8px 0;
+    font-size: 1em;
+    color: #4a90e2;
+}
+
+.weather-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.temp-display, .humidity-display, .photoperiod-display {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.solar-data-panel h6 {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+    color: #ffd700;
+}
+
+.solar-metrics {
+    display: grid;
+    gap: 4px;
+}
+
+.solar-metric {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    padding: 4px 0;
+}
+
+.growing-advice-panel {
+    background: rgba(74, 144, 226, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.advice-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ffd700;
+}
+
+.advice-content {
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: #e0e0e0;
+}
+
+.country-stats-bar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #ffd700;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: #b8c5d1;
+    margin-top: 4px;
+}
+
+.exploration-breadcrumbs {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 0.9em;
+}
+
+.breadcrumb-label {
+    color: #b8c5d1;
+    margin-right: 8px;
+}
+
+.breadcrumbs-container {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.widget-footer {
+    text-align: center;
+    font-size: 0.8em;
+    color: #b8c5d1;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
+
+.data-sources {
+    margin-bottom: 4px;
+}
+
+/* Animations */
+@keyframes earthRotation {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes solarPulse {
+    0%, 100% { box-shadow: 0 0 20px #ffff00, 0 0 40px #ff6600; }
+    50% { box-shadow: 0 0 30px #ffff00, 0 0 60px #ff6600; }
+}
+
+@keyframes coronaRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes raysRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-display-area {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .weather-display {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Interactive hover effects */
+.earth-globe:hover {
+    animation-play-state: paused;
+    cursor: pointer;
+}
+
+.country-highlights {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.country-highlight {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #ffd700;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ffd700;
+    animation: countryPulse 2s ease-in-out infinite;
+}
+
+@keyframes countryPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+</style>
+
+<!-- Widget JavaScript -->
+<script>
+(function() {
+    const widgetId = '{{ widget_data.widget_id }}';
+    let isRotating = true;
+    let rotationSpeed = 1;
+    let lastInteraction = Date.now();
+    let currentCountry = null;
+    let breadcrumbs = [];
+    let currentOrchidIndex = 0;
+    let countryOrchids = [];
+    
+    // Initialize widget
+    function initializeWidget() {
+        console.log('Initializing Enhanced Globe Weather Widget:', widgetId);
+        
+        // Load initial solar activity
+        loadSolarActivity();
+        
+        // Setup globe interaction
+        setupGlobeInteraction();
+        
+        // Setup controls
+        setupControls();
+        
+        // Start monitoring user interaction
+        startInteractionMonitoring();
+        
+        // Load initial orchid data
+        loadInitialOrchid();
+        
+        // Start real-time updates
+        startRealTimeUpdates();
+    }
+    
+    function loadSolarActivity() {
+        // Simulate solar activity data (in real implementation, fetch from NOAA)
+        const solarData = {
+            activity: 'Moderate',
+            sunspots: 45,
+            uvIndex: 6,
+            solarFlares: 'Low'
+        };
+        
+        document.getElementById(`solar-activity-${widgetId}`).textContent = 
+            `${solarData.activity} Activity • ${solarData.sunspots} Sunspots`;
+    }
+    
+    function setupGlobeInteraction() {
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        
+        // Add country highlight points
+        addCountryHighlights();
+        
+        // Globe click handler
+        globe.addEventListener('click', handleGlobeClick);
+        
+        // Hover effects
+        globe.addEventListener('mouseenter', () => {
+            updateLastInteraction();
+        });
+    }
+    
+    function addCountryHighlights() {
+        const highlightsContainer = document.getElementById(`country-highlights-${widgetId}`);
+        
+        // Sample countries with orchids (positions are approximate)
+        const countries = [
+            { name: 'Colombia', x: 35, y: 60, orchids: 156 },
+            { name: 'Ecuador', x: 32, y: 68, orchids: 89 },
+            { name: 'Brazil', x: 45, y: 75, orchids: 234 },
+            { name: 'Thailand', x: 75, y: 58, orchids: 98 },
+            { name: 'Madagascar', x: 68, y: 78, orchids: 67 },
+            { name: 'Philippines', x: 80, y: 62, orchids: 112 }
+        ];
+        
+        countries.forEach((country, index) => {
+            const highlight = document.createElement('div');
+            highlight.className = 'country-highlight';
+            highlight.style.left = country.x + '%';
+            highlight.style.top = country.y + '%';
+            highlight.style.animationDelay = (index * 0.5) + 's';
+            highlight.dataset.country = country.name;
+            highlight.dataset.orchids = country.orchids;
+            highlight.title = `${country.name} - ${country.orchids} orchids`;
+            
+            highlight.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectCountry(country);
+            });
+            
+            highlightsContainer.appendChild(highlight);
+        });
+        
+        // Update total countries display
+        document.getElementById(`total-countries-${widgetId}`).textContent = countries.length;
+    }
+    
+    function handleGlobeClick(event) {
+        updateLastInteraction();
+        
+        // Calculate approximate country based on click position
+        const rect = event.target.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        
+        // Find nearest country highlight
+        const highlights = document.querySelectorAll('.country-highlight');
+        let nearestCountry = null;
+        let minDistance = Infinity;
+        
+        highlights.forEach(highlight => {
+            const hx = parseFloat(highlight.style.left);
+            const hy = parseFloat(highlight.style.top);
+            const distance = Math.sqrt((x - hx) ** 2 + (y - hy) ** 2);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestCountry = {
+                    name: highlight.dataset.country,
+                    orchids: parseInt(highlight.dataset.orchids)
+                };
+            }
+        });
+        
+        if (nearestCountry && minDistance < 20) {
+            selectCountry(nearestCountry);
+        }
+    }
+    
+    function selectCountry(country) {
+        currentCountry = country;
+        updateLastInteraction();
+        
+        // Add to breadcrumbs
+        addToBreadcrumbs(country);
+        
+        // Load orchids from this country
+        loadCountryOrchids(country);
+        
+        // Update country statistics
+        updateCountryStats(country);
+        
+        // Load weather data for country
+        loadCountryWeather(country);
+        
+        // Generate growing advice
+        generateGrowingAdvice(country);
+        
+        console.log(`Selected country: ${country.name}`);
+    }
+    
+    function loadCountryOrchids(country) {
+        // Simulate loading orchids from selected country
+        fetch(`/api/orchids-by-country?country=${encodeURIComponent(country.name)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.orchids.length > 0) {
+                    countryOrchids = data.orchids;
+                    currentOrchidIndex = 0;
+                    displayOrchid(countryOrchids[0]);
+                } else {
+                    // Fallback to sample data
+                    loadSampleOrchidForCountry(country);
+                }
+            })
+            .catch(() => {
+                loadSampleOrchidForCountry(country);
+            });
+    }
+    
+    function loadSampleOrchidForCountry(country) {
+        // Sample orchid data for demonstration
+        const sampleOrchids = {
+            'Colombia': {
+                name: 'Cattleya trianae',
+                scientific: 'Cattleya trianae Linden & Rchb.f.',
+                image: '/static/images/cattleya_trianae.jpg'
+            },
+            'Thailand': {
+                name: 'Dendrobium nobile',
+                scientific: 'Dendrobium nobile Lindl.',
+                image: '/static/images/dendrobium_nobile.jpg'
+            },
+            'Ecuador': {
+                name: 'Dracula vampira',
+                scientific: 'Dracula vampira (Luer) Luer',
+                image: '/static/images/dracula_vampira.jpg'
+            }
+        };
+        
+        const orchid = sampleOrchids[country.name] || {
+            name: 'Unknown Orchid',
+            scientific: 'Species unknown',
+            image: '/static/images/orchid_placeholder.svg'
+        };
+        
+        displayOrchid(orchid);
+    }
+    
+    function displayOrchid(orchid) {
+        // Update orchid display
+        const imageEl = document.getElementById(`orchid-image-${widgetId}`);
+        const nameEl = document.getElementById(`orchid-name-${widgetId}`);
+        const scientificEl = document.getElementById(`scientific-name-${widgetId}`);
+        const countryBadgeEl = document.getElementById(`country-badge-${widgetId}`);
+        
+        if (imageEl) imageEl.src = orchid.image || orchid.image_url;
+        if (nameEl) nameEl.textContent = orchid.name || orchid.display_name;
+        if (scientificEl) scientificEl.textContent = orchid.scientific || orchid.scientific_name;
+        if (countryBadgeEl) countryBadgeEl.textContent = `🌍 ${currentCountry?.name || 'Unknown'}`;
+    }
+    
+    function updateCountryStats(country) {
+        document.getElementById(`selected-country-orchids-${widgetId}`).textContent = country.orchids;
+        
+        // Calculate season (simplified)
+        const now = new Date();
+        const month = now.getMonth();
+        let season = 'Spring';
+        if (month >= 5 && month <= 7) season = 'Summer';
+        else if (month >= 8 && month <= 10) season = 'Autumn';
+        else if (month >= 11 || month <= 1) season = 'Winter';
+        
+        document.getElementById(`growing-season-${widgetId}`).textContent = season;
+        
+        // Simulate local time (offset from UTC)
+        const localTime = new Date().toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+        document.getElementById(`local-time-${widgetId}`).textContent = localTime;
+    }
+    
+    function loadCountryWeather(country) {
+        // Simulate weather data for the selected country
+        const weatherData = {
+            temperature: Math.round(15 + Math.random() * 20),
+            humidity: Math.round(60 + Math.random() * 30),
+            photoperiod: Math.round(10 + Math.random() * 4),
+            solarAngle: Math.round(30 + Math.random() * 60),
+            uvIndex: Math.round(3 + Math.random() * 8),
+            dayLength: Math.round(10 + Math.random() * 4)
+        };
+        
+        // Update habitat weather display
+        document.querySelector(`#habitat-weather-${widgetId} .temp-display`).textContent = `${weatherData.temperature}°C`;
+        document.querySelector(`#habitat-weather-${widgetId} .humidity-display`).textContent = `${weatherData.humidity}%`;
+        document.querySelector(`#habitat-weather-${widgetId} .photoperiod-display`).textContent = `${weatherData.photoperiod}h`;
+        
+        // Update solar data
+        document.getElementById(`solar-angle-${widgetId}`).textContent = `${weatherData.solarAngle}°`;
+        document.getElementById(`uv-index-${widgetId}`).textContent = weatherData.uvIndex;
+        document.getElementById(`day-length-${widgetId}`).textContent = `${weatherData.dayLength}h`;
+    }
+    
+    function generateGrowingAdvice(country) {
+        const adviceContainer = document.getElementById(`ai-growing-advice-${widgetId}`);
+        
+        // Generate location-specific advice
+        const advice = `Based on ${country.name}'s climate, provide bright indirect light and maintain 60-70% humidity. ${country.name} orchids typically prefer temperature ranges of 18-25°C with good air circulation.`;
+        
+        adviceContainer.textContent = advice;
+    }
+    
+    function addToBreadcrumbs(country) {
+        breadcrumbs.push(country.name);
+        if (breadcrumbs.length > 5) breadcrumbs.shift();
+        
+        const breadcrumbsContainer = document.getElementById(`breadcrumbs-${widgetId}`);
+        breadcrumbsContainer.innerHTML = breadcrumbs.map(name => 
+            `<span class="breadcrumb-item">🌍 ${name}</span>`
+        ).join('');
+    }
+    
+    function setupControls() {
+        // Pause/Resume button
+        const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+        pauseBtn?.addEventListener('click', toggleRotation);
+        
+        // Random country button
+        const randomBtn = document.getElementById(`random-country-${widgetId}`);
+        randomBtn?.addEventListener('click', selectRandomCountry);
+        
+        // Speed control
+        const speedControl = document.getElementById(`rotation-speed-${widgetId}`);
+        speedControl?.addEventListener('change', updateRotationSpeed);
+    }
+    
+    function toggleRotation() {
+        isRotating = !isRotating;
+        updateLastInteraction();
+        
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+        const statusEl = document.getElementById(`rotation-status-${widgetId}`);
+        
+        if (isRotating) {
+            globe.style.animationPlayState = 'running';
+            pauseBtn.textContent = '⏸️ Pause';
+            statusEl.textContent = '🔄 Auto-rotating';
+        } else {
+            globe.style.animationPlayState = 'paused';
+            pauseBtn.textContent = '▶️ Resume';
+            statusEl.textContent = '⏸️ Paused';
+        }
+    }
+    
+    function selectRandomCountry() {
+        const highlights = document.querySelectorAll('.country-highlight');
+        const randomHighlight = highlights[Math.floor(Math.random() * highlights.length)];
+        
+        const country = {
+            name: randomHighlight.dataset.country,
+            orchids: parseInt(randomHighlight.dataset.orchids)
+        };
+        
+        selectCountry(country);
+    }
+    
+    function updateRotationSpeed() {
+        const speedControl = document.getElementById(`rotation-speed-${widgetId}`);
+        rotationSpeed = parseFloat(speedControl.value);
+        updateLastInteraction();
+        
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        globe.style.animationDuration = (60 / rotationSpeed) + 's';
+    }
+    
+    function updateLastInteraction() {
+        lastInteraction = Date.now();
+        document.getElementById(`last-interaction-${widgetId}`).textContent = 'now';
+    }
+    
+    function startInteractionMonitoring() {
+        setInterval(() => {
+            const timeSinceInteraction = Date.now() - lastInteraction;
+            const minutesSince = Math.floor(timeSinceInteraction / 60000);
+            
+            if (minutesSince >= 1 && !isRotating) {
+                // Auto-resume rotation after 1 minute of inactivity
+                isRotating = true;
+                const globe = document.getElementById(`earth-globe-${widgetId}`);
+                const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+                const statusEl = document.getElementById(`rotation-status-${widgetId}`);
+                
+                globe.style.animationPlayState = 'running';
+                pauseBtn.textContent = '⏸️ Pause';
+                statusEl.textContent = '🔄 Auto-rotating';
+            }
+            
+            // Update last interaction display
+            if (timeSinceInteraction > 5000) {
+                const seconds = Math.floor(timeSinceInteraction / 1000);
+                if (seconds < 60) {
+                    document.getElementById(`last-interaction-${widgetId}`).textContent = `${seconds}s ago`;
+                } else {
+                    document.getElementById(`last-interaction-${widgetId}`).textContent = `${minutesSince}m ago`;
+                }
+            }
+        }, 1000);
+    }
+    
+    function loadInitialOrchid() {
+        // Load the first orchid from the widget data
+        const orchids = {{ widget_data.orchids|tojson|safe }};
+        if (orchids && orchids.length > 0) {
+            displayOrchid(orchids[0]);
+            if (orchids[0].region) {
+                const country = { name: orchids[0].region, orchids: 1 };
+                updateCountryStats(country);
+                loadCountryWeather(country);
+                generateGrowingAdvice(country);
+            }
+        }
+    }
+    
+    function startRealTimeUpdates() {
+        // Update widget every 30 seconds
+        setInterval(() => {
+            document.getElementById(`last-update-${widgetId}`).textContent = 
+                new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+        }, 30000);
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWidget);
+    } else {
+        initializeWidget();
+    }
+})();
+</script>

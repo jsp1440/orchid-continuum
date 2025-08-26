@@ -64,6 +64,10 @@ app.register_blueprint(enhanced_mapping_bp)
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
+# Register Globe Weather Widget routes
+from globe_weather_routes import globe_weather_bp
+app.register_blueprint(globe_weather_bp)
+
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
     """Test Gary Yong Gee scraper with limited scope"""
