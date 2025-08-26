@@ -3,14 +3,30 @@
 Orchid Growth Comparison System - Analysis of same genus/species under different conditions
 """
 
+from flask import Blueprint, render_template, request, jsonify
 from app import app, db
 from models import OrchidRecord
 from sqlalchemy import func
 from collections import defaultdict
 import logging
 
+# Create the blueprint
+comparison_bp = Blueprint('comparison', __name__, url_prefix='/comparison')
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+@comparison_bp.route('/')
+def comparison_home():
+    """Main comparison page"""
+    candidates = find_best_comparison_candidates()
+    return render_template('comparison/home.html', candidates=candidates[:10])
+
+@comparison_bp.route('/api/candidates')
+def api_candidates():
+    """API endpoint for comparison candidates"""
+    candidates = find_best_comparison_candidates()
+    return jsonify(candidates)
 
 def find_best_comparison_candidates():
     """Find orchid species with the best data for growth comparison studies"""
