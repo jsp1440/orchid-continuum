@@ -886,7 +886,7 @@ class UserOrchidCollection(db.Model):
         return f'<UserOrchidCollection {self.user_id}: {self.orchid_id}>'
 
 class DiscoveryAlert(db.Model):
-    """Professor BloomBot discovery alerts and notifications"""
+    """AI discovery alerts and notifications (legacy from Professor BloomBot)"""
     __tablename__ = 'discovery_alerts'
     
     id = db.Column(db.Integer, primary_key=True)
