@@ -2199,6 +2199,68 @@ def zoom_speaker_registration(speaker_id):
     """Public Zoom speaker registration page"""
     return render_template('events/zoom_speaker_registration.html', speaker_id=speaker_id)
 
+@app.route('/admin/society-outreach/<speaker_id>')
+@admin_required
+def admin_society_outreach(speaker_id):
+    """Manage outreach to partner orchid societies"""
+    try:
+        from enhanced_newsletter_automation import zoom_automation
+        
+        # Get dummy speaker data for the interface (would be from database in production)
+        speaker_data = {
+            'speaker_name': 'Dr. Jane Smith',
+            'topic': 'Advanced Orchid Propagation',
+            'date': 'October 15, 2025',
+            'time': '7:00 PM PST'
+        }
+        
+        speaker = zoom_automation.schedule_monthly_speaker(speaker_data)
+        outreach_campaigns = zoom_automation._create_society_outreach_campaign(speaker)
+        
+        return jsonify({
+            'success': True,
+            'outreach_campaigns': outreach_campaigns,
+            'total_societies': len(outreach_campaigns),
+            'estimated_reach': sum(campaign['estimated_reach'] for campaign in outreach_campaigns)
+        })
+    except Exception as e:
+        logger.error(f"Society outreach error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Outreach generation failed'
+        }), 500
+
+@app.route('/admin/social-media-content/<speaker_id>')
+@admin_required
+def admin_social_media_content(speaker_id):
+    """Generate social media content for speaker events"""
+    try:
+        from enhanced_newsletter_automation import zoom_automation
+        
+        # Get dummy speaker data (would be from database in production)
+        speaker_data = {
+            'speaker_name': 'Dr. Jane Smith',
+            'topic': 'Advanced Orchid Propagation',
+            'date': 'October 15, 2025',
+            'time': '7:00 PM PST',
+            'bio': 'Leading orchid researcher with 20+ years experience'
+        }
+        
+        speaker = zoom_automation.schedule_monthly_speaker(speaker_data)
+        social_content = zoom_automation._generate_comprehensive_social_media_content(speaker)
+        
+        return jsonify({
+            'success': True,
+            'social_content': social_content,
+            'platforms': list(social_content.keys())
+        })
+    except Exception as e:
+        logger.error(f"Social media content error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Content generation failed'
+        }), 500
+
 # Register visitor teasers
 try:
     from visitor_teasers import register_visitor_teasers, add_membership_filters
