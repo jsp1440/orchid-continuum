@@ -46,7 +46,9 @@
             <!-- Globe Controls -->
             <div class="globe-controls">
                 <button id="pause-rotation-{{ widget_data.widget_id }}" class="globe-btn">⏸️ Pause</button>
-                <button id="random-country-{{ widget_data.widget_id }}" class="globe-btn">🎲 Random</button>
+                <button id="random-country-{{ widget_data.widget_id }}" class="globe-btn">🎲 Random Feature</button>
+                <button id="tutorial-toggle-{{ widget_data.widget_id }}" class="globe-btn">❓ How to Use</button>
+                <button id="demo-mode-{{ widget_data.widget_id }}" class="globe-btn">🎬 Demo Tour</button>
                 <select id="rotation-speed-{{ widget_data.widget_id }}" class="speed-control">
                     <option value="0.5">0.5x Speed</option>
                     <option value="1" selected>1x Speed</option>
@@ -54,6 +56,64 @@
                     <option value="5">5x Speed</option>
                     <option value="10">10x Speed</option>
                 </select>
+            </div>
+
+            <!-- Interactive Legend/Key -->
+            <div class="interactive-legend">
+                <div class="legend-header">
+                    <strong>📍 Click the Colored Dots on Earth to Learn!</strong>
+                </div>
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-marker forest"></div>
+                        <span>🌳 Rainforests</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker mountain"></div>
+                        <span>🏔️ Mountains</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker desert"></div>
+                        <span>🏜️ Deserts</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker climate-zone"></div>
+                        <span>🌡️ Climate Zones</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker orchid-hotspot"></div>
+                        <span>🌺 Orchid Hotspots</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tutorial Overlay -->
+            <div id="tutorial-overlay-{{ widget_data.widget_id }}" class="tutorial-overlay" style="display: none;">
+                <div class="tutorial-content">
+                    <h3>🌍 How to Use the Earth Science Widget</h3>
+                    <div class="tutorial-steps">
+                        <div class="tutorial-step">
+                            <strong>1. Look for Colored Dots:</strong> Small colored circles on Earth show different geographical features
+                        </div>
+                        <div class="tutorial-step">
+                            <strong>2. Click Any Dot:</strong> Touch or click a colored dot to learn about that location
+                        </div>
+                        <div class="tutorial-step">
+                            <strong>3. Color Guide:</strong>
+                            <div class="color-guide">
+                                <span class="color-example forest">●</span> Green = Forests & Rainforests<br>
+                                <span class="color-example mountain">●</span> Brown = Mountains & Peaks<br>
+                                <span class="color-example desert">●</span> Tan = Deserts & Dry Areas<br>
+                                <span class="color-example climate-zone">●</span> Blue = Climate Zones<br>
+                                <span class="color-example orchid-hotspot">●</span> Pink = Orchid Hotspots
+                            </div>
+                        </div>
+                        <div class="tutorial-step">
+                            <strong>4. Learn Connections:</strong> See how each feature affects weather and orchid growing!
+                        </div>
+                    </div>
+                    <button id="close-tutorial-{{ widget_data.widget_id }}" class="close-tutorial-btn">Got it! Start Exploring ✅</button>
+                </div>
             </div>
             
             <!-- Activity Status -->
@@ -873,6 +933,162 @@
     50% { transform: scale(1.2); opacity: 1; }
 }
 
+/* Interactive Legend Styling */
+.interactive-legend {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(52, 152, 219, 0.05));
+    border: 2px solid rgba(74, 144, 226, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.legend-header {
+    font-size: 1.1em;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 2px solid #4a90e2;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.legend-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.legend-marker.forest {
+    background: #228B22;
+    box-shadow: 0 0 8px rgba(34, 139, 34, 0.8);
+}
+
+.legend-marker.mountain {
+    background: #8B4513;
+    box-shadow: 0 0 8px rgba(139, 69, 19, 0.8);
+}
+
+.legend-marker.desert {
+    background: #F4A460;
+    box-shadow: 0 0 8px rgba(244, 164, 96, 0.8);
+}
+
+.legend-marker.climate-zone {
+    background: #32CD32;
+    box-shadow: 0 0 8px rgba(50, 205, 50, 0.8);
+}
+
+.legend-marker.orchid-hotspot {
+    background: #FF69B4;
+    box-shadow: 0 0 8px rgba(255, 105, 180, 0.8);
+}
+
+/* Tutorial Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-content h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.tutorial-steps {
+    margin: 20px 0;
+}
+
+.tutorial-step {
+    padding: 15px;
+    margin: 15px 0;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 5px solid #4a90e2;
+}
+
+.color-guide {
+    margin: 10px 0;
+    padding: 15px;
+    background: #f0f8ff;
+    border-radius: 8px;
+    line-height: 1.8;
+}
+
+.color-example {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+.color-example.forest { color: #228B22; }
+.color-example.mountain { color: #8B4513; }
+.color-example.desert { color: #F4A460; }
+.color-example.climate-zone { color: #32CD32; }
+.color-example.orchid-hotspot { color: #FF69B4; }
+
+.close-tutorial-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.close-tutorial-btn:hover {
+    background: #357abd;
+    transform: translateY(-2px);
+}
+
 /* Educational Learning System */
 .educational-panel {
     background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(52, 152, 219, 0.1));
@@ -1342,6 +1558,9 @@
         // Add educational geographical markers
         addCountryHighlights();
         
+        // Setup tutorial functionality
+        setupTutorial();
+        
         // Globe click handler
         globe.addEventListener('click', handleGlobeClick);
         
@@ -1687,6 +1906,101 @@
                 </div>
             </div>
         `;
+    }
+    
+    function setupTutorial() {
+        const tutorialBtn = document.getElementById(`tutorial-toggle-${widgetId}`);
+        const demoBtn = document.getElementById(`demo-mode-${widgetId}`);
+        const tutorialOverlay = document.getElementById(`tutorial-overlay-${widgetId}`);
+        const closeTutorialBtn = document.getElementById(`close-tutorial-${widgetId}`);
+        
+        // Tutorial button click
+        tutorialBtn.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'flex';
+        });
+        
+        // Close tutorial
+        closeTutorialBtn.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'none';
+        });
+        
+        // Close tutorial when clicking outside
+        tutorialOverlay.addEventListener('click', (e) => {
+            if (e.target === tutorialOverlay) {
+                tutorialOverlay.style.display = 'none';
+            }
+        });
+        
+        // Demo mode - automatically shows different features
+        demoBtn.addEventListener('click', () => {
+            startDemoTour();
+        });
+    }
+    
+    function startDemoTour() {
+        const markers = document.querySelectorAll('.geo-marker');
+        let currentIndex = 0;
+        
+        if (markers.length === 0) return;
+        
+        // Update demo button text
+        const demoBtn = document.getElementById(`demo-mode-${widgetId}`);
+        demoBtn.textContent = '⏳ Demo Running...';
+        demoBtn.disabled = true;
+        
+        function showNextFeature() {
+            if (currentIndex >= markers.length) {
+                // Demo complete
+                demoBtn.textContent = '🎬 Demo Tour';
+                demoBtn.disabled = false;
+                
+                // Show completion message
+                document.getElementById(`current-location-${widgetId}`).innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🎉</div>
+                        <div style="font-weight: bold; color: #4a90e2; margin-bottom: 10px;">Demo Tour Complete!</div>
+                        <div style="color: #666;">You've learned about all the major Earth features that affect orchid growing conditions.</div>
+                        <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 8px;">
+                            <strong>Next:</strong> Try clicking any colored dot to explore on your own!
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const marker = markers[currentIndex];
+            const feature = {
+                name: marker.dataset.feature,
+                type: marker.dataset.type,
+                info: marker.dataset.info
+            };
+            
+            // Highlight the current marker
+            marker.style.transform = 'scale(2)';
+            marker.style.zIndex = '100';
+            
+            // Show feature information
+            explainGeoFeature(feature);
+            
+            // Add demo counter
+            const locationEl = document.getElementById(`current-location-${widgetId}`);
+            const demoCounter = `
+                <div style="position: absolute; top: 10px; right: 10px; background: #4a90e2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9em;">
+                    Demo ${currentIndex + 1}/${markers.length}
+                </div>
+            `;
+            locationEl.innerHTML = demoCounter + locationEl.innerHTML;
+            
+            // Reset marker after delay
+            setTimeout(() => {
+                marker.style.transform = '';
+                marker.style.zIndex = '';
+                currentIndex++;
+                showNextFeature();
+            }, 3000);
+        }
+        
+        showNextFeature();
     }
     
     function updateRotationSpeed() {
