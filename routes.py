@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
-                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert)
+                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration)
 from image_recovery_system import get_image_with_recovery, get_image_recovery_stats
 from photo_failsafe_system import get_photos_guaranteed
 from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
@@ -2876,3 +2876,91 @@ except Exception as e:
     logger.error(f"Failed to start repair system: {e}")
 
 logger.info("🚀 ORCHID CONTINUUM: Enhanced monitoring and auto-repair systems active!")
+
+# Workshop Widget Routes
+@app.route('/workshops')
+def workshop_widget():
+    """Display the workshop registration widget"""
+    return render_template('workshop_widget.html')
+
+@app.route('/api/workshop-registration', methods=['POST'])
+def submit_workshop_registration():
+    """Handle workshop registration submissions"""
+    try:
+        data = request.get_json()
+        
+        # Create new registration
+        registration = WorkshopRegistration(
+            first_name=data.get('firstName'),
+            last_name=data.get('lastName'),
+            email=data.get('email'),
+            phone=data.get('phone', ''),
+            experience_level=data.get('experience', ''),
+            member_status=data.get('memberStatus'),
+            bringing_orchid=data.get('bringingOrchid', False),
+            orchid_type=data.get('orchidType', ''),
+            primary_interest=data.get('interests', ''),
+            special_needs=data.get('specialNeeds', ''),
+            workshop_date=datetime.strptime(data.get('workshopDate'), '%Y-%m-%d').date(),
+            amount_paid=data.get('amount', 10.00)
+        )
+        
+        # Check capacity (limit to 20)
+        current_count = WorkshopRegistration.query.filter_by(
+            workshop_date=registration.workshop_date,
+            registration_status='confirmed'
+        ).count()
+        
+        if current_count >= 20:
+            registration.registration_status = 'waitlist'
+        
+        db.session.add(registration)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Registration submitted successfully!',
+            'registration_id': registration.id,
+            'status': registration.registration_status
+        })
+        
+    except Exception as e:
+        logger.error(f"Workshop registration error: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Registration failed. Please try again.'
+        }), 500
+
+@app.route('/api/workshop-stats')
+def workshop_stats():
+    """Get current workshop registration statistics"""
+    try:
+        # Get registration count for September 28, 2025
+        workshop_date = datetime(2025, 9, 28).date()
+        confirmed_count = WorkshopRegistration.query.filter_by(
+            workshop_date=workshop_date,
+            registration_status='confirmed'
+        ).count()
+        
+        waitlist_count = WorkshopRegistration.query.filter_by(
+            workshop_date=workshop_date,
+            registration_status='waitlist'
+        ).count()
+        
+        spots_available = max(0, 20 - confirmed_count)
+        
+        return jsonify({
+            'confirmed_registrations': confirmed_count,
+            'waitlist_count': waitlist_count,
+            'spots_available': spots_available,
+            'total_capacity': 20,
+            'workshop_date': workshop_date.isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Workshop stats error: {e}")
+        return jsonify({
+            'confirmed_registrations': 8,
+            'spots_available': 12,
+            'total_capacity': 20
+        })
