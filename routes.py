@@ -5,6 +5,7 @@ from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
                    User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert)
 from image_recovery_system import get_image_with_recovery, get_image_recovery_stats
+from photo_failsafe_system import get_photos_guaranteed
 from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
 from web_scraper import scrape_gary_yong_gee, scrape_roberta_fox
 from google_drive_service import upload_to_drive, get_drive_file_url
@@ -843,43 +844,106 @@ def upload():
 
 @app.route('/gallery')
 def gallery():
-    """Display orchid gallery with filtering"""
-    page = request.args.get('page', 1, type=int)
-    genus = request.args.get('genus', '')
-    climate = request.args.get('climate', '')
-    growth_habit = request.args.get('growth_habit', '')
+    """Gallery with comprehensive photo failsafe protection"""
+    try:
+        # Primary attempt - database query
+        page = request.args.get('page', 1, type=int)
+        genus = request.args.get('genus', '')
+        climate = request.args.get('climate', '')
+        growth_habit = request.args.get('growth_habit', '')
+        
+        # Filter for Google Drive images only
+        query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
+        
+        if genus:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+        if climate:
+            query = query.filter_by(climate_preference=climate)
+        if growth_habit:
+            query = query.filter_by(growth_habit=growth_habit)
+        
+        orchids = query.order_by(OrchidRecord.created_at.desc()).paginate(
+            page=page, per_page=12, error_out=False
+        )
+        
+        # Check if we have enough orchids for a good gallery
+        if orchids.total < 3:
+            raise Exception("Insufficient orchids in database")
+        
+        # Ensure Google Drive images are prioritized
+        working_orchids = []
+        for orchid in orchids.items:
+            if hasattr(orchid, 'google_drive_id') and orchid.google_drive_id:
+                working_orchids.append(orchid)
+        
+        # If too few Google Drive images, supplement with failsafe
+        if len(working_orchids) < 6:
+            logging.warning(f"Only {len(working_orchids)} Google Drive images available, supplementing with failsafe")
+            from photo_failsafe_system import get_photos_guaranteed
+            backup_photos, _ = get_photos_guaranteed(12 - len(working_orchids))
+            
+            # Mix real orchids with backup photos for a complete gallery
+            orchids.items = working_orchids + backup_photos[:12-len(working_orchids)]
+        
+        # Get filter options
+        genera = db.session.query(OrchidRecord.genus).distinct().filter(
+            OrchidRecord.genus.isnot(None)
+        ).all()
+        genera = [g[0] for g in genera if g[0]]
+        
+        climates = ['cool', 'intermediate', 'warm']
+        growth_habits = ['epiphytic', 'terrestrial', 'lithophytic']
+        
+        return render_template('gallery.html',
+                             orchids=orchids,
+                             genera=genera,
+                             climates=climates,
+                             growth_habits=growth_habits,
+                             current_genus=genus,
+                             current_climate=climate,
+                             current_growth_habit=growth_habit)
     
-    # Filter for Google Drive images only (to avoid CORS issues with external URLs)
-    query = OrchidRecord.query.filter(OrchidRecord.google_drive_id.isnot(None))
-    
-    if genus:
-        query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
-    if climate:
-        query = query.filter_by(climate_preference=climate)
-    if growth_habit:
-        query = query.filter_by(growth_habit=growth_habit)
-    
-    orchids = query.order_by(OrchidRecord.created_at.desc()).paginate(
-        page=page, per_page=12, error_out=False
-    )
-    
-    # Get filter options
-    genera = db.session.query(OrchidRecord.genus).distinct().filter(
-        OrchidRecord.genus.isnot(None)
-    ).all()
-    genera = [g[0] for g in genera if g[0]]
-    
-    climates = ['cool', 'intermediate', 'warm']
-    growth_habits = ['epiphytic', 'terrestrial', 'lithophytic']
-    
-    return render_template('gallery.html',
-                         orchids=orchids,
-                         genera=genera,
-                         climates=climates,
-                         growth_habits=growth_habits,
-                         current_genus=genus,
-                         current_climate=climate,
-                         current_growth_habit=growth_habit)
+    except Exception as e:
+        logging.error(f"🚨 GALLERY FAILURE: {e}")
+        
+        # EMERGENCY FAILSAFE - NEVER show empty gallery
+        try:
+            from photo_failsafe_system import get_photos_guaranteed
+            
+            photos, recovery_info = get_photos_guaranteed(12)
+            
+            # Create mock pagination object for template compatibility
+            class MockPagination:
+                def __init__(self, items):
+                    self.items = items
+                    self.total = len(items)
+                    self.pages = 1
+                    self.page = 1
+                    self.per_page = len(items)
+                    self.has_prev = False
+                    self.has_next = False
+                    self.prev_num = None
+                    self.next_num = None
+            
+            mock_orchids = MockPagination(photos)
+            
+            return render_template('gallery.html',
+                                 orchids=mock_orchids,
+                                 genera=['Phalaenopsis', 'Dendrobium', 'Cattleya'],
+                                 climates=['cool', 'intermediate', 'warm'],
+                                 growth_habits=['epiphytic', 'terrestrial'],
+                                 current_genus='',
+                                 current_climate='',
+                                 current_growth_habit='',
+                                 emergency_mode=True,
+                                 recovery_info=recovery_info)
+        
+        except Exception as backup_error:
+            logging.critical(f"🆘 BACKUP SYSTEM FAILED: {backup_error}")
+            
+            # Ultimate fallback - minimal working gallery
+            return render_template('error.html', 
+                                 error_message="Gallery temporarily unavailable. Please try again in a few moments.")
 
 @app.route('/search')
 def search():
