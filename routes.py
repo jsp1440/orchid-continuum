@@ -2054,6 +2054,14 @@ try:
 except ImportError as e:
     logger.warning(f"Orchid Debugger System not available: {e}")
 
+# Register Photo Provenance System
+try:
+    from photo_provenance_system import provenance_bp
+    app.register_blueprint(provenance_bp)
+    logger.info("Photo Provenance System registered successfully")
+except ImportError as e:
+    logger.warning(f"Photo Provenance System not available: {e}")
+
 # Register main widget system blueprint
 try:
     from widget_system import widget_bp
