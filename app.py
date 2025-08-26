@@ -100,3 +100,10 @@ try:
     print("Widget system for external integration initialized")
 except Exception as e:
     print(f"Widget system initialization error: {e}")
+
+try:
+    from orchid_interaction_routes import orchid_interaction_bp
+    app.register_blueprint(orchid_interaction_bp)
+    print("Orchid Interaction Explorer system initialized")
+except Exception as e:
+    print(f"Orchid Interaction Explorer initialization error: {e}")
