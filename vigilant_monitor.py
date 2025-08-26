@@ -145,9 +145,9 @@ class VigilantMonitor:
             
             for orchid in recent_orchids[:test_count]:
                 try:
-                    if orchid.get('google_drive_file_id'):
+                    if orchid.get('google_drive_id'):
                         # Test Google Drive image
-                        img_response = requests.get(f"http://localhost:5000/api/drive-photo/{orchid['google_drive_file_id']}", timeout=10)
+                        img_response = requests.get(f"http://localhost:5000/api/drive-photo/{orchid['google_drive_id']}", timeout=10)
                         if img_response.status_code == 200 and len(img_response.content) > 1000:
                             working_images += 1
                         else:
