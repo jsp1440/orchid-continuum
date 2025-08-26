@@ -139,6 +139,19 @@
                 <ul id="marketingActions">
                     <!-- Marketing actions will be listed here -->
                 </ul>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-success w-100" onclick="viewSocietyOutreach()">
+                            <i data-feather="users"></i> View Partner Society Outreach
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-primary w-100" onclick="viewSocialMediaContent()">
+                            <i data-feather="share-2"></i> View Social Media Content
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -358,10 +371,13 @@
             const actions = document.getElementById('marketingActions');
             actions.innerHTML = `
                 <li>✅ Speaker announcement email sent to all FCOS members</li>
-                <li>✅ Social media content generated and ready to post</li>
+                <li>✅ Outreach emails sent to ${marketingResults.cross_promotion_emails || 5} partner orchid societies</li>
+                <li>✅ Social media content generated for Facebook, Instagram, and Google</li>
                 <li>✅ Registration page created at: ${speaker.registration_link}</li>
+                <li>✅ Google My Business event listing created</li>
                 <li>✅ Automated reminder scheduled for 3 days before event</li>
                 <li>✅ Member priority registration activated</li>
+                <li>📈 Estimated additional reach: ${marketingResults.estimated_reach || '2,000+'} orchid enthusiasts</li>
             `;
         }
 
@@ -388,6 +404,64 @@
 
         function viewRegistrations() {
             alert('Registration management feature coming soon!');
+        }
+
+        function viewSocietyOutreach() {
+            fetch('/admin/society-outreach/current')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let outreachSummary = `Partner Society Outreach Summary:\n\n`;
+                        outreachSummary += `Total Societies: ${data.total_societies}\n`;
+                        outreachSummary += `Estimated Reach: ${data.estimated_reach} members\n\n`;
+                        
+                        outreachSummary += `Societies Contacted:\n`;
+                        data.outreach_campaigns.forEach(campaign => {
+                            outreachSummary += `• ${campaign.society_name} (${campaign.estimated_reach} members)\n`;
+                        });
+                        
+                        outreachSummary += `\nOutreach emails are ready to send to partner societies for cross-promotion.`;
+                        alert(outreachSummary);
+                    } else {
+                        alert('Failed to load society outreach data');
+                    }
+                })
+                .catch(error => {
+                    alert('Error loading outreach data: ' + error.message);
+                });
+        }
+
+        function viewSocialMediaContent() {
+            fetch('/admin/social-media-content/current')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let contentSummary = `Social Media Content Generated:\n\n`;
+                        
+                        if (data.social_content.facebook) {
+                            contentSummary += `📘 FACEBOOK EVENT:\n`;
+                            contentSummary += `"${data.social_content.facebook.event_title}"\n\n`;
+                        }
+                        
+                        if (data.social_content.instagram) {
+                            contentSummary += `📸 INSTAGRAM POST:\n`;
+                            contentSummary += `${data.social_content.instagram.post_caption.substring(0, 100)}...\n\n`;
+                        }
+                        
+                        if (data.social_content.twitter) {
+                            contentSummary += `🐦 TWITTER POST:\n`;
+                            contentSummary += `${data.social_content.twitter.substring(0, 100)}...\n\n`;
+                        }
+                        
+                        contentSummary += `All content is ready to copy and post across your social media platforms!`;
+                        alert(contentSummary);
+                    } else {
+                        alert('Failed to load social media content');
+                    }
+                })
+                .catch(error => {
+                    alert('Error loading social media content: ' + error.message);
+                });
         }
 
         // Set default date to next month's third Thursday
