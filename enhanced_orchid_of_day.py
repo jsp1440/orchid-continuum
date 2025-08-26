@@ -88,6 +88,8 @@ class ValidatedOrchidOfDay:
                 # Has BOTH genus AND species information (fully spelled out)
                 OrchidRecord.genus.isnot(None),
                 OrchidRecord.species.isnot(None),
+                OrchidRecord.genus != '',
+                OrchidRecord.species != '',
                 # No single letter abbreviations
                 ~OrchidRecord.genus.like('%.'),
                 ~OrchidRecord.species.like('%.'),
