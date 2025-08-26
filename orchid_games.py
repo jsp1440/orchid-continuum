@@ -16,6 +16,27 @@ def games_home():
     """Games homepage with all available games"""
     return render_template('games/index.html')
 
+# Widget endpoints for embedding games in other pages
+@games_bp.route('/widget/quiz')
+def quiz_widget():
+    """Embeddable orchid quiz widget"""
+    return render_template('games/widgets/quiz_widget.html')
+
+@games_bp.route('/widget/memory')
+def memory_widget():
+    """Embeddable memory match widget"""
+    return render_template('games/widgets/memory_widget.html')
+
+@games_bp.route('/widget/trivia')
+def trivia_widget():
+    """Embeddable trivia widget"""
+    return render_template('games/widgets/trivia_widget.html')
+
+@games_bp.route('/widget/guess')
+def guess_widget():
+    """Embeddable guess-the-orchid widget"""
+    return render_template('games/widgets/guess_widget.html')
+
 @games_bp.route('/orchid-quiz')
 def orchid_quiz():
     """Orchid identification quiz game"""
