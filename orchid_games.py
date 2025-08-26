@@ -37,6 +37,81 @@ def guess_widget():
     """Embeddable guess-the-orchid widget"""
     return render_template('games/widgets/guess_widget.html')
 
+@games_bp.route('/widget/crossword')
+def crossword_widget():
+    """Embeddable crossword puzzle widget"""
+    return render_template('games/widgets/crossword_widget.html')
+
+# Leaderboard routes
+@games_bp.route('/leaderboard')
+def leaderboard():
+    """Game leaderboard page"""
+    return render_template('games/leaderboard.html')
+
+@games_bp.route('/api/leaderboard')
+def api_leaderboard():
+    """API endpoint for leaderboard data"""
+    from leaderboard import GameLeaderboard
+    
+    game_type = request.args.get('game_type')
+    time_period = request.args.get('time_period', 'all')
+    limit = int(request.args.get('limit', 10))
+    
+    try:
+        leaderboard_data = GameLeaderboard.get_leaderboard(game_type, limit, time_period)
+        stats = GameLeaderboard.get_game_stats()
+        
+        return jsonify({
+            'success': True,
+            'leaderboard': leaderboard_data,
+            'stats': stats
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@games_bp.route('/api/submit-score', methods=['POST'])
+def api_submit_score():
+    """API endpoint to submit game scores"""
+    from leaderboard import GameLeaderboard
+    
+    data = request.get_json()
+    
+    try:
+        result = GameLeaderboard.submit_score(
+            player_name=data.get('player_name', 'Anonymous'),
+            game_type=data['game_type'],
+            score=data['score'],
+            max_score=data['max_score'],
+            completion_time=data.get('completion_time'),
+            difficulty=data.get('difficulty', 'medium'),
+            game_data=data.get('game_data'),
+            ip_address=request.remote_addr
+        )
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Crossword puzzle routes
+@games_bp.route('/crossword-puzzle')
+def crossword_puzzle():
+    """Crossword puzzle game page"""
+    return render_template('games/crossword.html')
+
+@games_bp.route('/api/crossword-puzzle')
+def api_crossword_puzzle():
+    """API endpoint for crossword puzzle data"""
+    from crossword_generator import generate_crossword_api
+    
+    difficulty = request.args.get('difficulty', 'mixed')
+    size = request.args.get('size', 'medium')
+    
+    try:
+        puzzle_data = generate_crossword_api(difficulty, size)
+        return jsonify(puzzle_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @games_bp.route('/orchid-quiz')
 def orchid_quiz():
     """Orchid identification quiz game"""
