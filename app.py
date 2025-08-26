@@ -107,3 +107,11 @@ try:
     print("Orchid Interaction Explorer system initialized")
 except Exception as e:
     print(f"Orchid Interaction Explorer initialization error: {e}")
+
+try:
+    from system_monitor_dashboard import monitor_bp, initialize_monitoring
+    app.register_blueprint(monitor_bp)
+    initialize_monitoring()
+    print("System Monitor Dashboard initialized")
+except Exception as e:
+    print(f"System Monitor Dashboard initialization error: {e}")
