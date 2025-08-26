@@ -80,7 +80,7 @@ class UserActivity(db.Model):
     __tablename__ = 'user_activities'
     
     id = db.Column(Integer, primary_key=True)
-    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
     activity_type = db.Column(String, nullable=False)  # page_visit, game_play, search, etc.
     points_earned = db.Column(Integer, default=0)
     details = db.Column(Text, nullable=True)  # JSON string with activity details
