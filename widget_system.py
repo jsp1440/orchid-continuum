@@ -26,7 +26,8 @@ class OrchidWidgetSystem:
             'featured': 'Featured Orchid Widget',
             'mission': 'Mission & Support Widget',
             'map': 'World Map Widget',
-            'weather': 'Orchid Weather Comparison Widget'
+            'weather': 'Orchid Weather Comparison Widget',
+            'enhanced_globe': 'Enhanced Globe Weather Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -45,6 +46,8 @@ class OrchidWidgetSystem:
             return self._get_map_data(**kwargs)
         elif widget_type == 'weather':
             return self._get_weather_data(**kwargs)
+        elif widget_type == 'enhanced_globe':
+            return self._get_enhanced_globe_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -273,6 +276,127 @@ class OrchidWidgetSystem:
                 'show_forecast': True,
                 'show_care_advice': True,
                 'auto_location': True
+            }
+        }
+        
+        return widget_data
+    
+    def _get_enhanced_globe_data(self, **kwargs):
+        """Get enhanced globe weather widget data with country-orchid mapping"""
+        import uuid
+        from sqlalchemy import func, distinct
+        
+        # Get user ID if provided
+        user_id = kwargs.get('user_id')
+        
+        # Get orchids with location data
+        orchids_query = OrchidRecord.query.filter(
+            OrchidRecord.region.isnot(None),
+            OrchidRecord.region != 'Unknown',
+            or_(OrchidRecord.image_url.isnot(None), OrchidRecord.google_drive_id.isnot(None))
+        )
+        
+        # If user_id provided, prioritize user's collection
+        if user_id:
+            user_orchids = UserOrchidCollection.query.filter_by(
+                user_id=user_id, is_active=True
+            ).join(OrchidRecord).filter(
+                OrchidRecord.region.isnot(None),
+                or_(OrchidRecord.image_url.isnot(None), OrchidRecord.google_drive_id.isnot(None))
+            ).all()
+            
+            if user_orchids:
+                orchids = [uc.orchid for uc in user_orchids[:10]]
+            else:
+                orchids = orchids_query.limit(10).all()
+        else:
+            orchids = orchids_query.limit(20).all()
+        
+        # Get countries with orchid counts
+        countries_with_orchids = db.session.query(
+            OrchidRecord.region,
+            func.count(OrchidRecord.id).label('orchid_count')
+        ).filter(
+            OrchidRecord.region.isnot(None),
+            OrchidRecord.region != 'Unknown'
+        ).group_by(OrchidRecord.region).all()
+        
+        # Country coordinate mapping (simplified - in real app would use geocoding API)
+        country_coordinates = {
+            'Colombia': {'lat': 4.5709, 'lng': -74.2973},
+            'Ecuador': {'lat': -1.8312, 'lng': -78.1834},
+            'Brazil': {'lat': -14.2350, 'lng': -51.9253},
+            'Thailand': {'lat': 15.8700, 'lng': 100.9925},
+            'Madagascar': {'lat': -18.7669, 'lng': 46.8691},
+            'Philippines': {'lat': 12.8797, 'lng': 121.7740},
+            'Peru': {'lat': -9.1900, 'lng': -75.0152},
+            'Venezuela': {'lat': 6.4238, 'lng': -66.5897},
+            'Malaysia': {'lat': 4.2105, 'lng': 101.9758},
+            'Indonesia': {'lat': -0.7893, 'lng': 113.9213},
+            'India': {'lat': 20.5937, 'lng': 78.9629},
+            'Mexico': {'lat': 23.6345, 'lng': -102.5528}
+        }
+        
+        # Prepare orchid data with enhanced metadata
+        enhanced_orchids = []
+        for orchid in orchids:
+            # Get image URL (prioritize Google Drive)
+            image_url = orchid.image_url
+            if orchid.google_drive_id:
+                image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+            
+            enhanced_orchids.append({
+                'id': orchid.id,
+                'display_name': orchid.display_name or 'Unknown Orchid',
+                'scientific_name': orchid.scientific_name,
+                'image_url': image_url,
+                'region': orchid.region,
+                'climate_preference': orchid.climate_preference or 'intermediate',
+                'temperature_range': orchid.temperature_range,
+                'light_requirements': orchid.light_requirements,
+                'growth_habit': orchid.growth_habit,
+                'cultural_notes': orchid.cultural_notes,
+                'country_coordinates': country_coordinates.get(orchid.region, None),
+                'has_baker_data': bool(orchid.cultural_notes and 'BAKER' in orchid.cultural_notes.upper())
+            })
+        
+        # Solar activity data (in real implementation, fetch from NOAA Space Weather API)
+        solar_data = {
+            'activity_level': 'Moderate',
+            'sunspot_count': 45,
+            'solar_flares': 'Low',
+            'geomagnetic_activity': 'Quiet',
+            'uv_index': 6,
+            'solar_wind_speed': 350  # km/s
+        }
+        
+        widget_data = {
+            'widget_id': str(uuid.uuid4())[:8],
+            'user_id': user_id,
+            'orchids': enhanced_orchids,
+            'countries_with_orchids': [
+                {
+                    'name': country.region,
+                    'orchid_count': country.orchid_count,
+                    'coordinates': country_coordinates.get(country.region, None)
+                }
+                for country in countries_with_orchids
+                if country_coordinates.get(country.region)
+            ],
+            'solar_data': solar_data,
+            'globe_config': {
+                'auto_rotation_delay': 60000,  # 1 minute in milliseconds
+                'rotation_speed': 1.0,
+                'tilt_angle': 23.5,  # Earth's axial tilt
+                'enable_day_night': True,
+                'show_country_highlights': True,
+                'enable_solar_activity': True
+            },
+            'interaction_data': {
+                'total_countries': len(countries_with_orchids),
+                'total_orchids': sum(c.orchid_count for c in countries_with_orchids),
+                'featured_regions': ['Colombia', 'Ecuador', 'Thailand', 'Madagascar'],
+                'climate_zones': ['Tropical', 'Subtropical', 'Temperate']
             }
         }
         
