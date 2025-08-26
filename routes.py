@@ -2081,9 +2081,12 @@ except ImportError as e:
 # Register visitor teasers
 try:
     from visitor_teasers import register_visitor_teasers, add_membership_filters
+    from visitor_demo_system import visitor_demo_bp
     register_visitor_teasers()
     add_membership_filters(app)
+    app.register_blueprint(visitor_demo_bp)
     logger.info("Visitor Teasers System registered successfully")
+    logger.info("Visitor Demo System registered successfully")
 except ImportError as e:
     logger.warning(f"Visitor Teasers System not available: {e}")
 
