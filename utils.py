@@ -29,26 +29,33 @@ def get_orchid_of_the_day():
         seed = int(today.strftime("%Y%m%d"))
         random.seed(seed)
         
-        # Get all orchids with REAL images (excluding placeholders)
+        # Get orchids with STRICT quality criteria (same as enhanced system)
         orchids = OrchidRecord.query.filter(
+            # PRIORITY: Google Drive images only (most reliable)
+            OrchidRecord.google_drive_id.isnot(None),
+            # Has BOTH genus AND species information (fully spelled out)
+            OrchidRecord.genus.isnot(None),
+            OrchidRecord.species.isnot(None),
+            OrchidRecord.genus != '',
+            OrchidRecord.species != '',
+            # No single letter abbreviations
+            ~OrchidRecord.genus.like('%.'),
+            ~OrchidRecord.species.like('%.'),
+            # Has country/region of origin
             or_(
-                # Google Drive photos
-                OrchidRecord.google_drive_id.isnot(None),
-                # Real image URLs (not placeholders)
-                and_(
-                    OrchidRecord.image_url.isnot(None),
-                    OrchidRecord.image_url != '/static/images/orchid_placeholder.svg',
-                    OrchidRecord.image_url.notlike('%placeholder%')
-                )
+                OrchidRecord.region.isnot(None),
+                OrchidRecord.native_habitat.isnot(None)
             ),
+            # Has substantial metadata/description
+            OrchidRecord.ai_description.isnot(None),
+            # Has proper name (not just "Unknown Orchid")
+            OrchidRecord.display_name != 'Unknown Orchid',
+            OrchidRecord.display_name.isnot(None),
+            # Not rejected
             OrchidRecord.validation_status != 'rejected'
         ).all()
         
-        # Filter for orchids with proper names (not just "Unknown Orchid")
-        named_orchids = [o for o in orchids if o.display_name and o.display_name != 'Unknown Orchid']
-        
-        # Use named orchids if available, otherwise fall back to any with images
-        candidate_orchids = named_orchids if named_orchids else orchids
+        candidate_orchids = orchids
         
         if candidate_orchids:
             # Select orchid based on seeded random

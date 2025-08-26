@@ -77,14 +77,8 @@ class ValidatedOrchidOfDay:
             
             # Strict filtering: Get orchids with complete metadata and real images
             rich_orchids = OrchidRecord.query.filter(
-                # Has real high-resolution image
-                or_(
-                    OrchidRecord.google_drive_id.isnot(None),
-                    and_(
-                        OrchidRecord.image_url.isnot(None),
-                        OrchidRecord.image_url != '/static/images/orchid_placeholder.svg'
-                    )
-                ),
+                # PRIORITY: Google Drive images only (most reliable)
+                OrchidRecord.google_drive_id.isnot(None),
                 # Has BOTH genus AND species information (fully spelled out)
                 OrchidRecord.genus.isnot(None),
                 OrchidRecord.species.isnot(None),
