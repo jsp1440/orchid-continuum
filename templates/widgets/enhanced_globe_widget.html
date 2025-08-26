@@ -21,6 +21,15 @@
                 <!-- Earth Globe -->
                 <div id="earth-globe-{{ widget_data.widget_id }}" class="earth-globe"></div>
                 
+                <!-- Moon System -->
+                <div id="moon-orbit-{{ widget_data.widget_id }}" class="moon-orbit">
+                    <div id="moon-sphere-{{ widget_data.widget_id }}" class="moon-sphere">
+                        <div class="moon-surface"></div>
+                        <div class="moon-shadow"></div>
+                        <div class="moon-crater"></div>
+                    </div>
+                </div>
+                
                 <!-- Sun -->
                 <div id="sun-sphere-{{ widget_data.widget_id }}" class="sun-sphere">
                     <div class="sun-corona"></div>
@@ -108,6 +117,10 @@
                         <div class="solar-metric">
                             <span class="metric-label">Day Length:</span>
                             <span id="day-length-{{ widget_data.widget_id }}">-- hrs</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">Moon Phase:</span>
+                            <span id="moon-phase-{{ widget_data.widget_id }}">🌕 Full</span>
                         </div>
                     </div>
                 </div>
@@ -320,6 +333,73 @@
         /* Antarctic ice */
         radial-gradient(ellipse 50px 20px at 50% 85%, rgba(255, 255, 255, 0.4) 0%, transparent 50%);
     animation: featuresRotation var(--rotation-duration) linear infinite;
+}
+
+/* Moon System */
+.moon-orbit {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: moonOrbit 28s linear infinite;
+}
+
+.moon-sphere {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #f5f5f5, #ddd, #999);
+    box-shadow: 
+        inset -3px -3px 6px rgba(0, 0, 0, 0.4),
+        0 0 10px rgba(255, 255, 255, 0.3);
+    animation: moonRotation 28s linear infinite;
+    overflow: hidden;
+}
+
+.moon-surface {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Mare patterns */
+        radial-gradient(ellipse 6px 4px at 30% 40%, rgba(120, 120, 120, 0.6) 0%, transparent 50%),
+        radial-gradient(ellipse 4px 3px at 60% 30%, rgba(120, 120, 120, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 3px 5px at 50% 70%, rgba(120, 120, 120, 0.4) 0%, transparent 50%);
+}
+
+.moon-crater {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Crater patterns */
+        radial-gradient(circle 2px at 40% 35%, rgba(80, 80, 80, 0.8) 30%, transparent 60%),
+        radial-gradient(circle 1.5px at 65% 45%, rgba(80, 80, 80, 0.7) 30%, transparent 60%),
+        radial-gradient(circle 1px at 30% 60%, rgba(80, 80, 80, 0.6) 30%, transparent 60%),
+        radial-gradient(circle 1px at 70% 65%, rgba(80, 80, 80, 0.5) 30%, transparent 60%);
+}
+
+.moon-shadow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(var(--moon-phase-angle, 90deg), 
+        transparent 0%, 
+        transparent var(--shadow-start, 40%), 
+        rgba(0, 0, 0, 0.7) var(--shadow-end, 60%), 
+        rgba(0, 0, 0, 0.7) 100%);
+    animation: moonPhases 28s linear infinite;
 }
 
 .sun-sphere {
@@ -586,6 +666,64 @@
     to { transform: rotate(360deg); }
 }
 
+@keyframes moonOrbit {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes moonRotation {
+    from { transform: translateY(-50%) rotate(0deg); }
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+@keyframes moonPhases {
+    0% { 
+        --moon-phase-angle: 90deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+    12.5% { 
+        --moon-phase-angle: 45deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    25% { 
+        --moon-phase-angle: 0deg;
+        --shadow-start: 0%;
+        --shadow-end: 100%;
+    }
+    37.5% { 
+        --moon-phase-angle: 315deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    50% { 
+        --moon-phase-angle: 270deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+    62.5% { 
+        --moon-phase-angle: 225deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    75% { 
+        --moon-phase-angle: 180deg;
+        --shadow-start: 0%;
+        --shadow-end: 100%;
+    }
+    87.5% { 
+        --moon-phase-angle: 135deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    100% { 
+        --moon-phase-angle: 90deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+}
+
 @keyframes solarPulse {
     0%, 100% { box-shadow: 0 0 20px #ffff00, 0 0 40px #ff6600; }
     50% { box-shadow: 0 0 30px #ffff00, 0 0 60px #ff6600; }
@@ -667,6 +805,9 @@
         // Load initial solar activity
         loadSolarActivity();
         
+        // Update moon phase
+        updateMoonPhase();
+        
         // Setup globe interaction
         setupGlobeInteraction();
         
@@ -694,6 +835,35 @@
         
         document.getElementById(`solar-activity-${widgetId}`).textContent = 
             `${solarData.activity} Activity • ${solarData.sunspots} Sunspots`;
+    }
+    
+    function updateMoonPhase() {
+        // Calculate moon phase based on current time
+        const now = Date.now();
+        const lunarCycle = 28 * 24 * 60 * 60 * 1000; // 28 days in milliseconds
+        const cyclePosition = (now % lunarCycle) / lunarCycle;
+        
+        const phases = [
+            { name: '🌑 New', icon: '🌑', start: 0, end: 0.125 },
+            { name: '🌒 Waxing Crescent', icon: '🌒', start: 0.125, end: 0.25 },
+            { name: '🌓 First Quarter', icon: '🌓', start: 0.25, end: 0.375 },
+            { name: '🌔 Waxing Gibbous', icon: '🌔', start: 0.375, end: 0.5 },
+            { name: '🌕 Full', icon: '🌕', start: 0.5, end: 0.625 },
+            { name: '🌖 Waning Gibbous', icon: '🌖', start: 0.625, end: 0.75 },
+            { name: '🌗 Last Quarter', icon: '🌗', start: 0.75, end: 0.875 },
+            { name: '🌘 Waning Crescent', icon: '🌘', start: 0.875, end: 1 }
+        ];
+        
+        const currentPhase = phases.find(phase => 
+            cyclePosition >= phase.start && cyclePosition < phase.end
+        ) || phases[0];
+        
+        const moonPhaseEl = document.getElementById(`moon-phase-${widgetId}`);
+        if (moonPhaseEl) {
+            moonPhaseEl.textContent = currentPhase.name;
+        }
+        
+        return currentPhase;
     }
     
     function setupGlobeInteraction() {
@@ -943,15 +1113,32 @@
         updateLastInteraction();
         
         const globe = document.getElementById(`earth-globe-${widgetId}`);
+        const moonOrbit = document.getElementById(`moon-orbit-${widgetId}`);
         const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
         const statusEl = document.getElementById(`rotation-status-${widgetId}`);
         
+        const playState = isRotating ? 'running' : 'paused';
+        
+        // Control Earth rotation
+        globe.style.animationPlayState = playState;
+        
+        // Control moon orbit and rotation
+        if (moonOrbit) {
+            moonOrbit.style.animationPlayState = playState;
+            const moonSphere = moonOrbit.querySelector('.moon-sphere');
+            if (moonSphere) {
+                moonSphere.style.animationPlayState = playState;
+                const moonShadow = moonSphere.querySelector('.moon-shadow');
+                if (moonShadow) {
+                    moonShadow.style.animationPlayState = playState;
+                }
+            }
+        }
+        
         if (isRotating) {
-            globe.style.animationPlayState = 'running';
             pauseBtn.textContent = '⏸️ Pause';
             statusEl.textContent = '🔄 Auto-rotating';
         } else {
-            globe.style.animationPlayState = 'paused';
             pauseBtn.textContent = '▶️ Resume';
             statusEl.textContent = '⏸️ Paused';
         }
@@ -975,14 +1162,25 @@
         updateLastInteraction();
         
         const globe = document.getElementById(`earth-globe-${widgetId}`);
+        const moonOrbit = document.getElementById(`moon-orbit-${widgetId}`);
         const duration = (60 / rotationSpeed) + 's';
+        const moonDuration = (28 / rotationSpeed) + 's';
         
         // Update all Earth rotation animations to sync
         globe.style.animationDuration = duration;
         
-        // Update continent and feature animations
-        const continents = globe.querySelector('::before');
-        const features = globe.querySelector('::after');
+        // Update moon orbital and rotational animations
+        if (moonOrbit) {
+            moonOrbit.style.animationDuration = moonDuration;
+            const moonSphere = moonOrbit.querySelector('.moon-sphere');
+            if (moonSphere) {
+                moonSphere.style.animationDuration = moonDuration;
+                const moonShadow = moonSphere.querySelector('.moon-shadow');
+                if (moonShadow) {
+                    moonShadow.style.animationDuration = moonDuration;
+                }
+            }
+        }
         
         // Apply duration to pseudo-elements via CSS custom properties
         globe.style.setProperty('--rotation-duration', duration);
