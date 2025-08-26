@@ -2,8 +2,10 @@ import json
 import os
 import base64
 from PIL import Image
+from PIL.ExifTags import TAGS, GPSTAGS
 from openai import OpenAI
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,79 @@ def encode_image_to_base64(image_path):
         logger.error(f"Error encoding image: {str(e)}")
         return None
 
+def extract_exif_metadata(image_path):
+    """
+    Extract EXIF metadata from image including GPS coordinates and photo date
+    """
+    try:
+        image = Image.open(image_path)
+        exif_data = image._getexif()
+        
+        if not exif_data:
+            return {}
+        
+        metadata = {}
+        
+        # Extract basic EXIF data
+        for tag_id, value in exif_data.items():
+            tag = TAGS.get(tag_id, tag_id)
+            
+            # Extract photo date/time
+            if tag == 'DateTime':
+                try:
+                    metadata['photo_datetime'] = datetime.strptime(str(value), '%Y:%m:%d %H:%M:%S')
+                    metadata['photo_date'] = metadata['photo_datetime'].date()
+                    metadata['photo_time'] = metadata['photo_datetime'].time()
+                except:
+                    pass
+            
+            # Extract camera info
+            elif tag == 'Make':
+                metadata['camera_make'] = str(value)
+            elif tag == 'Model':
+                metadata['camera_model'] = str(value)
+            elif tag == 'Software':
+                metadata['software'] = str(value)
+            
+            # Extract GPS data
+            elif tag == 'GPSInfo':
+                gps_data = {}
+                for gps_tag_id, gps_value in value.items():
+                    gps_tag = GPSTAGS.get(gps_tag_id, gps_tag_id)
+                    gps_data[gps_tag] = gps_value
+                
+                # Parse GPS coordinates
+                if 'GPSLatitude' in gps_data and 'GPSLatitudeRef' in gps_data:
+                    lat = _convert_gps_coordinate(gps_data['GPSLatitude'])
+                    if gps_data['GPSLatitudeRef'] == 'S':
+                        lat = -lat
+                    metadata['gps_latitude'] = lat
+                
+                if 'GPSLongitude' in gps_data and 'GPSLongitudeRef' in gps_data:
+                    lon = _convert_gps_coordinate(gps_data['GPSLongitude'])
+                    if gps_data['GPSLongitudeRef'] == 'W':
+                        lon = -lon
+                    metadata['gps_longitude'] = lon
+                
+                if 'GPSAltitude' in gps_data:
+                    metadata['gps_altitude'] = float(gps_data['GPSAltitude'])
+        
+        return metadata
+        
+    except Exception as e:
+        logger.error(f"Error extracting EXIF data: {e}")
+        return {}
+
+def _convert_gps_coordinate(coord_tuple):
+    """Convert GPS coordinate from DMS format to decimal degrees"""
+    try:
+        degrees = float(coord_tuple[0])
+        minutes = float(coord_tuple[1])
+        seconds = float(coord_tuple[2])
+        return degrees + (minutes / 60.0) + (seconds / 3600.0)
+    except:
+        return 0.0
+
 def analyze_orchid_image(image_path):
     """
     Analyze orchid image using OpenAI Vision API to extract metadata
@@ -32,30 +107,59 @@ def analyze_orchid_image(image_path):
         if not base64_image:
             raise Exception("Failed to encode image")
         
-        # Prepare the prompt for orchid analysis
-        system_prompt = """You are an expert orchid taxonomist and botanist. Analyze this orchid image and provide detailed information in JSON format.
+        # Prepare the prompt for enhanced orchid analysis
+        system_prompt = """You are an expert orchid taxonomist and botanist with field research experience. Analyze this orchid image and provide comprehensive observational data in JSON format.
 
-Please identify and extract the following information:
+BOTANICAL IDENTIFICATION:
 - scientific_name: The full scientific name if identifiable
 - genus: The orchid genus
 - species: The species name if identifiable  
 - suggested_name: A display name for this orchid
 - description: Detailed description of the flower, plant, and notable features
 - confidence: Your confidence level (0.0 to 1.0) in the identification
-- growth_habit: epiphytic, terrestrial, or lithophytic
-- climate_preference: cool, intermediate, or warm
-- bloom_characteristics: Details about the flowers and flowering patterns
+
+FLOWERING ANALYSIS:
+- is_flowering: true/false - Is this plant currently in flower?
+- flowering_stage: "bud", "early_bloom", "peak_bloom", "late_bloom", "spent", "not_flowering"
+- flower_count: Count visible flowers/buds (estimate if many)
+- inflorescence_count: Number of flower spikes/stems
+- flower_size_mm: Estimated flower diameter in millimeters
+- flower_measurements: {"length_mm": X, "width_mm": Y, "depth_mm": Z} if measurable
+- bloom_season_indicator: Based on visual cues, likely blooming season
+
+HABITAT & GROWING ENVIRONMENT:
+- growth_habit: "epiphytic", "terrestrial", "lithophytic", "semi-terrestrial"
+- growing_environment: "wild_native", "naturalized", "cultivated_outdoor", "cultivated_greenhouse", "cultivated_indoor"
+- substrate_type: "tree_bark", "rock", "soil", "moss", "artificial_medium", "unknown"
+- mounting_evidence: Evidence of growing on trees, rocks, or ground
+- natural_vs_cultivated: "native_wild", "naturalized_wild", "cultivated", "uncertain"
+
+ENVIRONMENTAL CONDITIONS:
+- light_conditions: "deep_shade", "filtered_light", "bright_indirect", "direct_sun", "artificial"
+- humidity_indicators: Visual clues about humidity level (high/medium/low)
+- temperature_indicators: Visual clues about temperature preference
+- climate_preference: "cool", "intermediate", "warm", "hot"
+
+PLANT MORPHOLOGY:
 - leaf_form: Description of the leaves
 - pseudobulb_presence: true/false if pseudobulbs are visible
-- cultural_tips: Basic growing advice based on the orchid type
-- notable_features: Any distinctive characteristics
-- photoperiod_sensitivity: Likely sensitivity to day length changes (high/medium/low)
-- bloom_triggers: Environmental factors that trigger flowering (temperature drop, seasonal light changes, dry period, etc.)
-- native_latitude: Approximate latitude range of natural habitat if identifiable
-- seasonal_requirements: Specific seasonal care needs for blooming
-- metadata: Any additional relevant botanical information
+- root_visibility: Description of visible roots (aerial, terrestrial)
+- plant_maturity: "juvenile", "mature", "specimen_size"
 
-If you cannot identify the exact species, focus on genus-level identification and general orchid characteristics. Be honest about uncertainty levels."""
+LOCATION & CONTEXT:
+- setting_type: "natural_forest", "botanical_garden", "home_collection", "nursery", "greenhouse", "outdoor_garden"
+- companion_plants: Any other plants visible that indicate habitat
+- elevation_indicators: Visual clues about elevation (if natural setting)
+
+CULTURAL & RESEARCH NOTES:
+- cultural_tips: Growing advice based on observed conditions
+- notable_features: Any distinctive characteristics
+- photoperiod_sensitivity: Likely sensitivity to day length changes
+- bloom_triggers: Environmental factors that trigger flowering
+- seasonal_requirements: Specific seasonal care needs
+- conservation_status_clues: Any indicators of rarity or conservation concern
+
+Analyze carefully and be specific. If you cannot determine something, mark as "unknown" or "uncertain". Focus on what you can actually observe in the image."""
 
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -89,23 +193,58 @@ If you cannot identify the exact species, focus on genus-level identification an
         
         # Ensure required fields have defaults
         defaults = {
+            # Botanical Identification
             'suggested_name': 'Unknown Orchid',
             'scientific_name': None,
             'genus': None,
             'species': None,
             'description': 'Orchid identification pending',
             'confidence': 0.0,
-            'growth_habit': None,
-            'climate_preference': None,
-            'bloom_characteristics': None,
-            'leaf_form': None,
-            'pseudobulb_presence': None,
+            
+            # Flowering Analysis
+            'is_flowering': False,
+            'flowering_stage': 'unknown',
+            'flower_count': 0,
+            'inflorescence_count': 0,
+            'flower_size_mm': None,
+            'flower_measurements': {},
+            'bloom_season_indicator': 'unknown',
+            
+            # Habitat & Growing Environment
+            'growth_habit': 'unknown',
+            'growing_environment': 'unknown',
+            'substrate_type': 'unknown',
+            'mounting_evidence': 'unknown',
+            'natural_vs_cultivated': 'uncertain',
+            
+            # Environmental Conditions
+            'light_conditions': 'unknown',
+            'humidity_indicators': 'unknown',
+            'temperature_indicators': 'unknown',
+            'climate_preference': 'unknown',
+            
+            # Plant Morphology
+            'leaf_form': 'unknown',
+            'pseudobulb_presence': False,
+            'root_visibility': 'unknown',
+            'plant_maturity': 'unknown',
+            
+            # Location & Context
+            'setting_type': 'unknown',
+            'companion_plants': 'unknown',
+            'elevation_indicators': 'unknown',
+            
+            # Cultural & Research Notes
             'cultural_tips': None,
             'notable_features': None,
             'photoperiod_sensitivity': 'medium',
             'bloom_triggers': None,
-            'native_latitude': None,
             'seasonal_requirements': None,
+            'conservation_status_clues': 'unknown',
+            
+            # Legacy fields
+            'bloom_characteristics': None,
+            'native_latitude': None,
             'metadata': {}
         }
         
@@ -113,6 +252,33 @@ If you cannot identify the exact species, focus on genus-level identification an
         for key, default_value in defaults.items():
             if key not in result:
                 result[key] = default_value
+        
+        # Extract EXIF metadata and merge with AI analysis
+        exif_metadata = extract_exif_metadata(image_path)
+        if exif_metadata:
+            # Add EXIF data to result
+            result['exif_data'] = exif_metadata
+            
+            # If flowering and we have photo date, use it as potential flowering time
+            if result.get('is_flowering') and exif_metadata.get('photo_date'):
+                result['flowering_photo_date'] = exif_metadata['photo_date'].isoformat()
+                result['flowering_photo_datetime'] = exif_metadata['photo_datetime'].isoformat() if exif_metadata.get('photo_datetime') else None
+            
+            # Add GPS coordinates if available
+            if exif_metadata.get('gps_latitude') and exif_metadata.get('gps_longitude'):
+                result['photo_gps_coordinates'] = {
+                    'latitude': exif_metadata['gps_latitude'],
+                    'longitude': exif_metadata['gps_longitude'],
+                    'altitude': exif_metadata.get('gps_altitude')
+                }
+                
+            # Add camera/technical info
+            if exif_metadata.get('camera_make') or exif_metadata.get('camera_model'):
+                result['camera_info'] = {
+                    'make': exif_metadata.get('camera_make'),
+                    'model': exif_metadata.get('camera_model'),
+                    'software': exif_metadata.get('software')
+                }
         
         # Enhance with Baker culture data if this is a known species
         if result.get('scientific_name'):

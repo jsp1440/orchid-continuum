@@ -219,6 +219,43 @@ class OrchidRecord(db.Model):
     ai_confidence = db.Column(Float)
     ai_extracted_metadata = db.Column(Text)  # JSON string
     
+    # Enhanced flowering and observation metadata (from AI analysis)
+    is_flowering = db.Column(Boolean, default=False)
+    flowering_stage = db.Column(String(50))  # bud, early_bloom, peak_bloom, late_bloom, spent, not_flowering
+    flower_count = db.Column(Integer, default=0)
+    inflorescence_count = db.Column(Integer, default=0)
+    flower_size_mm = db.Column(Float)
+    flower_measurements = db.Column(JSON)  # {"length_mm": X, "width_mm": Y, "depth_mm": Z}
+    bloom_season_indicator = db.Column(String(50))
+    
+    # Photo metadata (from EXIF)
+    flowering_photo_date = db.Column(DateTime)  # Date photo was taken if flowering
+    flowering_photo_datetime = db.Column(DateTime)  # Full datetime if available
+    photo_gps_coordinates = db.Column(JSON)  # {"latitude": X, "longitude": Y, "altitude": Z}
+    camera_info = db.Column(JSON)  # Camera make, model, software
+    exif_data = db.Column(JSON)  # Full EXIF metadata
+    
+    # Enhanced habitat and environment analysis
+    growing_environment = db.Column(String(100))  # wild_native, naturalized, cultivated_outdoor, etc.
+    substrate_type = db.Column(String(50))  # tree_bark, rock, soil, moss, artificial_medium
+    mounting_evidence = db.Column(Text)  # Evidence of growing on trees, rocks, or ground
+    natural_vs_cultivated = db.Column(String(50))  # native_wild, naturalized_wild, cultivated
+    
+    # Environmental conditions observed
+    light_conditions = db.Column(String(50))  # deep_shade, filtered_light, bright_indirect, direct_sun
+    humidity_indicators = db.Column(String(50))  # Visual clues about humidity (high/medium/low)
+    temperature_indicators = db.Column(String(50))  # Visual clues about temperature preference
+    
+    # Plant morphology details
+    root_visibility = db.Column(Text)  # Description of visible roots (aerial, terrestrial)
+    plant_maturity = db.Column(String(50))  # juvenile, mature, specimen_size
+    
+    # Location and context
+    setting_type = db.Column(String(100))  # natural_forest, botanical_garden, home_collection, etc.
+    companion_plants = db.Column(Text)  # Other plants visible that indicate habitat
+    elevation_indicators = db.Column(Text)  # Visual clues about elevation
+    conservation_status_clues = db.Column(Text)  # Any indicators of rarity or conservation concern
+    
     # System metadata
     ingestion_source = db.Column(String(50))  # 'upload', 'scrape_gary', 'scrape_roberta', 'legacy'
     validation_status = db.Column(String(20), default='pending')  # pending, validated, rejected
