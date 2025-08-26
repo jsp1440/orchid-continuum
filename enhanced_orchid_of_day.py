@@ -42,6 +42,7 @@ class EnhancedOrchidOfDay:
                 'orchid': orchid,
                 'story': self._generate_story(orchid),
                 'haiku': self._generate_haiku(orchid),
+                'creative_reflection': self._generate_creative_reflection(orchid),
                 'expanded_info': self._generate_expanded_info(orchid),
                 'conservation_status': self._analyze_conservation_status(orchid),
                 'pollinator_story': self._generate_pollinator_story(orchid),
@@ -338,6 +339,131 @@ class EnhancedOrchidOfDay:
             seasonal_context['bloom_relevance'] = f"Perfect timing! This orchid often blooms in {current_month.title()}."
         
         return seasonal_context
+    
+    def _generate_creative_reflection(self, orchid):
+        """Generate randomized creative reflections - haiku, poem, joke, or quote tied to the orchid"""
+        from datetime import date
+        
+        # Use date-based seeding for consistency but vary by orchid ID for uniqueness
+        today = date.today()
+        seed = int(today.strftime("%Y%m%d")) + (orchid.id % 7)  # 7-day cycle
+        random.seed(seed)
+        
+        reflection_types = ['haiku', 'poem', 'quote', 'fun_fact']
+        chosen_type = random.choice(reflection_types)
+        
+        if chosen_type == 'haiku':
+            return {
+                'type': 'haiku',
+                'content': self._generate_haiku(orchid)
+            }
+        elif chosen_type == 'poem':
+            return {
+                'type': 'poem',
+                'content': self._generate_poem(orchid)
+            }
+        elif chosen_type == 'quote':
+            return {
+                'type': 'inspiring quote',
+                'content': self._generate_orchid_quote(orchid)
+            }
+        else:  # fun_fact
+            return {
+                'type': 'fun fact',
+                'content': self._generate_whimsical_fact(orchid)
+            }
+    
+    def _generate_poem(self, orchid):
+        """Generate a short poem inspired by the orchid"""
+        poem_templates = [
+            # Color-based poems
+            {
+                'condition': lambda o: 'white' in (o.ai_description or '').lower(),
+                'poem': "In gardens of moonlight,\nWhere silence speaks in white,\nThis orchid whispers secrets\nOf grace beyond our sight."
+            },
+            {
+                'condition': lambda o: 'purple' in (o.ai_description or '').lower() or 'violet' in (o.ai_description or '').lower(),
+                'poem': "Royal purple crowns the stem,\nA treasure nature chose to gift,\nEach petal tells a story\nOf beauty that will never drift."
+            },
+            {
+                'condition': lambda o: 'yellow' in (o.ai_description or '').lower() or 'gold' in (o.ai_description or '').lower(),
+                'poem': "Golden sunbeams caught in bloom,\nWarmth captured in living art,\nThis orchid holds the sunshine\nDeep within its gentle heart."
+            },
+            # Habitat-based poems
+            {
+                'condition': lambda o: any(word in (o.native_habitat or '').lower() 
+                                         for word in ['forest', 'tree', 'epiphytic']),
+                'poem': "High among the ancient trees,\nWhere mist and morning meet,\nThis sky-born flower dances\nTo earth's eternal beat."
+            },
+            {
+                'condition': lambda o: any(word in (o.ai_description or '').lower() 
+                                         for word in ['fragrant', 'scent', 'perfume']),
+                'poem': "Sweet perfume fills the evening air,\nA symphony of scent and sight,\nThis orchid's gift to weary souls:\nA moment of pure delight."
+            },
+            # Default
+            {
+                'condition': lambda o: True,
+                'poem': "In petals soft as morning dew,\nNature writes her poetry,\nEach bloom a verse of wonder,\nA living symphony."
+            }
+        ]
+        
+        # Find matching poem
+        for template in poem_templates:
+            if template['condition'](orchid):
+                return template['poem']
+        
+        return "Gentle beauty speaks in silence,\nBeyond the rush of daily care,\nThis orchid reminds us simply:\nWonder blooms everywhere."
+    
+    def _generate_orchid_quote(self, orchid):
+        """Generate inspiring quotes related to orchids and nature"""
+        # Genus-specific quotes
+        genus_quotes = {
+            'Cattleya': '"Like the Cattleya in Victorian conservatories, true beauty requires patience, care, and the right conditions to flourish." - Botanical Wisdom',
+            'Phalaenopsis': '"The moth orchid teaches us that grace can emerge from the most unexpected places, floating like dreams made real." - Garden Philosophy',
+            'Dendrobium': '"As the Dendrobium lives upon trees, we too can find strength by reaching toward the light while staying rooted in community." - Nature\'s Lessons',
+            'Vanilla': '"The vanilla orchid reminds us that the sweetest treasures often come disguised in simple forms." - Botanical Insights'
+        }
+        
+        if orchid.genus and orchid.genus in genus_quotes:
+            return genus_quotes[orchid.genus]
+        
+        # General inspiring quotes about orchids and nature
+        general_quotes = [
+            '"In every orchid\'s bloom lies proof that patience and persistence can create miracles." - Garden Wisdom',
+            '"Like orchids, we bloom not despite our challenges, but because of the unique conditions that shaped us." - Botanical Reflections',
+            '"The orchid doesn\'t compete with other flowers; it simply becomes the most beautiful version of itself." - Nature\'s Truth',
+            '"An orchid\'s beauty lies not just in its petals, but in its resilience, adaptation, and quiet strength." - Floral Philosophy',
+            '"Each orchid species is nature\'s reminder that diversity creates the most stunning gardens." - Botanical Appreciation'
+        ]
+        
+        return random.choice(general_quotes)
+    
+    def _generate_whimsical_fact(self, orchid):
+        """Generate fun, whimsical facts about orchids"""
+        whimsical_facts = [
+            "If orchids had social media, they'd definitely be influencers - they've been setting beauty trends for over 100 million years!",
+            "This orchid is basically a master of disguise. Some orchids are so good at mimicking other plants, even botanists get fooled sometimes!",
+            "Fun fact: If you lined up all the orchid species in the world, they'd stretch longer than a marathon. That's over 30,000 different ways to be beautiful!",
+            "Orchids are the ultimate optimists - some can survive being completely dry for months, then bloom spectacularly when conditions improve.",
+            "This orchid's roots are basically nature's GPS system - they can navigate toward the perfect growing spot with amazing accuracy.",
+            "If orchids could talk, they'd have some incredible travel stories. They've hitchhiked across continents on birds, boats, and even butterflies!",
+            "Orchid trivia: Some orchids are such picky eaters, they'll only work with one specific type of fungus. Talk about having refined taste!",
+            "This orchid is part of nature's largest flower family - orchids have more species than there are birds and mammals combined!"
+        ]
+        
+        # Add orchid-specific facts if possible
+        if orchid.genus:
+            genus_facts = {
+                'Cattleya': "This Cattleya belongs to the genus that started the Victorian orchid craze - single plants once sold for the price of a house!",
+                'Vanilla': "Plot twist: This is the only orchid that most people actually eat! Vanilla flavoring comes from the seed pods of Vanilla orchids.",
+                'Ophrys': "This orchid is a master of romance - it mimics female insects so convincingly that males actually try to court the flowers!",
+                'Bulbophyllum': "Some relatives of this orchid smell like rotting fish to attract flies. Beauty is definitely in the eye (and nose) of the beholder!"
+            }
+            
+            if orchid.genus in genus_facts:
+                return genus_facts[orchid.genus]
+        
+        return random.choice(whimsical_facts)
     
     # Helper methods
     def _extract_habitat_story(self, habitat):
