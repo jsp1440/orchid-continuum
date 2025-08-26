@@ -89,112 +89,10 @@ app.register_blueprint(mycorrhizal_map_bp)
 from botany_lab_stats import register_botany_lab_routes
 register_botany_lab_routes(app)
 
-# Register 35th Parallel Globe System
-from parallel_35_globe_system import Parallel35GlobeSystem, ProfessorBloomBot
+# Professor BloomBot system removed - Replit Agent is now the primary AI interface
 
-# Initialize globe system and BloomBot
-globe_system = Parallel35GlobeSystem()
-bloom_bot = ProfessorBloomBot(globe_system)
-
-@app.route('/35th-parallel-globe')
-def parallel_35_globe():
-    """35th Parallel Lesson Mode Globe"""
-    return render_template('parallel_35_globe.html')
-
-@app.route('/api/35p/hotspots')
-def get_35p_hotspots():
-    """API endpoint for hotspot data"""
-    try:
-        hotspots = globe_system.get_all_hotspots()
-        return jsonify({
-            'status': 'success',
-            'hotspots': hotspots
-        })
-    except Exception as e:
-        logging.error(f"Error getting hotspots: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/api/35p/tour/start', methods=['POST'])
-def start_35p_tour():
-    """Start guided demo tour"""
-    try:
-        tour_data = globe_system.start_demo_tour()
-        return jsonify({
-            'status': 'success',
-            'tour_data': tour_data
-        })
-    except Exception as e:
-        logging.error(f"Error starting tour: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/api/35p/tour/advance', methods=['POST'])
-def advance_35p_tour():
-    """Advance to next tour step"""
-    try:
-        step_data = globe_system.advance_tour_step()
-        return jsonify({
-            'status': 'success',
-            'step_data': step_data
-        })
-    except Exception as e:
-        logging.error(f"Error advancing tour: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/api/35p/toggle', methods=['POST'])
-def toggle_35p_overlay():
-    """Toggle 35th parallel overlay"""
-    try:
-        result = globe_system.toggle_35p_mode()
-        return jsonify({
-            'status': 'success',
-            'result': result
-        })
-    except Exception as e:
-        logging.error(f"Error toggling overlay: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/api/35p/orchids')
-def get_35p_orchids():
-    """Get list of orchids along 35th parallel"""
-    try:
-        orchid_list = globe_system.get_orchids_35n_list()
-        return jsonify({
-            'status': 'success',
-            'orchids': orchid_list,
-            'count': len(orchid_list)
-        })
-    except Exception as e:
-        logging.error(f"Error getting orchid list: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/api/35p/bloombot', methods=['POST'])
-def process_bloombot_intent():
-    """Process Professor BloomBot intent"""
-    try:
-        data = request.get_json()
-        intent_name = data.get('intent', '')
-        parameters = data.get('parameters', {})
-        
-        result = bloom_bot.process_intent(intent_name, parameters)
-        
-        return jsonify({
-            'status': 'success',
-            'result': result
-        })
-    except Exception as e:
-        logging.error(f"Error processing BloomBot intent: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/data/35p_species.json')
-def serve_35p_species_json():
-    """Serve 35th parallel species JSON data"""
-    try:
-        with open('data/35p_species.json', 'r') as f:
-            data = json.load(f)
-        return jsonify(data)
-    except Exception as e:
-        logging.error(f"Error serving species JSON: {e}")
-        return jsonify({'error': 'Species data not found'}), 404
+# 35th Parallel Globe and BloomBot routes removed
+# Geographic analysis now handled by Replit Agent directly
 
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
@@ -2188,7 +2086,7 @@ try:
     logger.info("Game Infrastructure registered successfully")
     logger.info("Memory Game System registered successfully") 
     logger.info("Rebus Puzzle System registered successfully")
-    logger.info("Professor BloomBot Curator registered successfully")
+# Professor BloomBot Curator removed - replaced by Replit Agent
     logger.info("Member Personalization System registered successfully")
     logger.info("Orchid Care Manager registered successfully")
 except ImportError as e:
@@ -2480,119 +2378,12 @@ def research_dashboard():
     return render_template("research_dashboard.html", candidates=research_candidates[:50])
 
 
-@app.route("/discovery_alerts")
-def discovery_alerts():
-    """Show Professor BloomBot discovery alerts dashboard"""
-    from professor_bloombot import ProfessorBloomBot
-    from models import DiscoveryAlert
-    
-    # Generate new discoveries
-    bot = ProfessorBloomBot()
-    discoveries = bot.discover_patterns()
-    
-    # Save important discoveries to database
-    for discovery in discoveries:
-        if discovery['importance'] >= 0.7:  # Only save important ones
-            # Check if similar alert already exists
-            existing = DiscoveryAlert.query.filter(
-                DiscoveryAlert.alert_type == discovery['type'],
-                DiscoveryAlert.title == discovery['title']
-            ).first()
-            
-            if not existing:
-                alert = DiscoveryAlert(
-                    alert_type=discovery['type'],
-                    title=discovery['title'],
-                    message=discovery['message'],
-                    importance=discovery['importance'],
-                    action_url=discovery.get('action_url'),
-                    action_text=discovery.get('action_text'),
-                    icon=discovery.get('icon'),
-                    category=discovery.get('category')
-                )
-                db.session.add(alert)
-    
-    db.session.commit()
-    
-    # Get all active alerts
-    active_alerts = DiscoveryAlert.query.filter(
-        DiscoveryAlert.is_active == True,
-        DiscoveryAlert.dismissed_by_admin == False
-    ).order_by(DiscoveryAlert.importance.desc()).all()
-    
-    # Generate daily report
-    daily_report = bot.generate_daily_discovery_report()
-    
-    return render_template("discovery_alerts.html", 
-                         alerts=active_alerts, 
-                         daily_report=daily_report,
-                         live_discoveries=discoveries)
+# Discovery alerts route removed - replaced by Replit Agent insights
+# Professor BloomBot functionality discontinued
+# All BloomBot functionality removed
 
-@app.route("/dismiss_alert/<int:alert_id>", methods=['POST'])
-def dismiss_alert(alert_id):
-    """Dismiss a discovery alert"""
-    alert = DiscoveryAlert.query.get_or_404(alert_id)
-    alert.dismissed_by_admin = True
-    db.session.commit()
-    
-    flash(f"Dismissed alert: {alert.title}", "success")
-    return redirect(url_for('discovery_alerts'))
-
-@app.route("/featured_discovery")
-def featured_discovery():
-    """Get featured discovery for homepage widget"""
-    from professor_bloombot import ProfessorBloomBot
-    
-    # Try to get a featured alert from database first
-    featured = DiscoveryAlert.query.filter(
-        DiscoveryAlert.is_featured == True,
-        DiscoveryAlert.is_active == True
-    ).first()
-    
-    if featured:
-        discovery = {
-            'title': featured.title,
-            'message': featured.message,
-            'action_url': featured.action_url,
-            'action_text': featured.action_text,
-            'icon': featured.icon,
-            'category': featured.category
-        }
-    else:
-        # Generate a fresh discovery
-        bot = ProfessorBloomBot()
-        discoveries = bot.discover_patterns()
-        discovery = discoveries[0] if discoveries else {
-            'title': '🔬 Professor BloomBot is monitoring...',
-            'message': 'Analyzing orchid patterns and correlations for new discoveries!',
-            'icon': 'activity',
-            'category': 'monitoring'
-        }
-    
-    return jsonify(discovery)
-
-@app.route("/api/discovery_widget")
-def discovery_widget():
-    """API endpoint for discovery widget data"""
-    from professor_bloombot import ProfessorBloomBot
-    
-    bot = ProfessorBloomBot()
-    report = bot.generate_daily_discovery_report()
-    
-    # Get the most important discovery for widget
-    if report['discoveries']:
-        top_discovery = report['discoveries'][0]
-        return jsonify({
-            'status': 'active',
-            'discovery': top_discovery,
-            'total_discoveries': len(report['discoveries'])
-        })
-    
-    return jsonify({
-        'status': 'monitoring',
-        'message': 'Professor BloomBot is analyzing orchid patterns...',
-        'icon': 'search'
-    })
+# Featured discovery route removed - replaced by Replit Agent insights
+# All BloomBot discovery functionality removed
 
 # FCOS Pages Routes
 @app.route('/fcos/merchandise')
