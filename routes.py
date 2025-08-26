@@ -2046,6 +2046,62 @@ try:
 except ImportError as e:
     logger.warning(f"AI Widget Builder not available: {e}")
 
+# Register main widget system blueprint
+try:
+    from widget_system import widget_bp
+    app.register_blueprint(widget_bp)
+    logger.info("Widget System registered successfully")
+except ImportError as e:
+    logger.warning(f"Widget System not available: {e}")
+
+# PRODUCTION-READY INDIVIDUAL WIDGET ROUTES FOR NEON ONE INTEGRATION
+@app.route('/widget/featured')
+def standalone_featured_widget():
+    """Standalone Featured Orchid Widget for embedding"""
+    from widget_system import widget_system
+    widget_data = widget_system.get_widget_data('featured')
+    return render_template('widgets/featured_widget.html', 
+                         widget_data=widget_data, 
+                         standalone=True)
+
+@app.route('/widget/gallery')
+def standalone_gallery_widget():
+    """Standalone Gallery Widget for embedding"""  
+    from widget_system import widget_system
+    limit = request.args.get('limit', 6, type=int)
+    genus = request.args.get('genus', None)
+    widget_data = widget_system.get_widget_data('gallery', limit=limit, genus=genus)
+    return render_template('widgets/gallery_widget.html', 
+                         widget_data=widget_data, 
+                         standalone=True)
+
+@app.route('/widget/discovery')  
+def standalone_discovery_widget():
+    """Standalone Discovery Widget for embedding"""
+    from widget_system import widget_system
+    # Discovery widget shows recent orchids with Google Drive images
+    widget_data = widget_system.get_widget_data('gallery', limit=8)
+    return render_template('widgets/discovery_widget.html', 
+                         widget_data=widget_data, 
+                         standalone=True)
+
+@app.route('/widget/orchid-of-the-day')
+def standalone_orchid_of_day_widget():
+    """Standalone Orchid of the Day Widget for embedding"""
+    try:
+        from enhanced_orchid_of_day import get_enhanced_orchid_of_day
+        orchid_data = get_enhanced_orchid_of_day()
+        widget_data = {'orchid': orchid_data} if orchid_data else {}
+    except ImportError:
+        # Fallback to regular featured orchid
+        from widget_system import widget_system
+        widget_data = widget_system.get_widget_data('featured')
+    
+    return render_template('widgets/featured_widget.html', 
+                         widget_data=widget_data, 
+                         standalone=True,
+                         title="Orchid of the Day")
+
 # Register media migration system
 try:
     from media_migration_system import migration_bp

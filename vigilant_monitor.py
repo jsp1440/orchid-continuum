@@ -139,11 +139,18 @@ class VigilantMonitor:
                 self.stats['image_issues'] += 1
                 return False
             
-            # Test actual orchid images from the gallery
-            working_images = 0
-            test_count = min(5, len(recent_orchids))  # Test up to 5 recent orchids
+            # PRODUCTION-READY: Prioritize Google Drive images for reliable testing
+            google_drive_orchids = [o for o in recent_orchids if o.get('google_drive_id')]
+            external_orchids = [o for o in recent_orchids if not o.get('google_drive_id') and o.get('photo_url')]
             
-            for orchid in recent_orchids[:test_count]:
+            # Test Google Drive images first (production-ready), then externals for monitoring
+            test_orchids = google_drive_orchids[:3] + external_orchids[:2]
+            test_count = min(5, len(test_orchids))
+            working_images = 0
+            
+            logger.info(f"🔍 Testing {len(google_drive_orchids)} Google Drive + {len(external_orchids)} external images")
+            
+            for orchid in test_orchids[:test_count]:
                 try:
                     if orchid.get('google_drive_id'):
                         # Test Google Drive image
