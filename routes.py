@@ -68,6 +68,10 @@ app.register_blueprint(orchid_approval_bp)
 from globe_weather_routes import globe_weather_bp
 app.register_blueprint(globe_weather_bp)
 
+# Register Orchid-Mycorrhizal Fungi Mapping routes
+from orchid_mycorrhizal_routes import mycorrhizal_map_bp
+app.register_blueprint(mycorrhizal_map_bp)
+
 @app.route('/test_gary_scraper')
 def test_gary_scraper():
     """Test Gary Yong Gee scraper with limited scope"""
