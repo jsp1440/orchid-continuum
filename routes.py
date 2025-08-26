@@ -2060,6 +2060,9 @@ try:
 except ImportError as e:
     logger.warning(f"Member Authentication System not available: {e}")
 
+# Import admin_required decorator
+from admin_system import admin_required
+
 # Neon One CRM Integration Routes
 @app.route('/api/neon-member-lookup/<email>')
 def neon_member_lookup(email):
@@ -2122,6 +2125,79 @@ def admin_engagement_report():
         return jsonify({
             'error': 'Report generation failed'
         }), 500
+
+# Newsletter and Zoom Speaker Automation Routes
+@app.route('/admin/newsletter-automation')
+@admin_required
+def admin_newsletter_automation():
+    """Newsletter automation dashboard"""
+    return render_template('admin/newsletter_automation.html')
+
+@app.route('/api/generate-newsletter-content')
+@admin_required
+def generate_newsletter_content():
+    """Generate automated newsletter content"""
+    try:
+        from enhanced_newsletter_automation import newsletter_automation
+        content = newsletter_automation.generate_monthly_newsletter_content()
+        
+        return jsonify({
+            'success': True,
+            'content': {
+                'featured_photos': content.featured_photos,
+                'database_insights': content.database_insights,
+                'member_spotlights': content.member_spotlights,
+                'orchid_of_month': content.orchid_of_month,
+                'upcoming_events': content.upcoming_events,
+                'growth_statistics': content.growth_statistics
+            }
+        })
+    except Exception as e:
+        logger.error(f"Newsletter generation error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Newsletter generation failed'
+        }), 500
+
+@app.route('/admin/zoom-speaker-setup')
+@admin_required
+def admin_zoom_speaker_setup():
+    """Zoom speaker event setup and management"""
+    return render_template('admin/zoom_speaker_setup.html')
+
+@app.route('/api/schedule-zoom-speaker', methods=['POST'])
+@admin_required
+def schedule_zoom_speaker():
+    """Schedule new Zoom speaker and trigger marketing"""
+    try:
+        data = request.get_json()
+        from enhanced_newsletter_automation import zoom_automation
+        
+        speaker = zoom_automation.schedule_monthly_speaker(data)
+        marketing_results = zoom_automation.trigger_speaker_marketing_campaign(speaker)
+        
+        return jsonify({
+            'success': True,
+            'speaker': {
+                'name': speaker.speaker_name,
+                'topic': speaker.topic,
+                'date': speaker.date,
+                'time': speaker.time,
+                'registration_link': speaker.registration_link
+            },
+            'marketing_results': marketing_results
+        })
+    except Exception as e:
+        logger.error(f"Zoom speaker setup error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Speaker setup failed'
+        }), 500
+
+@app.route('/events/register-speaker/<speaker_id>')
+def zoom_speaker_registration(speaker_id):
+    """Public Zoom speaker registration page"""
+    return render_template('events/zoom_speaker_registration.html', speaker_id=speaker_id)
 
 # Register visitor teasers
 try:
