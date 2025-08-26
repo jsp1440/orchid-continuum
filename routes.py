@@ -2082,11 +2082,20 @@ except ImportError as e:
 try:
     from visitor_teasers import register_visitor_teasers, add_membership_filters
     from visitor_demo_system import visitor_demo_bp
+    from game_infrastructure import game_infrastructure_bp
+    from orchid_memory_game import orchid_memory_bp
+    from rebus_puzzle_system import rebus_puzzle_bp
     register_visitor_teasers()
     add_membership_filters(app)
     app.register_blueprint(visitor_demo_bp)
+    app.register_blueprint(game_infrastructure_bp)
+    app.register_blueprint(orchid_memory_bp)
+    app.register_blueprint(rebus_puzzle_bp)
     logger.info("Visitor Teasers System registered successfully")
     logger.info("Visitor Demo System registered successfully")
+    logger.info("Game Infrastructure registered successfully")
+    logger.info("Memory Game System registered successfully") 
+    logger.info("Rebus Puzzle System registered successfully")
 except ImportError as e:
     logger.warning(f"Visitor Teasers System not available: {e}")
 
