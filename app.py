@@ -66,8 +66,8 @@ from user_weather_routes import user_weather_bp
 app.register_blueprint(user_weather_bp)
 
 # Import routes after app initialization
-# import routes  # DISABLED - using simple_routes instead
-import simple_routes
+import routes  # Full featured routes with complete homepage
+# import simple_routes  # DISABLED - using full routes instead
 import botanical_routes  # Import botanical database routes
 import botanical_analysis_route  # Additional botanical analysis integration
 import admin_system  # Administrative system with ultimate database control
