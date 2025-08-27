@@ -2273,12 +2273,23 @@ def admin_member_submissions():
 def trigger_submission_request():
     """Trigger member submission request email campaign"""
     try:
+        data = request.get_json() or {}
+        test_mode = data.get('test_mode', False)
+        test_email = data.get('test_email', 'jeffery@fivecitiesorchidsociety.org')
+        
         from enhanced_newsletter_automation import submission_manager
-        results = submission_manager.trigger_submission_request_campaign()
+        
+        if test_mode:
+            # Send test email to specific address
+            results = submission_manager.send_test_submission_email(test_email)
+        else:
+            # Send to all FCOS members
+            results = submission_manager.trigger_submission_request_campaign()
         
         return jsonify({
             'success': True,
-            'campaign_results': results
+            'campaign_results': results,
+            'test_mode': test_mode
         })
     except Exception as e:
         logger.error(f"Submission request campaign error: {e}")
