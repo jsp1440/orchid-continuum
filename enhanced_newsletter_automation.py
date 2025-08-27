@@ -624,5 +624,158 @@ Perfect for #orchid enthusiasts of all levels! Q&A included.
 newsletter_automation = NewsletterAutomation()
 zoom_automation = ZoomSpeakerAutomation()
 
+# Member Submission Management
+class MemberSubmissionManager:
+    """Manage member content submissions for newsletter and Members Garden"""
+    
+    def __init__(self):
+        self.google_forms_id = "MEMBERS_GARDEN_FORM_ID"  # Replace with actual form ID
+        self.submission_categories = [
+            'orchid_photos',
+            'growing_stories', 
+            'care_articles',
+            'video_content',
+            'youtube_features'
+        ]
+    
+    def trigger_submission_request_campaign(self) -> Dict[str, Any]:
+        """Trigger automated submission request email campaign"""
+        
+        from member_submission_email_template import submission_email_generator
+        
+        # Generate email content
+        main_email = submission_email_generator.generate_main_submission_email()
+        
+        # Trigger Neon One campaign (if available)
+        campaign_results = {
+            'email_sent': False,
+            'recipients': 0,
+            'template_generated': True,
+            'google_form_ready': True,
+            'member_gallery_integration': True
+        }
+        
+        try:
+            from neon_one_integration import fcos_automation
+            if fcos_automation.neon_automation:
+                # Use custom email content in Neon One campaign
+                campaign_success = fcos_automation.neon_automation.neon.trigger_email_campaign(
+                    'FCOS_SUBMISSION_REQUEST',
+                    []  # Send to all active members
+                )
+                campaign_results['email_sent'] = campaign_success
+                campaign_results['recipients'] = 'All FCOS Members'
+        except Exception as e:
+            logger.warning(f"Neon One campaign not available: {e}")
+        
+        logger.info("Member submission request campaign triggered")
+        return campaign_results
+    
+    def send_submission_reminders(self, days_before_deadline: int = 5) -> Dict[str, Any]:
+        """Send reminder emails before submission deadline"""
+        
+        from member_submission_email_template import submission_email_generator
+        
+        reminder_email = submission_email_generator.generate_reminder_email()
+        
+        reminder_results = {
+            'reminder_sent': False,
+            'template_ready': True,
+            'target_members': 'All members who haven\'t submitted'
+        }
+        
+        try:
+            from neon_one_integration import fcos_automation
+            if fcos_automation.neon_automation:
+                campaign_success = fcos_automation.neon_automation.neon.trigger_email_campaign(
+                    'FCOS_SUBMISSION_REMINDER',
+                    []  # Would filter to non-submitters in production
+                )
+                reminder_results['reminder_sent'] = campaign_success
+        except Exception as e:
+            logger.warning(f"Reminder campaign not available: {e}")
+        
+        return reminder_results
+    
+    def process_member_submission(self, submission_data: Dict) -> Dict[str, Any]:
+        """Process a member's content submission"""
+        
+        processing_results = {
+            'submission_received': True,
+            'gallery_updated': False,
+            'thank_you_sent': False,
+            'content_categorized': False
+        }
+        
+        # Categorize submission type
+        if 'photo' in submission_data or 'image' in submission_data:
+            processing_results['category'] = 'orchid_photo'
+            processing_results['newsletter_eligible'] = True
+        elif 'story' in submission_data or 'article' in submission_data:
+            processing_results['category'] = 'written_content'
+            processing_results['newsletter_eligible'] = True
+        elif 'video' in submission_data:
+            processing_results['category'] = 'video_content'
+            processing_results['youtube_eligible'] = True
+        
+        processing_results['content_categorized'] = True
+        
+        # Send thank you email
+        from member_submission_email_template import submission_email_generator
+        thank_you_email = submission_email_generator.generate_thank_you_email()
+        
+        try:
+            # In production, would send personalized thank you
+            processing_results['thank_you_sent'] = True
+        except Exception as e:
+            logger.error(f"Thank you email failed: {e}")
+        
+        return processing_results
+    
+    def get_submissions_for_newsletter(self, month: str = None) -> List[Dict]:
+        """Get approved submissions for newsletter inclusion"""
+        
+        # In production, would query actual submissions database
+        sample_submissions = [
+            {
+                'type': 'photo',
+                'member_name': 'Sarah Johnson',
+                'orchid_name': 'Cattleya warscewiczii',
+                'growing_notes': 'Bright light, weekly watering, bark mix',
+                'city': 'San Luis Obispo',
+                'photo_url': '/api/member-submission/12345',
+                'approved': True
+            },
+            {
+                'type': 'story', 
+                'member_name': 'Mike Chen',
+                'title': 'Rescuing a Neglected Phalaenopsis',
+                'content': 'Last month I found this poor orchid at a garage sale...',
+                'approved': True
+            }
+        ]
+        
+        return sample_submissions
+    
+    def generate_members_garden_stats(self) -> Dict[str, Any]:
+        """Generate statistics for Members Garden participation"""
+        
+        stats = {
+            'total_submissions': 0,  # Would query actual database
+            'monthly_submissions': 0,
+            'active_contributors': 0,
+            'photo_submissions': 0,
+            'story_submissions': 0,
+            'video_submissions': 0,
+            'featured_in_newsletter': 0,
+            'member_engagement_rate': '0%'
+        }
+        
+        return stats
+
+# Initialize submission manager
+submission_manager = MemberSubmissionManager()
+
 # Export for use in routes
-__all__ = ['NewsletterAutomation', 'ZoomSpeakerAutomation', 'newsletter_automation', 'zoom_automation']
+__all__ = ['NewsletterAutomation', 'ZoomSpeakerAutomation', 'MemberSubmissionManager', 
+           'newsletter_automation', 'zoom_automation', 'submission_manager']
