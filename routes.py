@@ -2261,6 +2261,70 @@ def admin_social_media_content(speaker_id):
             'error': 'Content generation failed'
         }), 500
 
+# Member Submission Email Campaigns
+@app.route('/admin/member-submissions')
+@admin_required
+def admin_member_submissions():
+    """Member submission management dashboard"""
+    return render_template('admin/member_submissions.html')
+
+@app.route('/api/trigger-submission-request', methods=['POST'])
+@admin_required
+def trigger_submission_request():
+    """Trigger member submission request email campaign"""
+    try:
+        from enhanced_newsletter_automation import submission_manager
+        results = submission_manager.trigger_submission_request_campaign()
+        
+        return jsonify({
+            'success': True,
+            'campaign_results': results
+        })
+    except Exception as e:
+        logger.error(f"Submission request campaign error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Campaign trigger failed'
+        }), 500
+
+@app.route('/api/send-submission-reminders', methods=['POST'])
+@admin_required
+def send_submission_reminders():
+    """Send submission deadline reminders"""
+    try:
+        from enhanced_newsletter_automation import submission_manager
+        results = submission_manager.send_submission_reminders()
+        
+        return jsonify({
+            'success': True,
+            'reminder_results': results
+        })
+    except Exception as e:
+        logger.error(f"Submission reminder error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Reminder sending failed'
+        }), 500
+
+@app.route('/api/members-garden-stats')
+@admin_required
+def members_garden_stats():
+    """Get Members Garden submission statistics"""
+    try:
+        from enhanced_newsletter_automation import submission_manager
+        stats = submission_manager.generate_members_garden_stats()
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Members Garden stats error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Stats generation failed'
+        }), 500
+
 # Register visitor teasers
 try:
     from visitor_teasers import register_visitor_teasers, add_membership_filters
