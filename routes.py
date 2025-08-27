@@ -782,6 +782,14 @@ def upload():
                     upload_record.orchid_id = orchid.id
                     db.session.commit()
                     
+                    # Send admin notification
+                    try:
+                        from admin_notification_service import notification_service
+                        notification_service.send_photo_submission_alert(upload_record, orchid)
+                        logger.info(f"📧 Admin notification sent for upload {upload_record.id}")
+                    except Exception as e:
+                        logger.error(f"Failed to send admin notification: {e}")
+                    
                     # Clean up temp file
                     os.remove(temp_path)
                     
@@ -792,6 +800,15 @@ def upload():
                     logger.error(f"Error processing upload: {str(e)}")
                     upload_record.processing_status = 'failed'
                     db.session.commit()
+                    
+                    # Send admin notification for failed upload
+                    try:
+                        from admin_notification_service import notification_service
+                        notification_service.send_photo_submission_alert(upload_record, None)
+                        logger.info(f"📧 Admin notification sent for failed upload {upload_record.id}")
+                    except Exception as e:
+                        logger.error(f"Failed to send admin notification: {e}")
+                    
                     flash(f'Error processing image: {str(e)}', 'error')
             else:
                 flash('Invalid file type. Please upload JPG, PNG, or GIF files.', 'error')
