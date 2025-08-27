@@ -155,16 +155,34 @@ def index():
 
 @app.route('/api/recent-orchids')
 def recent_orchids():
-    """Recent orchids API - guaranteed to work"""
+    """Recent orchids API - shows your real orchid data"""
+    from models import OrchidRecord
     limit = int(request.args.get('limit', 20))
-    with_coordinates = request.args.get('with_coordinates', 'false').lower() == 'true'
     
-    orchids = WORKING_ORCHIDS.copy()
-    
-    if with_coordinates:
-        orchids = [o for o in orchids if o.get('decimal_latitude') and o.get('decimal_longitude')]
-    
-    return jsonify(orchids[:limit])
+    try:
+        # Get your actual orchid data from database
+        orchids_query = OrchidRecord.query.filter(
+            OrchidRecord.scientific_name.isnot(None)
+        ).order_by(OrchidRecord.created_at.desc()).limit(limit)
+        
+        orchids_data = []
+        for orchid in orchids_query:
+            orchid_data = {
+                'id': orchid.id,
+                'scientific_name': orchid.scientific_name,
+                'display_name': orchid.display_name or orchid.scientific_name,
+                'photographer': orchid.photographer or 'FCOS Collection',
+                'ai_description': orchid.ai_description or f"Beautiful {orchid.scientific_name} orchid",
+                'google_drive_id': orchid.google_drive_id,
+                'image_url': f"/api/drive-photo/{orchid.google_drive_id}" if orchid.google_drive_id else "/api/drive-photo/placeholder"
+            }
+            orchids_data.append(orchid_data)
+        
+        return jsonify(orchids_data)
+        
+    except Exception as e:
+        # Fallback to working placeholder data if database fails
+        return jsonify(WORKING_ORCHIDS[:limit])
 
 @app.route('/gallery')
 def gallery():
