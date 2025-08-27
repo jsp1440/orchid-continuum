@@ -46,6 +46,7 @@ from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
 from admin_control_center import register_admin_control_center
 from automated_repair_system import repair_system
+from eol_integration import EOLIntegrator
 
 logger = logging.getLogger(__name__)
 
@@ -2948,6 +2949,144 @@ def api_recent_orchids():
     
     return jsonify(working_orchids[:limit])
 
+
+# ==============================================================================
+# EOL INTEGRATION ROUTES - Encyclopedia of Life enhancement
+# ==============================================================================
+
+@app.route('/admin/eol-enhancement')
+def eol_enhancement_dashboard():
+    """Admin dashboard for EOL enhancement status and controls"""
+    try:
+        eol = EOLIntegrator()
+        status = eol.get_enhancement_status()
+        
+        return render_template('admin/eol_dashboard.html', 
+                             status=status,
+                             title="EOL Enhancement Dashboard")
+    except Exception as e:
+        logger.error(f"EOL dashboard error: {e}")
+        flash(f"Error loading EOL dashboard: {str(e)}", 'error')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/eol-enhance-all', methods=['POST'])
+def eol_enhance_all_orchids():
+    """Start EOL enhancement for all orchid records"""
+    try:
+        eol = EOLIntegrator()
+        stats = eol.enhance_all_orchids()
+        
+        flash(f"EOL Enhancement completed! Enhanced: {stats['successfully_enhanced']}, "
+              f"Not found: {stats['not_found_in_eol']}, Errors: {stats['errors']}", 'success')
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        logger.error(f"EOL enhancement error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/admin/eol-test')
+def test_eol_integration():
+    """Test EOL integration with a sample orchid"""
+    try:
+        eol = EOLIntegrator()
+        
+        # Test with Cattleya trianae (your first orchid)
+        test_result = eol.search_eol_species("Cattleya trianae")
+        
+        if test_result:
+            page_data = eol.get_eol_page_data(test_result['id'])
+            traits = eol.extract_trait_data(page_data) if page_data else None
+            
+            return jsonify({
+                'success': True,
+                'test_species': 'Cattleya trianae',
+                'eol_page_id': test_result.get('id'),
+                'traits_found': len(traits.get('descriptions', [])) if traits else 0,
+                'images_found': len(traits.get('images', [])) if traits else 0,
+                'common_names': traits.get('common_names', []) if traits else []
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Cattleya trianae not found in EOL'
+            })
+            
+    except Exception as e:
+        logger.error(f"EOL test error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/orchid/<int:orchid_id>/eol-enhance', methods=['POST'])
+def enhance_single_orchid_with_eol(orchid_id):
+    """Enhance a single orchid with EOL data"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        eol = EOLIntegrator()
+        
+        # Search for the orchid in EOL
+        search_result = eol.search_eol_species(orchid.scientific_name)
+        
+        if search_result:
+            # Get detailed page data
+            page_data = eol.get_eol_page_data(search_result['id'])
+            
+            if page_data:
+                # Extract traits
+                traits = eol.extract_trait_data(page_data)
+                
+                # Update orchid record
+                success = eol.update_orchid_with_eol_data(orchid_id, traits)
+                
+                if success:
+                    return jsonify({
+                        'success': True,
+                        'message': f'Enhanced {orchid.scientific_name} with EOL data',
+                        'eol_page_id': traits.get('eol_page_id'),
+                        'traits_added': len(traits.get('descriptions', [])),
+                        'images_found': len(traits.get('images', []))
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to update orchid record'
+                    }), 500
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to get EOL page data'
+                }), 404
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'{orchid.scientific_name} not found in EOL'
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Single orchid EOL enhancement error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/eol-status')
+def get_eol_status():
+    """Get current EOL enhancement status"""
+    try:
+        eol = EOLIntegrator()
+        status = eol.get_enhancement_status()
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"EOL status error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # END OF API ROUTES
 
