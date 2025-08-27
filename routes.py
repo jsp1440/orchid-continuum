@@ -48,7 +48,46 @@ from admin_control_center import register_admin_control_center
 from automated_repair_system import repair_system
 from eol_integration import EOLIntegrator
 
+# Initialize logger first
 logger = logging.getLogger(__name__)
+
+try:
+    from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
+    from mobile_widget_optimizer import mobile_optimizer
+    from user_collection_hub import collection_hub
+    logger.info("✅ Widget integration modules loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Widget integration modules not available: {e}")
+    # Create mock objects to prevent errors
+    class MockWidgetHub:
+        def get_user_session(self): return {}
+        def manage_favorites(self, action, orchid_id=None, orchid_data=None): return {'favorites': [], 'count': 0}
+        def get_smart_recommendations(self, widget_type): return {'next_widgets': [], 'suggested_actions': []}
+        def track_exploration_progress(self, data): return {'progress': {}, 'new_achievements': []}
+        def get_unified_dashboard_data(self): return {}
+    
+    class MockMobileOptimizer:
+        def detect_device_type(self): return 'desktop'
+        def get_mobile_optimized_config(self, widget_type, device_type=None): return {'device_type': 'desktop'}
+        def get_touch_controls_javascript(self, widget_type): return '// Mobile controls not available'
+        def get_mobile_css(self): return '/* Mobile styles not available */'
+    
+    class MockCollectionHub:
+        def get_collection_dashboard_data(self): return {'collection': {'owned_orchids': [], 'wishlist': []}, 'statistics': {}, 'care_reminders': []}
+        def get_personalized_recommendations(self): return {'recommendations': []}
+        def add_to_collection(self, orchid_id, collection_type='owned', care_data=None): return {'success': False, 'error': 'Collection system not available'}
+        def log_care_activity(self, orchid_id, care_type, notes=''): return {'success': False, 'error': 'Collection system not available'}
+        def get_care_reminders(self): return []
+    
+    widget_hub = MockWidgetHub()
+    mobile_optimizer = MockMobileOptimizer()
+    collection_hub = MockCollectionHub()
+    
+    def track_widget_interaction(widget_name, action, **context_data):
+        pass
+    
+    def get_enhanced_widget_data(widget_type, **kwargs):
+        return {'widget_type': widget_type, 'data': 'integration_not_available'}
 
 # Start comprehensive image monitoring every 30 seconds
 try:
@@ -3086,6 +3125,345 @@ def get_eol_status():
         return jsonify(status)
     except Exception as e:
         logger.error(f"EOL status error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==============================================================================
+# WIDGET INTEGRATION ROUTES - Cross-widget functionality and mobile optimization
+# ==============================================================================
+
+@app.route('/api/widget-session')
+def get_widget_session():
+    """Get unified widget session data"""
+    try:
+        session_data = widget_hub.get_user_session()
+        return jsonify(session_data)
+    except Exception as e:
+        logger.error(f"Widget session error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/widget-interaction', methods=['POST'])
+def track_widget_interaction_api():
+    """Track widget interaction for cross-widget integration"""
+    try:
+        data = request.get_json()
+        widget_name = data.get('widget_name')
+        action = data.get('action', 'view')
+        context_data = data.get('context', {})
+        
+        track_widget_interaction(widget_name, action, **context_data)
+        
+        # Get smart recommendations based on interaction
+        recommendations = widget_hub.get_smart_recommendations(widget_name)
+        
+        return jsonify({
+            'success': True,
+            'recommendations': recommendations
+        })
+        
+    except Exception as e:
+        logger.error(f"Widget interaction tracking error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/widget-recommendations/<widget_type>')
+def get_widget_recommendations(widget_type):
+    """Get smart recommendations for a widget"""
+    try:
+        recommendations = widget_hub.get_smart_recommendations(widget_type)
+        return jsonify(recommendations)
+    except Exception as e:
+        logger.error(f"Widget recommendations error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/favorites', methods=['GET', 'POST', 'DELETE'])
+def manage_favorites():
+    """Manage user favorites across all widgets"""
+    try:
+        if request.method == 'GET':
+            return jsonify(widget_hub.manage_favorites('get'))
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            orchid_id = data.get('orchid_id')
+            orchid_data = data.get('orchid_data')
+            
+            result = widget_hub.manage_favorites('add', orchid_id, orchid_data)
+            return jsonify(result)
+            
+        elif request.method == 'DELETE':
+            orchid_id = request.args.get('orchid_id', type=int)
+            result = widget_hub.manage_favorites('remove', orchid_id)
+            return jsonify(result)
+            
+    except Exception as e:
+        logger.error(f"Favorites management error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/exploration-progress')
+def get_exploration_progress():
+    """Get user's exploration progress and achievements"""
+    try:
+        progress_data = widget_hub.track_exploration_progress({})
+        return jsonify(progress_data)
+    except Exception as e:
+        logger.error(f"Exploration progress error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mobile-config/<widget_type>')
+def get_mobile_config(widget_type):
+    """Get mobile-optimized configuration for widgets"""
+    try:
+        config = mobile_optimizer.get_mobile_optimized_config(widget_type)
+        return jsonify(config)
+    except Exception as e:
+        logger.error(f"Mobile config error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/mobile-touch-controls.js')
+def get_mobile_touch_controls_js():
+    """Get JavaScript for mobile touch controls"""
+    try:
+        widget_type = request.args.get('widget_type', 'general')
+        js_code = mobile_optimizer.get_touch_controls_javascript(widget_type)
+        
+        response = Response(js_code, mimetype='application/javascript')
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Mobile JS error: {e}")
+        return Response(f"console.error('Mobile controls error: {str(e)}');", 
+                       mimetype='application/javascript'), 500
+
+@app.route('/api/mobile-widget-styles.css')
+def get_mobile_widget_styles():
+    """Get CSS for mobile widget optimization"""
+    try:
+        css_code = mobile_optimizer.get_mobile_css()
+        
+        response = Response(css_code, mimetype='text/css')
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Mobile CSS error: {e}")
+        return Response(f"/* Mobile styles error: {str(e)} */", 
+                       mimetype='text/css'), 500
+
+# ==============================================================================
+# USER COLLECTION HUB ROUTES - Personal orchid collection management
+# ==============================================================================
+
+@app.route('/my-collection')
+def user_collection_dashboard():
+    """Personal orchid collection dashboard"""
+    try:
+        dashboard_data = collection_hub.get_collection_dashboard_data()
+        recommendations = collection_hub.get_personalized_recommendations()
+        
+        return render_template('collection/dashboard.html',
+                             dashboard=dashboard_data,
+                             recommendations=recommendations,
+                             title="My Orchid Collection")
+    except Exception as e:
+        logger.error(f"Collection dashboard error: {e}")
+        flash(f"Error loading collection: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/collection', methods=['GET', 'POST'])
+def collection_api():
+    """API for collection management"""
+    try:
+        if request.method == 'GET':
+            collection_data = collection_hub.get_user_collection()
+            return jsonify(collection_data)
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            action = data.get('action')
+            
+            if action == 'add_orchid':
+                orchid_id = data.get('orchid_id')
+                collection_type = data.get('collection_type', 'owned')
+                care_data = data.get('care_data', {})
+                
+                result = collection_hub.add_to_collection(orchid_id, collection_type, care_data)
+                return jsonify(result)
+                
+            elif action == 'log_care':
+                orchid_id = data.get('orchid_id')
+                care_type = data.get('care_type')
+                notes = data.get('notes', '')
+                
+                result = collection_hub.log_care_activity(orchid_id, care_type, notes)
+                return jsonify(result)
+                
+            else:
+                return jsonify({'error': 'Unknown action'}), 400
+                
+    except Exception as e:
+        logger.error(f"Collection API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/care-reminders')
+def get_care_reminders():
+    """Get care reminders for user's collection"""
+    try:
+        reminders = collection_hub.get_care_reminders()
+        return jsonify({'reminders': reminders})
+    except Exception as e:
+        logger.error(f"Care reminders error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/collection-recommendations')
+def get_collection_recommendations():
+    """Get personalized orchid recommendations"""
+    try:
+        recommendations = collection_hub.get_personalized_recommendations()
+        return jsonify(recommendations)
+    except Exception as e:
+        logger.error(f"Collection recommendations error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/unified-dashboard')
+def get_unified_dashboard():
+    """Get comprehensive unified dashboard data"""
+    try:
+        dashboard_data = widget_hub.get_unified_dashboard_data()
+        collection_data = collection_hub.get_collection_dashboard_data()
+        
+        unified_data = {
+            'widget_integration': dashboard_data,
+            'collection_hub': collection_data,
+            'device_type': mobile_optimizer.detect_device_type(),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(unified_data)
+        
+    except Exception as e:
+        logger.error(f"Unified dashboard error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==============================================================================
+# ENHANCED WIDGET DATA ROUTES - Cross-widget enhanced data
+# ==============================================================================
+
+@app.route('/api/enhanced-widget/<widget_type>')
+def get_enhanced_widget_data_api(widget_type):
+    """Get widget data enhanced with cross-widget context"""
+    try:
+        # Track the widget view
+        track_widget_interaction(widget_type, 'view', 
+                                genus=request.args.get('genus'),
+                                region=request.args.get('region'),
+                                query=request.args.get('query'))
+        
+        # Get enhanced widget data
+        enhanced_data = get_enhanced_widget_data(widget_type, **request.args)
+        
+        return jsonify(enhanced_data)
+        
+    except Exception as e:
+        logger.error(f"Enhanced widget data error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cross-widget-search')
+def cross_widget_search():
+    """Enhanced search that updates multiple widgets"""
+    try:
+        query = request.args.get('query', '')
+        if not query:
+            return jsonify({'error': 'Query required'}), 400
+        
+        # Track search interaction
+        track_widget_interaction('search', 'search', query=query)
+        
+        # Perform search
+        search_results = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.display_name.ilike(f'%{query}%'),
+                OrchidRecord.scientific_name.ilike(f'%{query}%'),
+                OrchidRecord.genus.ilike(f'%{query}%'),
+                OrchidRecord.species.ilike(f'%{query}%')
+            )
+        ).limit(20).all()
+        
+        # Format results
+        results = []
+        for orchid in search_results:
+            results.append({
+                'id': orchid.id,
+                'display_name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'image_url': orchid.image_url,
+                'region': orchid.region,
+                'native_habitat': orchid.native_habitat
+            })
+        
+        # Get recommendations for next widgets
+        recommendations = widget_hub.get_smart_recommendations('search')
+        
+        return jsonify({
+            'results': results,
+            'count': len(results),
+            'query': query,
+            'recommendations': recommendations,
+            'map_update_url': f'/api/enhanced-widget/map?genus={query.split()[0] if query else ""}',
+            'weather_update_url': f'/api/enhanced-widget/weather?species={query}'
+        })
+        
+    except Exception as e:
+        logger.error(f"Cross-widget search error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/identify-orchid', methods=['POST'])
+def identify_orchid_from_image():
+    """AI orchid identification for mobile camera search"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image provided'}), 400
+        
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({'error': 'No image selected'}), 400
+        
+        # Save temporary file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+            image_file.save(temp_file.name)
+            temp_path = temp_file.name
+        
+        try:
+            # Analyze with AI
+            from orchid_ai import analyze_orchid_image
+            ai_result = analyze_orchid_image(temp_path)
+            
+            # Track interaction
+            track_widget_interaction('search', 'camera_search', 
+                                   identified_genus=ai_result.get('genus'),
+                                   confidence=ai_result.get('confidence'))
+            
+            return jsonify({
+                'success': True,
+                'scientific_name': ai_result.get('scientific_name'),
+                'genus': ai_result.get('genus'),
+                'species': ai_result.get('species'),
+                'confidence': ai_result.get('confidence', 0.0),
+                'description': ai_result.get('description', ''),
+                'suggested_search': ai_result.get('scientific_name') or ai_result.get('genus', '')
+            })
+            
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+        
+    except Exception as e:
+        logger.error(f"Image identification error: {e}")
         return jsonify({'error': str(e)}), 500
 
 # END OF API ROUTES
