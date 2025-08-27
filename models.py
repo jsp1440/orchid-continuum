@@ -306,7 +306,7 @@ class UserUpload(db.Model):
     
     # Relationships
     orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=True)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, nullable=True)  # Temporarily remove FK constraint
     batch_id = db.Column(Integer, db.ForeignKey('batch_upload.id'), nullable=True)
     
     # File information
@@ -651,7 +651,7 @@ class BatchUpload(db.Model):
     batch_id = db.Column(String(50), unique=True, nullable=False)
     
     # User and session info
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, nullable=True)  # Remove FK constraint
     session_id = db.Column(String(100))
     
     # Batch statistics
