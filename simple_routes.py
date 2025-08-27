@@ -122,10 +122,14 @@ def index():
             .then(orchids => {
                 let html = '';
                 orchids.forEach(orchid => {
+                    // Use direct static URLs or API proxy
+                    const imageUrl = orchid.image_url.startsWith('/static/') ? 
+                        orchid.image_url : `/api/drive-photo/${orchid.google_drive_id}`;
+                    
                     html += `
                         <div class="col-md-6 col-lg-3 mb-4">
                             <div class="card">
-                                <img src="/api/drive-photo/${orchid.google_drive_id}" 
+                                <img src="${imageUrl}" 
                                      class="card-img-top" 
                                      style="height: 200px; object-fit: cover;" 
                                      alt="${orchid.display_name}"
