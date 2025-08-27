@@ -3627,6 +3627,299 @@ def export_contest_results():
         logger.error(f"Contest export error: {e}")
         return jsonify({'error': str(e)}), 500
 
+# Enhanced Contest API Endpoints
+
+@app.route('/api/contest/enhanced-submit', methods=['POST'])
+def enhanced_submit_entry():
+    """Enhanced submission endpoint with file upload and validation"""
+    try:
+        import hashlib
+        from werkzeug.utils import secure_filename
+        
+        member_id = session.get('user_id', 'demo_member')
+        
+        # Check submission window
+        contest_period = monthly_contest.get_current_contest_period()
+        if not contest_period['is_active']:
+            return jsonify({'success': False, 'error': 'Submission deadline has passed'})
+        
+        # Get form data
+        plant_name = request.form.get('plant_name', '').strip()
+        category = request.form.get('category', '').strip()
+        caption = request.form.get('caption', '').strip()
+        culture = request.form.get('culture', '').strip()
+        is_draft = request.form.get('is_draft') == 'true'
+        
+        # Validate required fields (unless draft)
+        if not is_draft:
+            if not all([plant_name, category, caption]):
+                return jsonify({'success': False, 'error': 'Missing required fields'})
+        
+        # Handle photo upload
+        photo_file = request.files.get('photo')
+        photo_hash = None
+        photo_url = None
+        
+        if photo_file and photo_file.filename:
+            # Validate file type
+            allowed_extensions = {'jpg', 'jpeg', 'png'}
+            file_ext = photo_file.filename.rsplit('.', 1)[1].lower() if '.' in photo_file.filename else ''
+            if file_ext not in allowed_extensions:
+                return jsonify({'success': False, 'error': 'Invalid file type. Use JPG or PNG.'})
+            
+            # Validate file size (10MB)
+            if len(photo_file.read()) > 10 * 1024 * 1024:
+                return jsonify({'success': False, 'error': 'File too large. Maximum 10MB.'})
+            
+            photo_file.seek(0)  # Reset file pointer
+            
+            # Generate photo hash for duplicate detection
+            photo_content = photo_file.read()
+            photo_hash = hashlib.sha256(photo_content).hexdigest()
+            photo_file.seek(0)
+            
+            # Check for duplicate hash
+            existing_entry = monthly_contest.find_by_photo_hash(photo_hash)
+            flags = []
+            if existing_entry:
+                flags.append('possible_duplicate')
+            
+            # Save file (in production, would upload to cloud storage)
+            filename = secure_filename(f"entry_{member_id}_{contest_period['contest_id']}_{photo_hash[:8]}.{file_ext}")
+            photo_url = f"/static/uploads/{filename}"
+            
+            # For demo, use placeholder
+            photo_url = "/static/images/placeholder.png"
+        
+        # Create entry data
+        entry_data = {
+            'plant_name': plant_name,
+            'category': category,
+            'caption': caption,
+            'culture_notes': culture,
+            'photo_url': photo_url,
+            'photo_hash': photo_hash,
+            'is_draft': is_draft,
+            'original_photo_confirmed': request.form.get('original_photo') == 'true',
+            'currently_blooming_confirmed': request.form.get('currently_blooming') == 'true'
+        }
+        
+        # Submit entry
+        result = monthly_contest.enhanced_submit_entry(member_id, entry_data)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Enhanced submission error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/submission-count')
+def get_submission_count():
+    """Get current member's submission count for the month"""
+    try:
+        member_id = session.get('user_id', 'demo_member')
+        submissions = monthly_contest.get_member_submissions(member_id)
+        return jsonify({'count': len(submissions)})
+        
+    except Exception as e:
+        logger.error(f"Submission count error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contest/admin/entries')
+def get_admin_entries():
+    """Get entries for admin review with filtering and pagination"""
+    try:
+        # Get filters
+        month_key = request.args.get('month_key')
+        status = request.args.get('status')
+        category = request.args.get('category')
+        search = request.args.get('search', '').strip()
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('pageSize', 20))
+        
+        # Get entries with filters
+        entries = monthly_contest.get_admin_entries(
+            month_key=month_key,
+            status=status,
+            category=category,
+            search=search,
+            page=page,
+            page_size=page_size
+        )
+        
+        return jsonify({
+            'success': True,
+            'entries': entries['items'],
+            'pagination': {
+                'page': page,
+                'pageSize': page_size,
+                'totalPages': entries['total_pages'],
+                'totalItems': entries['total_items']
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Admin entries error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/entry/<entry_id>')
+def get_admin_entry_detail(entry_id):
+    """Get detailed entry information for admin preview"""
+    try:
+        entry = monthly_contest.get_entry_detail(entry_id)
+        if not entry:
+            return jsonify({'success': False, 'error': 'Entry not found'}), 404
+            
+        return jsonify({'success': True, 'entry': entry})
+        
+    except Exception as e:
+        logger.error(f"Admin entry detail error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/approve', methods=['POST'])
+def approve_admin_entry():
+    """Approve a contest entry"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        admin_id = session.get('user_id', 'admin')
+        
+        result = monthly_contest.admin_approve_entry(entry_id, admin_id)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Admin approve error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/reject', methods=['POST'])
+def reject_admin_entry():
+    """Reject a contest entry with reason"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        reason = data.get('reason', '').strip()
+        admin_id = session.get('user_id', 'admin')
+        
+        if not reason:
+            return jsonify({'success': False, 'error': 'Rejection reason required'})
+        
+        result = monthly_contest.admin_reject_entry(entry_id, reason, admin_id)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Admin reject error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/remove', methods=['POST'])
+def remove_admin_entry():
+    """Remove a contest entry permanently"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        admin_id = session.get('user_id', 'admin')
+        
+        result = monthly_contest.admin_remove_entry(entry_id, admin_id)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Admin remove error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/bulk', methods=['POST'])
+def bulk_admin_action():
+    """Perform bulk actions on contest entries"""
+    try:
+        data = request.get_json()
+        action = data.get('action')
+        entry_ids = data.get('entry_ids', [])
+        admin_id = session.get('user_id', 'admin')
+        
+        if not action or not entry_ids:
+            return jsonify({'success': False, 'error': 'Missing action or entry IDs'})
+        
+        result = monthly_contest.admin_bulk_action(action, entry_ids, admin_id)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Admin bulk action error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/vote-enhanced', methods=['POST'])
+def cast_enhanced_vote():
+    """Enhanced voting with visitor fingerprinting"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        
+        # Create visitor fingerprint
+        visitor_ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', '')
+        visitor_cookie = session.get('visitor_id')
+        
+        if not visitor_cookie:
+            import uuid
+            visitor_cookie = str(uuid.uuid4())
+            session['visitor_id'] = visitor_cookie
+        
+        visitor_fingerprint = f"ip:{visitor_ip}|ua:{user_agent[:20]}|cookie:{visitor_cookie}"
+        
+        member_id = session.get('user_id')  # None for anonymous voters
+        
+        result = monthly_contest.cast_enhanced_vote(
+            entry_id=entry_id,
+            member_id=member_id,
+            visitor_fingerprint=visitor_fingerprint
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Enhanced voting error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/leaderboard/<month_key>')
+def get_monthly_leaderboard(month_key):
+    """Get monthly contest winners/leaderboard"""
+    try:
+        leaderboard = monthly_contest.get_monthly_leaderboard(month_key)
+        return jsonify(leaderboard)
+        
+    except Exception as e:
+        logger.error(f"Leaderboard error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/contest/admin')
+def contest_admin_queue():
+    """Contest admin review queue page"""
+    try:
+        return render_template('contest/admin_queue.html',
+                             title="Contest Admin Review Queue")
+    except Exception as e:
+        logger.error(f"Contest admin page error: {e}")
+        flash(f"Error loading admin queue: {str(e)}", 'error')
+        return redirect(url_for('admin_panel'))
+
+@app.route('/contest/enhanced-submit')
+def enhanced_contest_submission():
+    """Enhanced contest submission page"""
+    try:
+        contest_period = monthly_contest.get_current_contest_period()
+        member_id = session.get('user_id', 'demo_member')
+        submissions = monthly_contest.get_member_submissions(member_id)
+        
+        return render_template('contest/enhanced_submit_form.html',
+                             contest_open=contest_period['is_active'],
+                             deadline_date=contest_period['deadline_str'],
+                             next_open_date="Next month",
+                             member_name="Demo Member",
+                             member_email="demo@fcos.org",
+                             submission_count=len(submissions),
+                             categories=monthly_contest.categories,
+                             title="Submit Contest Entry")
+    except Exception as e:
+        logger.error(f"Enhanced submission page error: {e}")
+        flash(f"Error loading submission page: {str(e)}", 'error')
+        return redirect(url_for('monthly_contest_page'))
+
 @app.route('/contest/category/<category>')
 def contest_category_page(category):
     """Individual category page with detailed entries"""

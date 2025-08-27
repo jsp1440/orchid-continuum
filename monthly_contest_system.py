@@ -382,6 +382,365 @@ class MonthlyContestSystem:
             }
         
         return voting_status
+    
+    # Enhanced Methods for New Features
+    
+    def enhanced_submit_entry(self, member_id: str, entry_data: Dict) -> Dict:
+        """Enhanced entry submission with photo hash and validation"""
+        current_period = self.get_current_contest_period()
+        
+        if not current_period['is_active'] and not entry_data.get('is_draft'):
+            return {'success': False, 'error': 'Submission deadline has passed'}
+            
+        contest_data = self.get_contest_data()
+        
+        # Check submission limit (excluding drafts)
+        user_submissions = [s for s in contest_data['submissions'].get(member_id, []) 
+                          if not s.get('is_draft', False)]
+        if len(user_submissions) >= self.max_submissions_per_member and not entry_data.get('is_draft'):
+            return {'success': False, 'error': f'Maximum {self.max_submissions_per_member} submissions per month'}
+        
+        # Create entry ID
+        entry_id = f"entry_{member_id}_{len(contest_data['submissions'].get(member_id, []))}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Detect flags
+        flags = []
+        if entry_data.get('photo_hash'):
+            # Check for duplicate hash
+            duplicate_found = self.find_by_photo_hash(entry_data['photo_hash'], exclude_entry_id=entry_id)
+            if duplicate_found:
+                flags.append('possible_duplicate')
+        
+        # Check if submitted after hours (simulate)
+        if datetime.now().hour >= 19:  # After 7 PM
+            flags.append('after_hours')
+        
+        # Create enhanced entry
+        entry = {
+            'id': entry_id,
+            'member_id': member_id,
+            'plant_name': entry_data['plant_name'],
+            'category': entry_data['category'],
+            'caption': entry_data['caption'],
+            'culture_notes': entry_data.get('culture_notes', ''),
+            'photo_url': entry_data['photo_url'],
+            'photo_hash': entry_data.get('photo_hash'),
+            'status': 'draft' if entry_data.get('is_draft') else 'pending_approval',
+            'flags': flags,
+            'submitted_at': datetime.now().isoformat(),
+            'vote_count': 0,
+            'confirmations': {
+                'original_photo': entry_data.get('original_photo_confirmed', False),
+                'currently_blooming': entry_data.get('currently_blooming_confirmed', False)
+            },
+            'admin_notes': ''
+        }
+        
+        # Store entry
+        if member_id not in contest_data['submissions']:
+            contest_data['submissions'][member_id] = []
+        contest_data['submissions'][member_id].append(entry)
+        
+        # Initialize vote count
+        contest_data['votes'][entry_id] = 0
+        
+        # Save updates
+        session[self.contest_key][current_period['contest_id']] = contest_data
+        
+        return {'success': True, 'entry': entry}
+    
+    def find_by_photo_hash(self, photo_hash: str, exclude_entry_id: str = None) -> Optional[Dict]:
+        """Find entry by photo hash for duplicate detection"""
+        contest_data = self.get_contest_data()
+        
+        for user_submissions in contest_data['submissions'].values():
+            for entry in user_submissions:
+                if (entry.get('photo_hash') == photo_hash and 
+                    entry['id'] != exclude_entry_id):
+                    return entry
+        return None
+    
+    def get_admin_entries(self, month_key: str = None, status: str = None, 
+                         category: str = None, search: str = None, 
+                         page: int = 1, page_size: int = 20) -> Dict:
+        """Get entries for admin review with filtering and pagination"""
+        contest_data = self.get_contest_data(month_key)
+        
+        # Flatten all entries
+        all_entries = []
+        for user_id, user_submissions in contest_data['submissions'].items():
+            for entry in user_submissions:
+                # Add mock member data for demo
+                entry['member'] = {
+                    'id': user_id,
+                    'name': f"Member {user_id[-4:]}",
+                    'email': f"member{user_id[-4:]}@fcos.org"
+                }
+                entry['vote_count'] = contest_data['votes'].get(entry['id'], 0)
+                entry['photoUrls'] = {
+                    'thumb': entry.get('photo_url', '/static/images/placeholder.png'),
+                    'grid': entry.get('photo_url', '/static/images/placeholder.png'),
+                    'full': entry.get('photo_url', '/static/images/placeholder.png')
+                }
+                all_entries.append(entry)
+        
+        # Apply filters
+        filtered_entries = all_entries
+        
+        if status:
+            filtered_entries = [e for e in filtered_entries if e['status'] == status]
+        
+        if category:
+            filtered_entries = [e for e in filtered_entries if e.get('category') == category]
+        
+        if search:
+            search_lower = search.lower()
+            filtered_entries = [e for e in filtered_entries 
+                              if (search_lower in e.get('plant_name', '').lower() or
+                                  search_lower in e.get('caption', '').lower() or
+                                  search_lower in e.get('member', {}).get('name', '').lower())]
+        
+        # Sort by submission date (newest first)
+        filtered_entries.sort(key=lambda x: x.get('submitted_at', ''), reverse=True)
+        
+        # Paginate
+        total_items = len(filtered_entries)
+        total_pages = (total_items + page_size - 1) // page_size
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        page_entries = filtered_entries[start_idx:end_idx]
+        
+        return {
+            'items': page_entries,
+            'total_items': total_items,
+            'total_pages': total_pages
+        }
+    
+    def get_entry_detail(self, entry_id: str) -> Optional[Dict]:
+        """Get detailed entry information"""
+        contest_data = self.get_contest_data()
+        
+        for user_submissions in contest_data['submissions'].values():
+            for entry in user_submissions:
+                if entry['id'] == entry_id:
+                    # Enhance with additional data
+                    entry['photoUrls'] = {
+                        'thumb': entry.get('photo_url', '/static/images/placeholder.png'),
+                        'grid': entry.get('photo_url', '/static/images/placeholder.png'),
+                        'full': entry.get('photo_url', '/static/images/placeholder.png')
+                    }
+                    entry['member'] = {
+                        'id': entry['member_id'],
+                        'name': f"Member {entry['member_id'][-4:]}",
+                        'email': f"member{entry['member_id'][-4:]}@fcos.org"
+                    }
+                    return entry
+        return None
+    
+    def admin_approve_entry(self, entry_id: str, admin_id: str) -> Dict:
+        """Admin approve entry with audit logging"""
+        contest_data = self.get_contest_data()
+        
+        for user_submissions in contest_data['submissions'].values():
+            for entry in user_submissions:
+                if entry['id'] == entry_id:
+                    old_status = entry['status']
+                    entry['status'] = 'approved'
+                    entry['approved_at'] = datetime.now().isoformat()
+                    entry['approved_by'] = admin_id
+                    
+                    # Log audit trail
+                    self.log_admin_action(admin_id, 'approve', entry_id, old_status, 'approved')
+                    
+                    # Save updates
+                    current_period = self.get_current_contest_period()
+                    session[self.contest_key][current_period['contest_id']] = contest_data
+                    
+                    return {'success': True}
+        
+        return {'success': False, 'error': 'Entry not found'}
+    
+    def admin_reject_entry(self, entry_id: str, reason: str, admin_id: str) -> Dict:
+        """Admin reject entry with reason and audit logging"""
+        contest_data = self.get_contest_data()
+        
+        for user_submissions in contest_data['submissions'].values():
+            for entry in user_submissions:
+                if entry['id'] == entry_id:
+                    old_status = entry['status']
+                    entry['status'] = 'rejected'
+                    entry['rejection_reason'] = reason
+                    entry['rejected_at'] = datetime.now().isoformat()
+                    entry['rejected_by'] = admin_id
+                    
+                    # Log audit trail
+                    self.log_admin_action(admin_id, 'reject', entry_id, old_status, 'rejected', reason)
+                    
+                    # Save updates
+                    current_period = self.get_current_contest_period()
+                    session[self.contest_key][current_period['contest_id']] = contest_data
+                    
+                    return {'success': True}
+        
+        return {'success': False, 'error': 'Entry not found'}
+    
+    def admin_remove_entry(self, entry_id: str, admin_id: str) -> Dict:
+        """Admin permanently remove entry"""
+        contest_data = self.get_contest_data()
+        
+        for user_id, user_submissions in contest_data['submissions'].items():
+            for i, entry in enumerate(user_submissions):
+                if entry['id'] == entry_id:
+                    removed_entry = user_submissions.pop(i)
+                    
+                    # Remove votes
+                    if entry_id in contest_data['votes']:
+                        del contest_data['votes'][entry_id]
+                    
+                    # Log audit trail
+                    self.log_admin_action(admin_id, 'remove', entry_id, removed_entry['status'], 'removed')
+                    
+                    # Save updates
+                    current_period = self.get_current_contest_period()
+                    session[self.contest_key][current_period['contest_id']] = contest_data
+                    
+                    return {'success': True}
+        
+        return {'success': False, 'error': 'Entry not found'}
+    
+    def admin_bulk_action(self, action: str, entry_ids: List[str], admin_id: str) -> Dict:
+        """Perform bulk admin actions"""
+        results = {'success': 0, 'failed': 0, 'errors': []}
+        
+        for entry_id in entry_ids:
+            try:
+                if action == 'approve':
+                    result = self.admin_approve_entry(entry_id, admin_id)
+                elif action == 'reject':
+                    result = self.admin_reject_entry(entry_id, 'Bulk rejection', admin_id)
+                elif action == 'remove':
+                    result = self.admin_remove_entry(entry_id, admin_id)
+                else:
+                    results['errors'].append(f"Unknown action: {action}")
+                    results['failed'] += 1
+                    continue
+                
+                if result['success']:
+                    results['success'] += 1
+                else:
+                    results['failed'] += 1
+                    results['errors'].append(f"Entry {entry_id}: {result.get('error', 'Unknown error')}")
+                    
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append(f"Entry {entry_id}: {str(e)}")
+        
+        return {'success': True, 'results': results}
+    
+    def cast_enhanced_vote(self, entry_id: str, member_id: str = None, 
+                          visitor_fingerprint: str = None) -> Dict:
+        """Cast vote with enhanced tracking"""
+        current_period = self.get_current_contest_period()
+        
+        if not current_period['is_active']:
+            return {'success': False, 'error': 'Voting has closed'}
+        
+        contest_data = self.get_contest_data()
+        
+        # Find entry and validate
+        entry = self.get_entry_detail(entry_id)
+        if not entry or entry['status'] != 'approved':
+            return {'success': False, 'error': 'Entry not found or not approved'}
+        
+        category = entry['category']
+        
+        # Check voting limits using enhanced tracking
+        vote_key = member_id or visitor_fingerprint
+        vote_tracking_key = f"enhanced_votes_{current_period['contest_id']}"
+        
+        if vote_tracking_key not in session:
+            session[vote_tracking_key] = {}
+        
+        voter_votes = session[vote_tracking_key].get(vote_key, {})
+        
+        if category in voter_votes:
+            return {'success': False, 'error': f'Already voted in {category} category'}
+        
+        # Create vote record
+        vote_id = f"VTE_{datetime.now().strftime('%Y%m%d%H%M%S')}_{len(voter_votes)}"
+        vote_record = {
+            'id': vote_id,
+            'entry_id': entry_id,
+            'category': category,
+            'member_id': member_id,
+            'visitor_fingerprint': visitor_fingerprint,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Record vote
+        contest_data['votes'][entry_id] = contest_data['votes'].get(entry_id, 0) + 1
+        voter_votes[category] = vote_record
+        session[vote_tracking_key][vote_key] = voter_votes
+        
+        # Save updates
+        session[self.contest_key][current_period['contest_id']] = contest_data
+        
+        return {
+            'success': True, 
+            'vote': vote_record,
+            'new_vote_count': contest_data['votes'][entry_id]
+        }
+    
+    def get_monthly_leaderboard(self, month_key: str) -> Dict:
+        """Get finalized monthly contest winners"""
+        contest_data = self.get_contest_data(month_key)
+        
+        winners = {}
+        for category in self.categories:
+            category_entries = self.get_category_leaderboard(category, month_key)
+            
+            # Format winners data
+            winners[category] = []
+            for i, entry in enumerate(category_entries[:3]):
+                if entry['vote_count'] > 0:  # Only include entries with votes
+                    award_levels = ['gold', 'silver', 'bronze']
+                    winners[category].append({
+                        'entryId': entry['id'],
+                        'plantName': entry['plant_name'],
+                        'memberName': entry.get('member', {}).get('name', 'Unknown'),
+                        'votes': entry['vote_count'],
+                        'awardLevel': award_levels[i]
+                    })
+        
+        return {
+            'monthKey': month_key,
+            'winners': winners,
+            'generatedAt': datetime.now().isoformat()
+        }
+    
+    def log_admin_action(self, admin_id: str, action: str, entry_id: str, 
+                        from_status: str, to_status: str, reason: str = None):
+        """Log admin actions for audit trail"""
+        audit_key = 'contest_audit_log'
+        
+        if audit_key not in session:
+            session[audit_key] = []
+        
+        log_entry = {
+            'admin_id': admin_id,
+            'action': action,
+            'entry_id': entry_id,
+            'from_status': from_status,
+            'to_status': to_status,
+            'reason': reason,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        session[audit_key].append(log_entry)
+        
+        # Keep only last 1000 entries
+        if len(session[audit_key]) > 1000:
+            session[audit_key] = session[audit_key][-1000:]
 
 
 # Global instance
