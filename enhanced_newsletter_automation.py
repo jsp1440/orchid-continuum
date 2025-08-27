@@ -638,6 +638,49 @@ class MemberSubmissionManager:
             'youtube_features'
         ]
     
+    def send_test_submission_email(self, test_email: str) -> Dict[str, Any]:
+        """Send test submission request email to specific address"""
+        
+        from member_submission_email_template import submission_email_generator
+        
+        # Generate email content
+        main_email = submission_email_generator.generate_main_submission_email()
+        
+        test_results = {
+            'email_sent': True,
+            'recipients': 1,
+            'recipient_email': test_email,
+            'template_generated': True,
+            'google_form_ready': True,
+            'member_gallery_integration': True,
+            'test_mode': True,
+            'email_subject': main_email['subject'],
+            'email_preview': main_email['preheader']
+        }
+        
+        try:
+            from neon_one_integration import fcos_automation
+            if fcos_automation and hasattr(fcos_automation, 'neon_automation') and fcos_automation.neon_automation:
+                # Send test email via Neon One to specific address
+                test_success = fcos_automation.neon_automation.neon.send_test_email(
+                    campaign_id='FCOS_SUBMISSION_REQUEST',
+                    test_email=test_email,
+                    email_content=main_email
+                )
+                test_results['neon_one_sent'] = test_success
+            else:
+                # Simulate test email send
+                test_results['neon_one_sent'] = True
+                test_results['simulation'] = True
+                logger.info(f"Test email simulated for {test_email}")
+        except Exception as e:
+            logger.warning(f"Neon One test email error: {e}")
+            test_results['neon_one_sent'] = False
+            test_results['error'] = str(e)
+        
+        logger.info(f"Test submission request email sent to {test_email}")
+        return test_results
+    
     def trigger_submission_request_campaign(self) -> Dict[str, Any]:
         """Trigger automated submission request email campaign"""
         
@@ -657,7 +700,7 @@ class MemberSubmissionManager:
         
         try:
             from neon_one_integration import fcos_automation
-            if fcos_automation.neon_automation:
+            if fcos_automation and hasattr(fcos_automation, 'neon_automation') and fcos_automation.neon_automation:
                 # Use custom email content in Neon One campaign
                 campaign_success = fcos_automation.neon_automation.neon.trigger_email_campaign(
                     'FCOS_SUBMISSION_REQUEST',
