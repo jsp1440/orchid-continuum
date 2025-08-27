@@ -3345,6 +3345,135 @@ def get_unified_dashboard():
         return jsonify({'error': str(e)}), 500
 
 # ==============================================================================
+# SHOW & TELL ROUTES - Member gallery creation and admin approval workflow
+# ==============================================================================
+
+@app.route('/my-collection/show-tell')
+def show_tell_gallery_page():
+    """Show & Tell gallery management page"""
+    try:
+        show_tell_data = collection_hub.get_show_tell_dashboard_data()
+        collection_data = collection_hub.get_user_collection()
+        
+        return render_template('collection/show_tell.html',
+                             show_tell=show_tell_data,
+                             collection=collection_data,
+                             title="Show & Tell Galleries")
+    except Exception as e:
+        logger.error(f"Show & Tell page error: {e}")
+        flash(f"Error loading Show & Tell: {str(e)}", 'error')
+        return redirect(url_for('user_collection_dashboard'))
+
+@app.route('/api/show-tell', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def show_tell_api():
+    """API for Show & Tell gallery management"""
+    try:
+        if request.method == 'GET':
+            status_filter = request.args.get('status')
+            galleries = collection_hub.get_show_tell_galleries(status_filter)
+            return jsonify({'galleries': galleries})
+            
+        elif request.method == 'POST':
+            data = request.get_json()
+            result = collection_hub.create_show_tell_gallery(data)
+            return jsonify(result)
+            
+        elif request.method == 'PUT':
+            data = request.get_json()
+            gallery_id = data.get('gallery_id')
+            updates = data.get('updates', {})
+            
+            result = collection_hub.update_show_tell_gallery(gallery_id, updates)
+            return jsonify(result)
+            
+        elif request.method == 'DELETE':
+            gallery_id = request.args.get('gallery_id')
+            result = collection_hub.delete_show_tell_gallery(gallery_id)
+            return jsonify(result)
+            
+    except Exception as e:
+        logger.error(f"Show & Tell API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/show-tell/public')
+def get_public_show_tell():
+    """Get all approved public Show & Tell galleries"""
+    try:
+        galleries = collection_hub.get_public_show_tell_galleries()
+        return jsonify({'galleries': galleries})
+    except Exception as e:
+        logger.error(f"Public Show & Tell error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/show-tell/admin/queue')
+def get_admin_approval_queue():
+    """Get galleries pending admin approval"""
+    try:
+        queue = collection_hub.get_admin_approval_queue()
+        return jsonify({'queue': queue})
+    except Exception as e:
+        logger.error(f"Admin queue error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/show-tell/admin/approve', methods=['POST'])
+def admin_approve_show_tell():
+    """Admin approval/rejection of Show & Tell gallery"""
+    try:
+        data = request.get_json()
+        gallery_id = data.get('gallery_id')
+        approve = data.get('approve', True)
+        admin_notes = data.get('admin_notes', '')
+        
+        result = collection_hub.admin_approve_gallery(gallery_id, admin_notes, approve)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Admin approval error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/show-tell/public')
+def public_show_tell_page():
+    """Public Show & Tell display page"""
+    try:
+        galleries = collection_hub.get_public_show_tell_galleries()
+        
+        return render_template('show_tell/public.html',
+                             galleries=galleries,
+                             title="Member Show & Tell Galleries")
+    except Exception as e:
+        logger.error(f"Public Show & Tell page error: {e}")
+        flash(f"Error loading galleries: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+@app.route('/show-tell/gallery/<gallery_id>')
+def view_show_tell_gallery(gallery_id):
+    """View individual Show & Tell gallery"""
+    try:
+        # Increment view count
+        collection_hub.increment_gallery_views(gallery_id)
+        
+        # Get gallery data
+        all_galleries = collection_hub.get_show_tell_galleries()
+        gallery = next((g for g in all_galleries if g['id'] == gallery_id), None)
+        
+        if not gallery:
+            flash('Gallery not found', 'error')
+            return redirect(url_for('public_show_tell_page'))
+        
+        # Only show if public or user's own gallery
+        if gallery['status'] not in ['public_approved', 'member_published']:
+            flash('Gallery not available for viewing', 'error')
+            return redirect(url_for('public_show_tell_page'))
+        
+        return render_template('show_tell/gallery_detail.html',
+                             gallery=gallery,
+                             title=f"Show & Tell: {gallery['title']}")
+    except Exception as e:
+        logger.error(f"Gallery view error: {e}")
+        flash(f"Error loading gallery: {str(e)}", 'error')
+        return redirect(url_for('public_show_tell_page'))
+
+# ==============================================================================
 # ENHANCED WIDGET DATA ROUTES - Cross-widget enhanced data
 # ==============================================================================
 
