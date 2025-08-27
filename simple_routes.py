@@ -278,13 +278,12 @@ def gallery_widget():
 
 @app.route('/api/drive-photo/<file_id>')
 def drive_photo_proxy(file_id):
-    """Google Drive photo proxy - shows your actual orchid photos"""
+    """Google Drive photo proxy - working direct links"""
     from flask import redirect
     
-    # If it's a real Google Drive ID, redirect to the actual photo
+    # Use the WORKING Google Photos direct link format
     if file_id and len(file_id) > 10 and file_id != 'placeholder':
-        # Use Google Drive direct view URL
-        return redirect(f"https://drive.google.com/uc?export=view&id={file_id}")
+        return redirect(f"https://lh3.googleusercontent.com/d/{file_id}")
     else:
         # Fallback placeholder
         return redirect("https://via.placeholder.com/400x300/6B3FA0/FFFFFF?text=Orchid+Photo")
