@@ -1,0 +1,1053 @@
+{% extends "base.html" %}
+
+{% block title %}Show & Tell Admin Review Queue - Five Cities Orchid Society{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+  --fcos-purple: #6a3fb5;
+  --fcos-purple-600: #5a34a0;
+  --fcos-green: #3aa681;
+  --fcos-ink: #1a1a1a;
+  --fcos-muted: #6b7280;
+  --fcos-bg: #ffffff;
+  --fcos-card: #ffffff;
+  --fcos-border: #e5e7eb;
+  --fcos-ring: #c4b5fd;
+  --radius: 12px;
+  --shadow: 0 6px 18px rgba(0,0,0,.08);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --space: 16px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+}
+
+* { box-sizing: border-box; }
+
+body { 
+  font-family: var(--font); 
+  color: var(--fcos-ink); 
+  background: var(--fcos-bg); 
+  line-height: 1.5; 
+}
+
+.admin-queue {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.aq-header {
+  background: linear-gradient(135deg, var(--fcos-purple), var(--fcos-green));
+  color: white;
+  padding: 30px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+
+.aq-header h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.aq-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.aq-controls select,
+.aq-controls input {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 0.9rem;
+}
+
+.aq-controls select:focus,
+.aq-controls input:focus {
+  outline: none;
+  border-color: white;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+
+.aq-controls select option {
+  color: var(--fcos-ink);
+  background: white;
+}
+
+.bulk-actions {
+  background: var(--fcos-card);
+  border: 1px solid var(--fcos-border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.bulk-bar {
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--fcos-border);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--fcos-purple);
+}
+
+.aq-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.aq-table thead {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+
+.aq-table thead th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--fcos-muted);
+  font-weight: 600;
+  padding: 12px;
+  border-bottom: 2px solid var(--fcos-border);
+  background: #f9fafb;
+}
+
+.aq-table tbody tr {
+  background: white;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.aq-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.aq-table tbody tr:hover {
+  background: #f0f9ff;
+}
+
+.aq-table td,
+.aq-table th {
+  padding: 12px;
+  vertical-align: middle;
+}
+
+.thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--fcos-border);
+}
+
+.truncate {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.chip.species { background: #e8f5e9; color: #17633f; }
+.chip.hybrids { background: #eef2ff; color: #3730a3; }
+.chip.cattleyas { background: #fff7ed; color: #9a3412; }
+.chip.intergenerics { background: #ecfeff; color: #0e7490; }
+
+.status {
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status.pending { background: #fff3cd; color: #856404; }
+.status.approved { background: #d1fae5; color: #065f46; }
+.status.rejected { background: #fde2e1; color: #991b1b; }
+
+.flag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 4px;
+  text-transform: uppercase;
+}
+
+.flag.dupe { background: #ffe0e0; color: #991b1b; }
+.flag.late { background: #fef3c7; color: #92400e; }
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.small {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--fcos-border);
+  background: white;
+  color: var(--fcos-purple);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.small:hover {
+  background: #f5f3ff;
+}
+
+.small.approve {
+  background: var(--fcos-green);
+  color: white;
+  border-color: var(--fcos-green);
+}
+
+.small.approve:hover {
+  background: #2d8f64;
+}
+
+.small.reject {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.small.reject:hover {
+  background: #b91c1c;
+}
+
+.small.danger {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.small.danger:hover {
+  background: #b91c1c;
+}
+
+.ghost {
+  background: white;
+  color: var(--fcos-purple);
+  border: 1px solid var(--fcos-border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.ghost:hover {
+  background: #f5f3ff;
+}
+
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pager {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-top: 1px solid var(--fcos-border);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Modal Styles */
+dialog {
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 600px;
+  width: 90vw;
+  padding: 0;
+  background: white;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.preview {
+  padding: 24px;
+}
+
+.preview img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.meta h3 {
+  color: var(--fcos-purple);
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+}
+
+.meta p {
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.meta .caption {
+  font-style: italic;
+  color: var(--fcos-muted);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+}
+
+dialog footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fcos-border);
+}
+
+.approve {
+  background: var(--fcos-green);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.approve:hover {
+  background: #2d8f64;
+}
+
+.reject {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.reject:hover {
+  background: #b91c1c;
+}
+
+/* Reject Modal */
+#reject-modal form {
+  padding: 24px;
+}
+
+#reject-modal h3 {
+  color: var(--fcos-purple);
+  margin: 0 0 16px 0;
+}
+
+#reject-modal textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--fcos-border);
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  margin: 8px 0 16px 0;
+}
+
+#reject-modal textarea:focus {
+  outline: none;
+  border-color: var(--fcos-ring);
+  box-shadow: 0 0 0 3px rgba(196,181,253,.3);
+}
+
+.danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.danger:hover {
+  background: #b91c1c;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .admin-queue {
+    padding: 16px;
+  }
+  
+  .aq-header {
+    padding: 20px;
+  }
+  
+  .aq-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .aq-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .aq-controls select,
+  .aq-controls input {
+    width: 100%;
+  }
+  
+  .bulk-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .aq-table {
+    font-size: 0.85rem;
+  }
+  
+  .aq-table th,
+  .aq-table td {
+    padding: 8px 6px;
+  }
+  
+  .thumb {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .truncate {
+    max-width: 120px;
+  }
+  
+  .row-actions {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .small {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Focus indicators */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--fcos-purple);
+  outline-offset: 2px;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="admin-queue">
+  <header class="aq-header">
+    <h2>🗂️ Show & Tell — Admin Review Queue</h2>
+    <div class="aq-controls">
+      <select name="month_key" aria-label="Filter by Month" id="monthFilter">
+        <option value="2025-08" selected>August 2025</option>
+        <option value="2025-07">July 2025</option>
+        <option value="2025-06">June 2025</option>
+      </select>
+      <select name="status" aria-label="Filter by Status" id="statusFilter">
+        <option value="">All Statuses</option>
+        <option value="pending_approval" selected>Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <select name="category" aria-label="Filter by Category" id="categoryFilter">
+        <option value="">All Categories</option>
+        <option value="species">Species</option>
+        <option value="hybrids">Hybrids</option>
+        <option value="cattleyas">Cattleyas</option>
+        <option value="intergenerics">Intergenerics</option>
+      </select>
+      <input type="search" placeholder="Search name, member, caption…" 
+             aria-label="Search entries" id="searchInput">
+      <button class="ghost" onclick="exportQueue()" aria-label="Export queue as CSV">
+        Export CSV
+      </button>
+    </div>
+  </header>
+
+  <form class="bulk-actions" id="bulkForm">
+    <div class="bulk-bar">
+      <label class="checkbox">
+        <input type="checkbox" id="check-all" aria-label="Select all entries">
+        <span>Select all</span>
+      </label>
+      <select name="bulk_action" aria-label="Choose bulk action" id="bulkAction">
+        <option value="">Bulk actions…</option>
+        <option value="approve">Approve</option>
+        <option value="reject">Reject</option>
+        <option value="remove">Remove</option>
+      </select>
+      <button class="ghost" type="submit" aria-label="Apply bulk action">
+        Apply
+      </button>
+      <span id="selectedCount" class="sr-only" aria-live="polite"></span>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table class="aq-table" role="table" aria-label="Contest entries review queue">
+        <thead>
+          <tr role="row">
+            <th scope="col">
+              <span class="sr-only">Select</span>
+            </th>
+            <th scope="col">Thumbnail</th>
+            <th scope="col">Plant</th>
+            <th scope="col">Category</th>
+            <th scope="col">Member</th>
+            <th scope="col">Caption</th>
+            <th scope="col">Status</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Flags</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="entriesTableBody">
+          <!-- Entries will be loaded here -->
+        </tbody>
+      </table>
+    </div>
+
+    <nav class="pager" aria-label="Pagination">
+      <button class="ghost" id="prevBtn" disabled aria-label="Previous page">
+        « Prev
+      </button>
+      <span id="pageInfo" aria-live="polite">Page 1 of 1</span>
+      <button class="ghost" id="nextBtn" aria-label="Next page">
+        Next »
+      </button>
+    </nav>
+  </form>
+</section>
+
+<!-- Preview Modal -->
+<dialog id="preview-modal" aria-labelledby="preview-title" aria-describedby="preview-description">
+  <article class="preview">
+    <h3 id="preview-title">Entry Preview</h3>
+    <img id="preview-image" alt="" style="display: none;">
+    <div class="meta" id="preview-meta">
+      <p id="preview-description">Loading...</p>
+    </div>
+    <footer>
+      <button class="approve" id="preview-approve" aria-label="Approve this entry">
+        Approve
+      </button>
+      <button class="reject" id="preview-reject" aria-label="Reject this entry">
+        Reject
+      </button>
+      <button class="ghost" onclick="closeModal('preview-modal')" aria-label="Close preview">
+        Close
+      </button>
+    </footer>
+  </article>
+</dialog>
+
+<!-- Reject Modal -->
+<dialog id="reject-modal" aria-labelledby="reject-title">
+  <form id="rejectForm">
+    <h3 id="reject-title">Reject Entry</h3>
+    <p>Please provide a reason (member will be notified):</p>
+    <label for="rejectReason" class="sr-only">Rejection reason</label>
+    <textarea id="rejectReason" rows="3" required 
+              placeholder="e.g., Not currently in bloom / Naming format issue / Duplicate photo…"
+              aria-describedby="reject-help"></textarea>
+    <div id="reject-help" class="sr-only">
+      Provide a clear reason for rejection that will be sent to the member
+    </div>
+    <footer>
+      <button type="submit" class="danger" aria-label="Confirm rejection">
+        Reject
+      </button>
+      <button type="button" class="ghost" onclick="closeModal('reject-modal')" 
+              aria-label="Cancel rejection">
+        Cancel
+      </button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let selectedEntries = new Set();
+let currentEntryId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupEventListeners();
+  loadEntries();
+});
+
+function setupEventListeners() {
+  // Filters
+  document.getElementById('monthFilter').addEventListener('change', loadEntries);
+  document.getElementById('statusFilter').addEventListener('change', loadEntries);
+  document.getElementById('categoryFilter').addEventListener('change', loadEntries);
+  document.getElementById('searchInput').addEventListener('input', debounce(loadEntries, 300));
+  
+  // Bulk actions
+  document.getElementById('check-all').addEventListener('change', toggleAllCheckboxes);
+  document.getElementById('bulkForm').addEventListener('submit', handleBulkAction);
+  
+  // Pagination
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      loadEntries();
+    }
+  });
+  
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadEntries();
+    }
+  });
+  
+  // Modal handling
+  document.getElementById('rejectForm').addEventListener('submit', handleRejectSubmit);
+  
+  // ESC to close modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal('preview-modal');
+      closeModal('reject-modal');
+    }
+  });
+}
+
+function loadEntries() {
+  const filters = {
+    month_key: document.getElementById('monthFilter').value,
+    status: document.getElementById('statusFilter').value,
+    category: document.getElementById('categoryFilter').value,
+    search: document.getElementById('searchInput').value.trim(),
+    page: currentPage,
+    pageSize: 20
+  };
+  
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.append(key, value);
+  });
+  
+  fetch(`/api/contest/admin/entries?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        renderEntries(data.entries);
+        updatePagination(data.pagination);
+      } else {
+        console.error('Failed to load entries:', data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error loading entries:', error);
+    });
+}
+
+function renderEntries(entries) {
+  const tbody = document.getElementById('entriesTableBody');
+  tbody.innerHTML = '';
+  
+  if (entries.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; padding: 40px; color: var(--fcos-muted);">
+          No entries found
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  entries.forEach(entry => {
+    const row = createEntryRow(entry);
+    tbody.appendChild(row);
+  });
+  
+  updateSelectedCount();
+}
+
+function createEntryRow(entry) {
+  const tr = document.createElement('tr');
+  tr.setAttribute('role', 'row');
+  tr.dataset.entryId = entry.id;
+  
+  // Format timestamp
+  const submitTime = new Date(entry.createdAt).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+  
+  // Build flags
+  const flags = entry.flags.map(flag => {
+    const flagClass = flag === 'possible_duplicate' ? 'dupe' : flag;
+    const flagText = flag === 'possible_duplicate' ? 'Dup?' : flag;
+    return `<span class="flag ${flagClass}" title="${flag}">${flagText}</span>`;
+  }).join('');
+  
+  tr.innerHTML = `
+    <td>
+      <input type="checkbox" name="row_sel" value="${entry.id}" 
+             aria-label="Select ${entry.plantName}"
+             onchange="toggleRowSelection('${entry.id}', this.checked)">
+    </td>
+    <td>
+      <img src="${entry.photoUrls.thumb}" 
+           alt="${entry.plantName} thumbnail" 
+           class="thumb"
+           onerror="this.src='/static/images/placeholder.png'">
+    </td>
+    <td>
+      <strong>${escapeHtml(entry.plantName)}</strong><br>
+      <small>ID: ${entry.id}</small>
+    </td>
+    <td>
+      <span class="chip ${entry.category}">${capitalizeFirst(entry.category)}</span>
+    </td>
+    <td>
+      ${escapeHtml(entry.member.name)}<br>
+      <small>${escapeHtml(entry.member.email)}</small>
+    </td>
+    <td class="truncate" title="${escapeHtml(entry.caption)}">
+      ${escapeHtml(entry.caption)}
+    </td>
+    <td>
+      <span class="status ${entry.status}">${capitalizeFirst(entry.status.replace('_', ' '))}</span>
+    </td>
+    <td>
+      <time datetime="${entry.createdAt}">${submitTime}</time>
+    </td>
+    <td>
+      ${flags}
+    </td>
+    <td class="row-actions">
+      <button type="button" class="small" onclick="previewEntry('${entry.id}')" 
+              aria-label="Preview ${entry.plantName}">
+        Preview
+      </button>
+      <button type="button" class="small approve" onclick="approveEntry('${entry.id}')"
+              aria-label="Approve ${entry.plantName}">
+        Approve
+      </button>
+      <button type="button" class="small reject" onclick="rejectEntry('${entry.id}')"
+              aria-label="Reject ${entry.plantName}">
+        Reject
+      </button>
+      <button type="button" class="small ghost" onclick="editEntry('${entry.id}')"
+              aria-label="Edit ${entry.plantName}">
+        Edit
+      </button>
+      <button type="button" class="small danger" onclick="removeEntry('${entry.id}')"
+              aria-label="Remove ${entry.plantName}">
+        Remove
+      </button>
+    </td>
+  `;
+  
+  return tr;
+}
+
+function toggleRowSelection(entryId, isSelected) {
+  if (isSelected) {
+    selectedEntries.add(entryId);
+  } else {
+    selectedEntries.delete(entryId);
+  }
+  updateSelectedCount();
+}
+
+function toggleAllCheckboxes(e) {
+  const checkboxes = document.querySelectorAll('input[name="row_sel"]');
+  checkboxes.forEach(cb => {
+    cb.checked = e.target.checked;
+    toggleRowSelection(cb.value, cb.checked);
+  });
+}
+
+function updateSelectedCount() {
+  const count = selectedEntries.size;
+  const countElement = document.getElementById('selectedCount');
+  countElement.textContent = count > 0 ? `${count} entries selected` : '';
+}
+
+function updatePagination(pagination) {
+  currentPage = pagination.page;
+  totalPages = pagination.totalPages;
+  
+  document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+}
+
+function previewEntry(entryId) {
+  fetch(`/api/contest/admin/entry/${entryId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showPreviewModal(data.entry);
+      }
+    })
+    .catch(error => console.error('Error loading entry:', error));
+}
+
+function showPreviewModal(entry) {
+  currentEntryId = entry.id;
+  
+  const modal = document.getElementById('preview-modal');
+  const image = document.getElementById('preview-image');
+  const title = document.getElementById('preview-title');
+  const meta = document.getElementById('preview-meta');
+  
+  title.textContent = entry.plantName;
+  image.src = entry.photoUrls.full;
+  image.alt = `${entry.plantName} full preview`;
+  image.style.display = 'block';
+  
+  meta.innerHTML = `
+    <p class="caption">${escapeHtml(entry.caption)}</p>
+    <p><strong>Member:</strong> ${escapeHtml(entry.member.name)} • 
+       <strong>Category:</strong> ${capitalizeFirst(entry.category)}</p>
+    <p><strong>Submitted:</strong> ${new Date(entry.createdAt).toLocaleString()}</p>
+    <p><strong>Hash:</strong> ${entry.photoHash ? entry.photoHash.substring(0, 4) + '…' + entry.photoHash.slice(-3) : 'N/A'} 
+       (duplicate: ${entry.flags.includes('possible_duplicate') ? 'yes' : 'no'})</p>
+  `;
+  
+  modal.showModal();
+  focusModal(modal);
+}
+
+function approveEntry(entryId) {
+  if (!confirm('Approve this entry?')) return;
+  
+  fetch(`/api/contest/admin/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entry_id: entryId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      loadEntries();
+      closeModal('preview-modal');
+    } else {
+      alert('Error approving entry: ' + data.error);
+    }
+  });
+}
+
+function rejectEntry(entryId) {
+  currentEntryId = entryId;
+  document.getElementById('reject-modal').showModal();
+  document.getElementById('rejectReason').focus();
+}
+
+function handleRejectSubmit(e) {
+  e.preventDefault();
+  
+  const reason = document.getElementById('rejectReason').value.trim();
+  if (!reason) return;
+  
+  fetch(`/api/contest/admin/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      entry_id: currentEntryId,
+      reason: reason 
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      loadEntries();
+      closeModal('reject-modal');
+      closeModal('preview-modal');
+      document.getElementById('rejectReason').value = '';
+    } else {
+      alert('Error rejecting entry: ' + data.error);
+    }
+  });
+}
+
+function editEntry(entryId) {
+  // Placeholder for edit functionality
+  alert('Edit functionality would open an edit form for entry: ' + entryId);
+}
+
+function removeEntry(entryId) {
+  if (!confirm('Permanently remove this entry? This cannot be undone.')) return;
+  
+  fetch(`/api/contest/admin/remove`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entry_id: entryId })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      loadEntries();
+    } else {
+      alert('Error removing entry: ' + data.error);
+    }
+  });
+}
+
+function handleBulkAction(e) {
+  e.preventDefault();
+  
+  const action = document.getElementById('bulkAction').value;
+  if (!action || selectedEntries.size === 0) return;
+  
+  const entryIds = Array.from(selectedEntries);
+  const actionText = action === 'remove' ? 'permanently remove' : action;
+  
+  if (!confirm(`${actionText} ${entryIds.length} selected entries?`)) return;
+  
+  fetch(`/api/contest/admin/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      action: action,
+      entry_ids: entryIds 
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      selectedEntries.clear();
+      document.getElementById('check-all').checked = false;
+      loadEntries();
+    } else {
+      alert('Error performing bulk action: ' + data.error);
+    }
+  });
+}
+
+function exportQueue() {
+  const filters = {
+    month_key: document.getElementById('monthFilter').value,
+    status: document.getElementById('statusFilter').value,
+    category: document.getElementById('categoryFilter').value,
+    search: document.getElementById('searchInput').value.trim()
+  };
+  
+  const params = new URLSearchParams(filters);
+  window.open(`/api/contest/admin/export?${params}&format=csv`, '_blank');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).close();
+}
+
+function focusModal(modal) {
+  // Focus management for accessibility
+  const focusableElements = modal.querySelectorAll(
+    'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusableElements.length > 0) {
+    focusableElements[0].focus();
+  }
+}
+
+// Utility functions
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+</script>
+{% endblock %}
