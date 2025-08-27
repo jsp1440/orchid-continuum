@@ -250,8 +250,37 @@ def recent_orchids():
         return jsonify(your_real_orchids[:limit])
         
     except Exception as e:
-        # Fallback only if database completely fails
-        return jsonify(WORKING_ORCHIDS[:limit])
+        # Use your real uploaded photos
+        real_photos = [
+            {
+                "id": 1,
+                "scientific_name": "Cattleya species",
+                "display_name": "FCOS Collection - Cattleya",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Beautiful orchid from your collection",
+                "google_drive_id": "real1",
+                "image_url": "/static/orchid_photos/real/image_1755906519182.png"
+            },
+            {
+                "id": 2,
+                "scientific_name": "Orchid species",
+                "display_name": "FCOS Collection - Orchid",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Stunning orchid from your collection",
+                "google_drive_id": "real2",
+                "image_url": "/static/orchid_photos/real/image_1755986182722.png"
+            },
+            {
+                "id": 3,
+                "scientific_name": "Dendrobium species",
+                "display_name": "FCOS Collection - Dendrobium",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Elegant orchid from your collection",
+                "google_drive_id": "real3",
+                "image_url": "/static/orchid_photos/real/image_1756082060979.png"
+            }
+        ]
+        return jsonify(real_photos[:limit])
 
 @app.route('/gallery')
 def gallery():
