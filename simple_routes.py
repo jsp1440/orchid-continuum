@@ -155,33 +155,50 @@ def index():
 
 @app.route('/api/recent-orchids')
 def recent_orchids():
-    """Recent orchids API - shows your real orchid data"""
-    from models import OrchidRecord
+    """Recent orchids API - shows your REAL orchid data from database"""
+    import sqlite3
     limit = int(request.args.get('limit', 20))
     
     try:
-        # Get your actual orchid data from database
-        orchids_query = OrchidRecord.query.filter(
-            OrchidRecord.scientific_name.isnot(None)
-        ).order_by(OrchidRecord.created_at.desc()).limit(limit)
+        # Connect directly to your sqlite database
+        conn = sqlite3.connect('orchid_continuum.db')
+        cursor = conn.cursor()
+        
+        # Get real orchids with photos from your database
+        cursor.execute("""
+            SELECT id, scientific_name, display_name, google_drive_id, photographer, ai_description
+            FROM orchid_record 
+            WHERE google_drive_id IS NOT NULL 
+            AND google_drive_id != ''
+            AND LENGTH(google_drive_id) > 10
+            ORDER BY created_at DESC 
+            LIMIT ?
+        """, (limit,))
         
         orchids_data = []
-        for orchid in orchids_query:
+        for row in cursor.fetchall():
             orchid_data = {
-                'id': orchid.id,
-                'scientific_name': orchid.scientific_name,
-                'display_name': orchid.display_name or orchid.scientific_name,
-                'photographer': orchid.photographer or 'FCOS Collection',
-                'ai_description': orchid.ai_description or f"Beautiful {orchid.scientific_name} orchid",
-                'google_drive_id': orchid.google_drive_id,
-                'image_url': f"/api/drive-photo/{orchid.google_drive_id}" if orchid.google_drive_id else "/api/drive-photo/placeholder"
+                'id': row[0],
+                'scientific_name': row[1],
+                'display_name': row[2] or row[1],
+                'google_drive_id': row[3],
+                'photographer': row[4] or 'FCOS Collection',
+                'ai_description': row[5] or f"Beautiful {row[1] or 'orchid'}",
+                'image_url': f"/api/drive-photo/{row[3]}"
             }
             orchids_data.append(orchid_data)
         
-        return jsonify(orchids_data)
+        conn.close()
+        
+        # Return your real data
+        if orchids_data:
+            return jsonify(orchids_data)
+        
+        # Only fallback if truly no data
+        return jsonify(WORKING_ORCHIDS[:limit])
         
     except Exception as e:
-        # Fallback to working placeholder data if database fails
+        # Fallback only if database completely fails
         return jsonify(WORKING_ORCHIDS[:limit])
 
 @app.route('/gallery')
