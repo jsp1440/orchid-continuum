@@ -30,8 +30,8 @@ def get_orchid_data():
         
         orchids = []
         for row in cursor.fetchall():
-            # Use the CORRECT Google Drive URL format that actually works
-            photo_url = f"https://drive.usercontent.google.com/download?id={row[4]}&export=view"
+            # Use the WORKING Google Photos direct link format
+            photo_url = f"https://lh3.googleusercontent.com/d/{row[4]}"
             
             orchids.append({
                 'name': row[1] or row[0],
