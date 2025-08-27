@@ -199,8 +199,55 @@ def recent_orchids():
         if orchids_data:
             return jsonify(orchids_data)
         
-        # Only fallback if truly no data
-        return jsonify(WORKING_ORCHIDS[:limit])
+        # Fallback with your real static photos
+        your_real_orchids = [
+            {
+                "id": 1,
+                "scientific_name": "Cattleya species",
+                "display_name": "Cattleya (FCOS Collection)",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Your beautiful cattleya orchid from the FCOS collection",
+                "google_drive_id": "static_real_1",
+                "image_url": "/static/orchid_photos/real/image_1755906519182.png"
+            },
+            {
+                "id": 2,
+                "scientific_name": "Phalaenopsis species",
+                "display_name": "Phalaenopsis (FCOS Collection)", 
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Your elegant phalaenopsis from the FCOS collection",
+                "google_drive_id": "static_real_2",
+                "image_url": "/static/orchid_photos/real/image_1755986182722.png"
+            },
+            {
+                "id": 3,
+                "scientific_name": "Dendrobium species",
+                "display_name": "Dendrobium (FCOS Collection)",
+                "photographer": "Five Cities Orchid Society", 
+                "ai_description": "Your stunning dendrobium from the FCOS collection",
+                "google_drive_id": "static_real_3",
+                "image_url": "/static/orchid_photos/real/image_1756082060979.png"
+            },
+            {
+                "id": 4,
+                "scientific_name": "Orchid species",
+                "display_name": "FCOS Collection Orchid",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Beautiful orchid from your collection",
+                "google_drive_id": "static_real_4", 
+                "image_url": "/static/orchid_photos/real/image_1756082130795.png"
+            },
+            {
+                "id": 5,
+                "scientific_name": "Orchid species",
+                "display_name": "FCOS Collection Orchid",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Another beautiful orchid from your collection",
+                "google_drive_id": "static_real_5", 
+                "image_url": "/static/orchid_photos/real/image_1756100134228.png"
+            }
+        ]
+        return jsonify(your_real_orchids[:limit])
         
     except Exception as e:
         # Fallback only if database completely fails
