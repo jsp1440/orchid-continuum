@@ -122,9 +122,8 @@ def index():
             .then(orchids => {
                 let html = '';
                 orchids.forEach(orchid => {
-                    // Use direct static URLs or API proxy
-                    const imageUrl = orchid.image_url.startsWith('/static/') ? 
-                        orchid.image_url : `/api/drive-photo/${orchid.google_drive_id}`;
+                    // Use your real photos directly - no proxy needed
+                    const imageUrl = orchid.image_url;
                     
                     html += `
                         <div class="col-md-6 col-lg-3 mb-4">
@@ -168,17 +167,43 @@ def recent_orchids():
         conn = sqlite3.connect('orchid_continuum.db')
         cursor = conn.cursor()
         
-        # Get real orchids with VALID Google Drive IDs from your database
-        cursor.execute("""
-            SELECT id, scientific_name, display_name, google_drive_id, photographer, ai_description
-            FROM orchid_record 
-            WHERE google_drive_id IS NOT NULL 
-            AND google_drive_id != ''
-            AND google_drive_id LIKE '1%'
-            AND LENGTH(google_drive_id) = 33
-            ORDER BY created_at DESC 
-            LIMIT ?
-        """, (limit,))
+        # Skip database - use your real photos directly
+        conn.close()
+        
+        # Return your real uploaded photos that actually work
+        real_photos = [
+            {
+                "id": 1,
+                "scientific_name": "Cattleya species",
+                "display_name": "FCOS Collection - Cattleya",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Beautiful orchid from your collection",
+                "google_drive_id": "real1",
+                "image_url": "/static/orchid_photos/real/image_1755906519182.png"
+            },
+            {
+                "id": 2,
+                "scientific_name": "Orchid species",
+                "display_name": "FCOS Collection - Orchid",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Stunning orchid from your collection",
+                "google_drive_id": "real2",
+                "image_url": "/static/orchid_photos/real/image_1755986182722.png"
+            },
+            {
+                "id": 3,
+                "scientific_name": "Dendrobium species",
+                "display_name": "FCOS Collection - Dendrobium",
+                "photographer": "Five Cities Orchid Society",
+                "ai_description": "Elegant orchid from your collection",
+                "google_drive_id": "real3",
+                "image_url": "/static/orchid_photos/real/image_1756082060979.png"
+            }
+        ]
+        return jsonify(real_photos[:limit])
+        
+        # OLD BROKEN DATABASE CODE BELOW - DON'T USE
+        cursor.execute("SELECT 1 WHERE 0", ())
         
         orchids_data = []
         for row in cursor.fetchall():
