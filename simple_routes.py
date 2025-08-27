@@ -164,13 +164,14 @@ def recent_orchids():
         conn = sqlite3.connect('orchid_continuum.db')
         cursor = conn.cursor()
         
-        # Get real orchids with photos from your database
+        # Get real orchids with VALID Google Drive IDs from your database
         cursor.execute("""
             SELECT id, scientific_name, display_name, google_drive_id, photographer, ai_description
             FROM orchid_record 
             WHERE google_drive_id IS NOT NULL 
             AND google_drive_id != ''
-            AND LENGTH(google_drive_id) > 10
+            AND google_drive_id LIKE '1%'
+            AND LENGTH(google_drive_id) = 33
             ORDER BY created_at DESC 
             LIMIT ?
         """, (limit,))
