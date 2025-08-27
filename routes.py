@@ -2021,6 +2021,42 @@ def admin_import_sheets_data():
         logger.error(f"Error importing sheets data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/admin/check-member-submissions', methods=['GET', 'POST'])
+def admin_check_member_submissions():
+    """Check for new member photo submissions from Google Form"""
+    try:
+        from member_photo_submission_monitor import check_member_photo_submissions
+        
+        result = check_member_photo_submissions()
+        
+        return jsonify({
+            'success': True,
+            'new_submissions': result['new_submissions'],
+            'imported_count': result['imported_count'],
+            'message': f"Found {result['new_submissions']} new submissions, imported {result['imported_count']} photos"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error checking member submissions: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/photo-submission-notifications')
+def admin_photo_submission_notifications():
+    """Get recent photo submission notifications"""
+    try:
+        from member_photo_submission_monitor import photo_monitor
+        
+        notifications = photo_monitor.get_recent_notifications()
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Register AI widget builder blueprint  
 try:
     from ai_widget_builder import ai_widget_bp
