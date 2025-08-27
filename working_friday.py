@@ -22,11 +22,11 @@ def home():
         cursor.execute("SELECT COUNT(*) FROM orchid_record")
         total_count = cursor.fetchone()[0]
         
-        # Get some actual orchids
+        # Get orchids with actual photos
         cursor.execute("""
-            SELECT scientific_name, display_name, photographer, ai_description 
+            SELECT scientific_name, display_name, photographer, ai_description, google_drive_id 
             FROM orchid_record 
-            WHERE scientific_name IS NOT NULL
+            WHERE google_drive_id IS NOT NULL AND google_drive_id != ''
             ORDER BY created_at DESC 
             LIMIT 12
         """)
@@ -37,7 +37,8 @@ def home():
                 'name': row[1] or row[0],
                 'scientific': row[0],
                 'photographer': row[2] or 'FCOS Collection',
-                'description': row[3] or f"Beautiful {row[0]} orchid"
+                'description': row[3] or f"Beautiful {row[0]} orchid",
+                'google_drive_id': row[4]
             })
         
         conn.close()
@@ -117,9 +118,12 @@ def home():
                 {% for orchid in orchids %}
                     <div class="col-md-6 orchid-card">
                         <div class="card">
-                            <div class="photo-placeholder">
-                                🌺
-                            </div>
+                            <img src="https://drive.google.com/uc?export=view&id={{ orchid.google_drive_id }}" 
+                                 class="card-img-top" 
+                                 alt="{{ orchid.name }}"
+                                 style="height: 200px; object-fit: cover;"
+                                 onerror="this.src='https://via.placeholder.com/300x200/6B3FA0/FFFFFF?text=Orchid+Photo'"
+                                 loading="lazy">
                             <div class="card-body">
                                 <h5 class="card-title text-primary">{{ orchid.name }}</h5>
                                 <p class="card-text"><em>{{ orchid.scientific }}</em></p>
