@@ -3474,6 +3474,185 @@ def view_show_tell_gallery(gallery_id):
         return redirect(url_for('public_show_tell_page'))
 
 # ==============================================================================
+# MONTHLY CONTEST ROUTES - Show & Tell Monthly Contest System
+# ==============================================================================
+
+from monthly_contest_system import monthly_contest
+
+@app.route('/contest')
+def monthly_contest_page():
+    """Monthly Show & Tell Contest main page"""
+    try:
+        contest_period = monthly_contest.get_current_contest_period()
+        contest_stats = monthly_contest.get_contest_stats()
+        leaderboard = monthly_contest.get_full_leaderboard()
+        user_voting_status = monthly_contest.get_user_voting_status()
+        
+        return render_template('contest/monthly_contest.html',
+                             period=contest_period,
+                             stats=contest_stats,
+                             leaderboard=leaderboard,
+                             categories=monthly_contest.categories,
+                             voting_status=user_voting_status,
+                             title="Monthly Show & Tell Contest")
+    except Exception as e:
+        logger.error(f"Monthly contest page error: {e}")
+        flash(f"Error loading contest: {str(e)}", 'error')
+        return redirect(url_for('index'))
+
+@app.route('/contest/submit')
+def contest_submission_page():
+    """Contest submission page for members"""
+    try:
+        contest_period = monthly_contest.get_current_contest_period()
+        
+        if not contest_period['is_active']:
+            flash('Submission deadline has passed for this month', 'warning')
+            return redirect(url_for('monthly_contest_page'))
+        
+        # Get member's current submissions
+        member_id = session.get('user_id', 'demo_member')  # In real app, get from auth
+        member_submissions = monthly_contest.get_member_submissions(member_id)
+        remaining_submissions = monthly_contest.max_submissions_per_member - len(member_submissions)
+        
+        return render_template('contest/submit_entry.html',
+                             period=contest_period,
+                             categories=monthly_contest.categories,
+                             submissions=member_submissions,
+                             remaining=remaining_submissions,
+                             title="Submit Contest Entry")
+    except Exception as e:
+        logger.error(f"Contest submission page error: {e}")
+        flash(f"Error loading submission page: {str(e)}", 'error')
+        return redirect(url_for('monthly_contest_page'))
+
+@app.route('/api/contest/submit', methods=['POST'])
+def submit_contest_entry():
+    """API endpoint for submitting contest entries"""
+    try:
+        data = request.get_json()
+        member_id = session.get('user_id', 'demo_member')  # In real app, get from auth
+        
+        result = monthly_contest.submit_entry(member_id, data)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Contest submission error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/vote', methods=['POST'])
+def vote_contest_entry():
+    """API endpoint for voting on contest entries"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        voter_ip = request.remote_addr
+        
+        result = monthly_contest.vote_for_entry(entry_id, voter_ip)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Contest voting error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/entries')
+def get_contest_entries():
+    """Get contest entries by category"""
+    try:
+        category = request.args.get('category')
+        status = request.args.get('status', 'approved')
+        
+        entries = monthly_contest.get_contest_entries(category=category, status=status)
+        return jsonify({'entries': entries})
+        
+    except Exception as e:
+        logger.error(f"Contest entries error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contest/leaderboard')
+def get_contest_leaderboard():
+    """Get contest leaderboard data"""
+    try:
+        category = request.args.get('category')
+        
+        if category:
+            leaderboard = monthly_contest.get_category_leaderboard(category)
+        else:
+            leaderboard = monthly_contest.get_full_leaderboard()
+            
+        return jsonify({'leaderboard': leaderboard})
+        
+    except Exception as e:
+        logger.error(f"Contest leaderboard error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contest/admin/queue')
+def get_contest_admin_queue():
+    """Get entries pending admin approval"""
+    try:
+        queue = monthly_contest.get_admin_queue()
+        return jsonify({'queue': queue})
+        
+    except Exception as e:
+        logger.error(f"Contest admin queue error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contest/admin/moderate', methods=['POST'])
+def moderate_contest_entry():
+    """Admin moderation of contest entries"""
+    try:
+        data = request.get_json()
+        entry_id = data.get('entry_id')
+        action = data.get('action')  # 'approve' or 'reject'
+        admin_notes = data.get('admin_notes', '')
+        
+        result = monthly_contest.admin_moderate_entry(entry_id, action, admin_notes)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Contest moderation error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/contest/admin/export')
+def export_contest_results():
+    """Export contest results for admin"""
+    try:
+        contest_id = request.args.get('contest_id')
+        format_type = request.args.get('format', 'json')
+        
+        result = monthly_contest.export_contest_results(contest_id, format_type)
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Contest export error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/contest/category/<category>')
+def contest_category_page(category):
+    """Individual category page with detailed entries"""
+    try:
+        if category not in monthly_contest.categories:
+            flash('Invalid category', 'error')
+            return redirect(url_for('monthly_contest_page'))
+        
+        contest_period = monthly_contest.get_current_contest_period()
+        entries = monthly_contest.get_contest_entries(category=category)
+        leaderboard = monthly_contest.get_category_leaderboard(category)
+        user_voting_status = monthly_contest.get_user_voting_status()
+        
+        return render_template('contest/category_detail.html',
+                             category=category,
+                             period=contest_period,
+                             entries=entries,
+                             leaderboard=leaderboard,
+                             voting_status=user_voting_status,
+                             title=f"{category} Category - Monthly Contest")
+    except Exception as e:
+        logger.error(f"Contest category page error: {e}")
+        flash(f"Error loading category: {str(e)}", 'error')
+        return redirect(url_for('monthly_contest_page'))
+
+# ==============================================================================
 # ENHANCED WIDGET DATA ROUTES - Cross-widget enhanced data
 # ==============================================================================
 
