@@ -2950,24 +2950,6 @@ def api_recent_orchids():
 
 
 # END OF API ROUTES
-                'image_url': orchid.image_url,
-                'photo_url': orchid.image_url,  # Template backward compatibility
-                'image_filename': orchid.image_filename,
-                'decimal_latitude': float(orchid.decimal_latitude) if orchid.decimal_latitude else None,
-                'decimal_longitude': float(orchid.decimal_longitude) if orchid.decimal_longitude else None,
-                'country': orchid.country,
-                'collector': orchid.collector,
-                'event_date': orchid.event_date,
-                'data_source': orchid.data_source,
-                'created_at': orchid.created_at.isoformat() if orchid.created_at else None
-            }
-            orchids_data.append(orchid_data)
-        
-        return jsonify(orchids_data)
-        
-    except Exception as e:
-        logger.error(f"Error in recent orchids API: {e}")
-        return jsonify({'error': str(e)}), 500
 
 # ==============================================================================
 # IMAGE PROXY - Bypass CORS issues for external orchid images
