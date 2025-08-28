@@ -4539,6 +4539,10 @@ def research_stage(stage_id):
     
     return render_template(f'research/stages/{stage_id}.html', stage_id=stage_id)
 
+# Hollywood Orchids Movie Widget
+from hollywood_orchids_widget import hollywood_orchids
+app.register_blueprint(hollywood_orchids, url_prefix='/hollywood-orchids')
+
 # Bulk Orchid Analysis System
 from bulk_orchid_analyzer import bulk_analyzer
 app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
