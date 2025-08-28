@@ -4518,3 +4518,31 @@ def workshop_stats():
             'spots_available': 12,
             'total_capacity': 20
         })
+
+# Scientific Research Platform Routes
+from scientific_research_platform import scientific_research
+app.register_blueprint(scientific_research, url_prefix='/research')
+
+@app.route('/satellite-world-map')
+def enhanced_satellite_world_map():
+    """Enhanced satellite world map with space view"""
+    try:
+        # Get orchid count for the map display
+        orchid_count = db.session.query(OrchidRecord).count()
+        return render_template('mapping/enhanced_satellite_map.html', 
+                             orchid_count=orchid_count)
+    except Exception as e:
+        logger.error(f"Satellite map error: {e}")
+        return render_template('mapping/enhanced_satellite_map.html', 
+                             orchid_count="230+")
+
+@app.route('/enhanced-science-lab')
+def enhanced_science_lab():
+    """Enhanced scientific method learning platform"""
+    try:
+        from scientific_research_platform import scientific_method
+        return render_template('research/scientific_method_interface.html', 
+                             stages=scientific_method.stages)
+    except Exception as e:
+        logger.error(f"Science lab error: {e}")
+        return redirect(url_for('index'))
