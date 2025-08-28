@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>35th Parallel Orchid Hypothesis - Proof of Concept</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .hypothesis-header {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .evidence-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .strength-indicator {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .strength-STRONG { background: #22c55e; color: white; }
+        .strength-MODERATE { background: #f59e0b; color: white; }
+        .strength-WEAK { background: #ef4444; color: white; }
+        .strength-INSUFFICIENT { background: #6b7280; color: white; }
+        
+        .orchid-specimen {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .conclusion-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .proof-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="position-relative">
+            <div class="proof-badge">
+                🏆 PROOF OF CONCEPT
+            </div>
+            
+            <div class="hypothesis-header">
+                <h1 class="display-4 mb-3">🌍 35th Parallel Orchid Hypothesis</h1>
+                <h2 class="h4 mb-4">Testing Photoperiod Influence on Blooming Patterns</h2>
+                <div class="row">
+                    <div class="col-md-8 mx-auto">
+                        <div class="alert alert-info">
+                            <h5>📋 HYPOTHESIS</h5>
+                            <p class="mb-0"><strong>"{{ results.hypothesis }}"</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evidence Strength Assessment -->
+        <div class="evidence-card">
+            <h3><i data-feather="trending-up"></i> Evidence Assessment</h3>
+            <div class="strength-indicator strength-{{ results.evidence_strength }}">
+                Evidence Strength: {{ results.evidence_strength }}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h2 class="text-primary">{{ results.data_summary.total_orchids }}</h2>
+                        <p>Total Orchids Analyzed</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h2 class="text-success">{{ results.data_summary.continents|length }}</h2>
+                        <p>Continental Regions</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h2 class="text-warning">{{ results.data_summary.with_bloom_data }}</h2>
+                        <p>With Blooming Data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Geographic Distribution -->
+        <div class="evidence-card">
+            <h3><i data-feather="map"></i> Geographic Distribution</h3>
+            <div class="row">
+                {% for continent, orchids in results.data_summary.continents.items() %}
+                <div class="col-md-6">
+                    <h5>🌍 {{ continent }}</h5>
+                    <p><strong>{{ orchids|length }}</strong> orchid specimens</p>
+                    {% if orchids|length > 0 %}
+                    <small class="text-muted">
+                        Sample: {{ orchids[0].scientific_name if orchids[0].scientific_name else orchids[0].get('genus', 'Unknown') }}
+                    </small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Blooming Pattern Analysis -->
+        <div class="evidence-card">
+            <h3><i data-feather="calendar"></i> Seasonal Blooming Patterns</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="bloomingChart" width="400" height="200"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h5>📊 Seasonal Distribution</h5>
+                    <div class="mb-2">🌸 Spring: {{ results.data_summary.spring_bloomers|length }} species</div>
+                    <div class="mb-2">☀️ Summer: {{ results.data_summary.summer_bloomers|length }} species</div>
+                    <div class="mb-2">🍂 Fall: {{ results.data_summary.fall_bloomers|length }} species</div>
+                    <div class="mb-2">❄️ Winter: {{ results.data_summary.winter_bloomers|length }} species</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photoperiod Analysis -->
+        {% if results.photoperiod_analysis %}
+        <div class="evidence-card">
+            <h3><i data-feather="sun"></i> Cross-Continental Photoperiod Comparison</h3>
+            {% for comparison in results.photoperiod_analysis %}
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h6>{{ comparison.continent_1 }} ↔️ {{ comparison.continent_2 }}</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" style="width: {{ (comparison.similarity.similarity_score * 100)|round(1) }}%">
+                            {{ (comparison.similarity.similarity_score * 100)|round(1) }}% Similar
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        {{ comparison.orchid_1 }} ({{ comparison.similarity.location_1_daylight }}h) vs 
+                        {{ comparison.orchid_2 }} ({{ comparison.similarity.location_2_daylight }}h)
+                        • Difference: {{ comparison.similarity.difference_hours }}h
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Scientific Conclusions -->
+        <div class="evidence-card">
+            <h3><i data-feather="check-circle"></i> Scientific Conclusions</h3>
+            {% for conclusion in results.conclusions %}
+            <div class="conclusion-item">
+                {{ conclusion }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Sample Orchid Specimens -->
+        <div class="evidence-card">
+            <h3><i data-feather="database"></i> Sample Orchid Specimens</h3>
+            <div class="row">
+                {% for orchid in sample_orchids[:6] %}
+                <div class="col-md-6">
+                    <div class="orchid-specimen">
+                        <h6>{{ orchid.scientific_name }}</h6>
+                        <p class="mb-1"><strong>Location:</strong> {{ orchid.latitude }}°N, {{ orchid.longitude }}°W</p>
+                        <p class="mb-1"><strong>Region:</strong> {{ orchid.country or orchid.region }}</p>
+                        {% if orchid.bloom_time %}
+                        <p class="mb-0"><strong>Bloom Time:</strong> {{ orchid.bloom_time }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Next Research Steps -->
+        <div class="evidence-card">
+            <h3><i data-feather="arrow-right"></i> Next Research Steps</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🔬 Data Collection</h5>
+                    {% for step in results.next_steps[:4] %}
+                    <div class="mb-2">{{ step }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <h5>🤝 Community Engagement</h5>
+                    {% for step in results.next_steps[4:] %}
+                    <div class="mb-2">{{ step }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Proof of Concept Status -->
+        <div class="evidence-card text-center">
+            <h3><i data-feather="award"></i> Proof of Concept Status</h3>
+            <div class="alert alert-success">
+                <h4>🏆 {{ results.proof_of_concept_status }}</h4>
+                <p>The Orchid Continuum platform successfully demonstrates its capability to:</p>
+                <ul class="list-unstyled">
+                    <li>✅ Analyze geographic patterns in orchid distribution</li>
+                    <li>✅ Test scientific hypotheses using real data</li>
+                    <li>✅ Calculate photoperiod and climate relationships</li>
+                    <li>✅ Generate actionable research insights</li>
+                    <li>✅ Support evidence-based botanical research</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="text-center mt-4">
+            <a href="/35th-parallel-globe" class="btn btn-primary me-3">
+                <i data-feather="globe"></i> View Interactive Globe
+            </a>
+            <a href="/gallery" class="btn btn-outline-light me-3">
+                <i data-feather="image"></i> Browse Orchid Gallery
+            </a>
+            <a href="/" class="btn btn-outline-light">
+                <i data-feather="home"></i> Homepage
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Create blooming pattern chart
+        const ctx = document.getElementById('bloomingChart').getContext('2d');
+        const bloomingChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Spring', 'Summer', 'Fall', 'Winter'],
+                datasets: [{
+                    data: [
+                        {{ results.data_summary.spring_bloomers|length }},
+                        {{ results.data_summary.summer_bloomers|length }},
+                        {{ results.data_summary.fall_bloomers|length }},
+                        {{ results.data_summary.winter_bloomers|length }}
+                    ],
+                    backgroundColor: [
+                        '#22c55e', // Spring green
+                        '#f59e0b', // Summer yellow
+                        '#ea580c', // Fall orange  
+                        '#3b82f6'  // Winter blue
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff30'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Blooming Seasons Distribution',
+                        color: '#ffffff'
+                    }
+                }
+            }
+        });
+        
+        // Auto-refresh data every 60 seconds
+        setInterval(function() {
+            fetch('/api/35th-parallel-hypothesis')
+                .then(response => response.json())
+                .then(data => {
+                    // Update real-time data if needed
+                    console.log('Updated hypothesis data:', data);
+                })
+                .catch(error => console.error('Error updating data:', error));
+        }, 60000);
+    </script>
+</body>
+</html>

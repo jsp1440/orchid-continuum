@@ -507,6 +507,11 @@ def get_countries_on_35th_parallel():
         'Morocco', 'Algeria', 'Tunisia', 'Libya'
     ]
 
+@app.route('/scientific-research')
+def scientific_proof_dashboard():
+    """Scientific Research Validation Dashboard - Proof of Concept"""
+    return render_template('research/scientific_proof_dashboard.html')
+
 @app.route('/phenotype-analysis')
 def phenotype_analysis():
     """Phenotypic variation analysis page"""
@@ -4471,6 +4476,14 @@ def submit_workshop_registration():
             'success': False,
             'message': 'Registration failed. Please try again.'
         }), 500
+
+# Register the 35th parallel hypothesis testing system
+try:
+    from parallel_35_hypothesis_system import register_hypothesis_routes
+    register_hypothesis_routes(app)
+    logger.info("✅ 35th Parallel Hypothesis Testing System registered")
+except ImportError as e:
+    logger.warning(f"⚠️ Could not import hypothesis system: {e}")
 
 @app.route('/api/workshop-stats')
 def workshop_stats():
