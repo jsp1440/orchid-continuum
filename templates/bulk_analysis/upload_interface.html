@@ -258,6 +258,52 @@
                 </div>
             </div>
             
+            <!-- Educational Activities Integration -->
+            <div class="bg-warning text-dark p-4 rounded-3 mt-4">
+                <h4><i data-feather="graduation-cap" class="me-2"></i>Transform into Educational Activities</h4>
+                <p class="mb-3">Turn these analyzed photos into interactive learning experiences!</p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="educationalOptions" style="display: none;">
+                            <h6>Select Educational Activities:</h6>
+                            <div class="form-check-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduMatch" value="match_picture">
+                                    <label class="form-check-label" for="eduMatch">Picture Matching Game</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduName" value="match_name">
+                                    <label class="form-check-label" for="eduName">Name Matching</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduTrivia" value="trivia_cards">
+                                    <label class="form-check-label" for="eduTrivia">Trivia Cards</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduCross" value="crossword">
+                                    <label class="form-check-label" for="eduCross">Crossword</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduGallery" value="gallery_display">
+                                    <label class="form-check-label" for="eduGallery">Educational Gallery</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-dark btn-lg w-100" onclick="generateEducationalActivities()" id="eduGenerateBtn" disabled>
+                            <i data-feather="zap" class="me-2"></i>Generate Activities
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Gary Yong Gee Integration:</strong> Photos will be properly attributed with links to 
+                        <a href="https://orchids.yonggee.name" target="_blank" class="text-dark fw-bold">orchids.yonggee.name</a>
+                    </small>
+                </div>
+            </div>
+            
             <!-- Individual Results -->
             <div class="row">
                 <div class="col-12">
@@ -412,6 +458,10 @@
             
             // Display individual results
             displayIndividualResults(results);
+            
+            // Show educational options
+            document.getElementById('educationalOptions').style.display = 'block';
+            document.getElementById('eduGenerateBtn').disabled = false;
             
             // Scroll to results
             document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
@@ -613,6 +663,65 @@
             })
             .catch(error => {
                 alert('Export error: ' + error.message);
+            });
+        }
+        
+        // Generate educational activities
+        function generateEducationalActivities() {
+            if (!analysisResults || !analysisResults.results) {
+                alert('No analysis results available. Please process images first.');
+                return;
+            }
+            
+            // Get selected activities
+            const selectedActivities = [];
+            const checkboxes = document.querySelectorAll('#educationalOptions input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => selectedActivities.push(cb.value));
+            
+            if (selectedActivities.length === 0) {
+                alert('Please select at least one educational activity.');
+                return;
+            }
+            
+            // Show loading
+            const generateBtn = document.getElementById('eduGenerateBtn');
+            generateBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Generating...';
+            generateBtn.disabled = true;
+            feather.replace();
+            
+            // Generate activities
+            fetch('/educational-games/api/generate-activities', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    analyzed_results: analysisResults.results,
+                    activities: selectedActivities
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success and redirect to activities dashboard
+                    generateBtn.innerHTML = '<i data-feather="check" class="me-2"></i>Success!';
+                    generateBtn.style.background = '#28a745';
+                    
+                    setTimeout(() => {
+                        window.open('/educational-games/learning-activities', '_blank');
+                    }, 1000);
+                } else {
+                    alert('Activity generation failed: ' + data.error);
+                    generateBtn.innerHTML = '<i data-feather="zap" class="me-2"></i>Generate Activities';
+                    generateBtn.disabled = false;
+                }
+                feather.replace();
+            })
+            .catch(error => {
+                alert('Generation error: ' + error.message);
+                generateBtn.innerHTML = '<i data-feather="zap" class="me-2"></i>Generate Activities';
+                generateBtn.disabled = false;
+                feather.replace();
             });
         }
     </script>
