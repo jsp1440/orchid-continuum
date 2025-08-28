@@ -58,6 +58,13 @@ try:
     logger.info("✅ Widget integration modules loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠️ Widget integration modules not available: {e}")
+
+# Load philosophy quiz system
+try:
+    import philosophy_quiz_system
+    logger.info("✅ Philosophy Quiz system loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Philosophy Quiz system not available: {e}")
     # Create mock objects to prevent errors
     class MockWidgetHub:
         def get_user_session(self): return {}
