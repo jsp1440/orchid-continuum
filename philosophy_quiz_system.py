@@ -301,12 +301,12 @@ class PhilosophyQuizEngine:
             },
             {
                 'id': 29,
-                'question': "When people ask why you grow orchids, you say...",
+                'question': "You're asked to give a talk at your orchid society. You...",
                 'options': {
-                    'A': "They connect me to the mystery of life itself",
-                    'B': "They satisfy my need to understand and learn",
-                    'C': "They bring beauty and joy into every day",
-                    'D': "They help me create something meaningful to share"
+                    'A': "Make slides and rehearse for weeks",
+                    'B': "Improvise and trust the vibes",
+                    'C': "Create an interpretive dance of orchid life",
+                    'D': "Bring snacks. Always bring snacks"
                 }
             }
         ]
