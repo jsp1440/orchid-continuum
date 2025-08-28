@@ -4549,6 +4549,17 @@ def widget_gallery():
 from hollywood_orchids_widget import hollywood_orchids
 app.register_blueprint(hollywood_orchids, url_prefix='/widgets/hollywood-orchids')
 
+# Research Literature and Writing Lab Systems
+from research_literature_system import research_literature
+from research_writing_lab import writing_lab
+
+app.register_blueprint(research_literature, url_prefix='/research-lab')
+app.register_blueprint(writing_lab, url_prefix='/research-lab')
+
+# Greek Mythology Orchids Widget
+from greek_mythology_orchids import mythology_orchids
+app.register_blueprint(mythology_orchids, url_prefix='/widgets/mythology-orchids')
+
 # Bulk Orchid Analysis System
 from bulk_orchid_analyzer import bulk_analyzer
 app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
