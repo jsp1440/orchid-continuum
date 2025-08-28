@@ -425,6 +425,88 @@ def genus_detail_stats(genus):
         logger.error(f"Error loading genus statistics for {genus}: {e}")
         return render_template('error.html', error=f"Could not load statistics for genus {genus}"), 500
 
+@app.route('/35th-parallel-globe')
+def parallel_35_globe():
+    """35th Parallel Educational Globe System"""
+    try:
+        # Get orchid species data for 35th parallel regions
+        orchid_data = get_35th_parallel_orchids()
+        
+        # Create widget data for the enhanced globe system
+        widget_data = {
+            'widget_id': 'parallel-35-globe',
+            'orchids': orchid_data,
+            'countries_with_orchids': get_countries_on_35th_parallel(),
+            'focus_latitude': 35.0,
+            'enabled_features': ['orchid-hotspots', '35th-parallel', 'climate-zones']
+        }
+        
+        return render_template('widgets/enhanced_globe_widget.html', widget_data=widget_data)
+        
+    except Exception as e:
+        logger.error(f"Error loading 35th parallel globe: {e}")
+        return render_template('error.html', error="Could not load 35th parallel globe system"), 500
+
+def get_35th_parallel_orchids():
+    """Get orchid species found along the 35th parallel"""
+    try:
+        # Query orchids with geographic data near 35th parallel
+        orchids = OrchidRecord.query.filter(
+            OrchidRecord.photo_gps_coordinates.isnot(None)
+        ).limit(20).all()
+        
+        # Add some representative 35th parallel species
+        parallel_species = [
+            {
+                'display_name': 'Platanthera ciliaris',
+                'scientific_name': 'Orange Fringed Orchid',
+                'region': 'North Carolina, USA',
+                'image_url': '/static/images/orchid_placeholder.svg',
+                'latitude': 35.2,
+                'longitude': -80.8,
+                'conservation_status': 'Native',
+                'description': 'Native terrestrial orchid found in southeastern US wetlands'
+            },
+            {
+                'display_name': 'Ophrys apifera',
+                'scientific_name': 'Bee Orchid',
+                'region': 'Mediterranean Basin',
+                'image_url': '/static/images/orchid_placeholder.svg',
+                'latitude': 35.1,
+                'longitude': 14.5,
+                'conservation_status': 'Protected',
+                'description': 'Remarkable orchid that mimics bees for pollination'
+            },
+            {
+                'display_name': 'Cypripedium californicum',
+                'scientific_name': 'California Lady Slipper',
+                'region': 'Northern California',
+                'image_url': '/static/images/orchid_placeholder.svg',
+                'latitude': 35.8,
+                'longitude': -121.4,
+                'conservation_status': 'Rare',
+                'description': 'Endangered North American native requiring cool, wet conditions'
+            }
+        ]
+        
+        return parallel_species + [{'display_name': o.display_name or o.scientific_name, 
+                                  'scientific_name': o.scientific_name,
+                                  'region': 'Unknown',
+                                  'image_url': f"/api/drive-photo/{o.google_drive_id}" if o.google_drive_id else '/static/images/orchid_placeholder.svg'} 
+                                 for o in orchids[:10]]
+        
+    except Exception as e:
+        logger.error(f"Error getting 35th parallel orchids: {e}")
+        return []
+
+def get_countries_on_35th_parallel():
+    """Get countries crossed by the 35th parallel"""
+    return [
+        'United States', 'Turkey', 'Cyprus', 'Syria', 'Lebanon', 'Iraq', 'Iran', 
+        'Afghanistan', 'Pakistan', 'India', 'China', 'Japan', 'South Korea',
+        'Morocco', 'Algeria', 'Tunisia', 'Libya'
+    ]
+
 @app.route('/phenotype-analysis')
 def phenotype_analysis():
     """Phenotypic variation analysis page"""
