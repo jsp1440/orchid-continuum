@@ -430,27 +430,46 @@ def bulk_upload_interface():
 def process_zip_upload():
     """Process uploaded ZIP file"""
     try:
+        print(f"DEBUG: Processing ZIP upload request")
+        print(f"DEBUG: Request files: {request.files}")
+        print(f"DEBUG: Request form: {request.form}")
+        
         if 'zip_file' not in request.files:
+            print("DEBUG: No zip_file in request.files")
             return jsonify({'error': 'No ZIP file provided'}), 400
         
         zip_file = request.files['zip_file']
+        print(f"DEBUG: ZIP file: {zip_file}, filename: {zip_file.filename}")
+        
         if zip_file.filename == '':
+            print("DEBUG: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
         
         if not zip_file.filename.lower().endswith('.zip'):
+            print(f"DEBUG: Invalid file extension: {zip_file.filename}")
             return jsonify({'error': 'File must be a ZIP archive'}), 400
         
+        # Create temp directory if it doesn't exist
+        temp_dir = tempfile.gettempdir()
+        os.makedirs(temp_dir, exist_ok=True)
+        
         # Save uploaded file
-        temp_zip_path = os.path.join(tempfile.gettempdir(), f"orchid_bulk_{uuid.uuid4().hex}.zip")
+        temp_zip_path = os.path.join(temp_dir, f"orchid_bulk_{uuid.uuid4().hex}.zip")
+        print(f"DEBUG: Saving ZIP to: {temp_zip_path}")
         zip_file.save(temp_zip_path)
         
+        print(f"DEBUG: ZIP file saved, size: {os.path.getsize(temp_zip_path)} bytes")
+        
         # Process the ZIP file
+        print("DEBUG: Starting ZIP processing...")
         results = bulk_processor.process_zip_file(temp_zip_path)
         
         # Cleanup
         if os.path.exists(temp_zip_path):
             os.remove(temp_zip_path)
+            print("DEBUG: Temporary ZIP file cleaned up")
         
+        print(f"DEBUG: Processing completed successfully")
         return jsonify({
             'success': True,
             'data': results,
@@ -458,7 +477,11 @@ def process_zip_upload():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"DEBUG: Error processing ZIP: {str(e)}")
+        print(f"DEBUG: Full traceback: {error_details}")
+        return jsonify({'error': str(e), 'details': error_details}), 500
 
 @bulk_analyzer.route('/api/export-results', methods=['POST'])
 def export_results():
