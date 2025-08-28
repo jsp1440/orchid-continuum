@@ -4523,6 +4523,22 @@ def workshop_stats():
 from scientific_research_platform import scientific_research
 app.register_blueprint(scientific_research, url_prefix='/research')
 
+# Research Lab Upgrade - Direct implementation
+@app.route('/research-lab/')
+def research_lab_dashboard():
+    """Research Lab main dashboard"""
+    return render_template('research/research_lab_dashboard.html')
+
+@app.route('/research-lab/stage/<stage_id>')
+def research_stage(stage_id):
+    """Individual research stage interface"""
+    valid_stages = ['observation', 'hypothesis', 'methods', 'data_collection', 'analysis', 'conclusions', 'paper_draft']
+    
+    if stage_id not in valid_stages:
+        return redirect(url_for('research_lab_dashboard'))
+    
+    return render_template(f'research/stages/{stage_id}.html', stage_id=stage_id)
+
 # Bulk Orchid Analysis System
 from bulk_orchid_analyzer import bulk_analyzer
 app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
