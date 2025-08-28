@@ -345,31 +345,43 @@ class PhilosophyQuizEngine:
             29: {'A': 'Transcendentalism', 'B': 'Aristotelian', 'C': 'Epicureanism', 'D': 'Altruism'}
         }
         
-        # Philosophy descriptions and badges
+        # Philosophy descriptions and badges - Updated to match your exact specifications
         self.philosophies = {
             'Epicureanism': {
-                'badge_name': 'Being in Bloom',
+                'badge_name': 'Fragrance Seeker',
                 'badge_emoji': '🌺',
-                'description': 'Your orchids are a garden of joy. Each bloom is a reminder that life\'s greatest pleasures are often the simplest: fragrance, color, the quiet moment of opening a new flower. You savor orchids with mindful delight.',
-                'growing_style': 'Delight in sensory joy',
-                'badge_image': 'being_in_bloom.png',
-                'drive_id': '109qscgJSKo0M1FlRGsZzn81F5_0ge9BX'
+                'description': 'You savor orchids for color, fragrance, and simple pleasures. Color, fragrance, and quiet happiness in each bloom.',
+                'growing_style': 'Simple joy, friendship, and savoring the present',
+                'badge_image': 'fragrance_seeker.png',
+                'palette': 'Rose Pink + Warm Gold',
+                'symbol': 'Lush orchid cluster glowing'
+            },
+            'Platonism': {
+                'badge_name': 'The Perfect Bloom',
+                'badge_emoji': '👑',
+                'description': 'Always hunting the rare, perfect bloom. Chasing flawless symmetry and rare cultivars closest to an \'ideal bloom.\'',
+                'growing_style': 'Beyond the imperfect world lies an ideal realm of perfect forms',
+                'badge_image': 'perfect_bloom.png',
+                'palette': 'Ivory + Royal Purple',
+                'symbol': 'Radiant, symmetrical orchid'
             },
             'Stoicism': {
                 'badge_name': 'Enduring Bloom', 
                 'badge_emoji': '🪷',
-                'description': 'You let orchids follow their own rhythm. You embrace what comes: the withered leaf, the late spike, the sudden gift of blossoms. Peace in tending, not controlling.',
-                'growing_style': 'Strength through cycles',
+                'description': 'Patient and calm; every bloom is a gift of its own time. Patience and composure; every bloom arrives in its own time.',
+                'growing_style': 'Ancient guide to inner peace by accepting what we cannot control',
                 'badge_image': 'enduring_bloom.png',
-                'drive_id': '1QUBaM3AJfvhvfTS9qkDIxnIaCFY8AE4a'
+                'palette': 'Slate Gray + Soft Green',
+                'symbol': 'Orchid rooted against stone'
             },
             'Transcendentalism': {
                 'badge_name': 'Moonlight Reverie',
                 'badge_emoji': '🌙', 
-                'description': 'You sense the spirit in nature. Orchids are messengers of connection — roots in mystery, blossoms in wonder.',
-                'growing_style': 'Spiritual harmony with nature',
+                'description': 'Orchids are a spiritual journey and a guide to wonder. A mystical bond; roots and spikes as whispers of wonder.',
+                'growing_style': 'Truth is found in direct experience with nature and spirit',
                 'badge_image': 'moonlight_reverie.png',
-                'drive_id': '16vKYdUk8JnBcKEx27sH5TkynPsqLiwXN'
+                'palette': 'Indigo + Moonlight White',
+                'symbol': 'Orchid under a crescent moon'
             },
             'Idealism': {
                 'badge_name': 'Vision Vine',
@@ -377,77 +389,98 @@ class PhilosophyQuizEngine:
                 'description': 'You chase the perfect bloom — rare, exquisite, inspiring. Orchids give you a vision of perfection worth striving for.',
                 'growing_style': 'Chasing perfection and ideals',
                 'badge_image': 'vision_vine.png',
-                'drive_id': '11T52NzspBhfu8IU_Ulw-ApG-fXKnIh_S'
+                'palette': 'Ivory + Royal Purple',
+                'symbol': 'Radiant, symmetrical orchid'
             },
             'Confucianism': {
                 'badge_name': 'Harmony Orchid',
                 'badge_emoji': '⚖️',
-                'description': 'You cultivate harmony: light and shade, water and rest, discipline and care. Orchids reflect your respect for tradition, mentors, and community.',
-                'growing_style': 'Responsibility, respect, and order',
-                'badge_image': 'harmony_orchid.png'
+                'description': 'You grow with balance, tradition, and learned wisdom. Disciplined care, mentorship, and reverence for the craft.',
+                'growing_style': 'Harmony, respect, tradition, and balance passed down across generations',
+                'badge_image': 'harmony_orchid.png',
+                'palette': 'Jade Green + Gold',
+                'symbol': 'Orchid with yin-yang inspired frame'
             },
             'Egoism': {
                 'badge_name': 'Radiant Flame Orchid',
                 'badge_emoji': '🔥', 
-                'description': 'Your collection is a mirror of your taste and triumphs. You grow for the joy it brings you — and your orchids glow in that certainty.',
-                'growing_style': 'Self-driven brilliance',
-                'badge_image': 'radiant_flame.png'
+                'description': 'Your collection reflects your own brilliance. Collection mirrors personal taste and triumphs.',
+                'growing_style': 'Self-interest as foundation; personal achievement first',
+                'badge_image': 'radiant_flame.png',
+                'palette': 'Deep Red + Gold',
+                'symbol': 'Orchid glowing like a torch'
             },
             'Nihilism': {
                 'badge_name': 'Vanishing Bloom',
                 'badge_emoji': '🖤',
-                'description': 'You see the beauty in impermanence. Blooms fade; that is their truth. You do not cling — and yet you marvel every time one returns.',
-                'growing_style': 'Beauty in impermanence',
-                'badge_image': 'vanishing_bloom.png'
+                'description': 'Every bloom is precious because it vanishes. Precious because it vanishes; impermanence revealed.',
+                'growing_style': 'No inherent meaning or permanence; beauty fades',
+                'badge_image': 'vanishing_bloom.png',
+                'palette': 'Charcoal + Silver',
+                'symbol': 'Petals dissolving into mist'
             },
             'Renaissance Humanism': {
                 'badge_name': 'Orchid Muse',
                 'badge_emoji': '🎨',
-                'description': 'Your orchids are art. You admire symmetry, form, and grace — every flower a masterpiece, devotion worthy of beauty.',
-                'growing_style': 'Art, form and symmetry',
-                'badge_image': 'orchid_muse.png'
+                'description': 'Orchids as art and living masterpieces. Living art: symmetry, form, and color celebrated.',
+                'growing_style': 'Art, beauty, and human dignity inspired by classical ideals',
+                'badge_image': 'orchid_muse.png',
+                'palette': 'Burgundy + Renaissance Gold',
+                'symbol': 'Stylized orchid with painter\'s palette'
             },
             'Pragmatism': {
                 'badge_name': 'Grounded Root',
                 'badge_emoji': '🌱',
-                'description': 'You test, adapt, and do what works. Your orchids thrive on curiosity as much as water and light.',
-                'growing_style': 'Practical wisdom',
-                'badge_image': 'grounded_root.png'
+                'description': 'If it thrives, it stays. Function over form. Adapt methods; success defines the path.',
+                'growing_style': 'Truth is what works in practice; results matter',
+                'badge_image': 'grounded_root.png',
+                'palette': 'Earth Brown + Moss Green',
+                'symbol': 'Roots gripping stone'
             },
             'Skepticism': {
                 'badge_name': 'Veil Orchid',
                 'badge_emoji': '🕵️',
-                'description': 'You question, test, and refine. Your orchids thrive on curiosity as much as water and light.',
-                'growing_style': 'Questioning pursuit of truth',
-                'badge_image': 'veil_orchid.png'
+                'description': 'You question, test, and verify before you trust. Test tags, mediums, and methods; evidence first.',
+                'growing_style': 'Inquiry and doubt as paths to truth across eras of thought',
+                'badge_image': 'veil_orchid.png',
+                'palette': 'Cool Blue + Silver',
+                'symbol': 'Orchid half in shadow, half in light'
             },
             'Traditionalism': {
                 'badge_name': 'Legacy Bloom',
                 'badge_emoji': '📜',
-                'description': 'Your orchids carry stories — divisions handed down, journals kept, lessons preserved. You honor the lineage of growers.',
-                'growing_style': 'Honor and lineage',
-                'badge_image': 'legacy_bloom.png'
+                'description': 'You trust the time-tested ways. Time-tested methods; orchids as living heirlooms.',
+                'growing_style': 'Honor inherited wisdom and practices',
+                'badge_image': 'legacy_bloom.png',
+                'palette': 'Parchment Beige + Muted Green',
+                'symbol': 'Orchid on an old scroll/book'
             },
             'Cynicism': {
                 'badge_name': 'Wild Sprout',
                 'badge_emoji': '🌵',
-                'description': 'You refuse to be boxed by rules. If it grows in a bottle, a log, or a teacup — you smile and let it bloom outside the lines.',
-                'growing_style': 'Breaking convention',
-                'badge_image': 'wild_sprout.png'
+                'description': 'Breaking convention; thriving outside the lines. Let orchids thrive outside the rules (log, bottle, teacup).',
+                'growing_style': 'Reject convention; live simply and defiantly',
+                'badge_image': 'wild_sprout.png',
+                'palette': 'Gray + Magenta Flash',
+                'symbol': 'Orchid bursting from cracked stone'
             },
             'Aristotelian': {
                 'badge_name': 'Ordered Bloom',
                 'badge_emoji': '🔢',
-                'description': 'You delight in names, order, and clarity. Each tag, a piece of a larger pattern. Wisdom begins with seeing what a thing is.',
-                'growing_style': 'Knowledge through order',
-                'badge_image': 'ordered_bloom.png'
+                'description': 'Knowledge through order and precise names. Tags, labels, genus charts: clarity through order.',
+                'growing_style': 'Knowledge through observation, logic, and classification',
+                'badge_image': 'ordered_bloom.png',
+                'palette': 'Navy + Ivory',
+                'symbol': 'Geometric petal arrangement'
             },
             'Altruism': {
                 'badge_name': 'Gifted Orchid',
                 'badge_emoji': '🎁',
-                'description': 'You share joy through orchids. Your plants are gifts of spirit, spreading beauty and wisdom to others.',
-                'growing_style': 'Sharing joy and wisdom',
-                'badge_image': 'gifted_orchid.png'
+                'description': 'You share divisions generously; joy multiplies. Sharing divisions; multiplying joy through gifts.',
+                'growing_style': 'Ethic of selflessness; joy in giving',
+                'badge_image': 'gifted_orchid.png',
+                'palette': 'Lavender + Warm Gold',
+                'symbol': 'Orchid offered in open hands'
             }
         }
         
