@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from app import db
 from models import WorkshopRegistration, User
+from philosophy_quiz_system import PHILOSOPHY_PROFILES
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -132,7 +133,8 @@ class FCOSMemberAutomation:
             'workshop_welcome': 'FCOS_WORKSHOP_WELCOME',
             'workshop_reminder': 'FCOS_WORKSHOP_REMINDER', 
             'member_renewal': 'FCOS_MEMBER_RENEWAL',
-            'new_member_welcome': 'FCOS_NEW_MEMBER_WELCOME'
+            'new_member_welcome': 'FCOS_NEW_MEMBER_WELCOME',
+            'philosophy_quiz_results': 'FCOS_PHILOSOPHY_QUIZ_RESULTS'
         }
     
     def process_workshop_registration(self, registration: WorkshopRegistration) -> Dict[str, Any]:
@@ -281,6 +283,140 @@ class FCOSMemberAutomation:
         }
         
         return report
+    
+    def calculate_philosophy_quiz_score(self, answers: List[str]) -> Dict[str, Any]:
+        """
+        Calculate philosophy quiz results from form answers
+        Returns scored philosophy type and badge data for Neon One workflow
+        """
+        # Philosophy scoring weights for each answer
+        weights = {
+            'A': {'zen': 3, 'stoic': 2, 'epicurean': 1, 'skeptic': 1, 'empiricist': 2, 'rationalist': 1, 'existentialist': 2, 'pragmatist': 3, 'hedonist': 1, 'minimalist': 3},
+            'B': {'zen': 1, 'stoic': 3, 'epicurean': 2, 'skeptic': 2, 'empiricist': 3, 'rationalist': 2, 'existentialist': 1, 'pragmatist': 2, 'hedonist': 2, 'minimalist': 1},
+            'C': {'zen': 2, 'stoic': 1, 'epicurean': 3, 'skeptic': 3, 'empiricist': 1, 'rationalist': 3, 'existentialist': 3, 'pragmatist': 1, 'hedonist': 3, 'minimalist': 2},
+            'D': {'zen': 1, 'stoic': 2, 'epicurean': 2, 'skeptic': 3, 'empiricist': 3, 'rationalist': 3, 'existentialist': 2, 'pragmatist': 2, 'hedonist': 3, 'minimalist': 1}
+        }
+        
+        # Calculate scores for each philosophy
+        scores = {phil: 0 for phil in weights['A'].keys()}
+        
+        for answer in answers:
+            if answer in weights:
+                for phil, weight in weights[answer].items():
+                    scores[phil] += weight
+        
+        # Find winning philosophy
+        winning_philosophy = max(scores, key=scores.get)
+        winning_score = scores[winning_philosophy]
+        
+        # Get badge data
+        badge_data = PHILOSOPHY_PROFILES[winning_philosophy]
+        
+        return {
+            'philosophy_type': winning_philosophy,
+            'score': winning_score,
+            'total_possible': 30,  # 10 questions × 3 max points
+            'percentage': round((winning_score / 30) * 100),
+            'badge_data': badge_data,
+            'all_scores': scores
+        }
+    
+    def generate_philosophy_email_data(self, quiz_results: Dict, user_data: Dict) -> Dict[str, str]:
+        """
+        Generate email content data for Neon One workflow system
+        Returns subject, HTML content, and custom field data
+        """
+        badge = quiz_results['badge_data']
+        
+        # Email subject
+        subject = f"🌺 Your Orchid Philosophy: {badge['badge_name']} - Five Cities Orchid Society"
+        
+        # Generate custom field data for Neon One
+        custom_fields = {
+            'philosophy_type': quiz_results['philosophy_type'],
+            'philosophy_badge_name': badge['badge_name'],
+            'philosophy_score': quiz_results['score'],
+            'philosophy_percentage': quiz_results['percentage'],
+            'badge_emoji': badge['badge_emoji'],
+            'badge_philosophy_quote': badge['philosophy'],
+            'badge_growing_style': badge['growing_style'],
+            'badge_description': badge['description'],
+            'quiz_completion_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            # Flatten recommendations for Neon One fields
+            'growing_rec_1': badge['growing_recommendations'][0] if len(badge['growing_recommendations']) > 0 else '',
+            'growing_rec_2': badge['growing_recommendations'][1] if len(badge['growing_recommendations']) > 1 else '',
+            'growing_rec_3': badge['growing_recommendations'][2] if len(badge['growing_recommendations']) > 2 else '',
+            'book_rec_1': badge['recommended_reading'][0] if len(badge['recommended_reading']) > 0 else '',
+            'book_rec_2': badge['recommended_reading'][1] if len(badge['recommended_reading']) > 1 else '',
+            'book_rec_3': badge['recommended_reading'][2] if len(badge['recommended_reading']) > 2 else ''
+        }
+        
+        return {
+            'subject': subject,
+            'custom_fields': custom_fields,
+            'email_template_id': 'philosophy_quiz_results'
+        }
+    
+    def process_philosophy_quiz_submission(self, form_data: Dict) -> Dict[str, Any]:
+        """
+        Process philosophy quiz submission and prepare for Neon One workflow
+        """
+        logger.info(f"Processing philosophy quiz for {form_data.get('email', 'anonymous')}")
+        
+        # Extract quiz answers (question_1 through question_10)
+        answers = []
+        for i in range(1, 11):
+            answer = form_data.get(f'question_{i}', 'A')
+            answers.append(answer)
+        
+        # Calculate quiz results
+        quiz_results = self.calculate_philosophy_quiz_score(answers)
+        
+        # User data for personalization
+        user_data = {
+            'first_name': form_data.get('first_name', ''),
+            'last_name': form_data.get('last_name', ''),
+            'email': form_data.get('email', ''),
+            'phone': form_data.get('phone', ''),
+            'website_url': os.environ.get('REPLIT_DEV_DOMAIN', 'your-website.com')
+        }
+        
+        # Generate email data for Neon One
+        email_data = self.generate_philosophy_email_data(quiz_results, user_data)
+        
+        # Check if this person is already a member
+        member = self.neon.get_member_by_email(user_data['email']) if user_data['email'] else None
+        
+        # Prepare complete data package for Neon One
+        neon_submission = {
+            # Standard contact fields
+            **user_data,
+            
+            # Quiz-specific custom fields  
+            **email_data['custom_fields'],
+            
+            # Workflow triggers
+            'trigger_philosophy_email': True,
+            'email_template': email_data['email_template_id'],
+            'is_existing_member': member is not None,
+            'member_account_id': member.account_id if member else '',
+            
+            # Activity tracking
+            'activity_type': 'Philosophy Quiz Completion',
+            'activity_points': 50,  # Points awarded for completing quiz
+            'activity_date': datetime.now().isoformat()
+        }
+        
+        results = {
+            'quiz_results': quiz_results,
+            'email_data': email_data,
+            'neon_submission': neon_submission,
+            'member_found': member is not None,
+            'member_data': member.__dict__ if member else None
+        }
+        
+        logger.info(f"Philosophy quiz processed: {quiz_results['philosophy_type']} ({quiz_results['percentage']}%)")
+        return results
 
 # API endpoint functions for Flask routes
 def setup_neon_one_routes(app):
@@ -330,6 +466,58 @@ def setup_neon_one_routes(app):
         """Admin endpoint for member engagement report"""
         report = automation.generate_member_engagement_report()
         return report
+    
+    @app.route('/api/philosophy-quiz/submit', methods=['POST'])
+    def philosophy_quiz_submit():
+        """API endpoint for philosophy quiz submission with Neon One integration"""
+        try:
+            from flask import request, jsonify
+            form_data = request.form.to_dict()
+            
+            # Process quiz through automation system
+            results = automation.process_philosophy_quiz_submission(form_data)
+            
+            # If we have an email, create/update the contact in Neon One
+            if results['neon_submission'].get('email'):
+                # This would send to Neon One CRM via API or webhook
+                # For now, log the submission data
+                logger.info(f"Philosophy quiz submission ready for Neon One: {results['neon_submission']['email']}")
+                logger.info(f"Philosophy type: {results['quiz_results']['philosophy_type']}")
+                logger.info(f"Badge: {results['quiz_results']['badge_data']['badge_name']}")
+            
+            return jsonify({
+                'success': True,
+                'philosophy_type': results['quiz_results']['philosophy_type'],
+                'badge_name': results['quiz_results']['badge_data']['badge_name'],
+                'score_percentage': results['quiz_results']['percentage'],
+                'redirect_url': '/philosophy-quiz/result',
+                'neon_data': results['neon_submission']  # This would be sent to Neon One
+            })
+            
+        except Exception as e:
+            logger.error(f"Philosophy quiz submission error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @app.route('/api/philosophy-quiz/neon-webhook', methods=['POST'])
+    def philosophy_quiz_neon_webhook():
+        """Webhook endpoint for Neon One to get email content"""
+        try:
+            from flask import request, jsonify
+            neon_data = request.json
+            
+            # Generate email content from Neon One data
+            email_content = automation.generate_philosophy_email_html(neon_data)
+            
+            return jsonify({
+                'success': True,
+                'email_subject': email_content['subject'],
+                'email_html': email_content['html_content'],
+                'custom_fields': email_content.get('custom_fields', {})
+            })
+            
+        except Exception as e:
+            logger.error(f"Neon One webhook error: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 # Initialize the integration
 fcos_automation = FCOSMemberAutomation()
