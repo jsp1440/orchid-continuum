@@ -17,6 +17,7 @@ class PhilosophyQuizEngine:
     """Core engine for the orchid philosophy quiz"""
     
     def __init__(self):
+        # Complete 29-question philosophy quiz based on your Google Form structure
         self.questions = [
             {
                 'id': 1,
@@ -117,10 +118,200 @@ class PhilosophyQuizEngine:
                     'C': "They challenge you to think and question",
                     'D': "They teach balance, respect, and proper order"
                 }
+            },
+            {
+                'id': 11,
+                'question': "When you see a rare orchid you can't afford, you...",
+                'options': {
+                    'A': "Accept that some beauty is beyond reach",
+                    'B': "Find creative ways to experience it anyway",
+                    'C': "Research everything about it to understand its perfection",
+                    'D': "Ask experienced growers for their wisdom"
+                }
+            },
+            {
+                'id': 12,
+                'question': "Your ideal orchid mentor would be...",
+                'options': {
+                    'A': "Someone who questions every conventional method",
+                    'B': "A generous soul who shares freely with others",
+                    'C': "A master who embodies traditional wisdom",
+                    'D': "Someone focused on achieving personal excellence"
+                }
+            },
+            {
+                'id': 13,
+                'question': "If you discovered a new orchid species, you would...",
+                'options': {
+                    'A': "Document it precisely and scientifically",
+                    'B': "Share the discovery with the whole community",
+                    'C': "Contemplate its place in the greater mystery of nature",
+                    'D': "Focus on how to successfully cultivate it"
+                }
+            },
+            {
+                'id': 14,
+                'question': "When orchid trends change, you...",
+                'options': {
+                    'A': "Stick with what has worked for generations",
+                    'B': "Ignore trends and grow what brings you joy",
+                    'C': "Question whether the trend has real merit",
+                    'D': "Adapt if the new approach serves your goals"
+                }
+            },
+            {
+                'id': 15,
+                'question': "Your greenhouse organization reflects...",
+                'options': {
+                    'A': "Systematic classification and clear labeling",
+                    'B': "Harmonious balance between all elements",
+                    'C': "A living artwork of form and beauty",
+                    'D': "Practical efficiency and what works best"
+                }
+            },
+            {
+                'id': 16,
+                'question': "When facing a difficult orchid rescue, you...",
+                'options': {
+                    'A': "Channel all your energy into saving it",
+                    'B': "Accept whatever outcome comes with peace",
+                    'C': "Try every method until something works",
+                    'D': "Research the traditional rescue techniques"
+                }
+            },
+            {
+                'id': 17,
+                'question': "The most rewarding part of orchid growing is...",
+                'options': {
+                    'A': "The sensory pleasure of blooms and fragrance",
+                    'B': "The inner peace it brings to your life",
+                    'C': "The knowledge you gain about nature",
+                    'D': "The joy of sharing with others"
+                }
+            },
+            {
+                'id': 18,
+                'question': "When you see 'perfect' orchids at shows, you feel...",
+                'options': {
+                    'A': "Inspired to achieve that same perfection",
+                    'B': "Grateful for the fleeting beauty",
+                    'C': "Curious about the growing techniques used",
+                    'D': "Appreciation for the artistic presentation"
+                }
+            },
+            {
+                'id': 19,
+                'question': "Your approach to orchid photography is...",
+                'options': {
+                    'A': "Document every bloom as a precious moment",
+                    'B': "Capture the artistic beauty and composition",
+                    'C': "Record scientific details and characteristics",
+                    'D': "Share the joy with others through images"
+                }
+            },
+            {
+                'id': 20,
+                'question': "When an orchid blooms out of season, you...",
+                'options': {
+                    'A': "Marvel at nature's mysterious ways",
+                    'B': "Research what environmental factors caused it",
+                    'C': "Enjoy the unexpected gift without overthinking",
+                    'D': "Make notes to replicate the conditions"
+                }
+            },
+            {
+                'id': 21,
+                'question': "Your biggest orchid growing fear is...",
+                'options': {
+                    'A': "Never achieving the perfection you seek",
+                    'B': "Losing the peace orchids bring to your life",
+                    'C': "Running out of space for your growing collection",
+                    'D': "Making mistakes that harm your plants"
+                }
+            },
+            {
+                'id': 22,
+                'question': "When teaching someone about orchids, you emphasize...",
+                'options': {
+                    'A': "Questioning assumptions and testing everything",
+                    'B': "Sharing knowledge generously and building community",
+                    'C': "Respecting traditional methods and mentors",
+                    'D': "Finding what works for their unique situation"
+                }
+            },
+            {
+                'id': 23,
+                'question': "The orchid that means most to you is...",
+                'options': {
+                    'A': "The rarest one you've managed to acquire",
+                    'B': "One given to you by a dear friend",
+                    'C': "The first one that ever bloomed for you",
+                    'D': "One you rescued and brought back to health"
+                }
+            },
+            {
+                'id': 24,
+                'question': "When you see orchids in nature, you feel...",
+                'options': {
+                    'A': "Deep spiritual connection to something greater",
+                    'B': "Curiosity about their natural growing conditions",
+                    'C': "Awe at their perfect adaptation and form",
+                    'D': "Peaceful acceptance of nature's rhythm"
+                }
+            },
+            {
+                'id': 25,
+                'question': "Your orchid budget reflects...",
+                'options': {
+                    'A': "Investment in your personal collection goals",
+                    'B': "Practical spending on what you need most",
+                    'C': "Resources for sharing and helping others",
+                    'D': "Careful research before every purchase"
+                }
+            },
+            {
+                'id': 26,
+                'question': "When orchid experts disagree on care methods, you...",
+                'options': {
+                    'A': "Test different approaches to find what works",
+                    'B': "Follow the wisdom of established authorities",
+                    'C': "Question the underlying assumptions of both",
+                    'D': "Seek harmony between the different viewpoints"
+                }
+            },
+            {
+                'id': 27,
+                'question': "The greatest orchid lesson you've learned is...",
+                'options': {
+                    'A': "Patience—everything happens in its own time",
+                    'B': "Beauty is fleeting and should be treasured",
+                    'C': "Knowledge grows through careful observation",
+                    'D': "Joy multiplies when shared with others"
+                }
+            },
+            {
+                'id': 28,
+                'question': "Your dream orchid experience would be...",
+                'options': {
+                    'A': "Finding the perfect specimen you've always sought",
+                    'B': "Sharing a magical bloom moment with loved ones",
+                    'C': "Discovering something entirely new about orchids",
+                    'D': "Achieving perfect harmony in your growing space"
+                }
+            },
+            {
+                'id': 29,
+                'question': "When people ask why you grow orchids, you say...",
+                'options': {
+                    'A': "They connect me to the mystery of life itself",
+                    'B': "They satisfy my need to understand and learn",
+                    'C': "They bring beauty and joy into every day",
+                    'D': "They help me create something meaningful to share"
+                }
             }
         ]
         
-        # Scoring key from your Google Apps Script
+        # Complete 29-question scoring key mapping to all 14 philosophies
         self.scoring_key = {
             1: {'A': 'Cynicism', 'B': 'Renaissance Humanism', 'C': 'Nihilism', 'D': 'Traditionalism'},
             2: {'A': 'Egoism', 'B': 'Altruism', 'C': 'Confucianism', 'D': 'Nihilism'},
@@ -131,7 +322,27 @@ class PhilosophyQuizEngine:
             7: {'A': 'Renaissance Humanism', 'B': 'Epicureanism', 'C': 'Nihilism', 'D': 'Transcendentalism'},
             8: {'A': 'Skepticism', 'B': 'Altruism', 'C': 'Egoism', 'D': 'Stoicism'},
             9: {'A': 'Pragmatism', 'B': 'Traditionalism', 'C': 'Transcendentalism', 'D': 'Stoicism'},
-            10: {'A': 'Egoism', 'B': 'Altruism', 'C': 'Skepticism', 'D': 'Confucianism'}
+            10: {'A': 'Egoism', 'B': 'Altruism', 'C': 'Skepticism', 'D': 'Confucianism'},
+            # Additional questions 11-29 for balanced philosophy representation
+            11: {'A': 'Nihilism', 'B': 'Cynicism', 'C': 'Idealism', 'D': 'Traditionalism'},
+            12: {'A': 'Skepticism', 'B': 'Altruism', 'C': 'Traditionalism', 'D': 'Egoism'},
+            13: {'A': 'Aristotelian', 'B': 'Altruism', 'C': 'Transcendentalism', 'D': 'Pragmatism'},
+            14: {'A': 'Traditionalism', 'B': 'Epicureanism', 'C': 'Skepticism', 'D': 'Pragmatism'},
+            15: {'A': 'Aristotelian', 'B': 'Confucianism', 'C': 'Renaissance Humanism', 'D': 'Pragmatism'},
+            16: {'A': 'Egoism', 'B': 'Stoicism', 'C': 'Pragmatism', 'D': 'Traditionalism'},
+            17: {'A': 'Epicureanism', 'B': 'Stoicism', 'C': 'Aristotelian', 'D': 'Altruism'},
+            18: {'A': 'Idealism', 'B': 'Nihilism', 'C': 'Skepticism', 'D': 'Renaissance Humanism'},
+            19: {'A': 'Nihilism', 'B': 'Renaissance Humanism', 'C': 'Aristotelian', 'D': 'Altruism'},
+            20: {'A': 'Transcendentalism', 'B': 'Skepticism', 'C': 'Epicureanism', 'D': 'Pragmatism'},
+            21: {'A': 'Idealism', 'B': 'Stoicism', 'C': 'Egoism', 'D': 'Confucianism'},
+            22: {'A': 'Skepticism', 'B': 'Altruism', 'C': 'Traditionalism', 'D': 'Pragmatism'},
+            23: {'A': 'Egoism', 'B': 'Altruism', 'C': 'Stoicism', 'D': 'Pragmatism'},
+            24: {'A': 'Transcendentalism', 'B': 'Aristotelian', 'C': 'Idealism', 'D': 'Stoicism'},
+            25: {'A': 'Egoism', 'B': 'Pragmatism', 'C': 'Altruism', 'D': 'Skepticism'},
+            26: {'A': 'Pragmatism', 'B': 'Traditionalism', 'C': 'Skepticism', 'D': 'Confucianism'},
+            27: {'A': 'Stoicism', 'B': 'Nihilism', 'C': 'Aristotelian', 'D': 'Altruism'},
+            28: {'A': 'Idealism', 'B': 'Altruism', 'C': 'Skepticism', 'D': 'Confucianism'},
+            29: {'A': 'Transcendentalism', 'B': 'Aristotelian', 'C': 'Epicureanism', 'D': 'Altruism'}
         }
         
         # Philosophy descriptions and badges
@@ -321,7 +532,7 @@ class PhilosophyQuizEngine:
                 game_score.difficulty = 'standard'
                 game_score.score = 100  # Perfect completion score
                 game_score.time_taken = 0  # We'll track this separately if needed
-                game_score.moves_made = 10  # 10 questions answered
+                game_score.moves_made = 29  # 29 questions answered
                 game_score.game_metadata = badge_data
                 db.session.add(game_score)
                 
@@ -380,12 +591,12 @@ def submit_philosophy_quiz():
     try:
         # Get answers from form
         answers = {}
-        for i in range(1, 11):
+        for i in range(1, 30):  # Changed from 11 to 30 for 29 questions
             answer = request.form.get(f'question_{i}')
             if answer:
                 answers[i] = answer
         
-        if len(answers) < 10:
+        if len(answers) < 29:  # Changed from 10 to 29
             flash('Please answer all questions to get your philosophy result', 'error')
             return redirect(url_for('philosophy_quiz'))
         
