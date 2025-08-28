@@ -187,6 +187,39 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
+            <!-- Philosophy Quiz Widget -->
+            <div class="card bg-dark text-light mb-3" style="border: 2px solid #8b5cf6;">
+                <div class="card-header" style="background: rgba(139, 92, 246, 0.2);">
+                    <h5 class="mb-0">
+                        <i data-feather="compass" class="me-2"></i>Your Orchid Philosophy
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    {% set philosophy_badge = current_user.badges|selectattr('badge_type', 'eq', 'philosophy_quiz')|first %}
+                    {% if philosophy_badge %}
+                        <div class="mb-3">
+                            <div style="font-size: 3rem;">{{ philosophy_badge.badge_data.badge_emoji }}</div>
+                            <h4 style="color: #8b5cf6;">{{ philosophy_badge.badge_data.badge_name }}</h4>
+                            <p class="text-muted small">{{ philosophy_badge.badge_data.philosophy }}</p>
+                            <p class="small">{{ philosophy_badge.badge_data.growing_style }}</p>
+                        </div>
+                        <p class="small">{{ philosophy_badge.badge_data.description }}</p>
+                        <a href="{{ url_for('philosophy_quiz') }}" class="btn btn-outline-light btn-sm">
+                            <i data-feather="refresh-cw" class="me-1"></i>Retake Quiz
+                        </a>
+                    {% else %}
+                        <div class="mb-3">
+                            <div style="font-size: 3rem;">🌺</div>
+                            <h5 style="color: #8b5cf6;">Discover Your Philosophy</h5>
+                        </div>
+                        <p>Are you a Stoic grower? Epicurean? Skeptic? Take our 2-minute quiz to find out!</p>
+                        <a href="{{ url_for('philosophy_quiz') }}" class="btn btn-lg" style="background: #8b5cf6; border: none; color: white;">
+                            <i data-feather="help-circle" class="me-1"></i>Take Philosophy Quiz
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
             <!-- Achievements -->
             <div class="card bg-dark text-light mb-4">
                 <div class="card-header">
