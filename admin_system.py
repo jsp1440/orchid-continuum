@@ -119,29 +119,79 @@ Provide specific, actionable guidance for orchid platform management."""
 def admin_dashboard():
     """Administrative dashboard with ultimate database control"""
     try:
-        # Database statistics
-        stats = {
-            'orchid_records': OrchidRecord.query.count(),
-            'taxonomy_entries': OrchidTaxonomy.query.count(),
-            'user_uploads': UserUpload.query.count(),
-            'scraping_logs': ScrapingLog.query.count(),
-            'judging_analyses': JudgingAnalysis.query.count(),
-            'certificates': Certificate.query.count(),
-            'batch_uploads': BatchUpload.query.count()
-        }
+        # Database statistics with safe fallbacks
+        stats = {}
         
-        # Recent activities
-        recent_orchids = OrchidRecord.query.order_by(OrchidRecord.created_at.desc()).limit(10).all()
-        recent_uploads = UserUpload.query.order_by(UserUpload.created_at.desc()).limit(5).all()
-        recent_logs = ScrapingLog.query.order_by(ScrapingLog.created_at.desc()).limit(5).all()
+        # Safe count queries with error handling
+        try:
+            stats['orchid_records'] = OrchidRecord.query.count()
+        except Exception as e:
+            logger.warning(f"Could not count orchid_records: {e}")
+            stats['orchid_records'] = 0
+            
+        try:
+            stats['taxonomy_entries'] = OrchidTaxonomy.query.count()
+        except Exception as e:
+            logger.warning(f"Could not count taxonomy_entries: {e}")
+            stats['taxonomy_entries'] = 0
+            
+        # Safe queries for potentially missing tables
+        for table_name, model_class in [
+            ('user_uploads', UserUpload),
+            ('scraping_logs', ScrapingLog),
+            ('judging_analyses', JudgingAnalysis),
+            ('certificates', Certificate),
+            ('batch_uploads', BatchUpload)
+        ]:
+            try:
+                stats[table_name] = model_class.query.count()
+            except Exception as e:
+                logger.warning(f"Table {table_name} not available: {e}")
+                stats[table_name] = 0
         
-        # System health
-        health_info = {
-            'database_size': get_database_size(),
-            'total_images': len([r for r in recent_orchids if r.image_url]),
-            'ai_analyzed': OrchidRecord.query.filter(OrchidRecord.ai_description.isnot(None)).count(),
-            'rhs_verified': OrchidRecord.query.filter(OrchidRecord.rhs_verification_status == 'verified').count()
-        }
+        # Recent activities with safe queries
+        recent_orchids = []
+        recent_uploads = []
+        recent_logs = []
+        
+        try:
+            recent_orchids = OrchidRecord.query.order_by(OrchidRecord.created_at.desc()).limit(10).all()
+        except Exception as e:
+            logger.warning(f"Could not fetch recent orchids: {e}")
+            
+        try:
+            recent_uploads = UserUpload.query.order_by(UserUpload.created_at.desc()).limit(5).all()
+        except Exception as e:
+            logger.warning(f"Could not fetch recent uploads: {e}")
+            
+        try:
+            recent_logs = ScrapingLog.query.order_by(ScrapingLog.created_at.desc()).limit(5).all()
+        except Exception as e:
+            logger.warning(f"Could not fetch recent logs: {e}")
+        
+        # System health with safe queries
+        health_info = {}
+        
+        try:
+            health_info['database_size'] = get_database_size()
+        except Exception as e:
+            logger.warning(f"Could not get database size: {e}")
+            health_info['database_size'] = "Unknown"
+            
+        try:
+            health_info['total_images'] = len([r for r in recent_orchids if r.image_url])
+        except Exception:
+            health_info['total_images'] = 0
+            
+        try:
+            health_info['ai_analyzed'] = OrchidRecord.query.filter(OrchidRecord.ai_description.isnot(None)).count()
+        except Exception:
+            health_info['ai_analyzed'] = 0
+            
+        try:
+            health_info['rhs_verified'] = OrchidRecord.query.filter(OrchidRecord.rhs_verification_status == 'verified').count()
+        except Exception:
+            health_info['rhs_verified'] = 0
         
         return render_template('admin_dashboard.html',
                              stats=stats,
@@ -152,8 +202,31 @@ def admin_dashboard():
     
     except Exception as e:
         logger.error(f"Admin dashboard error: {str(e)}")
-        flash(f'Dashboard error: {str(e)}', 'error')
-        return render_template('admin_dashboard.html', stats={}, recent_orchids=[], recent_uploads=[], recent_logs=[], health={})
+        flash(f'Dashboard partially loaded - some database tables may not be available', 'warning')
+        
+        # Provide minimal safe data
+        minimal_stats = {
+            'orchid_records': 0,
+            'taxonomy_entries': 0,
+            'user_uploads': 0,
+            'scraping_logs': 0,
+            'judging_analyses': 0,
+            'certificates': 0,
+            'batch_uploads': 0
+        }
+        minimal_health = {
+            'database_size': "Unknown",
+            'total_images': 0,
+            'ai_analyzed': 0,
+            'rhs_verified': 0
+        }
+        
+        return render_template('admin_dashboard.html', 
+                             stats=minimal_stats, 
+                             recent_orchids=[], 
+                             recent_uploads=[], 
+                             recent_logs=[], 
+                             health=minimal_health)
 
 @app.route('/admin/database/query', methods=['GET', 'POST'])
 @admin_required
@@ -459,12 +532,41 @@ def database_maintenance():
         return render_template('admin_maintenance.html', info={})
 
 def get_database_size():
-    """Get approximate database size"""
+    """Get database size information (SQLite compatible)"""
     try:
-        result = db.session.execute(text("SELECT pg_size_pretty(pg_database_size(current_database()))"))
-        return result.scalar()
-    except Exception:
-        return "Unknown"
+        # Query to get table sizes safely
+        result = db.session.execute(text("""
+            SELECT name 
+            FROM sqlite_master 
+            WHERE type='table' AND name NOT LIKE 'sqlite_%'
+        """))
+        
+        tables = {}
+        total_rows = 0
+        
+        for row in result:
+            table_name = row[0]
+            try:
+                count_result = db.session.execute(text(f"SELECT COUNT(*) FROM `{table_name}`"))
+                row_count = count_result.scalar()
+                tables[table_name] = row_count
+                total_rows += row_count
+            except Exception as table_error:
+                logger.warning(f"Could not count rows in table {table_name}: {table_error}")
+                tables[table_name] = 0
+        
+        return {
+            'total_tables': len(tables),
+            'total_rows': total_rows,
+            'tables': tables
+        }
+    except Exception as e:
+        logger.error(f"Database size error: {e}")
+        return {
+            'total_tables': 0,
+            'total_rows': 0,
+            'tables': {}
+        }
 
 def get_orphaned_images_count():
     """Count images without corresponding records"""
