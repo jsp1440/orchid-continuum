@@ -4523,6 +4523,10 @@ def workshop_stats():
 from scientific_research_platform import scientific_research
 app.register_blueprint(scientific_research, url_prefix='/research')
 
+# Bulk Orchid Analysis System
+from bulk_orchid_analyzer import bulk_analyzer
+app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
+
 @app.route('/satellite-world-map')
 def enhanced_satellite_world_map():
     """Enhanced satellite world map with space view"""
