@@ -4527,6 +4527,10 @@ app.register_blueprint(scientific_research, url_prefix='/research')
 from bulk_orchid_analyzer import bulk_analyzer
 app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
 
+# Educational Games Integration
+from educational_games_integration import educational_games
+app.register_blueprint(educational_games, url_prefix='/educational-games')
+
 @app.route('/satellite-world-map')
 def enhanced_satellite_world_map():
     """Enhanced satellite world map with space view"""
