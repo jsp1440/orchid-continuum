@@ -13,8 +13,95 @@ from models import OrchidRecord
 
 hollywood_orchids = Blueprint('hollywood_orchids', __name__)
 
-# Sample orchid movies data (this will be expanded by user contributions)
+# Hollywood orchid movies with user-contributed posters
 HOLLYWOOD_ORCHIDS_MOVIES = {
+    'no_more_orchids': {
+        'title': 'No More Orchids (1932)',
+        'director': 'Walter Lang',
+        'description': 'A romantic drama starring Carole Lombard about a woman caught between love and duty, with orchids symbolizing luxury and unattainable desires.',
+        'orchid_focus': 'Orchids as symbols of luxury, beauty, and forbidden desire',
+        'poster_drive_id': '18SjQMSrxrBZNxbQ1AWOciKJqgwNz6RHK',
+        'poster_alt_drive_id': '1Bghv0dqWDp0IzwefhkdoL5iEGzwmxOZK',
+        'youtube_url': 'https://www.youtube.com/embed/placeholder1',
+        'imdb_rating': '6.8/10',
+        'orchid_significance': 'Orchids represent unattainable luxury and forbidden romance',
+        'scientific_accuracy': 'Period accurate - orchids as status symbols of the 1930s',
+        'contributed_by': 'User Collection',
+        'year': 1932,
+        'genre': 'Romance/Drama'
+    },
+    'the_big_sleep': {
+        'title': 'The Big Sleep (1946)',
+        'director': 'Howard Hawks',
+        'description': 'Classic film noir starring Humphrey Bogart and Lauren Bacall. While not explicitly about orchids, the mysterious and exotic atmosphere parallels orchid cultivation themes.',
+        'orchid_focus': 'Atmospheric noir themes reflecting orchid mystery and cultivation',
+        'poster_drive_id': '1YRzsrv4_CIQ-uX-29e2QTZzLHlinkYlx',
+        'poster_alt_drive_id': '1DffY2f_NE6hprahOY_NWoZ7b-n-YacCb',
+        'youtube_url': 'https://www.youtube.com/embed/wFJBTpIKBnY',
+        'imdb_rating': '7.9/10',
+        'orchid_significance': 'Noir atmosphere mirrors the mysterious world of rare orchid collecting',
+        'scientific_accuracy': 'Thematic - represents the hidden, mysterious nature of orchid enthusiasts',
+        'contributed_by': 'User Collection',
+        'year': 1946,
+        'genre': 'Film Noir/Mystery'
+    },
+    'black_orchid': {
+        'title': 'Black Orchid (1958)',
+        'director': 'Martin Ritt',
+        'description': 'Drama starring Sophia Loren and Anthony Quinn about love and family secrets, with the black orchid serving as a powerful symbol throughout the film.',
+        'orchid_focus': 'Black orchids as central metaphor for rare beauty and hidden secrets',
+        'poster_drive_id': '1oce4W1hQa5UnqEeTMEOdBUs-6Ru4HJ7Z',
+        'poster_alt_drive_id': '1wbZ8BX9M40DuUA3cYhrJPKcmD53FG_lV',
+        'youtube_url': 'https://www.youtube.com/embed/placeholder2',
+        'imdb_rating': '7.1/10',
+        'orchid_significance': 'Black orchids symbolize rare beauty, mystery, and forbidden love',
+        'scientific_accuracy': 'High - accurately portrays orchid rarity and symbolic meaning',
+        'contributed_by': 'User Collection',
+        'year': 1958,
+        'genre': 'Drama/Romance'
+    },
+    'orchid_and_my_love': {
+        'title': 'Orchid and My Love',
+        'director': 'Classic Era',
+        'description': 'Romantic story where orchids play a central role in expressing deep emotions and connections between lovers.',
+        'orchid_focus': 'Orchids as romantic symbols and expressions of love',
+        'poster_drive_id': '1npUrRTtyxLk8x67-48269COnOGOpG9Ok',
+        'youtube_url': 'https://www.youtube.com/embed/placeholder3',
+        'imdb_rating': 'Not rated',
+        'orchid_significance': 'Orchids as the ultimate romantic gesture and symbol of devotion',
+        'scientific_accuracy': 'Symbolic - focuses on cultural meaning rather than biology',
+        'contributed_by': 'User Collection',
+        'year': 1950,
+        'genre': 'Romance'
+    },
+    'seven_blood_stained_orchids': {
+        'title': 'Seven Blood-Stained Orchids (1972)',
+        'director': 'Umberto Lenzi',
+        'description': 'Italian giallo thriller where orchids become sinister symbols in a series of mysterious murders.',
+        'orchid_focus': 'Orchids as dark symbols in psychological thriller narrative',
+        'poster_drive_id': '1qqu-1DVbhtcUfwSByyhE8yBLDe0WsrX0',
+        'youtube_url': 'https://www.youtube.com/embed/placeholder4',
+        'imdb_rating': '6.4/10',
+        'orchid_significance': 'Orchids transformed into sinister symbols of death and mystery',
+        'scientific_accuracy': 'Symbolic - orchids used for atmospheric and psychological effect',
+        'contributed_by': 'User Collection',
+        'year': 1972,
+        'genre': 'Thriller/Giallo'
+    },
+    'movie_collection': {
+        'title': 'Classic Orchid Cinema Collection',
+        'director': 'Various Directors',
+        'description': 'A curated collection of classic films featuring orchids as central themes, symbols, or plot devices.',
+        'orchid_focus': 'Comprehensive orchid cinema anthology',
+        'poster_drive_id': '1Wmc0U3d99kU1k2pnSZW9SpVeUUsTHQK_',
+        'youtube_url': 'https://www.youtube.com/embed/placeholder5',
+        'imdb_rating': 'Collection',
+        'orchid_significance': 'Celebrates the enduring role of orchids in cinema history',
+        'scientific_accuracy': 'Educational - showcases orchids across different film eras',
+        'contributed_by': 'User Collection',
+        'year': 2024,
+        'genre': 'Anthology/Collection'
+    },
     'adaptation': {
         'title': 'Adaptation (2002)',
         'director': 'Spike Jonze',
@@ -25,31 +112,8 @@ HOLLYWOOD_ORCHIDS_MOVIES = {
         'orchid_significance': 'Central to plot - explores human obsession through rare orchid collecting',
         'scientific_accuracy': 'High - accurately portrays orchid biology and conservation issues',
         'contributed_by': 'System',
-        'year': 2002
-    },
-    'little_shop_horrors': {
-        'title': 'Little Shop of Horrors (1986)',
-        'director': 'Frank Oz',
-        'description': 'Musical comedy about Seymour and his carnivorous plant Audrey II. While not specifically an orchid, it represents exotic plant obsession.',
-        'orchid_focus': 'Exotic plant cultivation and botanical obsession themes',
-        'youtube_url': 'https://www.youtube.com/embed/L7SkrYF8lCU',
-        'imdb_rating': '7.1/10',
-        'orchid_significance': 'Botanical themes parallel orchid cultivation passion',
-        'scientific_accuracy': 'Low - fictional carnivorous plant, but captures plant enthusiasm',
-        'contributed_by': 'System',
-        'year': 1986
-    },
-    'the_orchid_thief': {
-        'title': 'The Orchid Thief Documentary (2020)',
-        'director': 'Independent',
-        'description': 'Documentary exploring the real-life orchid theft cases that inspired Susan Orlean\'s book and the movie Adaptation.',
-        'orchid_focus': 'Real orchid poaching, conservation, and the illegal orchid trade',
-        'youtube_url': 'https://www.youtube.com/embed/dQw4w9WgXcQ',  # Placeholder
-        'imdb_rating': 'Not rated',
-        'orchid_significance': 'Documentary truth behind orchid conservation challenges',
-        'scientific_accuracy': 'Very High - real conservation footage and expert interviews',
-        'contributed_by': 'System',
-        'year': 2020
+        'year': 2002,
+        'genre': 'Drama/Comedy'
     }
 }
 

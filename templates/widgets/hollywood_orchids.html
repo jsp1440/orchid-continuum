@@ -53,13 +53,47 @@
             border-color: rgba(142, 68, 173, 0.5);
         }
         
-        .video-container {
+        .video-container, .poster-container {
             position: relative;
             width: 100%;
             height: 300px;
             background: #000;
             border-radius: 15px 15px 0 0;
             overflow: hidden;
+        }
+        
+        .movie-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .poster-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1rem;
+        }
+        
+        .poster-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 0.5rem;
+        }
+        
+        .poster-year {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
         
         .video-frame {
@@ -340,6 +374,18 @@
             {% for movie_key, movie in movies.items() %}
             <div class="col-lg-6 col-xl-4">
                 <div class="movie-card" data-movie="{{ movie_key }}">
+                    {% if movie.poster_drive_id %}
+                    <div class="poster-container">
+                        <img class="movie-poster" 
+                             src="/api/drive-photo/{{ movie.poster_drive_id }}" 
+                             alt="{{ movie.title }} poster"
+                             onerror="this.src='/api/drive-photo/{{ movie.poster_alt_drive_id or movie.poster_drive_id }}'; if (this.src.includes('{{ movie.poster_alt_drive_id or movie.poster_drive_id }}')) this.style.display='none';">
+                        <div class="poster-overlay">
+                            <div class="poster-title">{{ movie.title }}</div>
+                            <div class="poster-year">{{ movie.year }} • {{ movie.genre or 'Classic' }}</div>
+                        </div>
+                    </div>
+                    {% else %}
                     <div class="video-container">
                         <iframe class="video-frame d-none" 
                                 data-src="{{ movie.youtube_url }}" 
@@ -351,6 +397,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                     
                     <div class="movie-content">
                         <h5 class="movie-title">{{ movie.title }}</h5>
