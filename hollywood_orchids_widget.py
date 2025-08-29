@@ -337,6 +337,11 @@ def embed_widget():
     """Compact embeddable widget optimized for Neon One"""
     return render_template('widgets/hollywood_orchids_embed.html')
 
+@hollywood_orchids.route('/preview')
+def preview_card():
+    """Preview card for widget gallery"""
+    return render_template('widgets/hollywood_orchids_preview.html')
+
 @hollywood_orchids.route('/api/movies')
 def get_movies_api():
     """API endpoint for movies data"""
