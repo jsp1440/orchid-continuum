@@ -9,7 +9,7 @@ import os
 import re
 from datetime import datetime
 from app import db
-from models import OrchidRecord, MovieReview
+from models import OrchidRecord, MovieReview, MovieVote
 from sqlalchemy import func
 
 hollywood_orchids = Blueprint('hollywood_orchids', __name__)
@@ -520,3 +520,101 @@ def get_movie_reviews(movie_key):
         
     except Exception as e:
         return jsonify({'error': f'Failed to fetch reviews: {str(e)}'}), 500
+
+@hollywood_orchids.route('/vote', methods=['POST'])
+def vote_movie():
+    """Handle Phalaenopsis voting for movies"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        # Validate required fields
+        if not data.get('movie_key') or not data.get('phalaenopsis_rating'):
+            return jsonify({'success': False, 'error': 'Missing movie or rating'}), 400
+        
+        movie_key = data['movie_key']
+        rating = int(data['phalaenopsis_rating'])
+        
+        # Validate movie exists and rating is valid
+        if movie_key not in HOLLYWOOD_ORCHIDS_MOVIES:
+            return jsonify({'success': False, 'error': 'Invalid movie'}), 400
+        
+        if not (1 <= rating <= 5):
+            return jsonify({'success': False, 'error': 'Rating must be 1-5 Phalaenopsis'}), 400
+        
+        # Get voter IP for basic duplicate prevention
+        voter_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+        
+        # Create vote
+        vote = MovieVote(
+            movie_key=movie_key,
+            phalaenopsis_rating=rating,
+            voter_ip=voter_ip
+        )
+        
+        db.session.add(vote)
+        db.session.commit()
+        
+        # Get updated vote statistics
+        vote_stats = get_movie_vote_stats(movie_key)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Thanks for your {rating}-Phalaenopsis vote!',
+            'vote_stats': vote_stats
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Voting failed: {str(e)}'}), 500
+
+@hollywood_orchids.route('/api/votes/<movie_key>')
+def get_movie_votes(movie_key):
+    """Get vote statistics for a specific movie"""
+    try:
+        if movie_key not in HOLLYWOOD_ORCHIDS_MOVIES:
+            return jsonify({'error': 'Movie not found'}), 404
+        
+        vote_stats = get_movie_vote_stats(movie_key)
+        
+        return jsonify({
+            'movie_key': movie_key,
+            'movie_title': HOLLYWOOD_ORCHIDS_MOVIES[movie_key]['title'],
+            'vote_stats': vote_stats
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch votes: {str(e)}'}), 500
+
+def get_movie_vote_stats(movie_key):
+    """Helper function to calculate vote statistics"""
+    # Get vote distribution
+    vote_counts = db.session.query(
+        MovieVote.phalaenopsis_rating,
+        func.count(MovieVote.id).label('count')
+    ).filter(
+        MovieVote.movie_key == movie_key
+    ).group_by(MovieVote.phalaenopsis_rating).all()
+    
+    # Calculate statistics
+    total_votes = sum(count for _, count in vote_counts)
+    if total_votes == 0:
+        return {
+            'total_votes': 0,
+            'average_rating': 0,
+            'distribution': {str(i): 0 for i in range(1, 6)}
+        }
+    
+    # Calculate average
+    weighted_sum = sum(rating * count for rating, count in vote_counts)
+    average_rating = round(weighted_sum / total_votes, 1)
+    
+    # Create distribution dict
+    distribution = {str(i): 0 for i in range(1, 6)}
+    for rating, count in vote_counts:
+        distribution[str(rating)] = count
+    
+    return {
+        'total_votes': total_votes,
+        'average_rating': average_rating,
+        'distribution': distribution
+    }
