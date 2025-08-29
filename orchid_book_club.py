@@ -74,3 +74,57 @@ def book_club_widget():
     """Book club widget for embedding"""
     featured_book = BOOK_REVIEWS['orchids_of_madagascar']
     return render_template('book_club/widget.html', book=featured_book)
+
+@orchid_book_club_bp.route('/admin/edit/<book_key>')
+def edit_review(book_key):
+    """Edit book review page"""
+    if book_key not in BOOK_REVIEWS:
+        return "Book review not found", 404
+    
+    book = BOOK_REVIEWS[book_key]
+    return render_template('book_club/edit.html', book=book, book_key=book_key)
+
+@orchid_book_club_bp.route('/admin/update/<book_key>', methods=['POST'])
+def update_review(book_key):
+    """Update book review"""
+    if book_key not in BOOK_REVIEWS:
+        return jsonify({'success': False, 'error': 'Book not found'}), 404
+    
+    try:
+        # Update basic details
+        BOOK_REVIEWS[book_key]['title'] = request.form.get('title', BOOK_REVIEWS[book_key]['title'])
+        BOOK_REVIEWS[book_key]['author'] = request.form.get('author', BOOK_REVIEWS[book_key]['author'])
+        BOOK_REVIEWS[book_key]['description'] = request.form.get('description', BOOK_REVIEWS[book_key]['description'])
+        BOOK_REVIEWS[book_key]['review_text'] = request.form.get('review_text', BOOK_REVIEWS[book_key]['review_text'])
+        BOOK_REVIEWS[book_key]['rating'] = int(request.form.get('rating', BOOK_REVIEWS[book_key]['rating']))
+        BOOK_REVIEWS[book_key]['pages'] = int(request.form.get('pages', BOOK_REVIEWS[book_key]['pages']))
+        BOOK_REVIEWS[book_key]['year'] = int(request.form.get('year', BOOK_REVIEWS[book_key]['year']))
+        BOOK_REVIEWS[book_key]['publisher'] = request.form.get('publisher', BOOK_REVIEWS[book_key]['publisher'])
+        BOOK_REVIEWS[book_key]['isbn'] = request.form.get('isbn', BOOK_REVIEWS[book_key]['isbn'])
+        BOOK_REVIEWS[book_key]['recommendation'] = request.form.get('recommendation', BOOK_REVIEWS[book_key]['recommendation'])
+        BOOK_REVIEWS[book_key]['audience'] = request.form.get('audience', BOOK_REVIEWS[book_key]['audience'])
+        
+        # Update categories (comma-separated)
+        categories_str = request.form.get('categories', '')
+        if categories_str:
+            BOOK_REVIEWS[book_key]['categories'] = [cat.strip() for cat in categories_str.split(',')]
+        
+        # Update key features (one per line)
+        features_str = request.form.get('key_features', '')
+        if features_str:
+            BOOK_REVIEWS[book_key]['key_features'] = [feat.strip() for feat in features_str.split('\n') if feat.strip()]
+        
+        # Update highlights (one per line)
+        highlights_str = request.form.get('highlights', '')
+        if highlights_str:
+            BOOK_REVIEWS[book_key]['highlights'] = [high.strip() for high in highlights_str.split('\n') if high.strip()]
+        
+        # Update cover images (comma-separated Drive IDs)
+        images_str = request.form.get('cover_images', '')
+        if images_str:
+            BOOK_REVIEWS[book_key]['cover_images'] = [img.strip() for img in images_str.split(',') if img.strip()]
+        
+        return jsonify({'success': True, 'message': 'Review updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
