@@ -1223,28 +1223,91 @@
                 border-radius: 10px;
             `;
             
+            // Create navigation controls container
+            const navControls = document.createElement('div');
+            navControls.style.cssText = `
+                position: absolute;
+                top: -50px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 20px;
+            `;
+            
+            // Movie title
+            const movieTitle = document.createElement('div');
+            movieTitle.textContent = movie.title;
+            movieTitle.style.cssText = `
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            `;
+            
+            // Control buttons container
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = `
+                display: flex;
+                gap: 10px;
+            `;
+            
+            // Back to movies button
+            const backBtn = document.createElement('button');
+            backBtn.innerHTML = '<i data-feather="arrow-left"></i> Back to Movies';
+            backBtn.style.cssText = `
+                background: rgba(142, 68, 173, 0.9);
+                color: white;
+                border: none;
+                border-radius: 20px;
+                padding: 8px 15px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 14px;
+                transition: all 0.3s ease;
+            `;
+            backBtn.onmouseover = () => backBtn.style.background = 'rgba(142, 68, 173, 1)';
+            backBtn.onmouseout = () => backBtn.style.background = 'rgba(142, 68, 173, 0.9)';
+            backBtn.onclick = () => {
+                document.body.removeChild(overlay);
+                // Scroll back to movies section
+                document.querySelector('.movies-grid, .container .row').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            };
+            
+            // Close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<i data-feather="x"></i>';
             closeBtn.style.cssText = `
-                position: absolute;
-                top: -40px;
-                right: 0;
                 background: rgba(255,255,255,0.8);
                 border: none;
                 border-radius: 50%;
-                width: 30px;
-                height: 30px;
+                width: 35px;
+                height: 35px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                transition: all 0.3s ease;
             `;
+            closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,1)';
+            closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.8)';
             closeBtn.onclick = () => {
                 document.body.removeChild(overlay);
             };
             
+            buttonContainer.appendChild(backBtn);
+            buttonContainer.appendChild(closeBtn);
+            navControls.appendChild(movieTitle);
+            navControls.appendChild(buttonContainer);
+            
             videoContainer.appendChild(iframe);
-            videoContainer.appendChild(closeBtn);
+            videoContainer.appendChild(navControls);
             overlay.appendChild(videoContainer);
             document.body.appendChild(overlay);
             
