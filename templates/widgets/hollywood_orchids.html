@@ -835,6 +835,11 @@
                         <div class="movie-meta">
                             <span class="rating">⭐ {{ movie.imdb_rating }}</span>
                             <div>
+                                <button class="btn btn-sm btn-outline-warning me-2" 
+                                        onclick="reportMovieBug('{{ movie_key }}', '{{ movie.title }}')"
+                                        title="Report issue with this movie">
+                                    🐛 Report
+                                </button>
                                 <button class="expand-btn me-2" onclick="expandToFloating('{{ movie_key }}')">
                                     <i data-feather="external-link" style="width: 16px; height: 16px;"></i>
                                     Float Player
@@ -983,6 +988,39 @@
 
     <script>
         let currentFloatingMovie = null;
+        
+        // Bug reporting function for movies
+        function reportMovieBug(movieKey, movieTitle) {
+            const issueDescription = prompt(`What's wrong with "${movieTitle}"?\n\nPlease describe the issue (e.g., video won't play, broken link, image not loading):`);
+            if (!issueDescription) return;
+            
+            const email = prompt('Email (optional, for follow-up):');
+            
+            fetch('/api/report-bug', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    item_type: 'movie',
+                    item_id: movieKey,
+                    item_name: movieTitle,
+                    issue_type: 'other',
+                    description: issueDescription,
+                    user_email: email || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Bug report submitted! Our AI agent will fix this immediately.');
+                } else {
+                    alert('❌ Error submitting report. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Bug report error:', error);
+                alert('❌ Network error. Please try again.');
+            });
+        }
         let isDragging = false;
         let currentX = 0;
         let currentY = 0;
