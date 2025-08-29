@@ -146,6 +146,61 @@
             transform: scale(1.1);
             background: rgba(142, 68, 173, 1);
         }
+
+        .video-choice-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .choice-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.9);
+            color: #8e44ad;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .choice-btn:hover {
+            background: rgba(255,255,255,1);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .trailer-btn {
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+        }
+
+        .trailer-btn:hover {
+            background: rgba(46, 204, 113, 1);
+        }
+
+        .movie-btn {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+        }
+
+        .movie-btn:hover {
+            background: rgba(231, 76, 60, 1);
+        }
+
+        .choice-btn i {
+            width: 18px;
+            height: 18px;
+        }
         
         .movie-content {
             padding: 1.5rem;
@@ -636,12 +691,20 @@
                     {% else %}
                     <div class="video-container">
                         <iframe class="video-frame d-none" 
-                                data-src="{{ movie.youtube_url }}" 
+                                data-trailer="{{ movie.trailer_url or movie.youtube_url }}" 
+                                data-fullmovie="{{ movie.full_movie_url or movie.youtube_url }}"
                                 allowfullscreen>
                         </iframe>
-                        <div class="video-overlay" onclick="loadVideo(this, '{{ movie.youtube_url }}')">
-                            <div class="play-btn">
-                                <i data-feather="play"></i>
+                        <div class="video-overlay">
+                            <div class="video-choice-buttons">
+                                <button class="choice-btn trailer-btn" onclick="loadVideo(this, '{{ movie.trailer_url or movie.youtube_url }}', 'trailer')">
+                                    <i data-feather="play-circle"></i>
+                                    <span>Watch Trailer</span>
+                                </button>
+                                <button class="choice-btn movie-btn" onclick="loadVideo(this, '{{ movie.full_movie_url or movie.youtube_url }}', 'full')">
+                                    <i data-feather="film"></i>
+                                    <span>Watch Full Movie</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -947,16 +1010,40 @@
             initializeDragging();
         });
 
-        function loadVideo(overlay, videoUrl) {
-            const container = overlay.parentElement;
+        function loadVideo(button, videoUrl, videoType) {
+            const container = button.closest('.video-container');
             const iframe = container.querySelector('.video-frame');
+            const overlay = container.querySelector('.video-overlay');
             
             // Load video
             iframe.src = videoUrl;
             iframe.classList.remove('d-none');
             overlay.style.display = 'none';
             
-            console.log('🎥 Video loaded:', videoUrl);
+            // Add a small indicator of what's playing
+            const indicator = document.createElement('div');
+            indicator.innerHTML = videoType === 'trailer' ? '🎬 Playing Trailer' : '🎭 Playing Full Movie';
+            indicator.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                z-index: 10;
+            `;
+            container.appendChild(indicator);
+            
+            // Remove indicator after 3 seconds
+            setTimeout(() => {
+                if (indicator && indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }, 3000);
+            
+            console.log(`🎥 ${videoType === 'trailer' ? 'Trailer' : 'Full Movie'} loaded:`, videoUrl);
         }
 
         function expandToFloating(movieKey) {
