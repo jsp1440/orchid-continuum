@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Share with Community - Five Cities Orchid Society</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .submit-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 30px 30px;
+        }
+        
+        .submit-form {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .content-type-option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .content-type-option:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.1);
+        }
+        
+        .content-type-option.selected {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+        
+        .content-type-option input[type="radio"] {
+            margin-right: 1rem;
+            transform: scale(1.2);
+        }
+        
+        .review-notice {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .guidelines-reminder {
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #3498db;
+            color: white;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(39, 174, 96, 0.3);
+            color: white;
+        }
+        
+        .guideline-item {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        
+        .char-counter {
+            text-align: right;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
+        
+        .orchid-checkbox {
+            display: flex;
+            align-items: center;
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .orchid-checkbox input[type="checkbox"] {
+            margin-right: 1rem;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <section class="submit-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-3">
+                        📝 Share with Our Community
+                    </h1>
+                    <p class="lead mb-0">
+                        Submit content for review. All posts are carefully reviewed before publication to maintain our supportive community environment.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div style="font-size: 6rem; opacity: 0.3;">
+                        🌺📝
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <!-- Review Notice -->
+        <div class="review-notice">
+            <h5 class="mb-2">🛡️ Content Review Process</h5>
+            <p class="mb-0">All submissions are reviewed by our team before being published. This ensures a safe, supportive environment for all members. You'll be notified once your content is approved!</p>
+        </div>
+
+        <!-- Submit Form -->
+        <form id="submitForm" class="submit-form">
+            <!-- Content Type -->
+            <h4 class="mb-3">📋 What would you like to share?</h4>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="content-type-option" onclick="selectContentType('comment')">
+                        <input type="radio" name="content_type" value="comment" id="comment" checked>
+                        <label for="comment" class="w-100">
+                            <i data-feather="message-circle" class="me-2"></i>
+                            <strong>Comment or Question</strong><br>
+                            <small>Share thoughts, ask questions, or start discussions</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="content-type-option" onclick="selectContentType('experience')">
+                        <input type="radio" name="content_type" value="experience" id="experience">
+                        <label for="experience" class="w-100">
+                            <i data-feather="star" class="me-2"></i>
+                            <strong>Growing Experience</strong><br>
+                            <small>Share your orchid growing successes or challenges</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="content-type-option" onclick="selectContentType('tip')">
+                        <input type="radio" name="content_type" value="tip" id="tip">
+                        <label for="tip" class="w-100">
+                            <i data-feather="lightbulb" class="me-2"></i>
+                            <strong>Care Tip</strong><br>
+                            <small>Share helpful advice or techniques with others</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div class="mb-4">
+                <label class="form-label">Title (Optional)</label>
+                <input type="text" name="title" class="form-control" 
+                       placeholder="Give your post a title..." maxlength="100">
+                <div class="char-counter">
+                    <span id="titleCounter">0</span>/100 characters
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="mb-4">
+                <label class="form-label">Your Content <span class="text-danger">*</span></label>
+                <textarea name="content" class="form-control" rows="8" required
+                          placeholder="Share your thoughts, experiences, or questions with our community..."></textarea>
+                <div class="char-counter">
+                    <span id="contentCounter">0</span> characters
+                </div>
+            </div>
+
+            <!-- Orchid Related -->
+            <div class="orchid-checkbox">
+                <input type="checkbox" name="orchid_related" id="orchid_related" checked>
+                <label for="orchid_related">
+                    <strong>🌺 This content is orchid-related</strong><br>
+                    <small class="text-muted">Check this box if your post is about orchids, growing, or botanical topics</small>
+                </label>
+            </div>
+
+            <!-- Guidelines Reminder -->
+            <div class="guidelines-reminder">
+                <h5 class="mb-3">📜 Community Guidelines Reminder</h5>
+                <p class="mb-3">Please ensure your content follows our community standards:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {% for principle in guidelines.principles[:3] %}
+                        <div class="guideline-item">
+                            <i data-feather="check-circle" class="text-success me-2"></i>
+                            {{ principle }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        {% for principle in guidelines.principles[3:] %}
+                        <div class="guideline-item">
+                            <i data-feather="check-circle" class="text-success me-2"></i>
+                            {{ principle }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <p class="mt-3 mb-0 text-center">
+                    <small><em>Our review team ensures all content creates a positive, supportive environment for everyone.</em></small>
+                </p>
+            </div>
+
+            <!-- Submit -->
+            <div class="text-center">
+                <button type="submit" class="btn-submit">
+                    <i data-feather="send" class="me-2"></i>
+                    Submit for Review
+                </button>
+            </div>
+        </form>
+
+        <!-- Navigation -->
+        <div class="text-center mb-4">
+            <a href="/member-privacy/approved-content" class="btn btn-outline-light me-3">
+                <i data-feather="eye" class="me-2"></i>
+                View Community Posts
+            </a>
+            <a href="/member-privacy/privacy-settings" class="btn btn-outline-light me-3">
+                <i data-feather="settings" class="me-2"></i>
+                Privacy Settings
+            </a>
+            <a href="/" class="btn btn-outline-light">
+                <i data-feather="arrow-left" class="me-2"></i>
+                Back to Main Site
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+        
+        function selectContentType(type) {
+            // Remove selected class from all options
+            document.querySelectorAll('.content-type-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            document.querySelector(`[onclick="selectContentType('${type}')"]`).classList.add('selected');
+            
+            // Check the radio button
+            document.getElementById(type).checked = true;
+        }
+        
+        // Initialize first option as selected
+        document.addEventListener('DOMContentLoaded', function() {
+            selectContentType('comment');
+        });
+        
+        // Character counters
+        document.querySelector('[name="title"]').addEventListener('input', function() {
+            document.getElementById('titleCounter').textContent = this.value.length;
+        });
+        
+        document.querySelector('[name="content"]').addEventListener('input', function() {
+            document.getElementById('contentCounter').textContent = this.value.length;
+        });
+        
+        // Form submission
+        document.getElementById('submitForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = document.querySelector('.btn-submit');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Submitting...';
+            feather.replace();
+            
+            fetch('/member-privacy/api/submit-content', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}\n\nThank you for contributing to our community!`);
+                    this.reset();
+                    selectContentType('comment');
+                    document.getElementById('titleCounter').textContent = '0';
+                    document.getElementById('contentCounter').textContent = '0';
+                } else {
+                    alert('❌ Error: ' + data.error);
+                }
+                
+                submitBtn.innerHTML = originalText;
+                feather.replace();
+            })
+            .catch(error => {
+                console.error('Submit error:', error);
+                alert('❌ Network error. Please try again.');
+                submitBtn.innerHTML = originalText;
+                feather.replace();
+            });
+        });
+    </script>
+</body>
+</html>
