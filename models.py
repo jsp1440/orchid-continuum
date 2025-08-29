@@ -120,6 +120,36 @@ class UserBadge(db.Model):
     # Ensure unique badge per user
     __table_args__ = (db.UniqueConstraint('user_id', 'badge_type', 'badge_key'),)
 
+class MovieReview(db.Model):
+    """User reviews for Hollywood Orchids movies"""
+    __tablename__ = 'movie_reviews'
+    
+    id = db.Column(Integer, primary_key=True)
+    movie_key = db.Column(String(100), nullable=False)  # Key from HOLLYWOOD_ORCHIDS_MOVIES
+    reviewer_name = db.Column(String(100), nullable=False)
+    reviewer_email = db.Column(String(255), nullable=True)
+    rating = db.Column(Integer, nullable=False)  # 1-5 stars
+    orchid_symbolism_rating = db.Column(Integer, nullable=False)  # 1-5 stars for orchid usage
+    review_text = db.Column(Text, nullable=False)
+    favorite_orchid_scene = db.Column(Text, nullable=True)
+    would_recommend = db.Column(Boolean, default=True)
+    created_at = db.Column(DateTime, default=datetime.now)
+    is_approved = db.Column(Boolean, default=True)  # For moderation
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'movie_key': self.movie_key,
+            'reviewer_name': self.reviewer_name,
+            'rating': self.rating,
+            'orchid_symbolism_rating': self.orchid_symbolism_rating,
+            'review_text': self.review_text,
+            'favorite_orchid_scene': self.favorite_orchid_scene,
+            'would_recommend': self.would_recommend,
+            'created_at': self.created_at.strftime('%B %d, %Y'),
+            'is_approved': self.is_approved
+        }
+
 class OAuth(db.Model):
     """OAuth tokens for authentication"""
     id = db.Column(Integer, primary_key=True)
