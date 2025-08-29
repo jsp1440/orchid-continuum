@@ -303,6 +303,22 @@ HOLLYWOOD_ORCHIDS_MOVIES = {
         'contributed_by': 'FCOS Article Collection',
         'year': 2025,
         'genre': 'Documentary Collection'
+    },
+    'orchids_enduring_spell': {
+        'title': 'The Orchid\'s Enduring Spell',
+        'director': 'Article Conclusion',
+        'stars': 'Hollywood\'s Most Mysterious Flower',
+        'description': 'Across nearly a century of storytelling, orchids have bloomed onscreen not merely as beautiful props but as living metaphors: of beauty\'s dangers, of the fragility of innocence, of the consuming fires of obsession, and of the delicate line between life and death.',
+        'orchid_focus': 'Cinematic Legacy and Eternal Mystery',
+        'poster_drive_id': '1zwjb9J0ub-cBmlamZhyO80QqDF_9lWxQ',
+        'youtube_url': 'https://www.youtube.com/embed/videoseries?list=PLxKnx4VQJ8HQECYPt1qmWJvDXhCkkb1eA',
+        'imdb_rating': 'Timeless',
+        'orchid_significance': 'Their rare beauty reminds us of the impermanence of everything we love. Their hidden complexity mirrors the labyrinths of human hearts. Their ghostly allure hints that not all that is beautiful is safe — and not all that is safe is truly alive.',
+        'scientific_accuracy': 'Poetic - captures the eternal mystique of orchids in cinema',
+        'contributed_by': 'FCOS Article - Final Reflection',
+        'year': 2025,
+        'genre': 'Article Conclusion',
+        'is_article_conclusion': True
     }
 }
 
