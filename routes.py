@@ -4568,6 +4568,10 @@ app.register_blueprint(bug_report_bp)
 from orchid_book_club import orchid_book_club_bp
 app.register_blueprint(orchid_book_club_bp, url_prefix='/book-club')
 
+# Register Privacy-Focused Member System
+from member_privacy_system import member_privacy_bp
+app.register_blueprint(member_privacy_bp, url_prefix='/member-privacy')
+
 # Bulk Orchid Analysis System
 from bulk_orchid_analyzer import bulk_analyzer
 app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
