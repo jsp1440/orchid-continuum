@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
-                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration)
+                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration, BugReport)
 from image_recovery_system import get_image_with_recovery, get_image_recovery_stats
 from photo_failsafe_system import get_photos_guaranteed
 from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
@@ -47,6 +47,7 @@ from database_backup_system import create_database_backups, get_backup_orchids
 from admin_control_center import register_admin_control_center
 from automated_repair_system import repair_system
 from eol_integration import EOLIntegrator
+from bug_report_system import bug_report_bp
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
@@ -4559,6 +4560,9 @@ app.register_blueprint(writing_lab, url_prefix='/research-lab')
 # Greek Mythology Orchids Widget
 from greek_mythology_orchids import mythology_orchids
 app.register_blueprint(mythology_orchids, url_prefix='/widgets/mythology-orchids')
+
+# Register Bug Report System for Beta Testing
+app.register_blueprint(bug_report_bp)
 
 # Bulk Orchid Analysis System
 from bulk_orchid_analyzer import bulk_analyzer

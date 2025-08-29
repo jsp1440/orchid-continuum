@@ -7,6 +7,35 @@ import secrets
 import enum
 import json
 
+# Bug Report System for Beta Testing
+class BugReport(db.Model):
+    """Bug reports from beta testers for AI agent immediate fixing"""
+    __tablename__ = 'bug_reports'
+    
+    id = db.Column(Integer, primary_key=True)
+    item_type = db.Column(String(50), nullable=False)  # 'movie', 'widget', 'photo', 'general'
+    item_id = db.Column(String(100), nullable=False)   # specific ID of the broken item
+    item_name = db.Column(String(200), nullable=False) # human-readable name
+    issue_type = db.Column(String(50), nullable=False) # 'broken_link', 'image_not_loading', 'widget_crash', 'other'
+    description = db.Column(Text, nullable=False)     # detailed description from user
+    user_email = db.Column(String(120), nullable=True) # optional email for follow-up
+    status = db.Column(String(20), default='open')    # 'open', 'in_progress', 'fixed', 'closed'
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    fixed_at = db.Column(DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'item_type': self.item_type,
+            'item_id': self.item_id,
+            'item_name': self.item_name,
+            'issue_type': self.issue_type,
+            'description': self.description,
+            'status': self.status,
+            'created_at': self.created_at.isoformat(),
+            'fixed_at': self.fixed_at.isoformat() if self.fixed_at else None
+        }
+
 # Gaming and User Management Models - Using unified User model below
 
 class MahjongGame(db.Model):
