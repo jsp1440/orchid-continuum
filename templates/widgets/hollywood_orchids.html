@@ -1081,14 +1081,24 @@
         });
 
         function loadVideo(button, videoUrl, videoType) {
+            console.log(`🎬 Loading ${videoType} video:`, videoUrl);
+            
+            if (!videoUrl || videoUrl === '' || videoUrl === 'undefined') {
+                console.error(`❌ Video URL missing for ${videoType}:`, videoUrl);
+                alert(`Sorry, the ${videoType} is not available yet.`);
+                return;
+            }
+            
             const container = button.closest('.video-container');
             const iframe = container.querySelector('.video-frame');
             const overlay = container.querySelector('.video-overlay');
             
             // Load video
-            iframe.src = videoUrl;
+            iframe.src = videoUrl + '?autoplay=1';
             iframe.classList.remove('d-none');
             overlay.style.display = 'none';
+            
+            console.log(`✅ Successfully loaded ${videoType}: ${videoUrl}`);
             
             // Add a small indicator of what's playing
             const indicator = document.createElement('div');
@@ -1128,7 +1138,7 @@
             
             // Set content
             floatingTitle.textContent = movie.title;
-            floatingVideo.src = movie.youtube_url + '?autoplay=1';
+            floatingVideo.src = (movie.trailer_url || movie.full_movie_url || movie.youtube_url) + '?autoplay=1';
             
             // Show floating player
             floatingPlayer.classList.add('active');
@@ -1169,7 +1179,7 @@
             `;
             
             const iframe = document.createElement('iframe');
-            iframe.src = movie.youtube_url + '?autoplay=1';
+            iframe.src = (movie.trailer_url || movie.full_movie_url || movie.youtube_url) + '?autoplay=1';
             iframe.style.cssText = `
                 width: 100%;
                 height: 100%;
