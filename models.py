@@ -150,6 +150,19 @@ class MovieReview(db.Model):
             'is_approved': self.is_approved
         }
 
+class MovieVote(db.Model):
+    """Quick Phalaenopsis voting for Hollywood Orchids movies"""
+    __tablename__ = 'movie_votes'
+    
+    id = db.Column(Integer, primary_key=True)
+    movie_key = db.Column(String(100), nullable=False)
+    phalaenopsis_rating = db.Column(Integer, nullable=False)  # 1-5 Phalaenopsis flowers
+    voter_ip = db.Column(String(45), nullable=True)  # For basic duplicate prevention
+    voted_at = db.Column(DateTime, default=datetime.now)
+    
+    # Simple index for faster queries
+    __table_args__ = (db.Index('idx_movie_votes', 'movie_key', 'phalaenopsis_rating'),)
+
 class OAuth(db.Model):
     """OAuth tokens for authentication"""
     id = db.Column(Integer, primary_key=True)

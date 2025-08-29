@@ -65,8 +65,9 @@
         .movie-poster {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             display: block;
+            background: #000;
         }
         
         .poster-overlay {
@@ -454,6 +455,95 @@
             gap: 0.3rem;
         }
         
+        /* Phalaenopsis Voting System */
+        .phalaenopsis-voting {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.1), rgba(142, 68, 173, 0.1));
+            border: 1px solid rgba(155, 89, 182, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .phalaenopsis-title {
+            font-weight: bold;
+            color: #9b59b6;
+            margin-bottom: 0.5rem;
+            font-size: 0.9em;
+        }
+        
+        .phalaenopsis-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.3rem;
+            margin: 0.5rem 0;
+        }
+        
+        .phalaenopsis-btn {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        
+        .phalaenopsis-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(155, 89, 182, 0.6));
+        }
+        
+        .phalaenopsis-btn.selected {
+            opacity: 1;
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 10px rgba(155, 89, 182, 0.8));
+        }
+        
+        .vote-stats {
+            font-size: 0.8em;
+            color: #bbb;
+            margin-top: 0.5rem;
+        }
+        
+        .vote-average {
+            color: #9b59b6;
+            font-weight: bold;
+        }
+        
+        .quick-vote-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-vote-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(155, 89, 182, 0.4);
+        }
+        
+        .vote-distribution {
+            display: flex;
+            justify-content: center;
+            gap: 0.2rem;
+            margin-top: 0.3rem;
+            font-size: 0.7em;
+        }
+        
+        .vote-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.7;
+        }
+        
         @media (max-width: 768px) {
             .floating-player {
                 width: 90vw;
@@ -587,6 +677,24 @@
                             </small>
                         </div>
                         
+                        <!-- Phalaenopsis Voting Section -->
+                        <div class="phalaenopsis-voting">
+                            <div class="phalaenopsis-title">Rate with Phalaenopsis 🌺</div>
+                            <div class="phalaenopsis-buttons" data-movie="{{ movie_key }}">
+                                <button class="phalaenopsis-btn" data-rating="1" onclick="selectPhalaenopsis('{{ movie_key }}', 1)">🌺</button>
+                                <button class="phalaenopsis-btn" data-rating="2" onclick="selectPhalaenopsis('{{ movie_key }}', 2)">🌺</button>
+                                <button class="phalaenopsis-btn" data-rating="3" onclick="selectPhalaenopsis('{{ movie_key }}', 3)">🌺</button>
+                                <button class="phalaenopsis-btn" data-rating="4" onclick="selectPhalaenopsis('{{ movie_key }}', 4)">🌺</button>
+                                <button class="phalaenopsis-btn" data-rating="5" onclick="selectPhalaenopsis('{{ movie_key }}', 5)">🌺</button>
+                            </div>
+                            <button class="quick-vote-btn" id="vote-btn-{{ movie_key }}" onclick="submitPhalaenopsisVote('{{ movie_key }}')" style="display: none;">
+                                Cast Vote
+                            </button>
+                            <div class="vote-stats" id="vote-stats-{{ movie_key }}">
+                                <span class="vote-average">Loading votes...</span>
+                            </div>
+                        </div>
+                        
                         <!-- Review Section -->
                         <div class="review-section">
                             <button class="review-toggle" onclick="toggleReviewForm('{{ movie_key }}')">
@@ -705,10 +813,128 @@
         let initialX = 0;
         let initialY = 0;
 
+        // Phalaenopsis Voting System
+        let selectedRatings = {};
+
+        function selectPhalaenopsis(movieKey, rating) {
+            selectedRatings[movieKey] = rating;
+            
+            // Update visual selection
+            const buttons = document.querySelectorAll(`[data-movie="${movieKey}"] .phalaenopsis-btn`);
+            buttons.forEach((btn, index) => {
+                if (index < rating) {
+                    btn.classList.add('selected');
+                    btn.style.opacity = '1';
+                } else {
+                    btn.classList.remove('selected');
+                    btn.style.opacity = '0.4';
+                }
+            });
+            
+            // Show vote button
+            document.getElementById(`vote-btn-${movieKey}`).style.display = 'block';
+        }
+
+        function submitPhalaenopsisVote(movieKey) {
+            const rating = selectedRatings[movieKey];
+            if (!rating) return;
+            
+            const voteBtn = document.getElementById(`vote-btn-${movieKey}`);
+            voteBtn.textContent = 'Voting...';
+            voteBtn.disabled = true;
+            
+            fetch('/widgets/hollywood-orchids/vote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    movie_key: movieKey,
+                    phalaenopsis_rating: rating
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update vote stats display
+                    updateVoteDisplay(movieKey, data.vote_stats);
+                    
+                    // Hide vote button and show thank you
+                    voteBtn.style.display = 'none';
+                    
+                    // Show thank you message
+                    showVoteThankYou(movieKey, rating);
+                } else {
+                    alert(data.error || 'Voting failed. Please try again.');
+                    voteBtn.textContent = 'Cast Vote';
+                    voteBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Vote error:', error);
+                alert('Voting failed. Please try again.');
+                voteBtn.textContent = 'Cast Vote';
+                voteBtn.disabled = false;
+            });
+        }
+
+        function showVoteThankYou(movieKey, rating) {
+            const statsDiv = document.getElementById(`vote-stats-${movieKey}`);
+            
+            statsDiv.innerHTML = `<span class="vote-average">Thank you for your ${rating}-Phalaenopsis vote! 🌺</span>`;
+            
+            // Restore original content after 3 seconds
+            setTimeout(() => {
+                loadVoteStats(movieKey);
+            }, 3000);
+        }
+
+        function updateVoteDisplay(movieKey, stats) {
+            const statsDiv = document.getElementById(`vote-stats-${movieKey}`);
+            
+            if (stats.total_votes === 0) {
+                statsDiv.innerHTML = '<span class="vote-average">No votes yet</span>';
+                return;
+            }
+            
+            // Create Phalaenopsis display for average
+            const avgFlowers = '🌺'.repeat(Math.round(stats.average_rating));
+            
+            statsDiv.innerHTML = `
+                <div class="vote-average">${avgFlowers} ${stats.average_rating}/5</div>
+                <div style="color: #888; font-size: 0.7em;">${stats.total_votes} votes</div>
+            `;
+        }
+
+        function loadVoteStats(movieKey) {
+            fetch(`/widgets/hollywood-orchids/api/votes/${movieKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.vote_stats) {
+                        updateVoteDisplay(movieKey, data.vote_stats);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading vote stats:', error);
+                    const statsDiv = document.getElementById(`vote-stats-${movieKey}`);
+                    statsDiv.innerHTML = '<span class="vote-average">Vote stats unavailable</span>';
+                });
+        }
+
+        // Load all vote statistics on page load
+        function loadAllVoteStats() {
+            const movieCards = document.querySelectorAll('[data-movie]');
+            movieCards.forEach(card => {
+                const movieKey = card.getAttribute('data-movie');
+                loadVoteStats(movieKey);
+            });
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
             console.log('🎬 Hollywood Orchids initialized');
+            loadAllVoteStats();
             
             // Make floating player draggable
             initializeDragging();
