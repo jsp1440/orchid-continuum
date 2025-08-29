@@ -3,13 +3,14 @@ Hollywood Orchids Movie Widget
 Interactive widget for showcasing orchids in movies and TV shows with embedded video player
 """
 
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 import json
 import os
 import re
 from datetime import datetime
 from app import db
-from models import OrchidRecord
+from models import OrchidRecord, MovieReview
+from sqlalchemy import func
 
 hollywood_orchids = Blueprint('hollywood_orchids', __name__)
 
@@ -437,3 +438,84 @@ def movie_detail(movie_key):
         return redirect(url_for('hollywood_orchids.hollywood_widget_home'))
     
     return render_template('widgets/movie_detail.html', movie=movie, movie_key=movie_key)
+
+@hollywood_orchids.route('/submit-review', methods=['POST'])
+def submit_review():
+    """Handle movie review submissions"""
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        # Validate required fields
+        required_fields = ['movie_key', 'reviewer_name', 'rating', 'orchid_symbolism_rating', 'review_text']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        # Validate movie exists
+        if data['movie_key'] not in HOLLYWOOD_ORCHIDS_MOVIES:
+            return jsonify({'success': False, 'error': 'Invalid movie'}), 400
+        
+        # Validate ratings are within range
+        rating = int(data['rating'])
+        orchid_rating = int(data['orchid_symbolism_rating'])
+        if not (1 <= rating <= 5) or not (1 <= orchid_rating <= 5):
+            return jsonify({'success': False, 'error': 'Ratings must be between 1 and 5'}), 400
+        
+        # Create new review
+        review = MovieReview(
+            movie_key=data['movie_key'],
+            reviewer_name=data['reviewer_name'][:100],  # Limit name length
+            reviewer_email=data.get('reviewer_email', '')[:255] if data.get('reviewer_email') else None,
+            rating=rating,
+            orchid_symbolism_rating=orchid_rating,
+            review_text=data['review_text'][:2000],  # Limit review length
+            favorite_orchid_scene=data.get('favorite_orchid_scene', '')[:500] if data.get('favorite_orchid_scene') else None,
+            would_recommend=data.get('would_recommend', 'true').lower() == 'true'
+        )
+        
+        db.session.add(review)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Thank you for your review! It has been submitted successfully.',
+            'review': review.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Failed to submit review: {str(e)}'}), 500
+
+@hollywood_orchids.route('/api/reviews/<movie_key>')
+def get_movie_reviews(movie_key):
+    """Get all approved reviews for a specific movie"""
+    try:
+        if movie_key not in HOLLYWOOD_ORCHIDS_MOVIES:
+            return jsonify({'error': 'Movie not found'}), 404
+        
+        # Get reviews with statistics
+        reviews = MovieReview.query.filter_by(
+            movie_key=movie_key, 
+            is_approved=True
+        ).order_by(MovieReview.created_at.desc()).all()
+        
+        # Calculate statistics
+        stats = db.session.query(
+            func.count(MovieReview.id).label('review_count'),
+            func.avg(MovieReview.rating).label('avg_rating'),
+            func.avg(MovieReview.orchid_symbolism_rating).label('avg_orchid_rating')
+        ).filter(MovieReview.movie_key == movie_key, MovieReview.is_approved == True).first()
+        
+        return jsonify({
+            'movie_key': movie_key,
+            'movie_title': HOLLYWOOD_ORCHIDS_MOVIES[movie_key]['title'],
+            'reviews': [review.to_dict() for review in reviews],
+            'stats': {
+                'review_count': stats.review_count or 0,
+                'avg_rating': round(stats.avg_rating, 1) if stats.avg_rating else 0,
+                'avg_orchid_rating': round(stats.avg_orchid_rating, 1) if stats.avg_orchid_rating else 0
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch reviews: {str(e)}'}), 500
