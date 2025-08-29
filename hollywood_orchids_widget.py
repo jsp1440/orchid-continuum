@@ -131,6 +131,7 @@ HOLLYWOOD_ORCHIDS_MOVIES = {
         'stars': 'Walter Matthau, Mason Gamble, Joan Plowright',
         'description': 'A surprising orchid appearance in this family comedy, where Mr. Wilson\'s prize possession is a rare black orchid — lovingly cultivated and fiercely protected.',
         'orchid_focus': 'Mischief vs. Precious Beauty (Black Orchid subplot)',
+        'poster_drive_id': '170IkejyxZ1GG5MuY-Wou_k-3-fiPvRiL',
         'youtube_url': 'https://www.youtube.com/embed/7SxqyKh-9Uk',
         'imdb_rating': '5.7/10',
         'orchid_significance': 'The orchid\'s destruction offers a humorous metaphor for the clash between uncontrolled youth and fragile order',
