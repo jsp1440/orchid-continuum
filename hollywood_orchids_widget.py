@@ -124,7 +124,7 @@ HOLLYWOOD_ORCHIDS_MOVIES = {
         'orchid_focus': 'Sensuality, Forbidden Desire, and Emotional Exposure',
         'poster_drive_id': '1RwlPE-mqFt1qiX7sp_0BuNQdYTxKHPy_',
         'trailer_url': 'https://www.youtube.com/embed/Kc8IrlD9yw8',
-        'full_movie_url': '',
+        'full_movie_url': 'https://youtube.com/playlist?list=PL94CN0Zp8UOPtiQc4IJMSVisCpAwcWhL0&si=jIJHnb7bPl8pUj9s',
         'imdb_rating': '4.4/10',
         'orchid_significance': 'The flower\'s fragility underscores characters\' vulnerability as emotional barriers crumble',
         'scientific_accuracy': 'Symbolic - emphasizes orchids\' exotic and sensual cultural associations',
