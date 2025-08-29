@@ -169,7 +169,7 @@ HOLLYWOOD_ORCHIDS_MOVIES = {
         'stars': 'Nicolas Cage, Meryl Streep, Chris Cooper',
         'description': 'Perhaps no film captures orchid obsession more intimately than Adaptation. Based on Susan Orlean\'s The Orchid Thief, the movie explores the Ghost Orchid — elusive, rare, and nearly mythical.',
         'orchid_focus': 'Obsession, Artistic Frustration, and the Unattainable (Ghost Orchid)',
-        'poster_drive_id': '1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a6b',
+        'poster_drive_id': '1XbG3TMwiSKU7Y6DACOjsvEREIfqD52CB',
         'trailer_url': 'https://www.youtube.com/embed/uougMRq-MSo',
         'full_movie_url': '',
         'imdb_rating': '7.7/10',
