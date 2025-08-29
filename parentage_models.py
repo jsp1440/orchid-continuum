@@ -11,7 +11,7 @@ class GeneticAnalysis(db.Model):
     
     # Relationships
     orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
     
     # Analysis metadata
     analysis_type = db.Column(String(50), nullable=False)  # 'parentage', 'traits', 'breeding'
@@ -124,7 +124,7 @@ class BreedingPrediction(db.Model):
     
     # Prediction metadata
     prediction_date = db.Column(DateTime, default=datetime.utcnow)
-    user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
     
     # Cross information
     cross_name = db.Column(String(300))
