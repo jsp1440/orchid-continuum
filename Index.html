@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Orchid Continuum — Widgets</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <img class="logo" src="./assets/images/fcos-logo.png" alt="Five Cities Orchid Society logo" />
+    <h1>Orchid Continuum</h1>
+    <p class="tag">A digital Orchid Society lab — widgets & demos</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Orchid Gallery (Widget)</h2>
+      <div id="gallery"></div>
+    </section>
+
+    <section class="card">
+      <h2>Taxon Quick Lookup (Widget)</h2>
+      <form id="lookup">
+        <input id="q" type="search" placeholder="Genus species…" aria-label="Search taxon" />
+        <button type="submit">Search</button>
+      </form>
+      <pre id="result" class="codeblock">Try: Cattleya dowiana</pre>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    © <span id="y"></span> Five Cities Orchid Society • Orchid Continuum
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Gallery fed by JSON
+    fetch('./assets/data/gallery.json')
+      .then(r => r.json())
+      .then(items => {
+        const wrap = document.getElementById('gallery');
+        wrap.className = 'gallery';
+        wrap.innerHTML = items.map(it => `
+          <figure>
+            <img src="${it.src}" alt="${it.alt}">
+            <figcaption><em>${it.caption.sciname}</em><br>${it.caption.text}</figcaption>
+          </figure>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('gallery').innerHTML =
+          '<p class="muted">Add assets/data/gallery.json and some images to see this widget.</p>';
+      });
+
+    // Simple mock lookup (swap for your API later)
+    const MOCK = {
+      "cattleya dowiana": {
+        family: "Orchidaceae", genus: "Cattleya", species: "dowiana",
+        light: "bright filtered", temp: "intermediate-warm"
+      }
+    };
+    document.getElementById('lookup').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const k = document.getElementById('q').value.trim().toLowerCase();
+      const data = MOCK[k] || {error: "No local match (wire this to Continuum API)."};
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>
