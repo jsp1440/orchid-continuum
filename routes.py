@@ -1843,6 +1843,39 @@ def api_orchid_of_day():
         })
     return jsonify({'error': 'No orchid found'}), 404
 
+@app.route('/api/featured-orchids')
+def api_featured_orchids():
+    """API endpoint for featured orchids"""
+    try:
+        featured = OrchidRecord.query.filter(
+            OrchidRecord.is_featured == True,
+            OrchidRecord.google_drive_id.isnot(None)
+        ).limit(6).all()
+        
+        if not featured:
+            # Get recent high-quality orchids as fallback
+            featured = OrchidRecord.query.filter(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.ai_description.isnot(None)
+            ).order_by(OrchidRecord.created_at.desc()).limit(6).all()
+        
+        orchids = []
+        for orchid in featured:
+            orchids.append({
+                'id': orchid.id,
+                'name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'description': orchid.ai_description,
+                'image_url': orchid.image_url,
+                'genus': orchid.genus
+            })
+        
+        return jsonify({'orchids': orchids})
+        
+    except Exception as e:
+        logger.error(f"Featured orchids error: {e}")
+        return jsonify({'error': 'Failed to fetch featured orchids'}), 500
+
 @app.route('/api/orchids-map-data')
 def api_orchids_map_data():
     """API endpoint for orchid map data with filtering"""

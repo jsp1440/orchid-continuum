@@ -11,6 +11,7 @@ import os
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 import time
+from sqlalchemy import text
 
 class PhotoFailsafeSystem:
     """
@@ -31,7 +32,7 @@ class PhotoFailsafeSystem:
         """Emergency backup collection - ALWAYS available offline"""
         return [
             {
-                'id': 'backup_001',
+                'id': 1001,
                 'scientific_name': 'Phalaenopsis amabilis',
                 'common_name': 'Moth Orchid',
                 'description': 'Classic white moth orchid - symbol of elegance',
@@ -155,7 +156,7 @@ class PhotoFailsafeSystem:
             from app import db
             
             # Test database connection first
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             
             # Query with safety limits
             query = OrchidRecord.query.filter(
@@ -200,7 +201,7 @@ class PhotoFailsafeSystem:
         
         for i in range(count):
             backup_item = self.backup_images[i % backup_count].copy()
-            backup_item['id'] = f"backup_{i+1:03d}"
+            backup_item['id'] = f"emergency_{i+1}"
             backup_item['emergency_mode'] = True
             photos.append(backup_item)
         
