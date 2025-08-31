@@ -37,7 +37,7 @@ class DatabaseBackupSystem:
         
         self.essential_orchids = [
             {
-                'id': 'emergency_1',
+                'id': 1001,
                 'scientific_name': 'Phalaenopsis amabilis',
                 'common_name': 'Moon Orchid',
                 'description': 'White elegance with subtle beauty',
@@ -45,7 +45,7 @@ class DatabaseBackupSystem:
                 'emoji': '🌙'
             },
             {
-                'id': 'emergency_2', 
+                'id': 1002, 
                 'scientific_name': 'Cattleya labiata',
                 'common_name': 'Cattleya Orchid',
                 'description': 'Purple magnificence in full bloom',
@@ -53,7 +53,7 @@ class DatabaseBackupSystem:
                 'emoji': '💜'
             },
             {
-                'id': 'emergency_3',
+                'id': 1003,
                 'scientific_name': 'Dendrobium nobile',
                 'common_name': 'Noble Dendrobium',
                 'description': 'Delicate pink and white flowers',
@@ -61,7 +61,7 @@ class DatabaseBackupSystem:
                 'emoji': '🌸'
             },
             {
-                'id': 'emergency_4',
+                'id': 1004,
                 'scientific_name': 'Paphiopedilum insigne',
                 'common_name': 'Lady Slipper Orchid',
                 'description': 'Distinctive slipper-shaped pouch',
@@ -69,7 +69,7 @@ class DatabaseBackupSystem:
                 'emoji': '👠'
             },
             {
-                'id': 'emergency_5',
+                'id': 1005,
                 'scientific_name': 'Oncidium flexuosum',
                 'common_name': 'Dancing Lady Orchid',
                 'description': 'Yellow flowers that dance in the breeze',

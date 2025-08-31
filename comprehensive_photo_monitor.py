@@ -337,7 +337,7 @@ class PhotoDisplayGuarantee:
         """Ultimate emergency fallback - hardcoded photos"""
         return [
             {
-                'id': 'emergency_1',
+                'id': 1001,
                 'scientific_name': 'Phalaenopsis sp.',
                 'common_name': 'Moth Orchid',
                 'description': 'Emergency fallback - Beautiful white orchid',
