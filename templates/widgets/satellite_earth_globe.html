@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Satellite Earth Globe - Five Cities Orchid Society</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #000 0%, #001122 50%, #002244 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Space Background with Stars */
+        .space-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                        radial-gradient(circle at 60% 70%, rgba(255,255,255,0.15) 1px, transparent 1px),
+                        radial-gradient(circle at 90% 30%, rgba(255,255,255,0.08) 1px, transparent 1px),
+                        radial-gradient(circle at 30% 80%, rgba(255,255,255,0.12) 1px, transparent 1px);
+            background-size: 200px 200px, 300px 300px, 250px 250px, 400px 400px;
+            animation: twinkle 8s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Main Container */
+        .satellite-earth-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        /* Google Maps Earth View */
+        #satellite-map {
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            border: 4px solid rgba(135, 206, 235, 0.3);
+            box-shadow: 
+                0 0 50px rgba(135, 206, 235, 0.4),
+                inset 0 0 100px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            animation: earthRotate 60s linear infinite;
+        }
+
+        @keyframes earthRotate {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        /* Orchid Data Overlay Points */
+        .orchid-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ff6b9d 0%, #c44569 100%);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            animation: orchidPulse 2s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .orchid-marker:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.8);
+        }
+
+        @keyframes orchidPulse {
+            0%, 100% { 
+                box-shadow: 0 0 5px rgba(255, 107, 157, 0.5);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 20px rgba(255, 107, 157, 0.9);
+                transform: scale(1.1);
+            }
+        }
+
+        /* 35th Parallel Line */
+        .parallel-35-line {
+            position: absolute;
+            top: 45%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 215, 0, 0.7) 25%, 
+                rgba(255, 215, 0, 1) 50%, 
+                rgba(255, 215, 0, 0.7) 75%, 
+                transparent 100%);
+            z-index: 100;
+            animation: parallelGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes parallelGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Control Panel */
+        .space-controls {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 1px solid rgba(135, 206, 235, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+
+        .space-controls h3 {
+            margin: 0 0 15px 0;
+            color: #87ceeb;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border: 1px solid rgba(135, 206, 235, 0.4);
+            color: white;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #2a5298, #1e3c72);
+            box-shadow: 0 0 15px rgba(135, 206, 235, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Zoom Level Indicator */
+        .zoom-indicator {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 1px solid rgba(135, 206, 235, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Orchid Info Panel */
+        .orchid-info-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            background: rgba(0, 20, 40, 0.95);
+            border: 1px solid rgba(135, 206, 235, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            backdrop-filter: blur(10px);
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .orchid-info-panel h4 {
+            margin: 0 0 10px 0;
+            color: #ff6b9d;
+            font-size: 20px;
+        }
+
+        /* Earth Atmosphere Glow */
+        .earth-atmosphere {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, 
+                transparent 50%, 
+                rgba(135, 206, 235, 0.1) 60%, 
+                rgba(135, 206, 235, 0.3) 80%, 
+                transparent 100%);
+            animation: atmosphereGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes atmosphereGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #satellite-map {
+                width: 90vmin;
+                height: 90vmin;
+            }
+            
+            .space-controls {
+                top: 10px;
+                left: 10px;
+                max-width: 250px;
+                padding: 15px;
+            }
+            
+            .zoom-indicator {
+                top: 10px;
+                right: 10px;
+                padding: 10px;
+            }
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, #000, #001122);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 2000;
+        }
+
+        .loading-earth {
+            width: 100px;
+            height: 100px;
+            border: 4px solid rgba(135, 206, 235, 0.2);
+            border-top: 4px solid #87ceeb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="space-background"></div>
+    
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-earth"></div>
+        <h2 style="margin-top: 20px; color: #87ceeb;">🛰️ Loading Satellite Earth...</h2>
+        <p style="opacity: 0.8;">Connecting to orbital view</p>
+    </div>
+
+    <div class="satellite-earth-container">
+        <div class="earth-atmosphere"></div>
+        
+        <div id="satellite-map">
+            <div class="parallel-35-line"></div>
+            <!-- Orchid markers will be dynamically added here -->
+        </div>
+
+        <div class="space-controls">
+            <h3>🛰️ Satellite Controls</h3>
+            <button class="control-btn" onclick="zoomToSpace()">🌌 Space View</button>
+            <button class="control-btn" onclick="zoomToEarth()">🌍 Earth View</button>
+            <button class="control-btn" onclick="show35thParallel()">📍 35th Parallel</button>
+            <button class="control-btn" onclick="toggleOrchidData()">🌺 Orchid Data</button>
+            <button class="control-btn" onclick="randomOrchidLocation()">🎲 Random Orchid</button>
+            <br>
+            <button class="control-btn" onclick="toggleRotation()">⏸️ Pause Rotation</button>
+        </div>
+
+        <div class="zoom-indicator">
+            <div style="font-weight: bold; color: #87ceeb;">Altitude</div>
+            <div id="altitudeDisplay">🛰️ 35,786 km</div>
+        </div>
+
+        <div class="orchid-info-panel" id="orchidInfoPanel">
+            <h4 id="orchidTitle">Orchid Information</h4>
+            <div id="orchidDetails">Select an orchid marker to see details</div>
+            <button class="control-btn" onclick="closeOrchidInfo()" style="float: right; margin-top: 10px;">✕ Close</button>
+        </div>
+    </div>
+
+    <!-- Google Maps API -->
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?callback=initSatelliteEarth&libraries=geometry">
+    </script>
+
+    <script>
+        let map;
+        let isRotating = true;
+        let orchidMarkersVisible = true;
+        let currentZoomLevel = 3; // Space view
+        
+        // Real orchid data from 35th parallel regions
+        const orchidLocations = [
+            {
+                lat: 35.2271,
+                lng: -80.8414,
+                name: "Platanthera ciliaris",
+                common: "Orange Fringed Orchid",
+                region: "North Carolina, USA",
+                description: "Native terrestrial orchid found in southeastern US wetlands",
+                conservation: "Native"
+            },
+            {
+                lat: 35.1264,
+                lng: 33.4299,
+                name: "Ophrys apifera",
+                common: "Bee Orchid", 
+                region: "Cyprus",
+                description: "Remarkable orchid that mimics bees for pollination",
+                conservation: "Protected"
+            },
+            {
+                lat: 35.8617,
+                lng: -121.4944,
+                name: "Cypripedium californicum",
+                common: "California Lady Slipper",
+                region: "Northern California",
+                description: "Endangered North American native requiring cool, wet conditions",
+                conservation: "Rare"
+            },
+            {
+                lat: 35.6762,
+                lng: 139.6503,
+                name: "Neofinetia falcata",
+                common: "Samurai Orchid",
+                region: "Japan",
+                description: "Traditional Japanese orchid prized for its fragrance",
+                conservation: "Cultivated"
+            },
+            {
+                lat: 35.9078,
+                lng: 127.7669,
+                name: "Orchis mascula",
+                common: "Early Purple Orchid",
+                region: "South Korea",
+                description: "Hardy terrestrial orchid that blooms in early spring",
+                conservation: "Native"
+            }
+        ];
+
+        function initSatelliteEarth() {
+            // Initialize Google Maps with satellite view
+            map = new google.maps.Map(document.getElementById('satellite-map'), {
+                center: { lat: 35, lng: 0 }, // 35th parallel center
+                zoom: 3,
+                mapTypeId: 'satellite',
+                disableDefaultUI: true,
+                gestureHandling: 'greedy',
+                styles: [
+                    {
+                        featureType: "all",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
+
+            // Add orchid markers
+            addOrchidMarkers();
+            
+            // Start automatic rotation
+            startEarthRotation();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+            }, 2000);
+        }
+
+        function addOrchidMarkers() {
+            orchidLocations.forEach((orchid, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: orchid.lat, lng: orchid.lng },
+                    map: map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#ff6b9d',
+                        fillOpacity: 0.9,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2
+                    },
+                    title: orchid.name
+                });
+
+                marker.addListener('click', () => {
+                    showOrchidInfo(orchid);
+                    map.panTo(marker.getPosition());
+                });
+            });
+        }
+
+        function showOrchidInfo(orchid) {
+            document.getElementById('orchidTitle').textContent = orchid.common;
+            document.getElementById('orchidDetails').innerHTML = `
+                <strong>Scientific Name:</strong> <em>${orchid.name}</em><br>
+                <strong>Location:</strong> ${orchid.region}<br>
+                <strong>Conservation Status:</strong> ${orchid.conservation}<br>
+                <strong>Description:</strong> ${orchid.description}
+            `;
+            document.getElementById('orchidInfoPanel').style.display = 'block';
+        }
+
+        function closeOrchidInfo() {
+            document.getElementById('orchidInfoPanel').style.display = 'none';
+        }
+
+        function zoomToSpace() {
+            map.setZoom(2);
+            currentZoomLevel = 2;
+            updateAltitudeDisplay();
+        }
+
+        function zoomToEarth() {
+            map.setZoom(6);
+            currentZoomLevel = 6;
+            updateAltitudeDisplay();
+        }
+
+        function show35thParallel() {
+            map.setCenter({ lat: 35, lng: 0 });
+            map.setZoom(4);
+            currentZoomLevel = 4;
+            updateAltitudeDisplay();
+        }
+
+        function toggleOrchidData() {
+            orchidMarkersVisible = !orchidMarkersVisible;
+            // Toggle marker visibility would go here
+        }
+
+        function randomOrchidLocation() {
+            const randomOrchid = orchidLocations[Math.floor(Math.random() * orchidLocations.length)];
+            map.setCenter({ lat: randomOrchid.lat, lng: randomOrchid.lng });
+            map.setZoom(8);
+            showOrchidInfo(randomOrchid);
+            currentZoomLevel = 8;
+            updateAltitudeDisplay();
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const mapElement = document.getElementById('satellite-map');
+            if (isRotating) {
+                mapElement.style.animationPlayState = 'running';
+            } else {
+                mapElement.style.animationPlayState = 'paused';
+            }
+        }
+
+        function startEarthRotation() {
+            // Smooth map panning for rotation effect
+            let currentLng = 0;
+            setInterval(() => {
+                if (isRotating) {
+                    currentLng += 0.5;
+                    if (currentLng > 180) currentLng = -180;
+                    map.setCenter({ lat: 35, lng: currentLng });
+                }
+            }, 1000);
+        }
+
+        function updateAltitudeDisplay() {
+            const altitudes = {
+                2: "🛰️ 35,786 km",
+                3: "🌌 20,000 km", 
+                4: "✈️ 10,000 km",
+                6: "🏔️ 5,000 km",
+                8: "🌍 Ground Level"
+            };
+            document.getElementById('altitudeDisplay').textContent = altitudes[currentZoomLevel] || "🌍 Variable";
+        }
+
+        // Add some space atmosphere effects
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add shooting stars occasionally
+            setInterval(() => {
+                if (Math.random() < 0.1) { // 10% chance every 3 seconds
+                    createShootingStar();
+                }
+            }, 3000);
+        });
+
+        function createShootingStar() {
+            const star = document.createElement('div');
+            star.style.position = 'absolute';
+            star.style.width = '2px';
+            star.style.height = '2px';
+            star.style.background = 'white';
+            star.style.borderRadius = '50%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = '-10px';
+            star.style.boxShadow = '0 0 6px white';
+            star.style.animation = 'shootingStar 2s linear forwards';
+            
+            document.querySelector('.space-background').appendChild(star);
+            
+            setTimeout(() => {
+                star.remove();
+            }, 2000);
+        }
+
+        // Add shooting star animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shootingStar {
+                from {
+                    left: -10px;
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                to {
+                    left: calc(100% + 10px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -448,6 +448,16 @@ def parallel_35_globe():
         logger.error(f"Error loading 35th parallel globe: {e}")
         return render_template('error.html', error="Could not load 35th parallel globe system"), 500
 
+@app.route('/satellite-earth-globe')
+def satellite_earth_globe():
+    """🛰️ Satellite Earth Globe - Real Earth from Space with Orchid Data"""
+    try:
+        return render_template('widgets/satellite_earth_globe.html')
+        
+    except Exception as e:
+        logger.error(f"Error loading satellite Earth globe: {e}")
+        return render_template('error.html', error="Could not load satellite Earth globe"), 500
+
 def get_35th_parallel_orchids():
     """Get orchid species found along the 35th parallel"""
     try:
