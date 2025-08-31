@@ -82,7 +82,7 @@ def index():
     
     <div class="container">
         <div class="row mb-5">
-            <div class="col-md-6">
+            <div class="col-md-6 col-lg-4">
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title"><i data-feather="camera"></i> Our Collection</h5>
@@ -91,7 +91,16 @@ def index():
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><i data-feather="globe"></i> Satellite Earth</h5>
+                        <p class="card-text">🛰️ Experience Earth from space with real satellite imagery and orchid data overlays</p>
+                        <a href="/satellite-earth-globe" class="btn btn-primary">Explore Earth</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 col-lg-4">
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title"><i data-feather="users"></i> Community</h5>
