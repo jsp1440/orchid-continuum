@@ -201,13 +201,20 @@ class OrchidStatistics:
                 LIMIT 15
             """)).fetchall()
             
-            # Continental distribution (if available)
+            # Continental distribution (using region as fallback)
             continent_results = db.session.execute(text("""
                 SELECT 
-                    continent,
+                    CASE 
+                        WHEN region LIKE '%Europe%' THEN 'Europe'
+                        WHEN region LIKE '%Asia%' THEN 'Asia'
+                        WHEN region LIKE '%Africa%' THEN 'Africa'
+                        WHEN region LIKE '%America%' THEN 'Americas'
+                        WHEN region LIKE '%Australia%' THEN 'Oceania'
+                        ELSE region
+                    END as continent,
                     COUNT(*) as count
                 FROM orchid_record 
-                WHERE continent IS NOT NULL AND continent != ''
+                WHERE region IS NOT NULL AND region != ''
                 GROUP BY continent 
                 ORDER BY count DESC
             """)).fetchall()
