@@ -3,300 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌍 Earth from Space - Five Cities Orchid Society</title>
+    <title>🌍 3D Earth Globe - Orchid Distribution - Five Cities Orchid Society</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(ellipse at center, #0f1419 0%, #000000 100%);
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             position: relative;
         }
 
-        /* Starfield Background */
-        .starfield {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-        }
-
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 2s infinite ease-in-out;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        /* Main Earth Container */
-        .earth-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 500px;
-            height: 500px;
-            perspective: 1000px;
-        }
-
-        /* 3D Earth Sphere */
-        .earth-sphere {
-            width: 100%;
-            height: 100%;
+        #globe-container {
+            width: 100vw;
+            height: 100vh;
             position: relative;
-            transform-style: preserve-3d;
-            animation: earthRotation 60s linear infinite;
-            border-radius: 50%;
-            background: 
-                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                linear-gradient(180deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
-            box-shadow: 
-                0 0 100px rgba(135, 206, 235, 0.3),
-                inset -30px -30px 100px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
         }
 
-        @keyframes earthRotation {
-            from { transform: rotateY(0deg); }
-            to { transform: rotateY(360deg); }
-        }
-
-        /* Earth Surface Layer with Real Satellite Texture */
-        .earth-surface {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: 
-                radial-gradient(circle at 30% 40%, rgba(34, 139, 34, 0.8) 0%, transparent 60%),
-                radial-gradient(circle at 70% 30%, rgba(139, 69, 19, 0.6) 0%, transparent 50%),
-                radial-gradient(circle at 20% 70%, rgba(0, 100, 0, 0.7) 0%, transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(160, 82, 45, 0.5) 0%, transparent 30%),
-                linear-gradient(180deg, 
-                    #1e40af 0%,     /* Deep ocean blue */
-                    #2563eb 20%,    /* Ocean blue */
-                    #3b82f6 40%,    /* Lighter ocean */
-                    #2563eb 60%,    /* Back to ocean */
-                    #1e40af 80%,    /* Deep ocean */
-                    #1e3a8a 100%    /* Very deep ocean */
-                );
-            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-            animation: surfaceRotation 60s linear infinite;
-        }
-
-        @keyframes surfaceRotation {
-            from { transform: rotateZ(0deg); }
-            to { transform: rotateZ(360deg); }
-        }
-
-        /* Cloud Layer */
-        .cloud-layer {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: calc(100% + 20px);
-            height: calc(100% + 20px);
-            border-radius: 50%;
-            background: 
-                radial-gradient(ellipse at 25% 25%, rgba(255, 255, 255, 0.6) 0%, transparent 30%),
-                radial-gradient(ellipse at 75% 35%, rgba(255, 255, 255, 0.4) 0%, transparent 25%),
-                radial-gradient(ellipse at 45% 60%, rgba(255, 255, 255, 0.5) 0%, transparent 35%),
-                radial-gradient(ellipse at 15% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 20%),
-                radial-gradient(ellipse at 85% 75%, rgba(255, 255, 255, 0.4) 0%, transparent 28%);
-            opacity: 0.7;
-            animation: cloudRotation 120s linear infinite;
-        }
-
-        @keyframes cloudRotation {
-            from { transform: rotateZ(0deg); }
-            to { transform: rotateZ(360deg); }
-        }
-
-        /* Atmosphere Glow */
-        .atmosphere {
-            position: absolute;
-            top: -50px;
-            left: -50px;
-            width: calc(100% + 100px);
-            height: calc(100% + 100px);
-            border-radius: 50%;
-            background: radial-gradient(circle, transparent 70%, rgba(135, 206, 235, 0.6) 80%, transparent 100%);
-            animation: atmosphereGlow 8s ease-in-out infinite;
-        }
-
-        @keyframes atmosphereGlow {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
-
-        /* 35th Parallel Line */
-        .parallel-line {
-            position: absolute;
-            top: 45%;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 215, 0, 0.8) 20%, 
-                rgba(255, 215, 0, 1) 50%, 
-                rgba(255, 215, 0, 0.8) 80%, 
-                transparent 100%);
-            border-radius: 50px;
-            animation: parallelPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes parallelPulse {
-            0%, 100% { opacity: 0.7; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-            50% { opacity: 1; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-        }
-
-        /* Orchid Markers */
-        .orchid-marker {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: radial-gradient(circle, #ff1744 0%, #d50000 100%);
-            border: 2px solid rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            cursor: pointer;
-            animation: orchidPulse 2s ease-in-out infinite;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-
-        .orchid-marker:hover {
-            transform: translate(-50%, -50%) scale(1.5);
-            z-index: 20;
-        }
-
-        @keyframes orchidPulse {
-            0%, 100% { 
-                box-shadow: 0 0 10px rgba(255, 23, 68, 0.6);
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% { 
-                box-shadow: 0 0 25px rgba(255, 23, 68, 1);
-                transform: translate(-50%, -50%) scale(1.2);
-            }
-        }
-
-        /* Control Panel - Positioned at Bottom */
+        /* Control Panel - Bottom positioned */
         .control-panel {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 20, 40, 0.9);
+            background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(135, 206, 235, 0.3);
+            border: 1px solid rgba(100, 149, 237, 0.4);
             border-radius: 25px;
-            padding: 20px 30px;
+            padding: 15px 25px;
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             color: white;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
         }
 
         .control-btn {
             background: linear-gradient(45deg, #1e3c72, #2a5298);
-            border: 1px solid rgba(135, 206, 235, 0.4);
+            border: 1px solid rgba(100, 149, 237, 0.5);
             color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 18px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 14px;
+            font-size: 13px;
             white-space: nowrap;
         }
 
         .control-btn:hover {
             background: linear-gradient(45deg, #2a5298, #4fc3f7);
-            box-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.6);
             transform: translateY(-2px);
         }
 
-        /* Info Panel - Side Positioned */
+        .control-btn.active {
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            box-shadow: 0 0 20px rgba(79, 195, 247, 0.8);
+        }
+
+        /* Info Panel */
         .info-panel {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(0, 20, 40, 0.9);
+            background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(135, 206, 235, 0.3);
+            border: 1px solid rgba(100, 149, 237, 0.4);
             border-radius: 15px;
             padding: 20px;
             color: white;
-            max-width: 300px;
+            max-width: 320px;
             display: none;
-            animation: slideIn 0.5s ease;
+            animation: slideIn 0.4s ease;
+            z-index: 1000;
         }
 
         @keyframes slideIn {
-            from { 
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to { 
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         .info-panel h3 {
             margin: 0 0 15px 0;
-            color: #ff1744;
+            color: #4fc3f7;
             font-size: 18px;
         }
 
-        /* View Mode Indicator */
-        .view-indicator {
+        .info-panel .orchid-location {
+            background: rgba(79, 195, 247, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 3px solid #4fc3f7;
+        }
+
+        /* Statistics Panel */
+        .stats-panel {
             position: fixed;
             top: 20px;
             left: 20px;
-            background: rgba(0, 20, 40, 0.9);
+            background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(135, 206, 235, 0.3);
+            border: 1px solid rgba(100, 149, 237, 0.4);
             border-radius: 15px;
-            padding: 15px 20px;
+            padding: 20px;
             color: white;
-            text-align: center;
-            min-width: 180px;
+            z-index: 1000;
         }
 
-        .view-indicator h4 {
-            margin: 0 0 5px 0;
-            color: #87ceeb;
+        .stats-panel h4 {
+            margin: 0 0 15px 0;
+            color: #4fc3f7;
             font-size: 16px;
         }
 
-        /* Sun */
-        .sun {
-            position: fixed;
-            top: 100px;
-            right: 100px;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, #ffeb3b 0%, #ff9800 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 50px rgba(255, 235, 59, 0.8);
-            animation: sunGlow 4s ease-in-out infinite;
-        }
-
-        @keyframes sunGlow {
-            0%, 100% { box-shadow: 0 0 50px rgba(255, 235, 59, 0.8); }
-            50% { box-shadow: 0 0 80px rgba(255, 235, 59, 1); }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(100, 149, 237, 0.2);
         }
 
         /* Loading Screen */
@@ -306,20 +135,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(ellipse at center, #0f1419 0%, #000000 100%);
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            z-index: 1000;
+            z-index: 2000;
         }
 
-        .loading-earth {
-            width: 100px;
-            height: 100px;
-            border: 4px solid rgba(135, 206, 235, 0.2);
-            border-top: 4px solid #87ceeb;
+        .loading-globe {
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(79, 195, 247, 0.2);
+            border-top: 3px solid #4fc3f7;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
@@ -332,193 +161,459 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .earth-container {
-                width: 350px;
-                height: 350px;
-            }
-            
             .control-panel {
                 bottom: 10px;
-                padding: 15px 20px;
+                padding: 12px 18px;
                 flex-wrap: wrap;
                 justify-content: center;
                 max-width: 90vw;
             }
             
             .control-btn {
-                padding: 8px 15px;
+                padding: 6px 12px;
                 font-size: 12px;
             }
             
-            .info-panel {
-                top: 10px;
-                right: 10px;
-                max-width: 250px;
-            }
-            
-            .view-indicator {
-                top: 10px;
-                left: 10px;
-                padding: 10px 15px;
-                min-width: 140px;
+            .info-panel, .stats-panel {
+                max-width: 280px;
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="starfield" id="starfield"></div>
-    
     <div class="loading-screen" id="loadingScreen">
-        <div class="loading-earth"></div>
-        <h2 style="color: #87ceeb; margin: 0;">🛰️ Loading Earth from Space...</h2>
-        <p style="opacity: 0.8; margin: 10px 0 0 0;">Positioning orbital view</p>
+        <div class="loading-globe"></div>
+        <h2 style="color: #4fc3f7; margin: 0;">🌍 Loading 3D Earth Globe...</h2>
+        <p style="opacity: 0.8; margin: 10px 0 0 0;">Mapping orchid distributions worldwide</p>
     </div>
 
-    <div class="sun"></div>
+    <div id="globe-container"></div>
 
-    <div class="earth-container">
-        <div class="atmosphere"></div>
-        <div class="earth-sphere" id="earthSphere">
-            <div class="earth-surface"></div>
-            <div class="cloud-layer"></div>
-            <div class="parallel-line"></div>
-            
-            <!-- Orchid Markers positioned on the sphere -->
-            <div class="orchid-marker" style="top: 45%; left: 25%;" 
-                 onclick="showOrchidInfo('Platanthera ciliaris', 'Orange Fringed Orchid', 'North Carolina, USA', 'Native terrestrial orchid found in southeastern US wetlands')"></div>
-            <div class="orchid-marker" style="top: 44%; left: 55%;" 
-                 onclick="showOrchidInfo('Ophrys apifera', 'Bee Orchid', 'Cyprus', 'Remarkable orchid that mimics bees for pollination')"></div>
-            <div class="orchid-marker" style="top: 43%; left: 20%;" 
-                 onclick="showOrchidInfo('Cypripedium californicum', 'California Lady Slipper', 'Northern California', 'Endangered North American native requiring cool, wet conditions')"></div>
-            <div class="orchid-marker" style="top: 42%; left: 75%;" 
-                 onclick="showOrchidInfo('Neofinetia falcata', 'Samurai Orchid', 'Japan', 'Traditional Japanese orchid prized for its fragrance')"></div>
-            <div class="orchid-marker" style="top: 41%; left: 70%;" 
-                 onclick="showOrchidInfo('Orchis mascula', 'Early Purple Orchid', 'South Korea', 'Hardy terrestrial orchid that blooms in early spring')"></div>
+    <div class="stats-panel">
+        <h4>🌺 Orchid Distribution</h4>
+        <div class="stat-item">
+            <span>Total Species:</span>
+            <span id="totalSpecies">Loading...</span>
+        </div>
+        <div class="stat-item">
+            <span>Continents:</span>
+            <span id="continentCount">Loading...</span>
+        </div>
+        <div class="stat-item">
+            <span>Current View:</span>
+            <span id="currentView">Global</span>
         </div>
     </div>
 
-    <div class="view-indicator">
-        <h4>🛰️ Orbital View</h4>
-        <div id="altitudeDisplay">Altitude: 35,786 km</div>
-        <div id="speedDisplay">Speed: 11,000 km/h</div>
-    </div>
-
     <div class="control-panel">
-        <button class="control-btn" onclick="zoomToSpace()">🌌 Space View</button>
-        <button class="control-btn" onclick="zoomToEarth()">🌍 Close View</button>
-        <button class="control-btn" onclick="focus35thParallel()">📍 35th Parallel</button>
+        <button class="control-btn active" onclick="setGlobalView()">🌍 Global View</button>
+        <button class="control-btn" onclick="focusContinent('asia')">🏔️ Asia</button>
+        <button class="control-btn" onclick="focusContinent('americas')">🌎 Americas</button>
+        <button class="control-btn" onclick="focusContinent('europe')">🇪🇺 Europe</button>
         <button class="control-btn" onclick="toggleRotation()">⏸️ Pause</button>
-        <button class="control-btn" onclick="randomOrchid()">🌺 Random Orchid</button>
+        <button class="control-btn" onclick="toggleOrchidLabels()">🏷️ Labels</button>
     </div>
 
     <div class="info-panel" id="infoPanel">
-        <h3 id="orchidTitle">Orchid Information</h3>
+        <h3 id="orchidTitle">Orchid Distribution</h3>
         <div id="orchidDetails">Click an orchid marker to see details</div>
         <button class="control-btn" onclick="closeInfo()" style="margin-top: 15px; float: right;">✕ Close</button>
     </div>
 
     <script>
+        // Global variables
+        let scene, camera, renderer, earth, controls;
+        let orchidMarkers = [];
+        let orchidData = [];
         let isRotating = true;
-        let currentView = 'space';
-        let earthSphere = document.getElementById('earthSphere');
+        let labelsVisible = false;
+        let currentViewMode = 'global';
 
-        // Create starfield
-        function createStarfield() {
-            const starfield = document.getElementById('starfield');
-            for (let i = 0; i < 200; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
-                star.style.animationDelay = Math.random() * 2 + 's';
-                starfield.appendChild(star);
+        // Initialize Three.js scene
+        function initThreeJS() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('globe-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            // Create Earth sphere
+            createEarth();
+            
+            // Position camera
+            camera.position.set(0, 0, 4);
+            
+            // Load orchid data
+            loadOrchidData();
+        }
+
+        function createEarth() {
+            // Earth geometry
+            const geometry = new THREE.SphereGeometry(1, 64, 64);
+            
+            // Earth texture using procedural generation
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient for oceans
+            const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+            gradient.addColorStop(0, '#1e40af');
+            gradient.addColorStop(0.5, '#2563eb');
+            gradient.addColorStop(1, '#1e3a8a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1024, 512);
+            
+            // Add continents (simplified shapes)
+            ctx.fillStyle = '#228B22';
+            
+            // North America
+            ctx.beginPath();
+            ctx.ellipse(150, 150, 80, 60, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // South America
+            ctx.beginPath();
+            ctx.ellipse(200, 350, 40, 80, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Europe
+            ctx.beginPath();
+            ctx.ellipse(400, 120, 50, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Africa
+            ctx.beginPath();
+            ctx.ellipse(450, 280, 60, 100, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Asia
+            ctx.beginPath();
+            ctx.ellipse(650, 150, 120, 80, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Australia
+            ctx.beginPath();
+            ctx.ellipse(750, 380, 60, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const material = new THREE.MeshLambertMaterial({ 
+                map: texture,
+                transparent: false
+            });
+            
+            earth = new THREE.Mesh(geometry, material);
+            scene.add(earth);
+        }
+
+        async function loadOrchidData() {
+            try {
+                const response = await fetch('/api/recent-orchids');
+                orchidData = await response.json();
+                
+                console.log('Loaded orchid data:', orchidData);
+                
+                // Update statistics
+                document.getElementById('totalSpecies').textContent = orchidData.length;
+                
+                // Count unique continents
+                const continents = new Set();
+                orchidData.forEach(orchid => {
+                    if (orchid.decimal_latitude && orchid.decimal_longitude) {
+                        const continent = getContinent(orchid.decimal_latitude, orchid.decimal_longitude);
+                        continents.add(continent);
+                    }
+                });
+                document.getElementById('continentCount').textContent = continents.size;
+                
+                // Create orchid markers
+                createOrchidMarkers();
+                
+            } catch (error) {
+                console.error('Error loading orchid data:', error);
+                // Fallback to sample data
+                createSampleMarkers();
             }
         }
 
-        function showOrchidInfo(scientific, common, location, description) {
-            document.getElementById('orchidTitle').textContent = common;
-            document.getElementById('orchidDetails').innerHTML = `
-                <strong>Scientific Name:</strong> <em>${scientific}</em><br><br>
-                <strong>Location:</strong> ${location}<br><br>
-                <strong>Description:</strong> ${description}
-            `;
-            document.getElementById('infoPanel').style.display = 'block';
+        function createOrchidMarkers() {
+            orchidData.forEach((orchid, index) => {
+                if (orchid.decimal_latitude && orchid.decimal_longitude) {
+                    const lat = parseFloat(orchid.decimal_latitude);
+                    const lng = parseFloat(orchid.decimal_longitude);
+                    
+                    // Convert lat/lng to 3D coordinates on sphere
+                    const phi = (90 - lat) * (Math.PI / 180);
+                    const theta = (lng + 180) * (Math.PI / 180);
+                    
+                    const x = -1.02 * Math.sin(phi) * Math.cos(theta);
+                    const y = 1.02 * Math.cos(phi);
+                    const z = 1.02 * Math.sin(phi) * Math.sin(theta);
+                    
+                    // Create orchid marker
+                    const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+                    const markerMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xff1744,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    
+                    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                    marker.position.set(x, y, z);
+                    marker.userData = {
+                        orchid: orchid,
+                        originalScale: 1
+                    };
+                    
+                    scene.add(marker);
+                    orchidMarkers.push(marker);
+                    
+                    // Add pulsing animation
+                    animateMarker(marker, index * 0.1);
+                }
+            });
+        }
+
+        function createSampleMarkers() {
+            // Fallback sample data
+            const sampleData = [
+                { lat: 4.0, lng: -74.0, name: "Cattleya trianae", location: "Colombia" },
+                { lat: 1.0, lng: 104.0, name: "Phalaenopsis amabilis", location: "Singapore" },
+                { lat: 27.0, lng: 85.0, name: "Dendrobium nobile", location: "Nepal" },
+                { lat: 25.0, lng: 95.0, name: "Vanda coerulea", location: "Myanmar" }
+            ];
+            
+            sampleData.forEach((data, index) => {
+                const phi = (90 - data.lat) * (Math.PI / 180);
+                const theta = (data.lng + 180) * (Math.PI / 180);
+                
+                const x = -1.02 * Math.sin(phi) * Math.cos(theta);
+                const y = 1.02 * Math.cos(phi);
+                const z = 1.02 * Math.sin(phi) * Math.sin(theta);
+                
+                const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+                const markerMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xff1744,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(x, y, z);
+                marker.userData = {
+                    orchid: data,
+                    originalScale: 1
+                };
+                
+                scene.add(marker);
+                orchidMarkers.push(marker);
+                animateMarker(marker, index * 0.1);
+            });
+            
+            document.getElementById('totalSpecies').textContent = sampleData.length;
+            document.getElementById('continentCount').textContent = "4";
+        }
+
+        function animateMarker(marker, delay) {
+            let time = delay;
+            
+            function pulse() {
+                time += 0.05;
+                const scale = 1 + 0.3 * Math.sin(time * 2);
+                marker.scale.setScalar(scale);
+                requestAnimationFrame(pulse);
+            }
+            
+            pulse();
+        }
+
+        function getContinent(lat, lng) {
+            if (lat >= 35 && lat <= 75 && lng >= -30 && lng <= 40) return "Europe";
+            if (lat >= -35 && lat <= 37 && lng >= -20 && lng <= 55) return "Africa";
+            if (lat >= 10 && lat <= 70 && lng >= 40 && lng <= 180) return "Asia";
+            if (lat >= -50 && lat <= -10 && lng >= 110 && lng <= 180) return "Australia";
+            if (lat >= 15 && lat <= 70 && lng >= -170 && lng <= -30) return "North America";
+            if (lat >= -60 && lat <= 15 && lng >= -85 && lng <= -30) return "South America";
+            return "Other";
+        }
+
+        function setGlobalView() {
+            currentViewMode = 'global';
+            camera.position.set(0, 0, 4);
+            controls.target.set(0, 0, 0);
+            document.getElementById('currentView').textContent = 'Global';
+            updateActiveButton(0);
+        }
+
+        function focusContinent(continent) {
+            currentViewMode = continent;
+            
+            let target = { x: 0, y: 0, z: 0 };
+            let position = { x: 0, y: 0, z: 3 };
+            
+            switch(continent) {
+                case 'asia':
+                    target = { x: 0.3, y: 0.2, z: 0 };
+                    position = { x: 1, y: 0.5, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Asia';
+                    updateActiveButton(1);
+                    break;
+                case 'americas':
+                    target = { x: -0.3, y: 0, z: 0 };
+                    position = { x: -1, y: 0, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Americas';
+                    updateActiveButton(2);
+                    break;
+                case 'europe':
+                    target = { x: 0.1, y: 0.3, z: 0 };
+                    position = { x: 0.3, y: 0.8, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Europe';
+                    updateActiveButton(3);
+                    break;
+            }
+            
+            // Smooth camera transition
+            animateCamera(camera.position, position, controls.target, target);
+        }
+
+        function animateCamera(fromPos, toPos, fromTarget, toTarget) {
+            let progress = 0;
+            const duration = 1000; // 1 second
+            const startTime = Date.now();
+            
+            function animate() {
+                progress = (Date.now() - startTime) / duration;
+                progress = Math.min(progress, 1);
+                
+                // Smooth easing
+                const eased = progress * progress * (3 - 2 * progress);
+                
+                camera.position.lerp(new THREE.Vector3(toPos.x, toPos.y, toPos.z), eased);
+                controls.target.lerp(new THREE.Vector3(toTarget.x, toTarget.y, toTarget.z), eased);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            animate();
+        }
+
+        function updateActiveButton(activeIndex) {
+            const buttons = document.querySelectorAll('.control-btn');
+            buttons.forEach((btn, index) => {
+                if (index === activeIndex) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = event.target;
+            btn.textContent = isRotating ? '⏸️ Pause' : '▶️ Play';
+        }
+
+        function toggleOrchidLabels() {
+            labelsVisible = !labelsVisible;
+            const btn = event.target;
+            btn.textContent = labelsVisible ? '🏷️ Hide Labels' : '🏷️ Labels';
+            // Labels implementation would go here
         }
 
         function closeInfo() {
             document.getElementById('infoPanel').style.display = 'none';
         }
 
-        function zoomToSpace() {
-            currentView = 'space';
-            earthSphere.style.transform = 'scale(1)';
-            updateViewIndicator('🛰️ Orbital View', '35,786 km', '11,000 km/h');
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(orchidMarkers);
+
+            if (intersects.length > 0) {
+                const orchid = intersects[0].object.userData.orchid;
+                showOrchidInfo(orchid);
+            }
         }
 
-        function zoomToEarth() {
-            currentView = 'close';
-            earthSphere.style.transform = 'scale(1.5)';
-            updateViewIndicator('🌍 Close View', '400 km', '27,600 km/h');
-        }
-
-        function focus35thParallel() {
-            currentView = '35th';
-            earthSphere.style.transform = 'scale(1.2) rotateX(-10deg)';
-            updateViewIndicator('📍 35th Parallel', '1,000 km', '25,000 km/h');
-        }
-
-        function toggleRotation() {
-            isRotating = !isRotating;
-            const playState = isRotating ? 'running' : 'paused';
-            earthSphere.style.animationPlayState = playState;
+        function showOrchidInfo(orchid) {
+            const panel = document.getElementById('infoPanel');
+            document.getElementById('orchidTitle').textContent = orchid.display_name || orchid.scientific_name || orchid.name;
             
-            const surfaces = earthSphere.querySelectorAll('.earth-surface, .cloud-layer');
-            surfaces.forEach(surface => {
-                surface.style.animationPlayState = playState;
-            });
+            const details = `
+                <div class="orchid-location">
+                    <strong>Scientific Name:</strong> ${orchid.scientific_name || 'N/A'}<br>
+                    <strong>Location:</strong> ${orchid.decimal_latitude?.toFixed(2)}°, ${orchid.decimal_longitude?.toFixed(2)}°<br>
+                    <strong>Description:</strong> ${orchid.ai_description || orchid.location || 'Beautiful orchid specimen'}<br>
+                    <strong>Photographer:</strong> ${orchid.photographer || 'FCOS Collection'}
+                </div>
+            `;
             
-            // Update button text
-            event.target.textContent = isRotating ? '⏸️ Pause' : '▶️ Play';
+            document.getElementById('orchidDetails').innerHTML = details;
+            panel.style.display = 'block';
         }
 
-        function randomOrchid() {
-            const orchids = [
-                ['Platanthera ciliaris', 'Orange Fringed Orchid', 'North Carolina, USA', 'Native terrestrial orchid found in southeastern US wetlands'],
-                ['Ophrys apifera', 'Bee Orchid', 'Cyprus', 'Remarkable orchid that mimics bees for pollination'],
-                ['Cypripedium californicum', 'California Lady Slipper', 'Northern California', 'Endangered North American native requiring cool, wet conditions'],
-                ['Neofinetia falcata', 'Samurai Orchid', 'Japan', 'Traditional Japanese orchid prized for its fragrance'],
-                ['Orchis mascula', 'Early Purple Orchid', 'South Korea', 'Hardy terrestrial orchid that blooms in early spring']
-            ];
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
             
-            const randomIndex = Math.floor(Math.random() * orchids.length);
-            const [scientific, common, location, description] = orchids[randomIndex];
-            showOrchidInfo(scientific, common, location, description);
+            if (isRotating) {
+                earth.rotation.y += 0.005;
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
         }
 
-        function updateViewIndicator(view, altitude, speed) {
-            document.getElementById('altitudeDisplay').textContent = `Altitude: ${altitude}`;
-            document.getElementById('speedDisplay').textContent = `Speed: ${speed}`;
-            document.querySelector('.view-indicator h4').textContent = view;
+        // Window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Initialize
+        // Initialize everything
         function init() {
-            createStarfield();
-            
-            // Hide loading screen after 2 seconds (faster load)
             setTimeout(() => {
                 document.getElementById('loadingScreen').style.display = 'none';
+                initThreeJS();
+                animate();
                 
-                // Show welcome message
-                setTimeout(() => {
-                    showOrchidInfo(
-                        'Five Cities Orchid Society',
-                        '🛰️ Welcome to Earth from Space!',
-                        'Click any glowing orchid marker on Earth to explore',
-                        'Use the controls below to navigate your orbital view. The golden line shows the 35th parallel where many of our featured orchids are found.'
-                    );
-                }, 500);
+                // Add event listeners
+                window.addEventListener('resize', onWindowResize);
+                renderer.domElement.addEventListener('click', onMouseClick);
+                
+                console.log('🌍 3D Earth Globe initialized with orchid distribution data');
             }, 2000);
         }
 
