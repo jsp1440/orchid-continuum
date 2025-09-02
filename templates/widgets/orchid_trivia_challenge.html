@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if embed_mode %}FCOS Orchid Trivia{% else %}Five Cities Orchid Society - Orchid Trivia Challenge{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        {% if embed_mode %}
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c5530 0%, #1a3d1f 50%, #0f2912 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        .embed-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        {% else %}
+        body {
+            background: linear-gradient(135deg, #2c5530 0%, #1a3d1f 50%, #0f2912 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e8f5e8;
+        }
+        {% endif %}
+
+        .trivia-container {
+            {% if embed_mode %}
+            flex: 1;
+            padding: 15px;
+            {% else %}
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            {% endif %}
+            position: relative;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+            {% if embed_mode %}
+            padding: 15px 0;
+            {% else %}
+            padding: 20px 0;
+            {% endif %}
+        }
+
+        .game-title {
+            {% if embed_mode %}
+            font-size: 2rem;
+            margin-bottom: 10px;
+            {% else %}
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            {% endif %}
+            color: #f0fff0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            font-weight: bold;
+        }
+
+        .game-subtitle {
+            {% if embed_mode %}
+            font-size: 1rem;
+            {% else %}
+            font-size: 1.2rem;
+            {% endif %}
+            color: #c8e6c9;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .score-item {
+            text-align: center;
+            color: #f0fff0;
+        }
+
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #98fb98;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            color: #2c5530;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .question-number {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c5530;
+            line-height: 1.4;
+        }
+
+        .answer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .answer-option {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-option:hover {
+            border-color: #28a745;
+            background: linear-gradient(145deg, #e8f5e9, #d4edda);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .answer-option.selected {
+            border-color: #007bff;
+            background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+            transform: translateY(-2px);
+        }
+
+        .answer-option.correct {
+            border-color: #28a745;
+            background: linear-gradient(145deg, #d4edda, #c3e6cb);
+            animation: correctPulse 0.6s ease;
+        }
+
+        .answer-option.incorrect {
+            border-color: #dc3545;
+            background: linear-gradient(145deg, #f8d7da, #f5c6cb);
+            animation: incorrectShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .next-button {
+            background: linear-gradient(145deg, #28a745, #20a138);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .next-button:hover {
+            background: linear-gradient(145deg, #20a138, #1e7e34);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .explanation {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .explanation-title {
+            font-weight: bold;
+            color: #155724;
+            margin-bottom: 8px;
+        }
+
+        .final-results {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            color: #2c5530;
+            display: none;
+        }
+
+        .final-score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .restart-button {
+            background: linear-gradient(145deg, #007bff, #0056b3);
+            border: none;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .restart-button:hover {
+            background: linear-gradient(145deg, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+
+        .floating-flowers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .flower {
+            position: absolute;
+            font-size: 25px;
+            animation: float 6s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            from {
+                top: -50px;
+                transform: rotate(0deg);
+                opacity: 0.6;
+            }
+            to {
+                top: 100vh;
+                transform: rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20a138);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        {% if embed_mode %}
+        @media (max-width: 768px) {
+            .answer-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .game-title {
+                font-size: 1.6rem;
+            }
+            .question-text {
+                font-size: 1.1rem;
+            }
+        }
+        {% endif %}
+
+        .orchid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px, 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="orchid-pattern"></div>
+    <div class="floating-flowers" id="flowers"></div>
+    
+    <div class="{% if embed_mode %}embed-container{% endif %}">
+        <div class="trivia-container">
+            <div class="game-header">
+                <h1 class="game-title">🌸 FCOS Orchid Trivia Challenge 🌿</h1>
+                <p class="game-subtitle">Test Your Knowledge of the Five Cities Orchid Society Collection</p>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-value" id="currentQuestion">1</div>
+                    <div class="score-label">Question</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-value" id="correctAnswers">0</div>
+                    <div class="score-label">Correct</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-value" id="totalScore">0</div>
+                    <div class="score-label">Score</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-value" id="streak">0</div>
+                    <div class="score-label">Streak</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <div id="questionContainer">
+                <!-- Questions will be loaded here -->
+            </div>
+
+            <div class="final-results" id="finalResults">
+                <h2>🎉 Trivia Complete! 🎉</h2>
+                <div class="final-score" id="finalScore">0/10</div>
+                <p id="finalMessage">Amazing orchid knowledge!</p>
+                <p>You've learned about beautiful orchids from the Five Cities collection!</p>
+                <button class="restart-button" onclick="startTrivia()">
+                    <i data-feather="rotate-ccw"></i> Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced orchid trivia questions using Five Cities collection
+        const triviaQuestions = [
+            {
+                id: 1,
+                image: '/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I',
+                question: 'This stunning orchid is the national flower of which South American country?',
+                answers: ['Colombia', 'Brazil', 'Venezuela', 'Ecuador'],
+                correct: 0,
+                explanation: 'Cattleya trianae is the national flower of Colombia! It blooms during Christmas season and is considered one of the most beautiful orchids in the world.',
+                genus: 'Cattleya',
+                species: 'trianae'
+            },
+            {
+                id: 2,
+                image: '/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY',
+                question: 'What does the name "Phalaenopsis" literally mean?',
+                answers: ['Butterfly-like', 'Moon flower', 'Night beauty', 'White petals'],
+                correct: 0,
+                explanation: 'Phalaenopsis means "butterfly-like" in Greek! These orchids are called moth orchids because their flowers resemble tropical moths in flight.',
+                genus: 'Phalaenopsis',
+                species: 'amabilis'
+            },
+            {
+                id: 3,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'Dendrobium orchids are epiphytes. What does this mean?',
+                answers: ['They grow in water', 'They grow on other plants', 'They grow underground', 'They grow in desert sand'],
+                correct: 1,
+                explanation: 'Epiphytes grow on other plants for support but get their nutrients from the air and rain, not from their host plant. They\'re not parasites!',
+                genus: 'Dendrobium',
+                species: 'nobile'
+            },
+            {
+                id: 4,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'Vanda coerulea is known for what distinctive characteristic?',
+                answers: ['It only blooms at night', 'It has blue flowers', 'It grows upside down', 'It changes colors'],
+                correct: 1,
+                explanation: 'Vanda coerulea is famous for its stunning blue flowers! True blue is extremely rare in orchids, making this species highly prized by collectors.',
+                genus: 'Vanda',
+                species: 'coerulea'
+            },
+            {
+                id: 5,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'How many petals does a typical orchid flower have?',
+                answers: ['3', '5', '6', '8'],
+                correct: 2,
+                explanation: 'Orchid flowers have 6 petals arranged in two whorls of 3. The bottom petal is often modified into a specialized "lip" or labellum to attract pollinators.',
+                genus: 'Orchidaceae',
+                species: 'family'
+            },
+            {
+                id: 6,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'What is the most important factor for most orchid health?',
+                answers: ['Bright direct sunlight', 'Proper drainage', 'Daily watering', 'Constant heat'],
+                correct: 1,
+                explanation: 'Proper drainage is crucial! Most orchids die from overwatering and poor drainage rather than underwatering. Their roots need air circulation.',
+                genus: 'Care',
+                species: 'tips'
+            },
+            {
+                id: 7,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'Approximately how many orchid species exist in the world?',
+                answers: ['5,000', '15,000', '25,000', '35,000'],
+                correct: 2,
+                explanation: 'There are over 25,000 known orchid species! Orchidaceae is one of the largest flowering plant families, found on every continent except Antarctica.',
+                genus: 'Orchidaceae',
+                species: 'diversity'
+            },
+            {
+                id: 8,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'What do orchid seeds lack that most other plant seeds have?',
+                answers: ['A protective coating', 'Genetic material', 'Stored nutrients', 'Color pigments'],
+                correct: 2,
+                explanation: 'Orchid seeds lack stored nutrients (endosperm)! They must form a partnership with mycorrhizal fungi to germinate and survive their early growth.',
+                genus: 'Reproduction',
+                species: 'biology'
+            },
+            {
+                id: 9,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'Which orchid genus is commonly used to flavor food?',
+                answers: ['Cattleya', 'Vanilla', 'Dendrobium', 'Oncidium'],
+                correct: 1,
+                explanation: 'Vanilla planifolia produces vanilla beans! This climbing orchid is the source of natural vanilla flavoring used in cooking and baking worldwide.',
+                genus: 'Vanilla',
+                species: 'planifolia'
+            },
+            {
+                id: 10,
+                image: '/static/images/orchid_placeholder.svg',
+                question: 'What makes orchid flowers unique among all flowering plants?',
+                answers: ['They never close', 'Fused stamens and pistil', 'They have no fragrance', 'They only bloom once'],
+                correct: 1,
+                explanation: 'Orchids have a unique column structure where the male and female reproductive parts are fused together! This is found nowhere else in the plant kingdom.',
+                genus: 'Orchidaceae',
+                species: 'anatomy'
+            }
+        ];
+
+        let gameState = {
+            currentQuestionIndex: 0,
+            correctAnswers: 0,
+            totalScore: 0,
+            streak: 0,
+            selectedAnswer: null,
+            answered: false
+        };
+
+        function shuffleQuestions() {
+            for (let i = triviaQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [triviaQuestions[i], triviaQuestions[j]] = [triviaQuestions[j], triviaQuestions[i]];
+            }
+        }
+
+        function displayQuestion(questionIndex) {
+            const question = triviaQuestions[questionIndex];
+            const container = document.getElementById('questionContainer');
+            
+            container.innerHTML = `
+                <div class="question-card">
+                    <div class="question-number">Question ${questionIndex + 1}/10</div>
+                    <img src="${question.image}" alt="${question.genus} ${question.species}" 
+                         class="question-image" onerror="this.src='/static/images/orchid_placeholder.svg'">
+                    <div class="question-text">${question.question}</div>
+                    <div class="answer-grid">
+                        ${question.answers.map((answer, index) => `
+                            <div class="answer-option" onclick="selectAnswer(${index})" data-index="${index}">
+                                ${answer}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="explanation" id="explanation">
+                        <div class="explanation-title">🌺 Did You Know?</div>
+                        ${question.explanation}
+                    </div>
+                    <button class="next-button" id="nextButton" onclick="nextQuestion()">
+                        ${questionIndex < 9 ? 'Next Question' : 'View Results'} 
+                        <i data-feather="arrow-right"></i>
+                    </button>
+                </div>
+            `;
+            
+            feather.replace();
+            updateProgressBar();
+            createFloatingFlowers();
+        }
+
+        function selectAnswer(answerIndex) {
+            if (gameState.answered) return;
+            
+            gameState.selectedAnswer = answerIndex;
+            gameState.answered = true;
+            
+            const question = triviaQuestions[gameState.currentQuestionIndex];
+            const answerOptions = document.querySelectorAll('.answer-option');
+            
+            answerOptions.forEach((option, index) => {
+                if (index === question.correct) {
+                    option.classList.add('correct');
+                } else if (index === answerIndex && index !== question.correct) {
+                    option.classList.add('incorrect');
+                }
+                option.style.pointerEvents = 'none';
+            });
+            
+            if (answerIndex === question.correct) {
+                gameState.correctAnswers++;
+                gameState.streak++;
+                gameState.totalScore += 100 + (gameState.streak * 10);
+                createCelebrationEffect();
+            } else {
+                gameState.streak = 0;
+            }
+            
+            document.getElementById('explanation').style.display = 'block';
+            document.getElementById('nextButton').style.display = 'block';
+            
+            updateScoreBoard();
+        }
+
+        function nextQuestion() {
+            gameState.currentQuestionIndex++;
+            gameState.answered = false;
+            gameState.selectedAnswer = null;
+            
+            if (gameState.currentQuestionIndex < triviaQuestions.length) {
+                displayQuestion(gameState.currentQuestionIndex);
+            } else {
+                showFinalResults();
+            }
+        }
+
+        function updateScoreBoard() {
+            document.getElementById('currentQuestion').textContent = gameState.currentQuestionIndex + 1;
+            document.getElementById('correctAnswers').textContent = gameState.correctAnswers;
+            document.getElementById('totalScore').textContent = gameState.totalScore;
+            document.getElementById('streak').textContent = gameState.streak;
+        }
+
+        function updateProgressBar() {
+            const progress = ((gameState.currentQuestionIndex + 1) / triviaQuestions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function showFinalResults() {
+            document.getElementById('questionContainer').style.display = 'none';
+            document.getElementById('finalResults').style.display = 'block';
+            
+            const percentage = Math.round((gameState.correctAnswers / triviaQuestions.length) * 100);
+            document.getElementById('finalScore').textContent = `${gameState.correctAnswers}/${triviaQuestions.length}`;
+            
+            let message = '';
+            if (percentage >= 90) {
+                message = '🏆 Orchid Expert! You know your flowers!';
+            } else if (percentage >= 70) {
+                message = '🌺 Orchid Enthusiast! Great knowledge!';
+            } else if (percentage >= 50) {
+                message = '🌸 Budding Orchid Lover! Keep learning!';
+            } else {
+                message = '🌱 Orchid Beginner! There\'s so much to discover!';
+            }
+            
+            document.getElementById('finalMessage').textContent = message;
+            
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => createCelebrationEffect(), i * 200);
+            }
+        }
+
+        function createCelebrationEffect() {
+            const flowers = ['🌸', '🌺', '🌼', '🌻', '🌷', '🌹', '🏵️'];
+            const container = document.getElementById('flowers');
+            
+            for (let i = 0; i < 3; i++) {
+                const flower = document.createElement('div');
+                flower.className = 'flower';
+                flower.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+                flower.style.left = Math.random() * 100 + '%';
+                flower.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(flower);
+                
+                setTimeout(() => {
+                    flower.remove();
+                }, 6000);
+            }
+        }
+
+        function createFloatingFlowers() {
+            const flowers = ['🌸', '🌺', '🌼'];
+            const container = document.getElementById('flowers');
+            
+            const flower = document.createElement('div');
+            flower.className = 'flower';
+            flower.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+            flower.style.left = Math.random() * 100 + '%';
+            flower.style.animationDelay = '0s';
+            container.appendChild(flower);
+            
+            setTimeout(() => {
+                flower.remove();
+            }, 6000);
+        }
+
+        function startTrivia() {
+            gameState = {
+                currentQuestionIndex: 0,
+                correctAnswers: 0,
+                totalScore: 0,
+                streak: 0,
+                selectedAnswer: null,
+                answered: false
+            };
+            
+            shuffleQuestions();
+            
+            document.getElementById('finalResults').style.display = 'none';
+            document.getElementById('questionContainer').style.display = 'block';
+            
+            displayQuestion(0);
+            updateScoreBoard();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            startTrivia();
+            
+            setInterval(createFloatingFlowers, 8000);
+        });
+    </script>
+</body>
+</html>
