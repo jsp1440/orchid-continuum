@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Learning Games</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body { 
+            background: #1a1a1a; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .games-container {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #4ECDC4 100%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .game-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .game-button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 25px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .game-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .game-button.active {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        .game-content {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            min-height: 500px;
+        }
+        .trivia-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .orchid-photo {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(45deg, #4CAF50, #2196F3);
+            border-radius: 15px;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+        }
+        .answer-button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 25px;
+            margin: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: left;
+        }
+        .answer-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(5px);
+        }
+        .answer-button.correct {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        .answer-button.incorrect {
+            background: #F44336;
+            border-color: #F44336;
+        }
+        .mahjong-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .mahjong-tile {
+            aspect-ratio: 3/4;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            padding: 5px;
+        }
+        .mahjong-tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .mahjong-tile.selected {
+            border: 3px solid #4CAF50;
+            background: #E8F5E8;
+        }
+        .mahjong-tile.matched {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .score-panel {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .score-item {
+            text-align: center;
+        }
+        .score-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #4CAF50, #FFD700);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .stat-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="games-container">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="mb-2">🎮 Orchid Learning Games</h2>
+                <p class="text-muted">Learn about orchids through interactive trivia and matching games</p>
+            </div>
+
+            <!-- Game Selector -->
+            <div class="game-selector">
+                <button class="game-button active" onclick="switchGame('trivia')" id="trivia-btn">
+                    <i data-feather="help-circle"></i> Trivia Challenge
+                </button>
+                <button class="game-button" onclick="switchGame('mahjong')" id="mahjong-btn">
+                    <i data-feather="grid"></i> Orchid Mahjong
+                </button>
+                <button class="game-button" onclick="switchGame('memory')" id="memory-btn">
+                    <i data-feather="eye"></i> Memory Match
+                </button>
+                <button class="game-button" onclick="switchGame('quiz')" id="quiz-btn">
+                    <i data-feather="award"></i> Expert Quiz
+                </button>
+            </div>
+
+            <!-- Trivia Game -->
+            <div id="trivia-game" class="game-content">
+                <div class="game-stats">
+                    <div class="stat-badge">Question <span id="question-number">1</span> of 10</div>
+                    <div class="stat-badge">Score: <span id="trivia-score">0</span></div>
+                    <div class="stat-badge">⏱️ <span id="trivia-timer">30</span>s</div>
+                </div>
+
+                <div class="trivia-card">
+                    <div class="orchid-photo">🌺</div>
+                    <h4 id="trivia-question">This stunning orchid is the national flower of which South American country?</h4>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <button class="answer-button" onclick="selectAnswer(0, this)">
+                                A) Colombia
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="answer-button" onclick="selectAnswer(1, this)">
+                                B) Brazil
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="answer-button" onclick="selectAnswer(2, this)">
+                                C) Venezuela
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="answer-button" onclick="selectAnswer(3, this)">
+                                D) Ecuador
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 10%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button class="game-button" onclick="nextQuestion()">
+                        <i data-feather="arrow-right"></i> Next Question
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mahjong Game -->
+            <div id="mahjong-game" class="game-content" style="display: none;">
+                <div class="score-panel">
+                    <div class="score-item">
+                        <div class="score-number" id="mahjong-score">0</div>
+                        <div>Score</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-number" id="matches-found">0</div>
+                        <div>Matches</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-number" id="mahjong-timer">300</div>
+                        <div>Time Left</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-number" id="moves-made">0</div>
+                        <div>Moves</div>
+                    </div>
+                </div>
+
+                <div class="mahjong-board" id="mahjong-board">
+                    <!-- Tiles will be generated by JavaScript -->
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="game-button" onclick="shuffleTiles()">
+                        <i data-feather="shuffle"></i> Shuffle
+                    </button>
+                    <button class="game-button" onclick="getHint()">
+                        <i data-feather="lightbulb"></i> Hint
+                    </button>
+                    <button class="game-button" onclick="resetMahjong()">
+                        <i data-feather="refresh-cw"></i> New Game
+                    </button>
+                </div>
+            </div>
+
+            <!-- Memory Match Game -->
+            <div id="memory-game" class="game-content" style="display: none;">
+                <div class="text-center">
+                    <h4>Memory Match</h4>
+                    <p>Find pairs of matching orchids!</p>
+                    <div class="mahjong-board" id="memory-board">
+                        <!-- Memory cards will be generated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expert Quiz -->
+            <div id="quiz-game" class="game-content" style="display: none;">
+                <div class="text-center">
+                    <h4>Expert Orchid Quiz</h4>
+                    <p>Advanced questions for orchid enthusiasts</p>
+                    <div class="score-panel">
+                        <div class="score-item">
+                            <div class="score-number">Expert</div>
+                            <div>Level</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-number">25</div>
+                            <div>Questions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGame = 'trivia';
+        let triviaScore = 0;
+        let mahjongScore = 0;
+        let selectedTiles = [];
+        let matchedTiles = [];
+
+        function switchGame(gameType) {
+            // Hide all games
+            document.querySelectorAll('.game-content').forEach(game => {
+                game.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.game-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected game and activate button
+            document.getElementById(gameType + '-game').style.display = 'block';
+            document.getElementById(gameType + '-btn').classList.add('active');
+            
+            currentGame = gameType;
+
+            // Initialize game if needed
+            if (gameType === 'mahjong') {
+                initializeMahjong();
+            } else if (gameType === 'memory') {
+                initializeMemory();
+            }
+        }
+
+        function selectAnswer(answerIndex, button) {
+            // Disable all answer buttons
+            document.querySelectorAll('.answer-button').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            // Show correct answer (0 is correct for Colombia)
+            if (answerIndex === 0) {
+                button.classList.add('correct');
+                triviaScore += 10;
+                document.getElementById('trivia-score').textContent = triviaScore;
+            } else {
+                button.classList.add('incorrect');
+                // Show correct answer
+                document.querySelectorAll('.answer-button')[0].classList.add('correct');
+            }
+        }
+
+        function nextQuestion() {
+            // Reset for next question
+            document.querySelectorAll('.answer-button').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'incorrect');
+            });
+
+            // Update question number
+            let currentQ = parseInt(document.getElementById('question-number').textContent);
+            if (currentQ < 10) {
+                document.getElementById('question-number').textContent = currentQ + 1;
+                // Update progress bar
+                let progress = (currentQ + 1) * 10;
+                document.querySelector('.progress-fill').style.width = progress + '%';
+            } else {
+                alert(`Game Complete! Final Score: ${triviaScore}/100`);
+            }
+        }
+
+        function initializeMahjong() {
+            const board = document.getElementById('mahjong-board');
+            board.innerHTML = '';
+            
+            // Create tiles with orchid names
+            const orchids = [
+                '🌺 Cattleya', '🌸 Phalaenopsis', '💜 Dendrobium', '🌿 Vanda',
+                '🌺 Cattleya', '🌸 Phalaenopsis', '💜 Dendrobium', '🌿 Vanda',
+                '🌼 Oncidium', '🌷 Miltonia', '🌹 Cymbidium', '🏵️ Paphiopedilum',
+                '🌼 Oncidium', '🌷 Miltonia', '🌹 Cymbidium', '🏵️ Paphiopedilum'
+            ];
+
+            // Shuffle tiles
+            for (let i = orchids.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [orchids[i], orchids[j]] = [orchids[j], orchids[i]];
+            }
+
+            // Create tile elements
+            orchids.forEach((orchid, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'mahjong-tile';
+                tile.innerHTML = `<div style="font-size: 1.5em;">${orchid.split(' ')[0]}</div><div style="font-size: 0.8em;">${orchid.split(' ')[1]}</div>`;
+                tile.onclick = () => selectTile(tile, orchid, index);
+                board.appendChild(tile);
+            });
+
+            selectedTiles = [];
+            matchedTiles = [];
+        }
+
+        function selectTile(tile, orchid, index) {
+            if (tile.classList.contains('matched') || tile.classList.contains('selected')) {
+                return;
+            }
+
+            tile.classList.add('selected');
+            selectedTiles.push({tile, orchid, index});
+
+            if (selectedTiles.length === 2) {
+                document.getElementById('moves-made').textContent = 
+                    parseInt(document.getElementById('moves-made').textContent) + 1;
+
+                setTimeout(() => {
+                    checkMatch();
+                }, 1000);
+            }
+        }
+
+        function checkMatch() {
+            const [tile1, tile2] = selectedTiles;
+            
+            if (tile1.orchid === tile2.orchid) {
+                // Match found
+                tile1.tile.classList.add('matched');
+                tile2.tile.classList.add('matched');
+                matchedTiles.push(tile1.index, tile2.index);
+                
+                mahjongScore += 20;
+                document.getElementById('mahjong-score').textContent = mahjongScore;
+                document.getElementById('matches-found').textContent = matchedTiles.length / 2;
+                
+                if (matchedTiles.length === 16) {
+                    setTimeout(() => alert('Congratulations! You won!'), 500);
+                }
+            } else {
+                // No match
+                tile1.tile.classList.remove('selected');
+                tile2.tile.classList.remove('selected');
+            }
+            
+            selectedTiles = [];
+        }
+
+        function shuffleTiles() {
+            // Reset and reinitialize
+            initializeMahjong();
+        }
+
+        function getHint() {
+            // Find first available match
+            const tiles = document.querySelectorAll('.mahjong-tile:not(.matched)');
+            const orchidTexts = Array.from(tiles).map(tile => tile.textContent);
+            
+            for (let i = 0; i < orchidTexts.length; i++) {
+                for (let j = i + 1; j < orchidTexts.length; j++) {
+                    if (orchidTexts[i] === orchidTexts[j]) {
+                        tiles[i].style.border = '3px solid #FFD700';
+                        tiles[j].style.border = '3px solid #FFD700';
+                        
+                        setTimeout(() => {
+                            tiles[i].style.border = '';
+                            tiles[j].style.border = '';
+                        }, 2000);
+                        return;
+                    }
+                }
+            }
+        }
+
+        function resetMahjong() {
+            mahjongScore = 0;
+            document.getElementById('mahjong-score').textContent = '0';
+            document.getElementById('matches-found').textContent = '0';
+            document.getElementById('moves-made').textContent = '0';
+            initializeMahjong();
+        }
+
+        function initializeMemory() {
+            const board = document.getElementById('memory-board');
+            board.innerHTML = '<p>Memory game coming soon!</p>';
+        }
+
+        // Timer for trivia
+        let triviaTimeLeft = 30;
+        setInterval(() => {
+            if (currentGame === 'trivia' && triviaTimeLeft > 0) {
+                triviaTimeLeft--;
+                document.getElementById('trivia-timer').textContent = triviaTimeLeft;
+                if (triviaTimeLeft === 0) {
+                    nextQuestion();
+                    triviaTimeLeft = 30;
+                }
+            }
+        }, 1000);
+
+        // Timer for mahjong
+        let mahjongTimeLeft = 300;
+        setInterval(() => {
+            if (currentGame === 'mahjong' && mahjongTimeLeft > 0) {
+                mahjongTimeLeft--;
+                document.getElementById('mahjong-timer').textContent = mahjongTimeLeft;
+            }
+        }, 1000);
+
+        // Initialize Feather icons
+        feather.replace();
+    </script>
+</body>
+</html>
