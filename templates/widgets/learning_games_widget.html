@@ -382,75 +382,128 @@
 
         function initializeMahjong() {
             const board = document.getElementById('mahjong-board');
+            if (!board) {
+                console.error('Mahjong board not found!');
+                return;
+            }
+            
             board.innerHTML = '';
             
-            // Create tiles with orchid names
+            // Create tiles with orchid names and emojis
             const orchids = [
-                '🌺 Cattleya', '🌸 Phalaenopsis', '💜 Dendrobium', '🌿 Vanda',
-                '🌺 Cattleya', '🌸 Phalaenopsis', '💜 Dendrobium', '🌿 Vanda',
-                '🌼 Oncidium', '🌷 Miltonia', '🌹 Cymbidium', '🏵️ Paphiopedilum',
-                '🌼 Oncidium', '🌷 Miltonia', '🌹 Cymbidium', '🏵️ Paphiopedilum'
+                {emoji: '🌺', name: 'Cattleya'},
+                {emoji: '🌸', name: 'Phalaenopsis'},
+                {emoji: '💜', name: 'Dendrobium'},
+                {emoji: '🌿', name: 'Vanda'},
+                {emoji: '🌼', name: 'Oncidium'},
+                {emoji: '🌷', name: 'Miltonia'},
+                {emoji: '🌹', name: 'Cymbidium'},
+                {emoji: '🏵️', name: 'Paphiopedilum'}
             ];
 
-            // Shuffle tiles
-            for (let i = orchids.length - 1; i > 0; i--) {
+            // Create pairs (16 tiles total)
+            const tilePairs = [...orchids, ...orchids];
+
+            // Shuffle tiles using Fisher-Yates algorithm
+            for (let i = tilePairs.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [orchids[i], orchids[j]] = [orchids[j], orchids[i]];
+                [tilePairs[i], tilePairs[j]] = [tilePairs[j], tilePairs[i]];
             }
 
             // Create tile elements
-            orchids.forEach((orchid, index) => {
+            tilePairs.forEach((orchid, index) => {
                 const tile = document.createElement('div');
                 tile.className = 'mahjong-tile';
-                tile.innerHTML = `<div style="font-size: 1.5em;">${orchid.split(' ')[0]}</div><div style="font-size: 0.8em;">${orchid.split(' ')[1]}</div>`;
-                tile.onclick = () => selectTile(tile, orchid, index);
+                tile.dataset.orchidName = orchid.name;
+                tile.dataset.index = index;
+                tile.innerHTML = `
+                    <div style="font-size: 2em; margin-bottom: 5px;">${orchid.emoji}</div>
+                    <div style="font-size: 0.7em; text-align: center; line-height: 1;">${orchid.name}</div>
+                `;
+                
+                // Add click event
+                tile.addEventListener('click', () => selectTile(tile, orchid, index));
                 board.appendChild(tile);
             });
 
+            // Reset game state
             selectedTiles = [];
             matchedTiles = [];
+            
+            console.log('Mahjong initialized with', tilePairs.length, 'tiles');
         }
 
         function selectTile(tile, orchid, index) {
-            if (tile.classList.contains('matched') || tile.classList.contains('selected')) {
+            // Prevent selecting if tile is already matched or if we already have 2 tiles selected
+            if (tile.classList.contains('matched') || tile.classList.contains('selected') || selectedTiles.length >= 2) {
                 return;
             }
 
+            // Add visual selection
             tile.classList.add('selected');
             selectedTiles.push({tile, orchid, index});
 
-            if (selectedTiles.length === 2) {
-                document.getElementById('moves-made').textContent = 
-                    parseInt(document.getElementById('moves-made').textContent) + 1;
+            console.log('Tile selected:', orchid.name, 'Total selected:', selectedTiles.length);
 
+            // If we have 2 tiles selected, check for match
+            if (selectedTiles.length === 2) {
+                // Update move counter
+                const moveCounter = document.getElementById('moves-made');
+                if (moveCounter) {
+                    moveCounter.textContent = parseInt(moveCounter.textContent) + 1;
+                }
+
+                // Check match after a short delay for visual effect
                 setTimeout(() => {
                     checkMatch();
-                }, 1000);
+                }, 800);
             }
         }
 
         function checkMatch() {
-            const [tile1, tile2] = selectedTiles;
+            if (selectedTiles.length !== 2) {
+                console.error('Invalid selection count:', selectedTiles.length);
+                return;
+            }
+
+            const [selection1, selection2] = selectedTiles;
             
-            if (tile1.orchid === tile2.orchid) {
-                // Match found
-                tile1.tile.classList.add('matched');
-                tile2.tile.classList.add('matched');
-                matchedTiles.push(tile1.index, tile2.index);
+            console.log('Checking match:', selection1.orchid.name, 'vs', selection2.orchid.name);
+            
+            if (selection1.orchid.name === selection2.orchid.name) {
+                // Match found!
+                selection1.tile.classList.remove('selected');
+                selection2.tile.classList.remove('selected');
+                selection1.tile.classList.add('matched');
+                selection2.tile.classList.add('matched');
                 
+                // Update score and match counter
                 mahjongScore += 20;
-                document.getElementById('mahjong-score').textContent = mahjongScore;
-                document.getElementById('matches-found').textContent = matchedTiles.length / 2;
+                const scoreElement = document.getElementById('mahjong-score');
+                const matchElement = document.getElementById('matches-found');
                 
-                if (matchedTiles.length === 16) {
-                    setTimeout(() => alert('Congratulations! You won!'), 500);
+                if (scoreElement) scoreElement.textContent = mahjongScore;
+                if (matchElement) {
+                    const currentMatches = parseInt(matchElement.textContent) + 1;
+                    matchElement.textContent = currentMatches;
+                    
+                    // Check if game is complete (8 pairs = 16 tiles)
+                    if (currentMatches === 8) {
+                        setTimeout(() => {
+                            alert(`🎉 Congratulations! You completed the Orchid Mahjong game!\nFinal Score: ${mahjongScore} points\nTotal Moves: ${document.getElementById('moves-made').textContent}`);
+                        }, 500);
+                    }
                 }
+                
+                console.log('Match found! Score:', mahjongScore);
             } else {
-                // No match
-                tile1.tile.classList.remove('selected');
-                tile2.tile.classList.remove('selected');
+                // No match - flip tiles back
+                selection1.tile.classList.remove('selected');
+                selection2.tile.classList.remove('selected');
+                console.log('No match');
             }
             
+            // Reset selections
             selectedTiles = [];
         }
 
