@@ -28,7 +28,9 @@ class OrchidWidgetSystem:
             'map': 'World Map Widget',
             'weather': 'Orchid Weather Comparison Widget',
             'enhanced_globe': 'Enhanced Globe Weather Widget',
-            'climate': 'Climate Habitat Comparator Widget'
+            'climate': 'Climate Habitat Comparator Widget',
+            'trivia': 'Orchid Trivia Challenge Widget',
+            'mahjong': 'Orchid Mahjong Game Widget'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -51,6 +53,10 @@ class OrchidWidgetSystem:
             return self._get_enhanced_globe_data(**kwargs)
         elif widget_type == 'climate':
             return self._get_climate_data(**kwargs)
+        elif widget_type == 'trivia':
+            return self._get_trivia_data(**kwargs)
+        elif widget_type == 'mahjong':
+            return self._get_mahjong_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -459,6 +465,14 @@ class OrchidWidgetSystem:
                 {'id': 'parallel35', 'name': '35th Parallel', 'description': 'Special mode for 35°N latitude orchids'}
             ]
         }
+    
+    def _get_trivia_data(self, **kwargs):
+        """Get trivia game data for widget"""
+        return {'questions': []}
+    
+    def _get_mahjong_data(self, **kwargs):
+        """Get Mahjong game data for widget"""
+        return {'tiles': []}
 
 # Initialize widget system
 widget_system = OrchidWidgetSystem()
