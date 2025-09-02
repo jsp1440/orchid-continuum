@@ -69,6 +69,42 @@
         }
     };
 
+    // Extended orchid species for customization
+    const ORCHID_SPECIES = {
+        'Phalaenopsis': { emoji: '🦋🌺', color: '#FF69B4', family: 'Moth Orchids' },
+        'Cattleya': { emoji: '👑🌸', color: '#DDA0DD', family: 'Corsage Orchids' },
+        'Dendrobium': { emoji: '🌿💜', color: '#9370DB', family: 'Tree Orchids' },
+        'Paphiopedilum': { emoji: '👞🌼', color: '#FFD700', family: 'Lady Slippers' },
+        'Vanda': { emoji: '💙🌟', color: '#4169E1', family: 'Blue Orchids' },
+        'Oncidium': { emoji: '☀️🌻', color: '#FFA500', family: 'Dancing Lady' },
+        'Cymbidium': { emoji: '🗾🌷', color: '#FF1493', family: 'Boat Orchids' },
+        'Masdevallia': { emoji: '🔺🌹', color: '#DC143C', family: 'Kite Orchids' },
+        'Epidendrum': { emoji: '🌈🌺', color: '#FF6347', family: 'Reed Orchids' },
+        'Brassia': { emoji: '🕷️🌾', color: '#228B22', family: 'Spider Orchids' },
+        'Miltonia': { emoji: '🎭🌸', color: '#DA70D6', family: 'Pansy Orchids' },
+        'Odontoglossum': { emoji: '❄️🌼', color: '#87CEEB', family: 'Tiger Orchids' },
+        'Zygopetalum': { emoji: '💜🌺', color: '#8A2BE2', family: 'Fragrant Orchids' },
+        'Bulbophyllum': { emoji: '🦅🌿', color: '#6B8E23', family: 'Bulb Orchids' },
+        'Laelia': { emoji: '🌟💖', color: '#FF69B4', family: 'Autumn Orchids' },
+        'Maxillaria': { emoji: '🍃🌹', color: '#8B4513', family: 'Coconut Orchids' }
+    };
+
+    // Game modes
+    const GAME_MODES = {
+        SOLITAIRE: 'solitaire',
+        MULTIPLAYER_2: 'multiplayer_2',
+        MULTIPLAYER_3: 'multiplayer_3', 
+        MULTIPLAYER_4: 'multiplayer_4'
+    };
+
+    // Tile count options
+    const TILE_COUNT_OPTIONS = {
+        MINI: { tiles: 72, name: 'Mini (72 tiles)', difficulty: 'Beginner' },
+        STANDARD: { tiles: 144, name: 'Standard (144 tiles)', difficulty: 'Normal' },
+        LARGE: { tiles: 216, name: 'Large (216 tiles)', difficulty: 'Expert' },
+        MEGA: { tiles: 288, name: 'Mega (288 tiles)', difficulty: 'Master' }
+    };
+
     // Color themes
     const THEMES = {
         fcos: {
@@ -130,6 +166,12 @@
                 highlights: true,
                 allowWildGroups: true,
                 seed: null,
+                gameMode: 'solitaire',
+                tileCount: 144,
+                selectedOrchids: ['Phalaenopsis', 'Cattleya', 'Dendrobium', 'Paphiopedilum', 'Vanda', 'Oncidium', 'Cymbidium', 'Masdevallia'],
+                customPattern: null,
+                playerName: '',
+                roomCode: '',
                 ...options
             };
 
@@ -143,7 +185,12 @@
                 endTime: null,
                 isPaused: false,
                 undoStack: [],
-                redoStack: []
+                redoStack: [],
+                isMultiplayer: false,
+                players: [],
+                currentPlayer: 0,
+                roomId: null,
+                chatMessages: []
             };
 
             this.eventHandlers = {};
@@ -159,6 +206,10 @@
             this.generateTiles();
             this.createLayout();
             this.bindEvents();
+            this.setupEnhancedSettings();
+            this.setupMultiplayer();
+            this.setupChat();
+            this.setupLeaderboard();
             this.loadSettings();
             this.startTimer();
             
@@ -221,54 +272,166 @@
                         </div>
                     </div>
 
-                    <!-- Settings panel (initially hidden) -->
+                    <!-- Enhanced Settings panel (initially hidden) -->
                     <div class="settings-panel" id="om-settings-panel" style="display: none;">
                         <div class="settings-header">
-                            <h3>Settings</h3>
+                            <h3>Game Settings</h3>
                             <button class="close-btn" id="om-close-settings">&times;</button>
                         </div>
                         
                         <div class="settings-content">
+                            <!-- Game Mode Selection -->
                             <div class="setting-group">
-                                <label>Theme</label>
+                                <label>Game Mode</label>
+                                <select id="om-game-mode-select">
+                                    <option value="solitaire">🧘 Solitaire</option>
+                                    <option value="multiplayer_2">👥 2 Players</option>
+                                    <option value="multiplayer_3">👥👥 3 Players</option>
+                                    <option value="multiplayer_4">👥👥👥 4 Players</option>
+                                </select>
+                            </div>
+
+                            <!-- Player Name (for multiplayer) -->
+                            <div class="setting-group" id="om-player-name-group" style="display: none;">
+                                <label>Your Name</label>
+                                <input type="text" id="om-player-name" placeholder="Enter your name" maxlength="20">
+                            </div>
+
+                            <!-- Room Code (for multiplayer) -->
+                            <div class="setting-group" id="om-room-code-group" style="display: none;">
+                                <label>Room Code (leave empty to create new room)</label>
+                                <input type="text" id="om-room-code" placeholder="Enter room code" maxlength="10">
+                            </div>
+                            
+                            <!-- Tile Count -->
+                            <div class="setting-group">
+                                <label>Tile Count</label>
+                                <select id="om-tile-count-select">
+                                    <option value="72">🌱 Mini (72 tiles) - Beginner</option>
+                                    <option value="144" selected>🌸 Standard (144 tiles) - Normal</option>
+                                    <option value="216">🌺 Large (216 tiles) - Expert</option>
+                                    <option value="288">🏆 Mega (288 tiles) - Master</option>
+                                </select>
+                            </div>
+
+                            <!-- Theme -->
+                            <div class="setting-group">
+                                <label>Visual Theme</label>
                                 <select id="om-theme-select">
-                                    <option value="fcos">FCOS Purple/Green</option>
-                                    <option value="neutral">Classic Neutral</option>
-                                    <option value="highContrast">High Contrast</option>
+                                    <option value="fcos">🌺 FCOS Purple/Green</option>
+                                    <option value="neutral">⚪ Classic Neutral</option>
+                                    <option value="highContrast">⚫ High Contrast</option>
                                 </select>
                             </div>
                             
+                            <!-- Layout/Pattern -->
                             <div class="setting-group">
-                                <label>Layout</label>
+                                <label>Layout Pattern</label>
                                 <select id="om-layout-select">
-                                    <option value="turtle">Turtle (Normal)</option>
-                                    <option value="dragon">Dragon (Hard)</option>
-                                    <option value="pyramid">Pyramid (Easy)</option>
-                                    <option value="orchid">Orchid Bloom (Normal)</option>
-                                    <option value="greenhouse">Greenhouse (Hard)</option>
-                                    <option value="butterfly">Butterfly (Expert)</option>
-                                    <option value="fortress">Fortress (Expert)</option>
-                                    <option value="garland">Orchid Garland (Normal)</option>
+                                    <option value="turtle">🐢 Turtle (Normal)</option>
+                                    <option value="dragon">🐉 Dragon (Hard)</option>
+                                    <option value="pyramid">🔺 Pyramid (Easy)</option>
+                                    <option value="orchid">🌺 Orchid Bloom (Normal)</option>
+                                    <option value="greenhouse">🏠 Greenhouse (Hard)</option>
+                                    <option value="butterfly">🦋 Butterfly (Expert)</option>
+                                    <option value="fortress">🏰 Fortress (Expert)</option>
+                                    <option value="garland">🌸 Orchid Garland (Normal)</option>
                                 </select>
                             </div>
-                            
+
+                            <!-- Orchid Species Selection -->
                             <div class="setting-group">
-                                <label>
-                                    <input type="checkbox" id="om-highlights"> 
-                                    Show tile highlights
-                                </label>
+                                <label>Flower Tile Species (select 8)</label>
+                                <div class="orchid-selector" id="om-orchid-selector">
+                                    <!-- Species checkboxes will be generated here -->
+                                </div>
+                                <small class="setting-note">Choose which orchid species appear on flower tiles</small>
+                            </div>
+
+                            <!-- Custom Pattern Designer -->
+                            <div class="setting-group">
+                                <label>Custom Pattern</label>
+                                <div class="custom-pattern-controls">
+                                    <button class="action-btn secondary" id="om-pattern-designer">🎨 Pattern Designer</button>
+                                    <button class="action-btn secondary" id="om-import-pattern">📁 Import Pattern</button>
+                                </div>
+                                <small class="setting-note">Create your own tile layouts</small>
                             </div>
                             
+                            <!-- Game Options -->
                             <div class="setting-group">
-                                <label>
-                                    <input type="checkbox" id="om-sound"> 
-                                    Sound effects
-                                </label>
+                                <label>Game Options</label>
+                                <div class="checkbox-list">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="om-highlights" checked> 
+                                        🔆 Show tile highlights
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="om-sound"> 
+                                        🔊 Sound effects
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="om-auto-hint"> 
+                                        💡 Auto-hint after 60 seconds
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" id="om-quick-match"> 
+                                        ⚡ Quick match mode (no confirm delay)
+                                    </label>
+                                </div>
                             </div>
                             
+                            <!-- Statistics & Data -->
                             <div class="setting-group">
-                                <button class="action-btn" id="om-reset-stats">Reset Statistics</button>
+                                <label>Statistics & Data</label>
+                                <div class="stats-controls">
+                                    <button class="action-btn secondary" id="om-view-stats">📊 View Statistics</button>
+                                    <button class="action-btn secondary" id="om-export-data">💾 Export Game Data</button>
+                                    <button class="action-btn danger" id="om-reset-stats">🗑️ Reset All Data</button>
+                                </div>
                             </div>
+
+                            <!-- Action Buttons -->
+                            <div class="setting-group">
+                                <div class="settings-actions">
+                                    <button class="action-btn" id="om-apply-settings">✅ Apply & Start Game</button>
+                                    <button class="action-btn secondary" id="om-save-settings">💾 Save Settings</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multiplayer Lobby -->
+                    <div class="multiplayer-lobby" id="om-multiplayer-lobby" style="display: none;">
+                        <div class="lobby-content">
+                            <h2>🎮 Game Room</h2>
+                            <div class="room-info">
+                                <div class="room-code">Room Code: <span id="om-room-display">------</span></div>
+                                <div class="player-count">Players: <span id="om-player-count">0/4</span></div>
+                            </div>
+                            <div class="player-list" id="om-player-list">
+                                <!-- Player avatars will appear here -->
+                            </div>
+                            <div class="lobby-actions">
+                                <button class="action-btn" id="om-start-multiplayer-game" style="display: none;">🚀 Start Game</button>
+                                <button class="action-btn secondary" id="om-leave-room">🚪 Leave Room</button>
+                                <button class="action-btn secondary" id="om-copy-room-code">📋 Copy Room Code</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat System -->
+                    <div class="chat-panel" id="om-chat-panel" style="display: none;">
+                        <div class="chat-header">
+                            <h4>💬 Chat</h4>
+                            <button class="close-btn" id="om-close-chat">−</button>
+                        </div>
+                        <div class="chat-messages" id="om-chat-messages">
+                            <!-- Messages will appear here -->
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="om-chat-input" placeholder="Type a message..." maxlength="200">
+                            <button id="om-send-chat">📤</button>
                         </div>
                     </div>
 
@@ -287,10 +450,35 @@
                                 <div class="win-stat">
                                     <strong>Score:</strong> <span id="om-win-score">0</span>
                                 </div>
+                                <div id="om-multiplayer-results" style="display: none;">
+                                    <div class="win-stat">
+                                        <strong>Ranking:</strong> <span id="om-player-rank">#1</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="win-actions">
                                 <button class="action-btn" id="om-play-again">Play Again</button>
-                                <button class="action-btn secondary" id="om-change-layout">Change Layout</button>
+                                <button class="action-btn secondary" id="om-change-layout">Change Settings</button>
+                                <button class="action-btn secondary" id="om-view-leaderboard">🏆 Leaderboard</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leaderboard Modal -->
+                    <div class="leaderboard-modal" id="om-leaderboard-modal" style="display: none;">
+                        <div class="leaderboard-content">
+                            <div class="leaderboard-header">
+                                <h2>🏆 Global Leaderboard</h2>
+                                <button class="close-btn" id="om-close-leaderboard">&times;</button>
+                            </div>
+                            <div class="leaderboard-tabs">
+                                <button class="tab-btn active" data-tab="daily">Today</button>
+                                <button class="tab-btn" data-tab="weekly">This Week</button>
+                                <button class="tab-btn" data-tab="monthly">This Month</button>
+                                <button class="tab-btn" data-tab="alltime">All Time</button>
+                            </div>
+                            <div class="leaderboard-list" id="om-leaderboard-list">
+                                <!-- Leaderboard entries will appear here -->
                             </div>
                         </div>
                     </div>
@@ -1166,6 +1354,416 @@
             
             this.options.theme = themeName;
             this.saveSettings();
+        }
+
+        /**
+         * Setup enhanced settings panel
+         */
+        setupEnhancedSettings() {
+            this.initOrchidSelector();
+            this.bindEnhancedSettingsEvents();
+        }
+
+        /**
+         * Initialize orchid species selector
+         */
+        initOrchidSelector() {
+            const selector = this.container.querySelector('#om-orchid-selector');
+            if (!selector) return;
+
+            Object.entries(ORCHID_SPECIES).forEach(([species, data]) => {
+                const isSelected = this.options.selectedOrchids.includes(species);
+                const checkbox = document.createElement('label');
+                checkbox.className = 'orchid-species-option';
+                checkbox.innerHTML = `
+                    <input type="checkbox" value="${species}" ${isSelected ? 'checked' : ''}>
+                    <span class="orchid-info">
+                        <span class="orchid-emoji">${data.emoji}</span>
+                        <span class="orchid-name">${species}</span>
+                        <span class="orchid-family">${data.family}</span>
+                    </span>
+                `;
+                selector.appendChild(checkbox);
+            });
+
+            // Limit selection to 8 species
+            selector.addEventListener('change', (e) => {
+                const checkboxes = selector.querySelectorAll('input[type="checkbox"]');
+                const checked = selector.querySelectorAll('input[type="checkbox"]:checked');
+                
+                if (checked.length > 8) {
+                    e.target.checked = false;
+                    this.announce('Maximum 8 orchid species allowed');
+                    return;
+                }
+
+                this.options.selectedOrchids = Array.from(checked).map(cb => cb.value);
+            });
+        }
+
+        /**
+         * Bind enhanced settings events
+         */
+        bindEnhancedSettingsEvents() {
+            const gameModeSelect = this.container.querySelector('#om-game-mode-select');
+            const playerNameGroup = this.container.querySelector('#om-player-name-group');
+            const roomCodeGroup = this.container.querySelector('#om-room-code-group');
+            const applyBtn = this.container.querySelector('#om-apply-settings');
+            const saveBtn = this.container.querySelector('#om-save-settings');
+            const resetBtn = this.container.querySelector('#om-reset-stats');
+
+            // Game mode change
+            gameModeSelect?.addEventListener('change', (e) => {
+                const isMultiplayer = e.target.value !== 'solitaire';
+                playerNameGroup.style.display = isMultiplayer ? 'block' : 'none';
+                roomCodeGroup.style.display = isMultiplayer ? 'block' : 'none';
+                this.options.gameMode = e.target.value;
+            });
+
+            // Apply settings
+            applyBtn?.addEventListener('click', () => {
+                this.applyAllSettings();
+                this.container.querySelector('#om-settings-panel').style.display = 'none';
+                
+                if (this.options.gameMode === 'solitaire') {
+                    this.newGame();
+                } else {
+                    this.startMultiplayerSetup();
+                }
+            });
+
+            // Save settings
+            saveBtn?.addEventListener('click', () => {
+                this.applyAllSettings();
+                this.saveSettings();
+                this.announce('Settings saved successfully');
+            });
+
+            // Reset all data
+            resetBtn?.addEventListener('click', () => {
+                if (confirm('This will delete all your game data, statistics, and custom patterns. Are you sure?')) {
+                    localStorage.clear();
+                    this.announce('All data reset successfully');
+                    location.reload();
+                }
+            });
+        }
+
+        /**
+         * Apply all settings from the panel
+         */
+        applyAllSettings() {
+            const settingsPanel = this.container.querySelector('#om-settings-panel');
+            
+            // Get all form values
+            this.options.gameMode = settingsPanel.querySelector('#om-game-mode-select')?.value || 'solitaire';
+            this.options.playerName = settingsPanel.querySelector('#om-player-name')?.value || '';
+            this.options.roomCode = settingsPanel.querySelector('#om-room-code')?.value || '';
+            this.options.tileCount = parseInt(settingsPanel.querySelector('#om-tile-count-select')?.value) || 144;
+            this.options.theme = settingsPanel.querySelector('#om-theme-select')?.value || 'fcos';
+            this.options.layout = settingsPanel.querySelector('#om-layout-select')?.value || 'turtle';
+            this.options.highlights = settingsPanel.querySelector('#om-highlights')?.checked || true;
+            this.options.sound = settingsPanel.querySelector('#om-sound')?.checked || false;
+            this.options.autoHint = settingsPanel.querySelector('#om-auto-hint')?.checked || false;
+            this.options.quickMatch = settingsPanel.querySelector('#om-quick-match')?.checked || false;
+
+            // Apply theme immediately
+            this.applyTheme(this.options.theme);
+        }
+
+        /**
+         * Setup multiplayer functionality
+         */
+        setupMultiplayer() {
+            this.multiplayerState = {
+                isHost: false,
+                roomCode: null,
+                players: [],
+                gameStarted: false,
+                turn: 0
+            };
+
+            this.bindMultiplayerEvents();
+        }
+
+        /**
+         * Bind multiplayer event handlers
+         */
+        bindMultiplayerEvents() {
+            const startGameBtn = this.container.querySelector('#om-start-multiplayer-game');
+            const leaveRoomBtn = this.container.querySelector('#om-leave-room');
+            const copyRoomBtn = this.container.querySelector('#om-copy-room-code');
+
+            startGameBtn?.addEventListener('click', () => {
+                this.startMultiplayerGame();
+            });
+
+            leaveRoomBtn?.addEventListener('click', () => {
+                this.leaveMultiplayerRoom();
+            });
+
+            copyRoomBtn?.addEventListener('click', () => {
+                this.copyRoomCode();
+            });
+        }
+
+        /**
+         * Start multiplayer setup
+         */
+        startMultiplayerSetup() {
+            const playerName = this.options.playerName || `Player ${Date.now() % 1000}`;
+            const roomCode = this.options.roomCode || this.generateRoomCode();
+
+            // Show multiplayer lobby
+            this.showMultiplayerLobby(roomCode, playerName);
+            
+            // Initialize mock multiplayer (replace with WebSocket connection)
+            this.joinOrCreateRoom(roomCode, playerName);
+        }
+
+        /**
+         * Show multiplayer lobby
+         */
+        showMultiplayerLobby(roomCode, playerName) {
+            const lobby = this.container.querySelector('#om-multiplayer-lobby');
+            const roomDisplay = this.container.querySelector('#om-room-display');
+            const playerCount = this.container.querySelector('#om-player-count');
+            
+            if (lobby && roomDisplay && playerCount) {
+                lobby.style.display = 'block';
+                roomDisplay.textContent = roomCode;
+                playerCount.textContent = '1/4';
+                
+                // Hide main game for now
+                this.container.querySelector('.game-board').style.display = 'none';
+            }
+        }
+
+        /**
+         * Setup chat system
+         */
+        setupChat() {
+            this.chatState = {
+                messages: [],
+                isOpen: false
+            };
+
+            this.bindChatEvents();
+        }
+
+        /**
+         * Bind chat event handlers
+         */
+        bindChatEvents() {
+            const chatInput = this.container.querySelector('#om-chat-input');
+            const sendBtn = this.container.querySelector('#om-send-chat');
+            const closeBtn = this.container.querySelector('#om-close-chat');
+
+            sendBtn?.addEventListener('click', () => {
+                this.sendChatMessage();
+            });
+
+            chatInput?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendChatMessage();
+                }
+            });
+
+            closeBtn?.addEventListener('click', () => {
+                this.container.querySelector('#om-chat-panel').style.display = 'none';
+            });
+        }
+
+        /**
+         * Setup leaderboard system
+         */
+        setupLeaderboard() {
+            this.leaderboardState = {
+                currentTab: 'daily',
+                data: {
+                    daily: [],
+                    weekly: [],
+                    monthly: [],
+                    alltime: []
+                }
+            };
+
+            this.bindLeaderboardEvents();
+        }
+
+        /**
+         * Bind leaderboard event handlers
+         */
+        bindLeaderboardEvents() {
+            const viewBtn = this.container.querySelector('#om-view-leaderboard');
+            const closeBtn = this.container.querySelector('#om-close-leaderboard');
+            const tabBtns = this.container.querySelectorAll('.tab-btn');
+
+            viewBtn?.addEventListener('click', () => {
+                this.showLeaderboard();
+            });
+
+            closeBtn?.addEventListener('click', () => {
+                this.container.querySelector('#om-leaderboard-modal').style.display = 'none';
+            });
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tab = e.target.dataset.tab;
+                    this.switchLeaderboardTab(tab);
+                });
+            });
+        }
+
+        /**
+         * Generate room code
+         */
+        generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        /**
+         * Join or create multiplayer room
+         */
+        joinOrCreateRoom(roomCode, playerName) {
+            // Mock implementation - replace with actual WebSocket/server logic
+            this.multiplayerState.roomCode = roomCode;
+            this.multiplayerState.isHost = true;
+            this.multiplayerState.players = [{ name: playerName, id: 1, score: 0 }];
+            
+            this.announce(`Joined room ${roomCode} as ${playerName}`);
+            
+            // Show start button for host
+            const startBtn = this.container.querySelector('#om-start-multiplayer-game');
+            if (startBtn) startBtn.style.display = 'block';
+        }
+
+        /**
+         * Send chat message
+         */
+        sendChatMessage() {
+            const input = this.container.querySelector('#om-chat-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                this.addChatMessage(this.options.playerName || 'You', message);
+                input.value = '';
+            }
+        }
+
+        /**
+         * Add chat message to display
+         */
+        addChatMessage(sender, message) {
+            const chatMessages = this.container.querySelector('#om-chat-messages');
+            if (!chatMessages) return;
+
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+            messageEl.innerHTML = `
+                <span class="chat-sender">${sender}:</span>
+                <span class="chat-text">${message}</span>
+                <span class="chat-time">${new Date().toLocaleTimeString()}</span>
+            `;
+            
+            chatMessages.appendChild(messageEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        /**
+         * Show leaderboard
+         */
+        showLeaderboard() {
+            const modal = this.container.querySelector('#om-leaderboard-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                this.loadLeaderboardData(this.leaderboardState.currentTab);
+            }
+        }
+
+        /**
+         * Switch leaderboard tab
+         */
+        switchLeaderboardTab(tab) {
+            const tabBtns = this.container.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            this.leaderboardState.currentTab = tab;
+            this.loadLeaderboardData(tab);
+        }
+
+        /**
+         * Load leaderboard data
+         */
+        loadLeaderboardData(tab) {
+            // Mock leaderboard data
+            const mockData = [
+                { rank: 1, name: 'OrchidMaster', score: 15420, time: '02:34', moves: 72 },
+                { rank: 2, name: 'FlowerPower', score: 14850, time: '03:12', moves: 85 },
+                { rank: 3, name: 'MahjongPro', score: 13960, time: '02:56', moves: 78 },
+                { rank: 4, name: 'PetalSeeker', score: 12340, time: '04:21', moves: 92 },
+                { rank: 5, name: 'BloomBuster', score: 11780, time: '03:45', moves: 89 }
+            ];
+
+            this.displayLeaderboard(mockData);
+        }
+
+        /**
+         * Display leaderboard entries
+         */
+        displayLeaderboard(data) {
+            const list = this.container.querySelector('#om-leaderboard-list');
+            if (!list) return;
+
+            list.innerHTML = data.map(entry => `
+                <div class="leaderboard-entry ${entry.rank <= 3 ? 'top-three' : ''}">
+                    <div class="rank">
+                        <span class="rank-number">#${entry.rank}</span>
+                        ${entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : ''}
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">${entry.name}</div>
+                        <div class="player-stats">${entry.time} • ${entry.moves} moves</div>
+                    </div>
+                    <div class="player-score">${entry.score.toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Copy room code to clipboard
+         */
+        copyRoomCode() {
+            const roomCode = this.multiplayerState.roomCode;
+            if (roomCode && navigator.clipboard) {
+                navigator.clipboard.writeText(roomCode).then(() => {
+                    this.announce('Room code copied to clipboard');
+                });
+            }
+        }
+
+        /**
+         * Start multiplayer game
+         */
+        startMultiplayerGame() {
+            this.container.querySelector('#om-multiplayer-lobby').style.display = 'none';
+            this.container.querySelector('.game-board').style.display = 'block';
+            this.container.querySelector('#om-chat-panel').style.display = 'block';
+            
+            this.newGame();
+            this.announce('Multiplayer game started!');
+        }
+
+        /**
+         * Leave multiplayer room
+         */
+        leaveMultiplayerRoom() {
+            this.container.querySelector('#om-multiplayer-lobby').style.display = 'none';
+            this.container.querySelector('.game-board').style.display = 'block';
+            this.options.gameMode = 'solitaire';
+            this.newGame();
         }
 
         /**
