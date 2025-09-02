@@ -30,7 +30,11 @@ class OrchidWidgetSystem:
             'enhanced_globe': 'Enhanced Globe Weather Widget',
             'climate': 'Climate Habitat Comparator Widget',
             'trivia': 'Orchid Trivia Challenge Widget',
-            'mahjong': 'Orchid Mahjong Game Widget'
+            'mahjong': 'Orchid Mahjong Game Widget',
+            'orchid_explorer_pro': 'Orchid Explorer Pro - Geographic & Climate Suite',
+            'discovery_center': 'Discovery Center - Search, Browse & Identify Hub',
+            'learning_games': 'Learning Games - Multi-Game Educational Suite',
+            'research_hub': 'Research Hub - Analysis & Citation Tools'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -57,6 +61,14 @@ class OrchidWidgetSystem:
             return self._get_trivia_data(**kwargs)
         elif widget_type == 'mahjong':
             return self._get_mahjong_data(**kwargs)
+        elif widget_type == 'orchid_explorer_pro':
+            return self._get_orchid_explorer_pro_data(**kwargs)
+        elif widget_type == 'discovery_center':
+            return self._get_discovery_center_data(**kwargs)
+        elif widget_type == 'learning_games':
+            return self._get_learning_games_data(**kwargs)
+        elif widget_type == 'research_hub':
+            return self._get_research_hub_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -473,6 +485,41 @@ class OrchidWidgetSystem:
     def _get_mahjong_data(self, **kwargs):
         """Get Mahjong game data for widget"""
         return {'tiles': []}
+    
+    def _get_orchid_explorer_pro_data(self, **kwargs):
+        """Get combined geographic and climate data"""
+        return {
+            'globe_data': {'countries': [], 'hotspots': []},
+            'weather_data': {'location': 'Unknown', 'climate': 'Temperate'},
+            'climate_zones': []
+        }
+    
+    def _get_discovery_center_data(self, **kwargs):
+        """Get combined search, gallery, and identification data"""
+        return {
+            'featured_orchid': {'name': 'Cattleya trianae', 'country': 'Colombia'},
+            'recent_searches': [],
+            'gallery_items': [],
+            'stats': {'total': 247, 'genera': 42, 'species': 189}
+        }
+    
+    def _get_learning_games_data(self, **kwargs):
+        """Get combined gaming data"""
+        return {
+            'trivia_questions': [],
+            'mahjong_tiles': [],
+            'memory_cards': [],
+            'quiz_data': []
+        }
+    
+    def _get_research_hub_data(self, **kwargs):
+        """Get combined research and citation data"""
+        return {
+            'comparison_tools': [],
+            'citation_formats': ['APA', 'MLA', 'Chicago', 'BibTeX'],
+            'analysis_data': {'specimens': 247, 'diversity_index': 3.47},
+            'export_options': ['CSV', 'JSON', 'PDF', 'LaTeX']
+        }
 
 # Initialize widget system
 widget_system = OrchidWidgetSystem()
