@@ -1,0 +1,119 @@
+Build a production-ready, stand-alone Mahjong Solitaire web widget with an ORCHID theme.
+
+GOAL
+- A fast, polished, robust Mahjong Solitaire game that rivals top online versions.
+- Embeddable anywhere via a single <script> and <div id="orchid-mahjong"></div>.
+- No external frameworks; vanilla HTML/CSS/JS only (optional tiny helper libs allowed if bundled, no CDNs).
+- Works great on desktop, tablet, and mobile; supports touch and mouse.
+
+THEME & BRANDING
+- Orchid-themed tiles: blossoms from major genera (Phalaenopsis, Cattleya, Dendrobium, Paphiopedilum, Vanda, Oncidium, Cymbidium, Miltoniopsis, Masdevallia, Phragmipedium).
+- Clean, modern UI with gentle “orchid house” vibe.
+- Include two built-in color themes: 
+  1) FCOS Purple/Green/Beach Blue (#4B0082, #CDE4BC, #e6f7ff)
+  2) Classic neutral (off-white tile table, charcoal UI)
+- Tile backs can show a subtle orchid silhouette; fronts feature orchid bloom art (no realistic leaves dominating—focus on flowers).
+- Provide a11y/high-contrast theme variant.
+
+GAME TYPE & RULES
+- Mahjong SOLITAIRE tile-matching (not 4-player mahjong).
+- Standard 144 tiles set:
+  - 3 suits × 1–9, 4 copies each (108 tiles).
+  - Honors: 4 Winds (N,E,S,W) ×4 and 3 Dragons ×4 (28 tiles).
+  - Flowers/Seasons: 8 unique tiles (8 tiles).
+- Orchid mapping:
+  - “Dots” → “Petals” (1–9) with stylized petal motifs + miniature orchid bloom in center.
+  - “Bamboo” → “Stems” (1–9) with stylized stems + small blossom.
+  - “Characters” → “Labels” (1–9) using delicate label plaques with species initials and a tiny flower mark.
+  - Winds → Greenhouse fans icons with orchid accents (N/E/S/W).
+  - Dragons → Award ribbons (Gold/Silver/Bronze) with orchid rosette.
+  - Flowers/Seasons → 8 distinct orchid portraits (e.g., Phal, Cat, Den, Paph, Vanda, Onc, Cym, Masd).
+- Matching:
+  - Identical tiles match normally.
+  - Flowers/Seasons act as standard wild groups (any Flower matches Flower, any Season matches Season).
+- Free-tile logic: a tile is free if no tile directly on top of it and either the left or right side is open.
+
+ROBUST FEATURES
+- Layouts: include 50+ classic and creative layouts (Turtle, Dragon, Pyramid, Butterfly, Fortress) plus orchid-shaped ones (Orchid, Greenhouse, Garland).
+- Difficulty labels (Easy/Normal/Hard/Expert) tied to layout shape and pair distribution.
+- Solvable shuffle: generator must ensure at least one solution (use backtracking/graph approach to avoid dead layouts).
+- Timer, move counter, and scoring:
+  - Base score per match, time bonus, combo streak bonus (optional).
+  - Penalties for shuffle and hint usage (configurable).
+- Quality of life:
+  - Undo/Redo (multi-step), Hint, Shuffle (guarantee solvable after shuffle), Auto-highlight free tiles on hover/tap, Show available pairs count.
+  - Auto-save progress and settings in localStorage; resume session on reload.
+- Daily Challenge:
+  - Seeded layout by date; local daily streak tracking (localStorage).
+- Leaderboard (local only by default): fastest time per layout; simple name entry stored locally.
+  - Provide an easy hook function to POST results to a backend if added later.
+
+ACCESSIBILITY & UX
+- Keyboard support: arrow keys to move focus among free tiles, Enter/Space to select/match; “H” for hint, “U” undo, “R” redo, “S” shuffle, “T” new game.
+- High-contrast mode; color-blind safe palette; clearly visible selection/focus rings.
+- ARIA roles/labels; announce matches/remaining pairs to screen readers (“X pairs remain”).
+- Settings panel:
+  - Themes (FCOS, Neutral, High Contrast)
+  - Music/SFX toggles (default off), volume sliders
+  - Tile face size (S/M/L), table background selection (subtle orchid greenhouse, cloud forest mist, plain)
+  - Show/Hide helper highlights, show remaining pairs toggle
+- Tutorial overlay (first run): 3–5 step guided tips.
+
+PERFORMANCE
+- 60fps animations (CSS transforms, GPU-accelerated).
+- Sprite sheets or optimized SVGs for tiles; preloading with a lightweight loader.
+- Memory-friendly image sizes; lazy loading for large assets.
+- Responsive: scales to fit container while preserving click/tap targets ≥44px.
+
+FILES & BUNDLE
+- Single embeddable bundle “orchid-mahjong.min.js” with inlined CSS and assets (data URLs or base64) OR
+  - “orchid-mahjong.js”, “orchid-mahjong.css”, “assets/…” with a tiny loader script.
+- Provide an example snippet:
+  <div id="orchid-mahjong" data-theme="fcos" data-layout="orchid"></div>
+  <script src="orchid-mahjong.min.js"></script>
+- Expose a small API on window.OrchidMahjong:
+  - init(selectorOrElement, options)
+  - newGame({layout, seed})
+  - setTheme(name)
+  - getStats(), resetStats()
+  - on(eventName, handler) // events: 'match','win','shuffle','hint','undo','redo'
+- No network calls required; works offline. Optional PWA manifest/service worker if easy.
+
+ART & ASSETS (placeholders acceptable, easily replaced)
+- Provide a coherent orchid tile pack (vector or high-res PNG):
+  - Petals (1–9): abstract dots formed by orchid petals.
+  - Stems (1–9): abstract slender stems; avoid dense leaf art; keep focus on blossoms.
+  - Labels (1–9): small engraved plaques with subtle orchid icon.
+  - Winds: four fan icons with orchid accent + N/E/S/W labels.
+  - Dragons: gold/silver/bronze ribbons with orchid rosettes (three types).
+  - 8 Flowers/Seasons: portrait tiles of key genera (Phalaenopsis, Cattleya, Dendrobium, Paphiopedilum, Vanda, Oncidium, Cymbidium, Masdevallia).
+- Backgrounds: 3 options (beach blue #e6f7ff, greenhouse parchment, dark slate).
+- SFX: soft click, chime on match, subtle fan whirr on win (toggleable). Short loops only.
+
+GAME FLOW
+- Home screen: Play, Daily, Layouts, Settings, Help.
+- In-game HUD: timer, moves, pairs left, buttons (Undo, Hint, Shuffle, New).
+- Win screen: time, score, bests; options to replay, change layout, or share (copyable text).
+- Pause/resume overlay.
+
+QUALITY BAR / ACCEPTANCE
+- Smooth tile selection, clear states, no accidental taps.
+- Solvable shuffle system proven across all provided layouts.
+- No crashes, no layout overflow on mobile; tiles readable at smallest breakpoint.
+- Lighthouse performance ≥90 on mobile if possible.
+- All text strings centralized for future localization.
+
+DELIVERABLES
+- Minified production bundle + unminified sources.
+- “/demo/index.html” showcasing embedding, multiple themes, layouts, and API usage.
+- Brief README with init options and asset replacement instructions.
+
+INIT OPTIONS (examples)
+- theme: "fcos" | "neutral" | "high-contrast"
+- layout: "turtle" | "dragon" | "orchid" | "greenhouse" | ...
+- difficulty: "easy" | "normal" | "hard" | "expert"
+- sound: true/false, music: false, highlights: true
+- allowWildGroups: true (Flowers/Seasons)
+- seed: number | "daily"
+
+Make it delightful, elegant, and fast. Focus visuals on orchid blossoms (not leafy foliage). Ship a polished, “best-in-class” Mahjong Solitaire experience.
