@@ -487,6 +487,11 @@ def workshops():
 </html>
 '''
 
+@app.route('/satellite-earth-globe')
+def satellite_earth_globe():
+    """3D Earth Globe with real orchid distribution data"""
+    return render_template('widgets/satellite_earth_globe.html')
+
 if __name__ == '__main__':
     print("Simple routes loaded successfully")
     print(f"Ready to serve {len(WORKING_ORCHIDS)} orchids")

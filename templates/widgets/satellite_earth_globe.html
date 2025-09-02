@@ -9,10 +9,11 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
+            padding: 0 0 300px 0;
             background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
             font-family: 'Arial', sans-serif;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
         }
 
@@ -22,20 +23,21 @@
             position: relative;
         }
 
-        /* Control Panel - Bottom positioned */
+        /* Control Panel - Below globe as caption */
         .control-panel {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: absolute;
+            bottom: -80px;
+            left: 0;
+            right: 0;
             background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(100, 149, 237, 0.4);
-            border-radius: 25px;
+            border-radius: 15px;
             padding: 15px 25px;
             display: flex;
             gap: 12px;
             align-items: center;
+            justify-content: center;
             color: white;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             z-index: 1000;
@@ -64,10 +66,10 @@
             box-shadow: 0 0 20px rgba(79, 195, 247, 0.8);
         }
 
-        /* Info Panel */
+        /* Info Panel - As caption below right */
         .info-panel {
-            position: fixed;
-            top: 20px;
+            position: absolute;
+            bottom: -250px;
             right: 20px;
             background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
@@ -100,10 +102,10 @@
             border-left: 3px solid #4fc3f7;
         }
 
-        /* Statistics Panel */
+        /* Statistics Panel - As caption below left */
         .stats-panel {
-            position: fixed;
-            top: 20px;
+            position: absolute;
+            bottom: -250px;
             left: 20px;
             background: rgba(15, 30, 60, 0.95);
             backdrop-filter: blur(15px);
@@ -364,34 +366,42 @@
                     const lat = parseFloat(orchid.decimal_latitude);
                     const lng = parseFloat(orchid.decimal_longitude);
                     
-                    // Convert lat/lng to 3D coordinates on sphere
-                    const phi = (90 - lat) * (Math.PI / 180);
-                    const theta = (lng + 180) * (Math.PI / 180);
+                    // Convert lat/lng to 3D coordinates on sphere - FIXED VERSION
+                    const phi = (90 - lat) * (Math.PI / 180);  // latitude to phi
+                    const theta = (lng + 180) * (Math.PI / 180); // longitude to theta
                     
-                    const x = -1.02 * Math.sin(phi) * Math.cos(theta);
-                    const y = 1.02 * Math.cos(phi);
-                    const z = 1.02 * Math.sin(phi) * Math.sin(theta);
+                    const earthRadius = 1.02; // Slightly above Earth surface
                     
-                    // Create orchid marker
-                    const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+                    // Correct spherical to cartesian conversion
+                    const x = earthRadius * Math.sin(phi) * Math.cos(theta);
+                    const y = earthRadius * Math.cos(phi);
+                    const z = earthRadius * Math.sin(phi) * Math.sin(theta);
+                    
+                    // Create orchid marker - larger and more visible
+                    const markerGeometry = new THREE.SphereGeometry(0.03, 12, 12);
                     const markerMaterial = new THREE.MeshBasicMaterial({ 
-                        color: 0xff1744,
+                        color: 0xff4444,  // Brighter red
                         transparent: true,
-                        opacity: 0.9
+                        opacity: 1.0
                     });
                     
                     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
                     marker.position.set(x, y, z);
+                    
+                    // IMPORTANT: Parent marker to Earth so it rotates with the planet
+                    earth.add(marker);
+                    
                     marker.userData = {
                         orchid: orchid,
-                        originalScale: 1
+                        originalPosition: { x, y, z }
                     };
                     
-                    scene.add(marker);
                     orchidMarkers.push(marker);
                     
-                    // Add pulsing animation
-                    animateMarker(marker, index * 0.1);
+                    // Gentle pulsing - no crazy movement
+                    animateMarkerPulse(marker, index * 0.2);
+                    
+                    console.log(`Orchid ${orchid.display_name} placed at (${lat}, ${lng}) -> 3D (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
                 }
             });
         }
@@ -436,12 +446,12 @@
             document.getElementById('continentCount').textContent = "4";
         }
 
-        function animateMarker(marker, delay) {
+        function animateMarkerPulse(marker, delay) {
             let time = delay;
             
             function pulse() {
-                time += 0.05;
-                const scale = 1 + 0.3 * Math.sin(time * 2);
+                time += 0.02; // Slower pulsing
+                const scale = 1 + 0.2 * Math.sin(time * 1.5); // Gentler pulse
                 marker.scale.setScalar(scale);
                 requestAnimationFrame(pulse);
             }
