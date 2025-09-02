@@ -498,6 +498,76 @@ def blooms_of_mystery_widget():
     embed_mode = request.args.get('embed', '').lower() == 'true'
     return render_template('widgets/blooms_of_mystery.html', embed_mode=embed_mode)
 
+@app.route('/widgets/orchid-mahjong')
+def orchid_mahjong_widget():
+    """Embeddable Orchid Mahjong widget for Neon One website"""
+    embed_mode = request.args.get('embed', '').lower() == 'true'
+    return render_template('widgets/orchid_mahjong.html', embed_mode=embed_mode)
+
+@app.route('/api/mahjong-tiles')
+def mahjong_tiles_api():
+    """API endpoint for Mahjong tile data"""
+    tiles = [
+        {
+            "id": "cattleya_1",
+            "genus": "Cattleya",
+            "name": "trianae",
+            "image": "/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
+            "decoration": "🌺"
+        },
+        {
+            "id": "phalaenopsis_1", 
+            "genus": "Phalaenopsis",
+            "name": "amabilis",
+            "image": "/api/drive-photo/1BKz8H8n9pQ3jZ8QeH8N9pQ3jZ8QeH8N9",
+            "decoration": "🦋"
+        },
+        {
+            "id": "dendrobium_1",
+            "genus": "Dendrobium", 
+            "name": "nobile",
+            "image": "/api/drive-photo/1CXz9I9o0sR4kA9RfI9O0sR4kA9RfI9O0",
+            "decoration": "🌸"
+        },
+        {
+            "id": "vanda_1",
+            "genus": "Vanda",
+            "name": "coerulea", 
+            "image": "/api/drive-photo/1DYa0J0p1tS5lB0SgJ0P1tS5lB0SgJ0P1",
+            "decoration": "💜"
+        },
+        {
+            "id": "oncidium_1",
+            "genus": "Oncidium",
+            "name": "sphacelatum",
+            "image": "/static/images/orchid_placeholder.svg",
+            "decoration": "☀️"
+        },
+        {
+            "id": "cymbidium_1",
+            "genus": "Cymbidium",
+            "name": "eburneum",
+            "image": "/static/images/orchid_placeholder.svg", 
+            "decoration": "🌿"
+        },
+        {
+            "id": "paphiopedilum_1",
+            "genus": "Paphiopedilum",
+            "name": "wardii",
+            "image": "/static/images/orchid_placeholder.svg",
+            "decoration": "👑"
+        },
+        {
+            "id": "miltonia_1",
+            "genus": "Miltonia",
+            "name": "spectabilis",
+            "image": "/static/images/orchid_placeholder.svg",
+            "decoration": "🎭"
+        }
+    ]
+    
+    return jsonify(tiles)
+
 @app.route('/api/mystery-orchids')
 def mystery_orchids_api():
     """API endpoint for Hollywood Orchids movie data (Blooms of Mystery)"""
