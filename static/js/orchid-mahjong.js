@@ -1024,6 +1024,9 @@
                 
                 this.announce(`Match found! ${this.getRemainingPairs()} pairs remaining.`);
                 this.emit('match', { tile1, tile2, score: this.gameState.score });
+                
+                // Show educational pop-up card for matched orchid
+                this.showEducationalCard(tile1);
 
                 // Check for win condition
                 if (this.gameState.matchedTiles.size === this.gameState.tiles.length) {
@@ -1981,6 +1984,157 @@
             } catch (e) {
                 console.warn('Failed to save statistics:', e);
             }
+        }
+
+        /**
+         * Show educational pop-up card when tiles are matched
+         */
+        showEducationalCard(tile) {
+            // Get orchid fact from tile or fetch from API
+            const fact = tile.fact || 'This beautiful orchid is part of the Orchidaceae family.';
+            
+            // Create or get existing educational card modal
+            let cardModal = this.container.querySelector('#om-educational-card');
+            if (!cardModal) {
+                cardModal = document.createElement('div');
+                cardModal.id = 'om-educational-card';
+                cardModal.className = 'educational-card-modal';
+                cardModal.innerHTML = `
+                    <div class="educational-card">
+                        <div class="card-header">
+                            <h3 class="orchid-name">Orchid Fact</h3>
+                            <span class="timer-circle">
+                                <svg class="timer-svg" width="24" height="24">
+                                    <circle cx="12" cy="12" r="10" class="timer-bg" />
+                                    <circle cx="12" cy="12" r="10" class="timer-progress" />
+                                </svg>
+                                <span class="timer-text">5</span>
+                            </span>
+                        </div>
+                        <div class="card-content">
+                            <div class="orchid-image-container">
+                                <img class="orchid-image" src="" alt="Orchid" />
+                            </div>
+                            <div class="fact-content">
+                                <p class="orchid-fact"></p>
+                                <div class="orchid-details">
+                                    <span class="detail-item"><strong>Family:</strong> <span class="family">Orchidaceae</span></span>
+                                    <span class="detail-item"><strong>Origin:</strong> <span class="origin">Various regions</span></span>
+                                    <span class="detail-item"><strong>Care:</strong> <span class="care-tip">Bright, indirect light</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="close-btn" aria-label="Close">&times;</button>
+                            <div class="learn-more">
+                                <small>🌺 Five Cities Orchid Society Educational Series</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                this.container.appendChild(cardModal);
+                
+                // Add event listener for close button
+                cardModal.querySelector('.close-btn').addEventListener('click', () => {
+                    cardModal.style.display = 'none';
+                });
+                
+                // Close on click outside
+                cardModal.addEventListener('click', (e) => {
+                    if (e.target === cardModal) {
+                        cardModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Update card content with tile information
+            const orchidName = tile.name || 'Beautiful Orchid';
+            const orchidImage = tile.imageUrl || tile.backupImage || '/static/images/orchid_placeholder.svg';
+            
+            cardModal.querySelector('.orchid-name').textContent = orchidName;
+            cardModal.querySelector('.orchid-image').src = orchidImage;
+            cardModal.querySelector('.orchid-fact').textContent = fact;
+            
+            // Optionally fetch additional facts from API
+            this.fetchOrchidFacts(tile).then(factData => {
+                if (factData && factData.orchid_fact) {
+                    const factInfo = factData.orchid_fact;
+                    cardModal.querySelector('.orchid-name').textContent = factInfo.name || orchidName;
+                    cardModal.querySelector('.orchid-fact').textContent = factInfo.fact || fact;
+                    cardModal.querySelector('.family').textContent = factInfo.family || 'Orchidaceae';
+                    cardModal.querySelector('.origin').textContent = factInfo.origin || 'Various regions';
+                    cardModal.querySelector('.care-tip').textContent = factInfo.care_tip || 'Bright, indirect light';
+                    
+                    if (factInfo.image_url && factInfo.image_url !== '/static/images/orchid_placeholder.svg') {
+                        cardModal.querySelector('.orchid-image').src = factInfo.image_url;
+                    }
+                }
+            }).catch(error => {
+                console.log('Using tile fact data:', error);
+            });
+            
+            // Show modal with animation
+            cardModal.style.display = 'flex';
+            cardModal.classList.add('show');
+            
+            // Start 5-second countdown timer
+            this.startEducationalTimer(cardModal);
+        }
+        
+        /**
+         * Fetch additional orchid facts from API
+         */
+        async fetchOrchidFacts(tile) {
+            try {
+                const response = await fetch('/api/mahjong/orchid-facts');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.log('Could not fetch additional orchid facts:', error);
+                return null;
+            }
+        }
+        
+        /**
+         * Start 5-second countdown timer for educational card
+         */
+        startEducationalTimer(cardModal) {
+            const timerText = cardModal.querySelector('.timer-text');
+            const timerProgress = cardModal.querySelector('.timer-progress');
+            const totalDuration = 5000; // 5 seconds
+            const interval = 100; // Update every 100ms
+            let elapsed = 0;
+            
+            // Set up SVG circle for progress animation
+            const circle = timerProgress;
+            const radius = 10;
+            const circumference = 2 * Math.PI * radius;
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = 0;
+            
+            const timer = setInterval(() => {
+                elapsed += interval;
+                const remaining = Math.max(0, totalDuration - elapsed);
+                const seconds = Math.ceil(remaining / 1000);
+                
+                // Update countdown text
+                timerText.textContent = seconds;
+                
+                // Update progress circle
+                const progress = elapsed / totalDuration;
+                const offset = circumference * progress;
+                circle.style.strokeDashoffset = offset;
+                
+                // Auto-close when timer reaches 0
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    cardModal.style.display = 'none';
+                    cardModal.classList.remove('show');
+                }
+            }, interval);
+            
+            // Store timer ID for cleanup if needed
+            cardModal._timerId = timer;
         }
 
         /**

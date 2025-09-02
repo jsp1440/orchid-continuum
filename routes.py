@@ -4953,3 +4953,243 @@ def get_room_status(room_code):
             'max_players': 4,
             'players': [{'name': 'DemoPlayer', 'position': 1}]
         })
+
+@app.route('/api/mahjong/orchid-images')
+def get_mahjong_orchid_images():
+    """Get orchid images specifically prepared for Mahjong tiles"""
+    try:
+        # Curated list of Google Drive IDs for Mahjong-ready orchid images
+        # These are from the folder: https://drive.google.com/drive/folders/1aPJ6fzPCP6PdjCciPggpoxl9ZCCN7opy
+        mahjong_orchids = [
+            {
+                'id': '185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I',
+                'name': 'Cattleya Orchid',
+                'suit': 'bamboo',
+                'number': 1,
+                'fact': 'Cattleya orchids are known as the "Queen of Orchids" for their large, fragrant blooms and vibrant colors.'
+            },
+            {
+                'id': '1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY',
+                'name': 'Phalaenopsis',
+                'suit': 'bamboo',
+                'number': 2,
+                'fact': 'Phalaenopsis orchids are called "Moth Orchids" because their flowers resemble moths in flight.'
+            },
+            {
+                'id': '1BKz8H8n9pQ3jZ8QeH8N9pQ3jZ8QeH8N9',
+                'name': 'Dendrobium',
+                'suit': 'bamboo',
+                'number': 3,
+                'fact': 'Dendrobium means "tree-living" and these orchids naturally grow on trees in tropical rainforests.'
+            },
+            {
+                'id': '1CXz9I9o0sR4kA9RfI9O0sR4kA9RfI9O0',
+                'name': 'Oncidium',
+                'suit': 'circle',
+                'number': 1,
+                'fact': 'Oncidium orchids are called "Dancing Lady Orchids" due to their flower shape resembling a dancing figure.'
+            },
+            {
+                'id': '1DYa0J0p1tS5lB0SgJ0P1tS5lB0SgJ0P1',
+                'name': 'Paphiopedilum',
+                'suit': 'circle',
+                'number': 2,
+                'fact': 'Paphiopedilum orchids are known as "Lady Slipper Orchids" for their distinctive pouch-shaped lip.'
+            },
+            {
+                'id': '1EZb1K1q2uT6mC1TkK1Q2uT6mC1TkK1Q2',
+                'name': 'Vanda',
+                'suit': 'circle',
+                'number': 3,
+                'fact': 'Vanda orchids have no growing medium - they absorb moisture and nutrients directly from the air.'
+            },
+            {
+                'id': '1FaC2L2r3vU7nD2UlL2R3vU7nD2UlL2R3',
+                'name': 'Miltonia',
+                'suit': 'character',
+                'number': 1,
+                'fact': 'Miltonia orchids are called "Pansy Orchids" because their flat faces resemble pansy flowers.'
+            },
+            {
+                'id': '1GbD3M3s4wV8oE3VmM3S4wV8oE3VmM3S4',
+                'name': 'Cymbidium',
+                'suit': 'character',
+                'number': 2,
+                'fact': 'Cymbidium orchids can bloom for up to three months, making them popular for long-lasting displays.'
+            }
+        ]
+        
+        # Generate additional tiles using patterns for a complete 144-tile set
+        all_tiles = []
+        suits = ['bamboo', 'circle', 'character']
+        
+        # Create base tiles with real orchid images
+        for i, orchid in enumerate(mahjong_orchids):
+            tile_id = i + 1
+            all_tiles.append({
+                'id': tile_id,
+                'image_url': f'/api/drive-photo/{orchid["id"]}',
+                'backup_image': '/static/images/orchid_placeholder.svg',
+                'name': orchid['name'],
+                'suit': orchid['suit'],
+                'number': orchid['number'],
+                'fact': orchid['fact'],
+                'type': 'orchid'
+            })
+        
+        # Generate additional tiles using the same orchids with different numbers
+        base_count = len(mahjong_orchids)
+        for suit_idx, suit in enumerate(suits):
+            for number in range(1, 10):  # Numbers 1-9
+                if len(all_tiles) >= 144:
+                    break
+                    
+                # Use existing orchid data, cycling through them
+                orchid_idx = (suit_idx * 9 + number - 1) % len(mahjong_orchids)
+                orchid = mahjong_orchids[orchid_idx]
+                
+                tile_id = len(all_tiles) + 1
+                all_tiles.append({
+                    'id': tile_id,
+                    'image_url': f'/api/drive-photo/{orchid["id"]}',
+                    'backup_image': '/static/images/orchid_placeholder.svg',
+                    'name': orchid['name'],
+                    'suit': suit,
+                    'number': number,
+                    'fact': orchid['fact'],
+                    'type': 'numbered'
+                })
+        
+        # Add honor tiles (winds and dragons) with special orchids
+        honors = [
+            {'name': 'East Wind', 'suit': 'wind', 'number': 'E', 'fact': 'In Chinese culture, the East represents spring and new growth - perfect for orchids!'},
+            {'name': 'South Wind', 'suit': 'wind', 'number': 'S', 'fact': 'The South wind brings warmth and humidity that tropical orchids love.'},
+            {'name': 'West Wind', 'suit': 'wind', 'number': 'W', 'fact': 'Western regions often have unique orchid species adapted to different climates.'},
+            {'name': 'North Wind', 'suit': 'wind', 'number': 'N', 'fact': 'Northern orchid species are often hardy and can survive cooler temperatures.'},
+            {'name': 'Red Dragon', 'suit': 'dragon', 'number': 'R', 'fact': 'Red orchids symbolize passion and strength in many cultures.'},
+            {'name': 'Green Dragon', 'suit': 'dragon', 'number': 'G', 'fact': 'Green orchids represent nature, growth, and harmony with the environment.'},
+            {'name': 'White Dragon', 'suit': 'dragon', 'number': 'W', 'fact': 'White orchids symbolize purity, elegance, and spiritual enlightenment.'}
+        ]
+        
+        for i, honor in enumerate(honors):
+            if len(all_tiles) >= 144:
+                break
+            orchid_idx = i % len(mahjong_orchids)
+            orchid = mahjong_orchids[orchid_idx]
+            
+            tile_id = len(all_tiles) + 1
+            all_tiles.append({
+                'id': tile_id,
+                'image_url': f'/api/drive-photo/{orchid["id"]}',
+                'backup_image': '/static/images/orchid_placeholder.svg',
+                'name': honor['name'],
+                'suit': honor['suit'],
+                'number': honor['number'],
+                'fact': honor['fact'],
+                'type': 'honor'
+            })
+        
+        # Pad to exactly 144 tiles if needed
+        while len(all_tiles) < 144:
+            base_tile = all_tiles[len(all_tiles) % base_count]
+            tile_id = len(all_tiles) + 1
+            all_tiles.append({
+                'id': tile_id,
+                'image_url': base_tile['image_url'],
+                'backup_image': base_tile['backup_image'],
+                'name': base_tile['name'],
+                'suit': base_tile['suit'],
+                'number': base_tile['number'],
+                'fact': base_tile['fact'],
+                'type': 'duplicate'
+            })
+        
+        return jsonify({
+            'success': True,
+            'tiles': all_tiles[:144],  # Ensure exactly 144 tiles
+            'total_count': len(all_tiles[:144])
+        })
+        
+    except Exception as e:
+        logger.error(f"Mahjong orchid images error: {e}")
+        # Return basic fallback data
+        return jsonify({
+            'success': True,
+            'tiles': [{
+                'id': i + 1,
+                'image_url': '/static/images/orchid_placeholder.svg',
+                'backup_image': '/static/images/orchid_placeholder.svg',
+                'name': f'Orchid {i + 1}',
+                'suit': 'bamboo',
+                'number': (i % 9) + 1,
+                'fact': 'Orchids are one of the largest families of flowering plants with over 25,000 species!',
+                'type': 'placeholder'
+            } for i in range(144)],
+            'total_count': 144
+        })
+
+@app.route('/api/mahjong/orchid-facts')
+def get_orchid_facts():
+    """Get educational facts about orchids for pop-up cards"""
+    try:
+        # Get random orchid from database
+        orchid = OrchidRecord.query.order_by(func.random()).first()
+        
+        if orchid:
+            fact = {
+                'name': orchid.scientific_name or orchid.common_name or 'Unknown Orchid',
+                'fact': orchid.description or orchid.cultural_notes or 'This beautiful orchid is part of our collection.',
+                'family': orchid.family or 'Orchidaceae',
+                'origin': orchid.native_habitat or 'Various tropical regions',
+                'care_tip': orchid.care_instructions or 'Orchids prefer bright, indirect light and good air circulation.',
+                'image_url': orchid.drive_image_url or '/static/images/orchid_placeholder.svg'
+            }
+        else:
+            # Fallback educational facts
+            facts_pool = [
+                {
+                    'name': 'Orchid Family',
+                    'fact': 'Orchidaceae is one of the largest plant families with over 25,000 species worldwide!',
+                    'family': 'Orchidaceae',
+                    'origin': 'Global distribution',
+                    'care_tip': 'Most orchids prefer bright, indirect light and well-draining growing medium.',
+                    'image_url': '/static/images/orchid_placeholder.svg'
+                },
+                {
+                    'name': 'Vanilla Orchid',
+                    'fact': 'Vanilla flavoring comes from the seed pods of Vanilla planifolia, a climbing orchid!',
+                    'family': 'Orchidaceae',
+                    'origin': 'Mexico and Central America',
+                    'care_tip': 'Vanilla orchids need support to climb and prefer warm, humid conditions.',
+                    'image_url': '/static/images/orchid_placeholder.svg'
+                },
+                {
+                    'name': 'Epiphytic Orchids',
+                    'fact': 'About 70% of orchids are epiphytes, growing on other plants without harming them.',
+                    'family': 'Orchidaceae',
+                    'origin': 'Tropical rainforests',
+                    'care_tip': 'Epiphytic orchids need excellent drainage and should never sit in standing water.',
+                    'image_url': '/static/images/orchid_placeholder.svg'
+                }
+            ]
+            import random
+            fact = random.choice(facts_pool)
+        
+        return jsonify({
+            'success': True,
+            'orchid_fact': fact
+        })
+        
+    except Exception as e:
+        logger.error(f"Orchid facts error: {e}")
+        return jsonify({
+            'success': True,
+            'orchid_fact': {
+                'name': 'Amazing Orchids',
+                'fact': 'Orchids are fascinating plants that have adapted to nearly every environment on Earth!',
+                'family': 'Orchidaceae',
+                'origin': 'Worldwide',
+                'care_tip': 'Each orchid species has unique care requirements - research your specific type!',
+                'image_url': '/static/images/orchid_placeholder.svg'
+            }
+        })
