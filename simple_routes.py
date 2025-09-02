@@ -492,6 +492,64 @@ def satellite_earth_globe():
     """3D Earth Globe with real orchid distribution data"""
     return render_template('widgets/satellite_earth_globe.html')
 
+@app.route('/widgets/blooms-of-mystery')
+def blooms_of_mystery_widget():
+    """Embeddable Blooms of Mystery widget for Neon One website"""
+    embed_mode = request.args.get('embed', '').lower() == 'true'
+    return render_template('widgets/blooms_of_mystery.html', embed_mode=embed_mode)
+
+@app.route('/api/mystery-orchids')
+def mystery_orchids_api():
+    """API endpoint for Hollywood Orchids movie data (Blooms of Mystery)"""
+    hollywood_movies = [
+        {
+            "id": 1,
+            "name": "No More Orchids (1932)",
+            "scientific_name": "Carole Lombard, Walter Connolly, Lyle Talbot",
+            "mystery_type": "Classic Hollywood",
+            "description": "Carole Lombard plays a rebellious heiress resisting an arranged marriage. The orchids of the title reflect the fleeting nature of youth, beauty, and social status — treasures too delicate to withstand the pressures of expectation.",
+            "image_url": "/api/drive-photo/18SjQMSrxrBZNxbQ1AWOciKJqgwNz6RHK",
+            "rarity": "Classic",
+            "genre": "Romance/Drama",
+            "year": 1932
+        },
+        {
+            "id": 2,
+            "name": "The Big Sleep (1946)",
+            "scientific_name": "Humphrey Bogart, Lauren Bacall", 
+            "mystery_type": "Film Noir",
+            "description": "Howard Hawks' steamy noir classic uses orchids with calculated purpose. General Sternwood's greenhouse is lush, heavy, and rotting under the tropical heat — a metaphor for moral corruption hiding beneath high society's glittering surface.",
+            "image_url": "/api/drive-photo/1YRzsrv4_CIQ-uX-29e2QTZzLHlinkYlx",
+            "rarity": "Legendary",
+            "genre": "Film Noir/Mystery",
+            "year": 1946
+        },
+        {
+            "id": 3,
+            "name": "Adaptation (2002)",
+            "scientific_name": "Nicolas Cage, Meryl Streep",
+            "mystery_type": "Academy Award", 
+            "description": "Perhaps no film captures orchid obsession more intimately than Adaptation. Based on Susan Orlean's The Orchid Thief, the movie explores the Ghost Orchid — elusive, rare, and nearly mythical.",
+            "image_url": "/api/drive-photo/1XbG3TMwiSKU7Y6DACOjsvEREIfqD52CB",
+            "rarity": "Acclaimed",
+            "genre": "Drama/Comedy",
+            "year": 2002
+        },
+        {
+            "id": 4,
+            "name": "Wednesday (2022)",
+            "scientific_name": "Jenna Ortega",
+            "mystery_type": "Gothic Mystery",
+            "description": "Netflix's hit series uses orchids in a Gothic setting, linked to mystery and the supernatural. The flowers appear in Nevermore Academy's conservatory, adding an air of elegant menace to the already dark atmosphere.",
+            "image_url": "/static/images/orchid_placeholder.svg", 
+            "rarity": "Popular",
+            "genre": "Gothic/Mystery",
+            "year": 2022
+        }
+    ]
+    
+    return jsonify(hollywood_movies)
+
 if __name__ == '__main__':
     print("Simple routes loaded successfully")
     print(f"Ready to serve {len(WORKING_ORCHIDS)} orchids")
