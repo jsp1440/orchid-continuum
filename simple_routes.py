@@ -504,6 +504,70 @@ def orchid_mahjong_widget():
     embed_mode = request.args.get('embed', '').lower() == 'true'
     return render_template('widgets/orchid_mahjong.html', embed_mode=embed_mode)
 
+@app.route('/widgets/orchid-trivia')
+def orchid_trivia_widget():
+    """Embeddable Orchid Trivia widget for Neon One website"""
+    embed_mode = request.args.get('embed', '').lower() == 'true'
+    return render_template('widgets/orchid_trivia_challenge.html', embed_mode=embed_mode)
+
+@app.route('/api/trivia-questions')
+def trivia_questions_api():
+    """API endpoint for trivia questions data"""
+    questions = [
+        {
+            "id": 1,
+            "image": "/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
+            "question": "This stunning orchid is the national flower of which South American country?",
+            "answers": ["Colombia", "Brazil", "Venezuela", "Ecuador"],
+            "correct": 0,
+            "explanation": "Cattleya trianae is the national flower of Colombia! It blooms during Christmas season and is considered one of the most beautiful orchids in the world.",
+            "genus": "Cattleya",
+            "species": "trianae"
+        },
+        {
+            "id": 2,
+            "image": "/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
+            "question": "What does the name 'Phalaenopsis' literally mean?",
+            "answers": ["Butterfly-like", "Moon flower", "Night beauty", "White petals"],
+            "correct": 0,
+            "explanation": "Phalaenopsis means 'butterfly-like' in Greek! These orchids are called moth orchids because their flowers resemble tropical moths in flight.",
+            "genus": "Phalaenopsis",
+            "species": "amabilis"
+        },
+        {
+            "id": 3,
+            "image": "/static/images/orchid_placeholder.svg",
+            "question": "How many petals does a typical orchid flower have?",
+            "answers": ["3", "5", "6", "8"],
+            "correct": 2,
+            "explanation": "Orchid flowers have 6 petals arranged in two whorls of 3. The bottom petal is often modified into a specialized 'lip' or labellum to attract pollinators.",
+            "genus": "Orchidaceae",
+            "species": "family"
+        },
+        {
+            "id": 4,
+            "image": "/static/images/orchid_placeholder.svg",
+            "question": "Which orchid genus is commonly used to flavor food?",
+            "answers": ["Cattleya", "Vanilla", "Dendrobium", "Oncidium"],
+            "correct": 1,
+            "explanation": "Vanilla planifolia produces vanilla beans! This climbing orchid is the source of natural vanilla flavoring used in cooking and baking worldwide.",
+            "genus": "Vanilla",
+            "species": "planifolia"
+        },
+        {
+            "id": 5,
+            "image": "/static/images/orchid_placeholder.svg",
+            "question": "What makes orchid flowers unique among all flowering plants?",
+            "answers": ["They never close", "Fused stamens and pistil", "They have no fragrance", "They only bloom once"],
+            "correct": 1,
+            "explanation": "Orchids have a unique column structure where the male and female reproductive parts are fused together! This is found nowhere else in the plant kingdom.",
+            "genus": "Orchidaceae",
+            "species": "anatomy"
+        }
+    ]
+    
+    return jsonify(questions)
+
 @app.route('/api/mahjong-tiles')
 def mahjong_tiles_api():
     """API endpoint for Mahjong tile data"""
