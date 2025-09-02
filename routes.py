@@ -60,6 +60,12 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Widget integration modules not available: {e}")
 
+# Add Orchid Mahjong demo route
+@app.route('/orchid-mahjong-demo')
+def orchid_mahjong_demo():
+    """Standalone Orchid Mahjong Solitaire demo page"""
+    return render_template('standalone/orchid-mahjong-demo.html')
+
 # Load philosophy quiz system
 try:
     import philosophy_quiz_system
