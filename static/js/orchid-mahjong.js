@@ -200,10 +200,10 @@
         /**
          * Initialize the game
          */
-        init() {
+        async init() {
             this.createGameHTML();
             this.applyTheme(this.options.theme);
-            this.generateTiles();
+            await this.generateTiles();
             this.createLayout();
             this.bindEvents();
             this.setupEnhancedSettings();
@@ -490,107 +490,134 @@
         }
 
         /**
-         * Generate the complete set of 144 Mahjong tiles
+         * Generate the complete set of 144 Mahjong tiles with real orchid photos
          */
-        generateTiles() {
+        async generateTiles() {
             this.gameState.tiles = [];
-            let tileId = 0;
-
-            // Generate Petals (Dots) 1-9, 4 copies each = 36 tiles
-            for (let value = 1; value <= 9; value++) {
-                for (let copy = 0; copy < 4; copy++) {
-                    this.gameState.tiles.push({
-                        id: tileId++,
-                        type: 'petals',
-                        value: value,
-                        suit: 'petals',
-                        canMatch: (other) => other.type === 'petals' && other.value === value,
-                        display: this.createPetalsTile(value),
-                        aria: `Petals ${value}`
+            
+            try {
+                // Fetch real orchid data from API
+                const response = await fetch('/api/mahjong/orchid-images');
+                const data = await response.json();
+                
+                if (data.success && data.tiles) {
+                    // Use real orchid tiles from API
+                    data.tiles.forEach((apiTile, index) => {
+                        this.gameState.tiles.push({
+                            id: index,
+                            type: apiTile.suit || 'orchid',
+                            value: apiTile.number || apiTile.name,
+                            suit: apiTile.suit || 'orchid',
+                            canMatch: (other) => {
+                                // Match tiles with same suit and number, or same type for special tiles
+                                if (apiTile.type === 'honor') {
+                                    return other.type === 'honor' && other.value === apiTile.number;
+                                }
+                                return other.suit === apiTile.suit && other.value === apiTile.number;
+                            },
+                            display: this.createOrchidTile(apiTile),
+                            aria: `${apiTile.name} - ${apiTile.suit} ${apiTile.number}`,
+                            // Store orchid data for educational cards
+                            orchidData: {
+                                name: apiTile.name,
+                                imageUrl: apiTile.image_url,
+                                backupImage: apiTile.backup_image,
+                                fact: apiTile.fact,
+                                suit: apiTile.suit,
+                                number: apiTile.number
+                            }
+                        });
                     });
+                } else {
+                    throw new Error('Failed to load orchid data');
                 }
+            } catch (error) {
+                console.log('Failed to load real orchid tiles, using fallback:', error);
+                // Fallback to basic tiles if API fails
+                this.generateFallbackTiles();
             }
-
-            // Generate Stems (Bamboo) 1-9, 4 copies each = 36 tiles  
-            for (let value = 1; value <= 9; value++) {
-                for (let copy = 0; copy < 4; copy++) {
-                    this.gameState.tiles.push({
-                        id: tileId++,
-                        type: 'stems',
-                        value: value,
-                        suit: 'stems',
-                        canMatch: (other) => other.type === 'stems' && other.value === value,
-                        display: this.createStemsTile(value),
-                        aria: `Stems ${value}`
-                    });
-                }
-            }
-
-            // Generate Labels (Characters) 1-9, 4 copies each = 36 tiles
-            for (let value = 1; value <= 9; value++) {
-                for (let copy = 0; copy < 4; copy++) {
-                    this.gameState.tiles.push({
-                        id: tileId++,
-                        type: 'labels',
-                        value: value,
-                        suit: 'labels',
-                        canMatch: (other) => other.type === 'labels' && other.value === value,
-                        display: this.createLabelsTile(value),
-                        aria: `Labels ${value}`
-                    });
-                }
-            }
-
-            // Generate Winds N,E,S,W, 4 copies each = 16 tiles
-            const winds = ['N', 'E', 'S', 'W'];
-            winds.forEach(wind => {
-                for (let copy = 0; copy < 4; copy++) {
-                    this.gameState.tiles.push({
-                        id: tileId++,
-                        type: 'winds',
-                        value: wind,
-                        suit: 'honors',
-                        canMatch: (other) => other.type === 'winds' && other.value === wind,
-                        display: this.createWindTile(wind),
-                        aria: `Wind ${wind}`
-                    });
-                }
-            });
-
-            // Generate Dragons Gold,Silver,Bronze, 4 copies each = 12 tiles
-            const dragons = ['Gold', 'Silver', 'Bronze'];
-            dragons.forEach(dragon => {
-                for (let copy = 0; copy < 4; copy++) {
-                    this.gameState.tiles.push({
-                        id: tileId++,
-                        type: 'dragons',
-                        value: dragon,
-                        suit: 'honors',
-                        canMatch: (other) => other.type === 'dragons' && other.value === dragon,
-                        display: this.createDragonTile(dragon),
-                        aria: `Dragon ${dragon}`
-                    });
-                }
-            });
-
-            // Generate Flowers (8 unique orchid species) = 8 tiles
-            const flowers = ['Phalaenopsis', 'Cattleya', 'Dendrobium', 'Paphiopedilum', 'Vanda', 'Oncidium', 'Cymbidium', 'Masdevallia'];
-            flowers.forEach(flower => {
-                this.gameState.tiles.push({
-                    id: tileId++,
-                    type: 'flowers',
-                    value: flower,
-                    suit: 'flowers',
-                    canMatch: (other) => other.type === 'flowers', // Any flower matches any flower
-                    display: this.createFlowerTile(flower),
-                    aria: `Flower ${flower}`
-                });
-            });
 
             // Shuffle tiles for random distribution
             this.shuffleTiles();
             
             console.log(`Generated ${this.gameState.tiles.length} tiles`);
+        }
+        
+        /**
+         * Create visual representation for orchid tiles with real photos
+         */
+        createOrchidTile(apiTile) {
+            return `
+                <div class="tile-content orchid-tile" data-suit="${apiTile.suit}" data-number="${apiTile.number}">
+                    <div class="orchid-image-container">
+                        <img src="${apiTile.image_url}" 
+                             alt="${apiTile.name}" 
+                             class="orchid-tile-image"
+                             onerror="this.src='${apiTile.backup_image}'" />
+                    </div>
+                    <div class="tile-info">
+                        <div class="tile-suit">${apiTile.suit}</div>
+                        <div class="tile-number">${apiTile.number}</div>
+                    </div>
+                    <div class="tile-name">${apiTile.name}</div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Fallback tile generation if API fails
+         */
+        generateFallbackTiles() {
+            let tileId = 0;
+
+            // Generate basic numbered tiles
+            const suits = ['bamboo', 'wind', 'dragon'];
+            suits.forEach(suit => {
+                for (let value = 1; value <= 9; value++) {
+                    for (let copy = 0; copy < 4; copy++) {
+                        this.gameState.tiles.push({
+                            id: tileId++,
+                            type: suit,
+                            value: value,
+                            suit: suit,
+                            canMatch: (other) => other.type === suit && other.value === value,
+                            display: this.createFallbackTile(suit, value),
+                            aria: `${suit} ${value}`,
+                            orchidData: {
+                                name: `${suit} ${value}`,
+                                imageUrl: '/static/images/orchid_placeholder.svg',
+                                backupImage: '/static/images/orchid_placeholder.svg',
+                                fact: 'Orchids are one of the largest families of flowering plants!',
+                                suit: suit,
+                                number: value
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Pad to 144 tiles
+            while (this.gameState.tiles.length < 144) {
+                const baseTile = this.gameState.tiles[this.gameState.tiles.length % 36];
+                this.gameState.tiles.push({
+                    ...baseTile,
+                    id: tileId++
+                });
+            }
+        }
+        
+        /**
+         * Create fallback tile when API is unavailable
+         */
+        createFallbackTile(suit, value) {
+            const suitEmoji = suit === 'bamboo' ? '🎋' : suit === 'wind' ? '💨' : '🐉';
+            return `
+                <div class="tile-content fallback-tile">
+                    <div class="tile-emoji">${suitEmoji}</div>
+                    <div class="tile-number">${value}</div>
+                    <div class="tile-suit">${suit}</div>
+                </div>
+            `;
         }
 
         /**
@@ -1262,7 +1289,7 @@
                 redoStack: []
             };
 
-            this.generateTiles();
+            await this.generateTiles();
             this.createLayout();
             this.startTimer();
             this.updateUI();
@@ -1990,8 +2017,9 @@
          * Show educational pop-up card when tiles are matched
          */
         showEducationalCard(tile) {
-            // Get orchid fact from tile or fetch from API
-            const fact = tile.fact || 'This beautiful orchid is part of the Orchidaceae family.';
+            // Get orchid data from tile (now includes real orchid photos and facts)
+            const orchidData = tile.orchidData || {};
+            const fact = orchidData.fact || 'This beautiful orchid is part of the Orchidaceae family.';
             
             // Create or get existing educational card modal
             let cardModal = this.container.querySelector('#om-educational-card');
@@ -2047,9 +2075,9 @@
                 });
             }
             
-            // Update card content with tile information
-            const orchidName = tile.name || 'Beautiful Orchid';
-            const orchidImage = tile.imageUrl || tile.backupImage || '/static/images/orchid_placeholder.svg';
+            // Update card content with tile information  
+            const orchidName = orchidData.name || tile.name || 'Beautiful Orchid';
+            const orchidImage = orchidData.imageUrl || orchidData.backupImage || '/static/images/orchid_placeholder.svg';
             
             cardModal.querySelector('.orchid-name').textContent = orchidName;
             cardModal.querySelector('.orchid-image').src = orchidImage;
