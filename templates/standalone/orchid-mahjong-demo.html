@@ -268,7 +268,7 @@
     </div>
     
     <!-- Widget JavaScript -->
-    <script src="/static/js/orchid-mahjong.js"></script>
+    <script src="/static/js/orchid-mahjong-simple.js"></script>
     
     <!-- Demo Control Scripts -->
     <script>
@@ -280,38 +280,34 @@
             gameInstance = OrchidMahjong.init(container, {
                 theme: 'fcos',
                 layout: 'turtle',
-                sound: false,
-                highlights: true
-            });
-            
-            // Listen to game events for demo
-            gameInstance.on('win', (data) => {
-                console.log('Game won!', data);
-                // Could show custom celebration
-            });
-            
-            gameInstance.on('match', (data) => {
-                console.log('Tiles matched!', data);
+                sound: false
             });
         });
         
         // Demo control functions
         function changeTheme(theme) {
             if (gameInstance) {
-                gameInstance.setTheme(theme);
+                gameInstance.options.theme = theme;
+                // Reinitialize with new theme
+                const container = document.getElementById('orchid-mahjong-demo');
+                gameInstance = OrchidMahjong.init(container, gameInstance.options);
             }
         }
         
         function changeLayout(layout) {
             if (gameInstance) {
                 gameInstance.options.layout = layout;
-                gameInstance.newGame();
+                // Reinitialize with new layout
+                const container = document.getElementById('orchid-mahjong-demo');
+                gameInstance = OrchidMahjong.init(container, gameInstance.options);
             }
         }
         
         function newGame() {
             if (gameInstance) {
-                gameInstance.newGame();
+                // Reinitialize the game
+                const container = document.getElementById('orchid-mahjong-demo');
+                gameInstance = OrchidMahjong.init(container, gameInstance.options);
             }
         }
         
