@@ -194,7 +194,8 @@
             };
 
             this.eventHandlers = {};
-            this.init();
+            // Initialize control panel first, then wait for user to start game
+            this.createControlPanel();
         }
 
         /**
@@ -214,6 +215,198 @@
             this.startTimer();
             
             this.emit('init', { options: this.options });
+        }
+
+        /**
+         * Create control panel for game setup
+         */
+        createControlPanel() {
+            this.container.innerHTML = `
+                <div class="orchid-mahjong-control-panel">
+                    <div class="control-header">
+                        <h2>🌺 Orchid Mahjong Solitaire</h2>
+                        <p>Configure your game settings and start playing with real orchid photos!</p>
+                    </div>
+                    
+                    <div class="control-sections">
+                        <div class="control-section">
+                            <h3>🎨 Visual Settings</h3>
+                            <div class="setting-group">
+                                <label for="theme-select">Theme:</label>
+                                <select id="theme-select">
+                                    <option value="fcos">Five Cities Orchid Society</option>
+                                    <option value="neutral">Classic Neutral</option>
+                                    <option value="highContrast">High Contrast</option>
+                                </select>
+                            </div>
+                            <div class="setting-group">
+                                <label for="layout-select">Layout:</label>
+                                <select id="layout-select">
+                                    <option value="turtle">Turtle (Normal)</option>
+                                    <option value="orchid">Orchid Bloom (Normal)</option>
+                                    <option value="pyramid">Pyramid (Easy)</option>
+                                    <option value="dragon">Dragon (Hard)</option>
+                                    <option value="greenhouse">Greenhouse (Hard)</option>
+                                    <option value="fortress">Fortress (Expert)</option>
+                                    <option value="butterfly">Butterfly (Expert)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🎮 Game Settings</h3>
+                            <div class="setting-group">
+                                <label for="difficulty-select">Difficulty:</label>
+                                <select id="difficulty-select">
+                                    <option value="easy">Easy (Extra hints)</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="hard">Hard (Limited hints)</option>
+                                    <option value="expert">Expert (No hints)</option>
+                                </select>
+                            </div>
+                            <div class="setting-group">
+                                <label for="game-mode-select">Game Mode:</label>
+                                <select id="game-mode-select">
+                                    <option value="solitaire" selected>Solitaire</option>
+                                    <option value="timed">Timed Challenge</option>
+                                    <option value="zen">Zen Mode (No score)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🔊 Audio & Accessibility</h3>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="sound-effects"> Sound Effects
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="background-music"> Background Music
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-hints" checked> Auto-hint after 60 seconds
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🌸 Orchid Collection</h3>
+                            <div class="setting-group">
+                                <label for="orchid-count">Number of different orchid species:</label>
+                                <select id="orchid-count">
+                                    <option value="all">All Available (Varied)</option>
+                                    <option value="16">16 Species (Classic)</option>
+                                    <option value="8">8 Species (Beginner)</option>
+                                </select>
+                            </div>
+                            <div class="preview-grid" id="orchid-preview">
+                                <p>🌺 Real orchid photos will be loaded on game start</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-actions">
+                        <button class="start-game-btn" id="start-game">🎮 Start Game</button>
+                        <button class="preview-btn" id="preview-tiles">👁️ Preview Orchids</button>
+                        <button class="reset-btn" id="reset-settings">🔄 Reset to Defaults</button>
+                    </div>
+                </div>
+            `;
+            
+            this.bindControlPanelEvents();
+        }
+        
+        /**
+         * Bind control panel events
+         */
+        bindControlPanelEvents() {
+            const startBtn = this.container.querySelector('#start-game');
+            const previewBtn = this.container.querySelector('#preview-tiles');
+            const resetBtn = this.container.querySelector('#reset-settings');
+            
+            startBtn?.addEventListener('click', () => this.startGameFromControlPanel());
+            previewBtn?.addEventListener('click', () => this.previewOrchidTiles());
+            resetBtn?.addEventListener('click', () => this.resetControlPanelSettings());
+            
+            // Live preview theme changes
+            const themeSelect = this.container.querySelector('#theme-select');
+            themeSelect?.addEventListener('change', (e) => {
+                this.container.setAttribute('data-theme', e.target.value);
+            });
+        }
+        
+        /**
+         * Start game with control panel settings
+         */
+        async startGameFromControlPanel() {
+            // Collect settings from control panel
+            this.options.theme = this.container.querySelector('#theme-select').value;
+            this.options.layout = this.container.querySelector('#layout-select').value;
+            this.options.difficulty = this.container.querySelector('#difficulty-select').value;
+            this.options.gameMode = this.container.querySelector('#game-mode-select').value;
+            this.options.sound = this.container.querySelector('#sound-effects').checked;
+            this.options.music = this.container.querySelector('#background-music').checked;
+            this.options.autoHint = this.container.querySelector('#auto-hints').checked;
+            
+            // Show loading state
+            const startBtn = this.container.querySelector('#start-game');
+            startBtn.disabled = true;
+            startBtn.textContent = '🔄 Loading orchid photos...';
+            
+            try {
+                await this.init();
+            } catch (error) {
+                console.error('Failed to start game:', error);
+                startBtn.disabled = false;
+                startBtn.textContent = '❌ Failed to load - Try again';
+            }
+        }
+        
+        /**
+         * Preview orchid tiles
+         */
+        async previewOrchidTiles() {
+            const previewGrid = this.container.querySelector('#orchid-preview');
+            previewGrid.innerHTML = '<p>🔄 Loading orchid preview...</p>';
+            
+            try {
+                const response = await fetch('/api/mahjong/orchid-images');
+                const data = await response.json();
+                
+                if (data.success && data.tiles) {
+                    const preview = data.tiles.slice(0, 12).map(tile => `
+                        <div class="preview-tile">
+                            <img src="${tile.image_url}" alt="${tile.name}" onerror="this.src='${tile.backup_image}'" />
+                            <span>${tile.name}</span>
+                        </div>
+                    `).join('');
+                    
+                    previewGrid.innerHTML = `<div class="preview-tiles">${preview}</div>`;
+                } else {
+                    previewGrid.innerHTML = '<p>❌ Could not load orchid preview</p>';
+                }
+            } catch (error) {
+                previewGrid.innerHTML = '<p>❌ Preview unavailable</p>';
+            }
+        }
+        
+        /**
+         * Reset control panel to defaults
+         */
+        resetControlPanelSettings() {
+            this.container.querySelector('#theme-select').value = 'fcos';
+            this.container.querySelector('#layout-select').value = 'turtle';
+            this.container.querySelector('#difficulty-select').value = 'normal';
+            this.container.querySelector('#game-mode-select').value = 'solitaire';
+            this.container.querySelector('#sound-effects').checked = false;
+            this.container.querySelector('#background-music').checked = false;
+            this.container.querySelector('#auto-hints').checked = true;
+            this.container.querySelector('#orchid-count').value = 'all';
+            this.container.setAttribute('data-theme', 'fcos');
         }
 
         /**
@@ -2231,14 +2424,16 @@
     /**
      * Public API
      */
-    window.OrchidMahjong.init = function(selector, options) {
+    window.OrchidMahjong.init = async function(selector, options) {
         const container = typeof selector === 'string' ? document.querySelector(selector) : selector;
         if (!container) {
             console.error('OrchidMahjong: Container not found');
             return null;
         }
         
-        return new OrchidMahjongGame(container, options);
+        const game = new OrchidMahjongGame(container, options);
+        await game.init();
+        return game;
     };
 
     window.OrchidMahjong.Game = OrchidMahjongGame;
@@ -2246,14 +2441,15 @@
     window.OrchidMahjong.LAYOUTS = LAYOUTS;
 
     // Auto-initialize if data attributes are present
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-orchid-mahjong]').forEach(element => {
+    document.addEventListener('DOMContentLoaded', async () => {
+        const elements = document.querySelectorAll('[data-orchid-mahjong]');
+        for (const element of elements) {
             const options = {};
             if (element.dataset.theme) options.theme = element.dataset.theme;
             if (element.dataset.layout) options.layout = element.dataset.layout;
             
-            window.OrchidMahjong.init(element, options);
-        });
+            await window.OrchidMahjong.init(element, options);
+        }
     });
 
 })();
