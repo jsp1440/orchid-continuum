@@ -237,34 +237,62 @@
             `;
         }
         
-        function previewOrchids() {
+        async function previewOrchids() {
             console.log('👁️ Previewing orchids...');
             
             const previewDiv = document.getElementById('orchid-preview');
-            previewDiv.innerHTML = `
-                <div style="background: white; padding: 15px; border-radius: 8px;">
-                    <h4>🌺 Orchid Preview</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
-                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌺</div>
-                            <small>Phalaenopsis</small>
+            previewDiv.innerHTML = '<p style="text-align: center; color: #666;">🔄 Loading real orchid photos from Google Drive...</p>';
+            
+            try {
+                const response = await fetch('/api/mahjong/orchid-images');
+                const data = await response.json();
+                
+                if (data.success && data.tiles && data.tiles.length > 0) {
+                    console.log(`✅ Loaded ${data.tiles.length} orchid images`);
+                    
+                    const orchidGrid = data.tiles.slice(0, 12).map(orchid => `
+                        <div style="text-align: center; padding: 8px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+                            <img 
+                                src="${orchid.image_url}" 
+                                alt="${orchid.name}"
+                                style="width: 70px; height: 70px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;"
+                                onerror="this.src='${orchid.backup_image}'"
+                                title="${orchid.description || orchid.name}"
+                            />
+                            <div style="font-size: 10px; font-weight: bold; color: #333; margin-bottom: 2px;">${orchid.genus || 'Unknown'}</div>
+                            <div style="font-size: 9px; color: #666; line-height: 1.2;">${orchid.species || 'Species'}</div>
                         </div>
-                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌸</div>
-                            <small>Cattleya</small>
+                    `).join('');
+                    
+                    previewDiv.innerHTML = `
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <h4 style="margin: 0 0 15px 0; color: #333;">🌺 Real Orchid Photos</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px;">
+                                ${orchidGrid}
+                            </div>
+                            <p style="margin: 15px 0 0 0; font-size: 0.85em; color: #28a745; text-align: center;">
+                                ✅ ${data.count} orchid photos loaded from Five Cities Orchid Society collection
+                            </p>
                         </div>
-                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌼</div>
-                            <small>Dendrobium</small>
+                    `;
+                } else {
+                    console.warn('❌ No orchid images available');
+                    previewDiv.innerHTML = `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeaa7;">
+                            <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Preview Unavailable</h4>
+                            <p style="margin: 0; color: #856404;">No orchid images available in the database. The game will use placeholder images.</p>
                         </div>
-                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌻</div>
-                            <small>Paphiopedilum</small>
-                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error loading orchid preview:', error);
+                previewDiv.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border: 1px solid #f5c6cb;">
+                        <h4 style="margin: 0 0 10px 0; color: #721c24;">❌ Loading Error</h4>
+                        <p style="margin: 0; color: #721c24;">Could not load orchid photos. Please try again later.</p>
                     </div>
-                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Real orchid photos from Google Drive would appear here in the full game.</p>
-                </div>
-            `;
+                `;
+            }
         }
         
         function resetSettings() {

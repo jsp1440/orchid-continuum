@@ -71,6 +71,84 @@ def orchid_mahjong_demo_fixed():
     """Fixed Orchid Mahjong Control Panel - No JavaScript Errors"""
     return render_template('standalone/orchid-mahjong-demo-fixed.html')
 
+@app.route('/api/mahjong/orchid-images')
+def get_mahjong_orchid_images():
+    """Get orchid images for Mahjong tiles"""
+    try:
+        # Get orchids with images from database
+        orchids = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.image_filename.isnot(None),
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.image_url.isnot(None)
+            )
+        ).limit(20).all()
+        
+        orchid_tiles = []
+        for orchid in orchids:
+            # Try to get an image URL from various possible fields
+            image_url = url_for('static', filename='images/orchid_placeholder.svg')
+            
+            # Check if there's a Google Drive file ID or image filename
+            if orchid.google_drive_id:
+                image_url = url_for('get_drive_photo', file_id=orchid.google_drive_id)
+            elif orchid.image_filename:
+                image_url = url_for('static', filename=f'uploads/{orchid.image_filename}')
+            elif orchid.image_url:
+                image_url = orchid.image_url
+            
+            tile_data = {
+                'id': orchid.id,
+                'name': orchid.scientific_name or orchid.display_name or 'Unknown Orchid',
+                'image_url': image_url,
+                'backup_image': url_for('static', filename='images/orchid_placeholder.svg'),
+                'genus': orchid.genus or 'Unknown',
+                'species': orchid.species or 'Unknown',
+                'description': orchid.ai_description or f'Beautiful {orchid.genus or "orchid"} specimen',
+                'growing_conditions': orchid.cultural_notes or 'Moderate light and humidity'
+            }
+            orchid_tiles.append(tile_data)
+        
+        # If we don't have enough real orchid images, add some fallbacks
+        if len(orchid_tiles) < 16:
+            fallback_orchids = [
+                {'name': 'Phalaenopsis amabilis', 'genus': 'Phalaenopsis', 'description': 'Moth Orchid - Classic white blooms'},
+                {'name': 'Cattleya trianae', 'genus': 'Cattleya', 'description': 'Queen of Orchids - Purple and white'},
+                {'name': 'Dendrobium nobile', 'genus': 'Dendrobium', 'description': 'Noble Dendrobium - Pink flowers'},
+                {'name': 'Paphiopedilum callosum', 'genus': 'Paphiopedilum', 'description': 'Slipper Orchid - Unique pouch'},
+                {'name': 'Vanda coerulea', 'genus': 'Vanda', 'description': 'Blue Vanda - Rare blue orchid'},
+                {'name': 'Oncidium Sharry Baby', 'genus': 'Oncidium', 'description': 'Dancing Lady - Sweet fragrance'},
+                {'name': 'Cymbidium eburneum', 'genus': 'Cymbidium', 'description': 'Boat Orchid - Long-lasting blooms'},
+                {'name': 'Masdevallia veitchiana', 'genus': 'Masdevallia', 'description': 'Kite Orchid - Vivid orange-red'}
+            ]
+            
+            for i, fallback in enumerate(fallback_orchids):
+                if len(orchid_tiles) < 16:
+                    orchid_tiles.append({
+                        'id': f'fallback_{i}',
+                        'name': fallback['name'],
+                        'image_url': url_for('static', filename='images/orchid_placeholder.svg'),
+                        'backup_image': url_for('static', filename='images/orchid_placeholder.svg'),
+                        'genus': fallback['genus'],
+                        'species': fallback['name'].split()[-1] if ' ' in fallback['name'] else '',
+                        'description': fallback['description'],
+                        'growing_conditions': 'Varies by species - research specific requirements'
+                    })
+        
+        return jsonify({
+            'success': True,
+            'count': len(orchid_tiles),
+            'tiles': orchid_tiles
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting Mahjong orchid images: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'tiles': []
+        }), 500
+
 # Load philosophy quiz system
 try:
     import philosophy_quiz_system
@@ -4957,180 +5035,6 @@ def get_room_status(room_code):
             'current_players': 1,
             'max_players': 4,
             'players': [{'name': 'DemoPlayer', 'position': 1}]
-        })
-
-@app.route('/api/mahjong/orchid-images')
-def get_mahjong_orchid_images():
-    """Get orchid images specifically prepared for Mahjong tiles"""
-    try:
-        # Curated list of Google Drive IDs for Mahjong-ready orchid images
-        # These are from the folder: https://drive.google.com/drive/folders/1aPJ6fzPCP6PdjCciPggpoxl9ZCCN7opy
-        mahjong_orchids = [
-            {
-                'id': '185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I',
-                'name': 'Cattleya Orchid',
-                'suit': 'bamboo',
-                'number': 1,
-                'fact': 'Cattleya orchids are known as the "Queen of Orchids" for their large, fragrant blooms and vibrant colors.'
-            },
-            {
-                'id': '1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY',
-                'name': 'Phalaenopsis',
-                'suit': 'bamboo',
-                'number': 2,
-                'fact': 'Phalaenopsis orchids are called "Moth Orchids" because their flowers resemble moths in flight.'
-            },
-            {
-                'id': '1BKz8H8n9pQ3jZ8QeH8N9pQ3jZ8QeH8N9',
-                'name': 'Dendrobium',
-                'suit': 'bamboo',
-                'number': 3,
-                'fact': 'Dendrobium means "tree-living" and these orchids naturally grow on trees in tropical rainforests.'
-            },
-            {
-                'id': '1CXz9I9o0sR4kA9RfI9O0sR4kA9RfI9O0',
-                'name': 'Oncidium',
-                'suit': 'circle',
-                'number': 1,
-                'fact': 'Oncidium orchids are called "Dancing Lady Orchids" due to their flower shape resembling a dancing figure.'
-            },
-            {
-                'id': '1DYa0J0p1tS5lB0SgJ0P1tS5lB0SgJ0P1',
-                'name': 'Paphiopedilum',
-                'suit': 'circle',
-                'number': 2,
-                'fact': 'Paphiopedilum orchids are known as "Lady Slipper Orchids" for their distinctive pouch-shaped lip.'
-            },
-            {
-                'id': '1EZb1K1q2uT6mC1TkK1Q2uT6mC1TkK1Q2',
-                'name': 'Vanda',
-                'suit': 'circle',
-                'number': 3,
-                'fact': 'Vanda orchids have no growing medium - they absorb moisture and nutrients directly from the air.'
-            },
-            {
-                'id': '1FaC2L2r3vU7nD2UlL2R3vU7nD2UlL2R3',
-                'name': 'Miltonia',
-                'suit': 'character',
-                'number': 1,
-                'fact': 'Miltonia orchids are called "Pansy Orchids" because their flat faces resemble pansy flowers.'
-            },
-            {
-                'id': '1GbD3M3s4wV8oE3VmM3S4wV8oE3VmM3S4',
-                'name': 'Cymbidium',
-                'suit': 'character',
-                'number': 2,
-                'fact': 'Cymbidium orchids can bloom for up to three months, making them popular for long-lasting displays.'
-            }
-        ]
-        
-        # Generate additional tiles using patterns for a complete 144-tile set
-        all_tiles = []
-        suits = ['bamboo', 'circle', 'character']
-        
-        # Create base tiles with real orchid images
-        for i, orchid in enumerate(mahjong_orchids):
-            tile_id = i + 1
-            all_tiles.append({
-                'id': tile_id,
-                'image_url': f'/api/drive-photo/{orchid["id"]}',
-                'backup_image': '/static/images/orchid_placeholder.svg',
-                'name': orchid['name'],
-                'suit': orchid['suit'],
-                'number': orchid['number'],
-                'fact': orchid['fact'],
-                'type': 'orchid'
-            })
-        
-        # Generate additional tiles using the same orchids with different numbers
-        base_count = len(mahjong_orchids)
-        for suit_idx, suit in enumerate(suits):
-            for number in range(1, 10):  # Numbers 1-9
-                if len(all_tiles) >= 144:
-                    break
-                    
-                # Use existing orchid data, cycling through them
-                orchid_idx = (suit_idx * 9 + number - 1) % len(mahjong_orchids)
-                orchid = mahjong_orchids[orchid_idx]
-                
-                tile_id = len(all_tiles) + 1
-                all_tiles.append({
-                    'id': tile_id,
-                    'image_url': f'/api/drive-photo/{orchid["id"]}',
-                    'backup_image': '/static/images/orchid_placeholder.svg',
-                    'name': orchid['name'],
-                    'suit': suit,
-                    'number': number,
-                    'fact': orchid['fact'],
-                    'type': 'numbered'
-                })
-        
-        # Add honor tiles (winds and dragons) with special orchids
-        honors = [
-            {'name': 'East Wind', 'suit': 'wind', 'number': 'E', 'fact': 'In Chinese culture, the East represents spring and new growth - perfect for orchids!'},
-            {'name': 'South Wind', 'suit': 'wind', 'number': 'S', 'fact': 'The South wind brings warmth and humidity that tropical orchids love.'},
-            {'name': 'West Wind', 'suit': 'wind', 'number': 'W', 'fact': 'Western regions often have unique orchid species adapted to different climates.'},
-            {'name': 'North Wind', 'suit': 'wind', 'number': 'N', 'fact': 'Northern orchid species are often hardy and can survive cooler temperatures.'},
-            {'name': 'Red Dragon', 'suit': 'dragon', 'number': 'R', 'fact': 'Red orchids symbolize passion and strength in many cultures.'},
-            {'name': 'Green Dragon', 'suit': 'dragon', 'number': 'G', 'fact': 'Green orchids represent nature, growth, and harmony with the environment.'},
-            {'name': 'White Dragon', 'suit': 'dragon', 'number': 'W', 'fact': 'White orchids symbolize purity, elegance, and spiritual enlightenment.'}
-        ]
-        
-        for i, honor in enumerate(honors):
-            if len(all_tiles) >= 144:
-                break
-            orchid_idx = i % len(mahjong_orchids)
-            orchid = mahjong_orchids[orchid_idx]
-            
-            tile_id = len(all_tiles) + 1
-            all_tiles.append({
-                'id': tile_id,
-                'image_url': f'/api/drive-photo/{orchid["id"]}',
-                'backup_image': '/static/images/orchid_placeholder.svg',
-                'name': honor['name'],
-                'suit': honor['suit'],
-                'number': honor['number'],
-                'fact': honor['fact'],
-                'type': 'honor'
-            })
-        
-        # Pad to exactly 144 tiles if needed
-        while len(all_tiles) < 144:
-            base_tile = all_tiles[len(all_tiles) % base_count]
-            tile_id = len(all_tiles) + 1
-            all_tiles.append({
-                'id': tile_id,
-                'image_url': base_tile['image_url'],
-                'backup_image': base_tile['backup_image'],
-                'name': base_tile['name'],
-                'suit': base_tile['suit'],
-                'number': base_tile['number'],
-                'fact': base_tile['fact'],
-                'type': 'duplicate'
-            })
-        
-        return jsonify({
-            'success': True,
-            'tiles': all_tiles[:144],  # Ensure exactly 144 tiles
-            'total_count': len(all_tiles[:144])
-        })
-        
-    except Exception as e:
-        logger.error(f"Mahjong orchid images error: {e}")
-        # Return basic fallback data
-        return jsonify({
-            'success': True,
-            'tiles': [{
-                'id': i + 1,
-                'image_url': '/static/images/orchid_placeholder.svg',
-                'backup_image': '/static/images/orchid_placeholder.svg',
-                'name': f'Orchid {i + 1}',
-                'suit': 'bamboo',
-                'number': (i % 9) + 1,
-                'fact': 'Orchids are one of the largest families of flowering plants with over 25,000 species!',
-                'type': 'placeholder'
-            } for i in range(144)],
-            'total_count': 144
         })
 
 @app.route('/api/mahjong/orchid-facts')
