@@ -196,7 +196,7 @@
             }
         }
         
-        function startGame() {
+        async function startGame() {
             console.log('🎮 Starting game...');
             
             // Get all settings
@@ -213,28 +213,196 @@
             
             console.log('⚙️ Game settings:', settings);
             
-            // Show game started screen
             const container = document.getElementById('orchid-mahjong-game');
-            container.innerHTML = `
-                <div class="orchid-mahjong-widget" style="text-align: center; padding: 50px; background: white; border-radius: 12px;">
-                    <h2>🎮 Game Started Successfully!</h2>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                        <h3>Selected Settings:</h3>
-                        <p><strong>Theme:</strong> ${settings.theme}</p>
-                        <p><strong>Layout:</strong> ${settings.layout}</p>
-                        <p><strong>Difficulty:</strong> ${settings.difficulty}</p>
-                        <p><strong>Game Mode:</strong> ${settings.gameMode}</p>
-                        <p><strong>Sound Effects:</strong> ${settings.sound ? 'Enabled' : 'Disabled'}</p>
-                        <p><strong>Background Music:</strong> ${settings.music ? 'Enabled' : 'Disabled'}</p>
-                        <p><strong>Auto-hints:</strong> ${settings.autoHint ? 'Enabled' : 'Disabled'}</p>
-                        <p><strong>Orchid Species:</strong> ${settings.orchidCount}</p>
+            container.innerHTML = '<div style="text-align: center; padding: 50px;"><h3>🔄 Loading game...</h3></div>';
+            
+            try {
+                // Load orchid images
+                const response = await fetch('/api/mahjong/orchid-images');
+                const data = await response.json();
+                
+                if (data.success && data.tiles && data.tiles.length > 0) {
+                    loadGameBoard(settings, data.tiles);
+                } else {
+                    throw new Error('No orchid images available');
+                }
+            } catch (error) {
+                console.error('❌ Error loading game:', error);
+                container.innerHTML = `
+                    <div class="orchid-mahjong-widget" style="text-align: center; padding: 50px; background: white; border-radius: 12px;">
+                        <h2>❌ Game Loading Error</h2>
+                        <p style="color: #dc3545;">Could not load orchid images for the game.</p>
+                        <button onclick="showControlPanel()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px;">
+                            🔄 Back to Control Panel
+                        </button>
                     </div>
-                    <p style="color: #28a745; font-weight: bold;">✅ Control panel is working! Game board would load here.</p>
-                    <button onclick="showControlPanel()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px;">
-                        🔄 Back to Control Panel
-                    </button>
+                `;
+            }
+        }
+        
+        function loadGameBoard(settings, orchidTiles) {
+            console.log('🎯 Loading game board with', orchidTiles.length, 'orchid tiles');
+            
+            const container = document.getElementById('orchid-mahjong-game');
+            
+            // Create a simple Mahjong board layout
+            const boardTiles = createMahjongBoard(orchidTiles, settings.layout);
+            
+            container.innerHTML = `
+                <div class="orchid-mahjong-widget" style="background: white; border-radius: 12px; padding: 20px;">
+                    <div class="game-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e9ecef; padding-bottom: 15px;">
+                        <h2 style="margin: 0; color: #333;">🌺 Orchid Mahjong Solitaire</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="showControlPanel()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                ⚙️ Settings
+                            </button>
+                            <button onclick="resetGame()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                🔄 New Game
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="game-info" style="margin-bottom: 20px; display: flex; justify-content: space-between; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                        <div><strong>Theme:</strong> ${settings.theme.toUpperCase()}</div>
+                        <div><strong>Layout:</strong> ${settings.layout}</div>
+                        <div><strong>Tiles:</strong> <span id="tiles-remaining">${boardTiles.length}</span></div>
+                        <div><strong>Matches:</strong> <span id="matches-found">0</span></div>
+                    </div>
+                    
+                    <div class="game-board" style="position: relative; min-height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; overflow: auto;">
+                        ${boardTiles.join('')}
+                    </div>
+                    
+                    <div class="game-status" style="margin-top: 20px; text-align: center;">
+                        <p style="color: #28a745; font-weight: bold;">✅ Game loaded with real orchid photos from Five Cities Orchid Society!</p>
+                        <p style="color: #666; font-size: 0.9em;">Click matching orchid tiles to remove them. Match pairs of the same species.</p>
+                    </div>
                 </div>
             `;
+            
+            // Add click handlers for tiles
+            initializeTileInteraction();
+        }
+        
+        function createMahjongBoard(orchidTiles, layout) {
+            const tilesHtml = [];
+            const maxTiles = Math.min(orchidTiles.length, 16); // Limit for demo
+            
+            for (let i = 0; i < maxTiles; i++) {
+                const orchid = orchidTiles[i];
+                const row = Math.floor(i / 4);
+                const col = i % 4;
+                
+                // Position tiles in a grid with slight overlap for classic Mahjong look
+                const x = col * 80 + (row % 2) * 40;
+                const y = row * 60;
+                
+                tilesHtml.push(`
+                    <div class="mahjong-tile" 
+                         data-orchid-id="${orchid.id}" 
+                         data-genus="${orchid.genus}"
+                         style="
+                            position: absolute;
+                            left: ${x}px;
+                            top: ${y}px;
+                            width: 70px;
+                            height: 90px;
+                            background: white;
+                            border: 2px solid #333;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            padding: 5px;
+                            transition: all 0.2s ease;
+                         "
+                         onclick="selectTile(this)"
+                         onmouseover="this.style.transform='scale(1.05)'"
+                         onmouseout="this.style.transform='scale(1)'"
+                    >
+                        <img src="${orchid.image_url}" 
+                             alt="${orchid.name}"
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin-bottom: 2px;"
+                             onerror="this.src='${orchid.backup_image}'"
+                        />
+                        <div style="font-size: 8px; color: #333; text-align: center; font-weight: bold; line-height: 1.1;">
+                            ${orchid.genus}
+                        </div>
+                    </div>
+                `);
+            }
+            
+            return tilesHtml;
+        }
+        
+        let selectedTile = null;
+        let matchesFound = 0;
+        
+        function initializeTileInteraction() {
+            console.log('🎯 Initializing tile interaction');
+        }
+        
+        function selectTile(tile) {
+            if (tile.style.opacity === '0.3') return; // Already matched
+            
+            if (selectedTile === null) {
+                // First tile selection
+                selectedTile = tile;
+                tile.style.border = '3px solid #007bff';
+                tile.style.backgroundColor = '#e7f3ff';
+            } else if (selectedTile === tile) {
+                // Deselect same tile
+                selectedTile.style.border = '2px solid #333';
+                selectedTile.style.backgroundColor = 'white';
+                selectedTile = null;
+            } else {
+                // Second tile selection - check for match
+                const genus1 = selectedTile.dataset.genus;
+                const genus2 = tile.dataset.genus;
+                
+                if (genus1 === genus2) {
+                    // Match found!
+                    selectedTile.style.opacity = '0.3';
+                    selectedTile.style.cursor = 'default';
+                    tile.style.opacity = '0.3';
+                    tile.style.cursor = 'default';
+                    
+                    matchesFound++;
+                    document.getElementById('matches-found').textContent = matchesFound;
+                    
+                    const remaining = document.querySelectorAll('.mahjong-tile[style*="opacity: 1"], .mahjong-tile:not([style*="opacity"])').length - 2;
+                    document.getElementById('tiles-remaining').textContent = remaining;
+                    
+                    selectedTile = null;
+                    
+                    if (remaining === 0) {
+                        setTimeout(() => {
+                            alert('🎉 Congratulations! You matched all the orchids!');
+                        }, 500);
+                    }
+                } else {
+                    // No match - reset selection
+                    selectedTile.style.border = '2px solid #333';
+                    selectedTile.style.backgroundColor = 'white';
+                    tile.style.border = '2px solid #dc3545';
+                    tile.style.backgroundColor = '#ffe6e6';
+                    
+                    setTimeout(() => {
+                        tile.style.border = '2px solid #333';
+                        tile.style.backgroundColor = 'white';
+                    }, 1000);
+                    
+                    selectedTile = null;
+                }
+            }
+        }
+        
+        function resetGame() {
+            console.log('🔄 Resetting game...');
+            startGame();
         }
         
         async function previewOrchids() {
