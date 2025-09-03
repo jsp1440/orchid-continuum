@@ -5137,12 +5137,12 @@ def get_orchid_facts():
         
         if orchid:
             fact = {
-                'name': orchid.scientific_name or orchid.common_name or 'Unknown Orchid',
-                'fact': orchid.description or orchid.cultural_notes or 'This beautiful orchid is part of our collection.',
-                'family': orchid.family or 'Orchidaceae',
+                'name': orchid.scientific_name or orchid.display_name or 'Unknown Orchid',
+                'fact': orchid.ai_description or orchid.cultural_notes or 'This beautiful orchid is part of our collection.',
+                'family': 'Orchidaceae',
                 'origin': orchid.native_habitat or 'Various tropical regions',
-                'care_tip': orchid.care_instructions or 'Orchids prefer bright, indirect light and good air circulation.',
-                'image_url': orchid.drive_image_url or '/static/images/orchid_placeholder.svg'
+                'care_tip': orchid.cultural_notes or 'Orchids prefer bright, indirect light and good air circulation.',
+                'image_url': orchid.image_url or '/static/images/orchid_placeholder.svg'
             }
         else:
             # Fallback educational facts
