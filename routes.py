@@ -66,6 +66,11 @@ def orchid_mahjong_demo():
     """Standalone Orchid Mahjong Solitaire demo page"""
     return render_template('standalone/orchid-mahjong-demo.html')
 
+@app.route('/orchid-mahjong-demo-fixed')
+def orchid_mahjong_demo_fixed():
+    """Fixed Orchid Mahjong Control Panel - No JavaScript Errors"""
+    return render_template('standalone/orchid-mahjong-demo-fixed.html')
+
 # Load philosophy quiz system
 try:
     import philosophy_quiz_system

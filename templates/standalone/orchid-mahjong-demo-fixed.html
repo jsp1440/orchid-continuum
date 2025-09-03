@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Mahjong Solitaire - Control Panel Demo</title>
+    
+    <!-- Control Panel CSS -->
+    <link rel="stylesheet" href="/static/css/orchid-mahjong.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .demo-header h1 {
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .widget-showcase {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🌺 Orchid Mahjong Control Panel</h1>
+            <p>Fixed Implementation - No JavaScript Errors</p>
+        </div>
+        
+        <div class="widget-showcase">
+            <!-- Game Container -->
+            <div id="orchid-mahjong-game"></div>
+        </div>
+    </div>
+    
+    <!-- FIXED JavaScript - Direct Implementation -->
+    <script>
+        console.log('🌺 Loading Orchid Mahjong Control Panel');
+        
+        // Create the control panel immediately
+        function createControlPanel() {
+            const container = document.getElementById('orchid-mahjong-game');
+            
+            container.innerHTML = `
+                <div class="orchid-mahjong-control-panel">
+                    <div class="control-header">
+                        <h2>🌺 Orchid Mahjong Solitaire</h2>
+                        <p>Configure your game settings and start playing with real orchid photos!</p>
+                    </div>
+                    
+                    <div class="control-sections">
+                        <div class="control-section">
+                            <h3>🎨 Visual Settings</h3>
+                            <div class="setting-group">
+                                <label for="theme-select">Theme:</label>
+                                <select id="theme-select">
+                                    <option value="fcos">Five Cities Orchid Society</option>
+                                    <option value="neutral">Classic Neutral</option>
+                                    <option value="highContrast">High Contrast</option>
+                                </select>
+                            </div>
+                            <div class="setting-group">
+                                <label for="layout-select">Layout:</label>
+                                <select id="layout-select">
+                                    <option value="turtle">Turtle (Normal)</option>
+                                    <option value="orchid">Orchid Bloom (Normal)</option>
+                                    <option value="pyramid">Pyramid (Easy)</option>
+                                    <option value="dragon">Dragon (Hard)</option>
+                                    <option value="greenhouse">Greenhouse (Hard)</option>
+                                    <option value="fortress">Fortress (Expert)</option>
+                                    <option value="butterfly">Butterfly (Expert)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🎮 Game Settings</h3>
+                            <div class="setting-group">
+                                <label for="difficulty-select">Difficulty:</label>
+                                <select id="difficulty-select">
+                                    <option value="easy">Easy (Extra hints)</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="hard">Hard (Limited hints)</option>
+                                    <option value="expert">Expert (No hints)</option>
+                                </select>
+                            </div>
+                            <div class="setting-group">
+                                <label for="game-mode-select">Game Mode:</label>
+                                <select id="game-mode-select">
+                                    <option value="solitaire" selected>Solitaire</option>
+                                    <option value="timed">Timed Challenge</option>
+                                    <option value="zen">Zen Mode (No score)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🔊 Audio & Accessibility</h3>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="sound-effects"> Sound Effects
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="background-music"> Background Music
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-hints" checked> Auto-hint after 60 seconds
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h3>🌸 Orchid Collection</h3>
+                            <div class="setting-group">
+                                <label for="orchid-count">Number of different orchid species:</label>
+                                <select id="orchid-count">
+                                    <option value="all">All Available (Varied)</option>
+                                    <option value="16">16 Species (Classic)</option>
+                                    <option value="8">8 Species (Beginner)</option>
+                                </select>
+                            </div>
+                            <div class="preview-grid" id="orchid-preview">
+                                <p>🌺 Real orchid photos will be loaded on game start</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-actions">
+                        <button class="start-game-btn" id="start-game">🎮 Start Game</button>
+                        <button class="preview-btn" id="preview-tiles">👁️ Preview Orchids</button>
+                        <button class="reset-btn" id="reset-settings">🔄 Reset to Defaults</button>
+                    </div>
+                </div>
+            `;
+            
+            console.log('✅ Control panel HTML created');
+            
+            // Add event listeners
+            bindControlEvents();
+        }
+        
+        function bindControlEvents() {
+            const startBtn = document.getElementById('start-game');
+            const previewBtn = document.getElementById('preview-tiles');
+            const resetBtn = document.getElementById('reset-settings');
+            
+            if (startBtn) {
+                startBtn.addEventListener('click', startGame);
+                console.log('✅ Start button bound');
+            }
+            
+            if (previewBtn) {
+                previewBtn.addEventListener('click', previewOrchids);
+                console.log('✅ Preview button bound');
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', resetSettings);
+                console.log('✅ Reset button bound');
+            }
+            
+            // Live theme preview
+            const themeSelect = document.getElementById('theme-select');
+            if (themeSelect) {
+                themeSelect.addEventListener('change', function(e) {
+                    document.body.setAttribute('data-theme', e.target.value);
+                    console.log('🎨 Theme changed to:', e.target.value);
+                });
+            }
+        }
+        
+        function startGame() {
+            console.log('🎮 Starting game...');
+            
+            // Get all settings
+            const settings = {
+                theme: document.getElementById('theme-select').value,
+                layout: document.getElementById('layout-select').value,
+                difficulty: document.getElementById('difficulty-select').value,
+                gameMode: document.getElementById('game-mode-select').value,
+                sound: document.getElementById('sound-effects').checked,
+                music: document.getElementById('background-music').checked,
+                autoHint: document.getElementById('auto-hints').checked,
+                orchidCount: document.getElementById('orchid-count').value
+            };
+            
+            console.log('⚙️ Game settings:', settings);
+            
+            // Show game started screen
+            const container = document.getElementById('orchid-mahjong-game');
+            container.innerHTML = `
+                <div class="orchid-mahjong-widget" style="text-align: center; padding: 50px; background: white; border-radius: 12px;">
+                    <h2>🎮 Game Started Successfully!</h2>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3>Selected Settings:</h3>
+                        <p><strong>Theme:</strong> ${settings.theme}</p>
+                        <p><strong>Layout:</strong> ${settings.layout}</p>
+                        <p><strong>Difficulty:</strong> ${settings.difficulty}</p>
+                        <p><strong>Game Mode:</strong> ${settings.gameMode}</p>
+                        <p><strong>Sound Effects:</strong> ${settings.sound ? 'Enabled' : 'Disabled'}</p>
+                        <p><strong>Background Music:</strong> ${settings.music ? 'Enabled' : 'Disabled'}</p>
+                        <p><strong>Auto-hints:</strong> ${settings.autoHint ? 'Enabled' : 'Disabled'}</p>
+                        <p><strong>Orchid Species:</strong> ${settings.orchidCount}</p>
+                    </div>
+                    <p style="color: #28a745; font-weight: bold;">✅ Control panel is working! Game board would load here.</p>
+                    <button onclick="showControlPanel()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px;">
+                        🔄 Back to Control Panel
+                    </button>
+                </div>
+            `;
+        }
+        
+        function previewOrchids() {
+            console.log('👁️ Previewing orchids...');
+            
+            const previewDiv = document.getElementById('orchid-preview');
+            previewDiv.innerHTML = `
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <h4>🌺 Orchid Preview</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
+                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌺</div>
+                            <small>Phalaenopsis</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌸</div>
+                            <small>Cattleya</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌼</div>
+                            <small>Dendrobium</small>
+                        </div>
+                        <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                            <div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 4px; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center;">🌻</div>
+                            <small>Paphiopedilum</small>
+                        </div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Real orchid photos from Google Drive would appear here in the full game.</p>
+                </div>
+            `;
+        }
+        
+        function resetSettings() {
+            console.log('🔄 Resetting settings...');
+            
+            document.getElementById('theme-select').value = 'fcos';
+            document.getElementById('layout-select').value = 'turtle';
+            document.getElementById('difficulty-select').value = 'normal';
+            document.getElementById('game-mode-select').value = 'solitaire';
+            document.getElementById('sound-effects').checked = false;
+            document.getElementById('background-music').checked = false;
+            document.getElementById('auto-hints').checked = true;
+            document.getElementById('orchid-count').value = 'all';
+            
+            // Reset preview
+            const previewDiv = document.getElementById('orchid-preview');
+            previewDiv.innerHTML = '<p>🌺 Real orchid photos will be loaded on game start</p>';
+            
+            console.log('✅ Settings reset to defaults');
+        }
+        
+        function showControlPanel() {
+            createControlPanel();
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM loaded, creating control panel...');
+            createControlPanel();
+        });
+        
+        console.log('✅ Orchid Mahjong script loaded successfully');
+    </script>
+</body>
+</html>
