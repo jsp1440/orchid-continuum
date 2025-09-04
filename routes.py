@@ -2754,6 +2754,160 @@ try:
 except ImportError as e:
     logger.warning(f"Visitor Teasers System not available: {e}")
 
+# API ENDPOINTS FOR DISCOVERY CENTER SEARCH
+@app.route('/api/search-orchids')
+def api_search_orchids():
+    """API endpoint for searching orchids in discovery center"""
+    import sqlite3
+    import os
+    
+    query = request.args.get('q', '').strip()
+    genus = request.args.get('genus', '').strip()
+    climate = request.args.get('climate', '').strip()
+    limit = int(request.args.get('limit', 12))
+    
+    try:
+        # Connect directly to the database to bypass ORM issues
+        db_path = os.environ.get('DATABASE_URL', 'orchid_continuum.db')
+        if db_path.startswith('postgresql://'):
+            # For PostgreSQL, use the configured connection
+            from models import OrchidRecord
+            orchid_query = db.session.query(OrchidRecord)
+            
+            # Apply filters
+            if query:
+                search_filter = db.or_(
+                    OrchidRecord.display_name.ilike(f'%{query}%'),
+                    OrchidRecord.scientific_name.ilike(f'%{query}%'),
+                    OrchidRecord.genus.ilike(f'%{query}%'),
+                    OrchidRecord.species.ilike(f'%{query}%')
+                )
+                orchid_query = orchid_query.filter(search_filter)
+            
+            if genus:
+                orchid_query = orchid_query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+            
+            if climate:
+                orchid_query = orchid_query.filter(OrchidRecord.climate_preference.ilike(f'%{climate}%'))
+            
+            # Order by relevance and limit results
+            orchids = orchid_query.order_by(OrchidRecord.created_at.desc()).limit(limit).all()
+            
+            # Convert to JSON format
+            results = []
+            for orchid in orchids:
+                result = {
+                    'id': orchid.id,
+                    'name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'habitat': orchid.native_habitat,
+                    'climate': orchid.climate_preference,
+                    'image_url': orchid.image_url if orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' else None,
+                    'google_drive_id': orchid.google_drive_id
+                }
+                results.append(result)
+        else:
+            # For SQLite, use direct connection
+            conn = sqlite3.connect('orchid_continuum.db')
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            # Build SQL query with filters
+            sql = """
+                SELECT id, display_name, scientific_name, genus, species, 
+                       native_habitat, climate_preference, image_url, google_drive_id
+                FROM orchid_record 
+                WHERE 1=1
+            """
+            params = []
+            
+            if query:
+                sql += " AND (display_name LIKE ? OR scientific_name LIKE ? OR genus LIKE ? OR species LIKE ?)"
+                search_term = f'%{query}%'
+                params.extend([search_term, search_term, search_term, search_term])
+            
+            if genus:
+                sql += " AND genus LIKE ?"
+                params.append(f'%{genus}%')
+            
+            if climate:
+                sql += " AND climate_preference LIKE ?"
+                params.append(f'%{climate}%')
+            
+            sql += " ORDER BY created_at DESC LIMIT ?"
+            params.append(limit)
+            
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                result = {
+                    'id': row['id'],
+                    'name': row['display_name'],
+                    'scientific_name': row['scientific_name'],
+                    'genus': row['genus'],
+                    'species': row['species'],
+                    'habitat': row['native_habitat'],
+                    'climate': row['climate_preference'],
+                    'image_url': row['image_url'] if row['image_url'] and row['image_url'] != '/static/images/orchid_placeholder.svg' else None,
+                    'google_drive_id': row['google_drive_id']
+                }
+                results.append(result)
+            
+            conn.close()
+        
+        return jsonify({
+            'orchids': results,
+            'total': len(results),
+            'query': query,
+            'filters': {'genus': genus, 'climate': climate}
+        })
+        
+    except Exception as e:
+        logger.error(f"Search API error: {e}")
+        # Return filtered version of the simple orchids as fallback
+        from simple_api import get_simple_orchids
+        simple_orchids = get_simple_orchids()
+        
+        # Apply basic filtering to the fallback data
+        filtered_orchids = []
+        for orchid in simple_orchids:
+            matches = True
+            if query:
+                query_lower = query.lower()
+                matches = (query_lower in orchid.get('display_name', '').lower() or 
+                          query_lower in orchid.get('scientific_name', '').lower() or
+                          query_lower in orchid.get('genus', '').lower())
+            
+            if genus and matches:
+                matches = genus.lower() in orchid.get('genus', '').lower()
+                
+            if matches:
+                # Convert to expected format
+                result = {
+                    'id': orchid['id'],
+                    'name': orchid['display_name'],
+                    'scientific_name': orchid['scientific_name'],
+                    'genus': orchid.get('genus', ''),
+                    'species': orchid.get('species', ''),
+                    'habitat': orchid.get('native_habitat', ''),
+                    'climate': orchid.get('climate_preference', ''),
+                    'image_url': None,
+                    'google_drive_id': orchid['google_drive_id']
+                }
+                filtered_orchids.append(result)
+        
+        return jsonify({
+            'orchids': filtered_orchids[:limit],
+            'total': len(filtered_orchids),
+            'query': query,
+            'filters': {'genus': genus, 'climate': climate},
+            'fallback': True
+        })
+
 # PRODUCTION-READY INDIVIDUAL WIDGET ROUTES FOR NEON ONE INTEGRATION
 @app.route('/widget/featured')
 def standalone_featured_widget():
@@ -2779,8 +2933,33 @@ def standalone_gallery_widget():
 def standalone_discovery_widget():
     """Standalone Discovery Widget for embedding"""
     from widget_system import widget_system
-    # Discovery widget shows recent orchids with Google Drive images
-    widget_data = widget_system.get_widget_data('gallery', limit=8)
+    from models import OrchidRecord
+    
+    # Get actual database statistics
+    total_orchids = db.session.query(OrchidRecord).count()
+    recent_orchids = db.session.query(OrchidRecord).order_by(OrchidRecord.created_at.desc()).limit(8).all()
+    
+    # Convert to dictionary format for template
+    orchids_data = []
+    for orchid in recent_orchids:
+        orchid_data = {
+            'id': orchid.id,
+            'display_name': orchid.display_name,
+            'scientific_name': orchid.scientific_name,
+            'genus': orchid.genus,
+            'species': orchid.species,
+            'native_habitat': orchid.native_habitat,
+            'climate_preference': orchid.climate_preference,
+            'image_url': orchid.image_url,
+            'google_drive_id': orchid.google_drive_id
+        }
+        orchids_data.append(orchid_data)
+    
+    widget_data = {
+        'orchids': orchids_data,
+        'total_orchids': total_orchids
+    }
+    
     return render_template('widgets/discovery_widget.html', 
                          widget_data=widget_data, 
                          standalone=True)
