@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Care Wheel Generator - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="pie-chart" class="me-2"></i>Care Wheel Generator
+            </h1>
+            <p class="lead text-muted">Generate detailed care wheels for different orchid genera</p>
+        </div>
+    </div>
+    
+    <!-- Care Wheel Generator -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="genusSelect" class="form-label">Select a genus to view its care wheel:</label>
+                            <select class="form-select form-select-lg" id="genusSelect" onchange="generateCareWheel()">
+                                <option value="">-- Select Genus --</option>
+                                <option value="Phalaenopsis">Phalaenopsis</option>
+                                <option value="Cattleya">Cattleya</option>
+                                <option value="Paphiopedilum">Paphiopedilum</option>
+                                <option value="Dendrobium">Dendrobium</option>
+                                <option value="Oncidium">Oncidium</option>
+                                <option value="Cymbidium">Cymbidium</option>
+                                <option value="Vanda">Vanda</option>
+                                <option value="Miltonia">Miltonia</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button class="btn btn-outline-primary btn-lg" onclick="downloadCareWheelPDF()" id="downloadBtn" disabled>
+                                <i data-feather="download" class="me-2"></i>Download as PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Care Wheel Display Area -->
+                    <div id="careWheelContainer" style="display: none;">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <!-- Care Wheel Chart -->
+                                <div class="text-center mb-4">
+                                    <h5 id="genusTitle">Care Requirements</h5>
+                                    <canvas id="careWheelChart" width="400" height="400"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <!-- Care Details -->
+                                <div id="careDetails">
+                                    <h5>Detailed Care Information</h5>
+                                    <div id="careRequirements" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Care Information -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i data-feather="calendar" class="me-2"></i>Seasonal Care Calendar
+                                        </h6>
+                                        <div id="seasonalCare"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Care Wheel Generator
+let careWheelChart = null;
+
+const careData = {
+    'Phalaenopsis': {
+        light: 70, temperature: 75, humidity: 80, water: 65, fertilizer: 60, air: 85,
+        details: {
+            light: 'Bright indirect light, 1000-1500 foot-candles. East or shaded south windows.',
+            temperature: 'Day 75-85°F (24-29°C), Night 65-75°F (18-24°C). Consistent temperatures.',
+            humidity: '60-80% with good air circulation. Use humidity trays or room humidifier.',
+            water: 'Weekly watering, allow to dry slightly between. Use lukewarm water.',
+            fertilizer: 'Balanced 20-20-20, weekly weak feeding. Reduce in winter.',
+            air: 'Good air movement essential, avoid stagnant air. Gentle fan circulation.'
+        },
+        seasonal: {
+            spring: 'Increase watering and fertilizing as growth resumes. Repot if needed.',
+            summer: 'Regular care routine. Monitor for heat stress in extreme weather.',
+            fall: 'Reduce fertilizing frequency. Prepare for dormancy period.',
+            winter: 'Reduce watering and fertilizing. Provide consistent warmth.'
+        }
+    },
+    'Cattleya': {
+        light: 90, temperature: 70, humidity: 70, water: 50, fertilizer: 75, air: 80,
+        details: {
+            light: 'Bright light, 2000-3000 foot-candles. South or west windows with some protection.',
+            temperature: 'Day 80-85°F (27-29°C), Night 60-65°F (15-18°C). Large temperature swing beneficial.',
+            humidity: '50-70% with excellent drainage. Lower humidity acceptable with good air flow.',
+            water: 'Allow to dry between waterings. Heavy watering when in growth, less when dormant.',
+            fertilizer: 'High nitrogen during growth (30-10-10), balanced during bloom (20-20-20).',
+            air: 'Strong air circulation required. Outdoors in summer if possible.'
+        },
+        seasonal: {
+            spring: 'Resume normal watering and fertilizing. Increase as pseudobulbs swell.',
+            summer: 'Peak growing season. Heavy feeding and watering. Outdoor culture ideal.',
+            fall: 'Reduce watering as growth completes. Prepare for bloom or dormancy.',
+            winter: 'Minimal watering. Allow to dry thoroughly. Maintain bright light.'
+        }
+    },
+    'Paphiopedilum': {
+        light: 50, temperature: 65, humidity: 75, water: 80, air: 70, fertilizer: 55,
+        details: {
+            light: 'Low to medium light, 800-1200 foot-candles. North or shaded east windows.',
+            temperature: 'Day 70-80°F (21-27°C), Night 60-65°F (15-18°C). Cool types prefer lower.',
+            humidity: '60-80% with consistent moisture. Never allow to dry completely.',
+            water: 'Keep evenly moist year-round. Use distilled or rainwater when possible.',
+            fertilizer: 'Low concentration balanced feeding (1/4 strength). Monthly application.',
+            air: 'Gentle air movement, avoid drafts. Good ventilation prevents rot.'
+        },
+        seasonal: {
+            spring: 'Increase fertilizing slightly as growth begins. Monitor for new shoots.',
+            summer: 'Maintain consistent moisture and feeding. Protect from heat.',
+            fall: 'Continue regular care. Many species bloom in fall/winter.',
+            winter: 'Maintain moisture but reduce fertilizing. Enjoy blooms.'
+        }
+    },
+    'Dendrobium': {
+        light: 85, temperature: 75, humidity: 65, water: 45, fertilizer: 70, air: 85,
+        details: {
+            light: 'Bright light, 2000-2500 foot-candles. Similar to Cattleya requirements.',
+            temperature: 'Varies by type. Warm: 75-85°F day, Cool: 65-75°F day. Night drop important.',
+            humidity: '50-70%. Tolerates lower humidity with good air circulation.',
+            water: 'Wet/dry cycle important. Heavy watering in growth, dry rest for some types.',
+            fertilizer: 'High nitrogen in growth, none during dry rest. Varies by species.',
+            air: 'Excellent air circulation crucial. Prevents fungal issues.'
+        },
+        seasonal: {
+            spring: 'Resume watering and fertilizing. New growth appears.',
+            summer: 'Peak growing season. Heavy watering and feeding.',
+            fall: 'Begin reducing water for deciduous types. Evergreen types continue.',
+            winter: 'Dry rest for many species. Bright light, minimal water.'
+        }
+    },
+    'Oncidium': {
+        light: 80, temperature: 70, humidity: 60, water: 55, fertilizer: 65, air: 75,
+        details: {
+            light: 'Bright light, 1500-2500 foot-candles. Morning sun beneficial.',
+            temperature: 'Day 75-85°F (24-29°C), Night 60-70°F (15-21°C). Adaptable to wide range.',
+            humidity: '50-70%. Tolerant of varying conditions.',
+            water: 'Regular watering when in growth, reduce when dormant. Allow partial drying.',
+            fertilizer: 'Balanced feeding during growth. Reduce in winter.',
+            air: 'Good air circulation. Prevents pseudobulb rot.'
+        },
+        seasonal: {
+            spring: 'New growth begins. Increase watering and fertilizing.',
+            summer: 'Active growing season. Regular care routine.',
+            fall: 'Complete growth, some species bloom. Reduce feeding.',
+            winter: 'Rest period. Minimal watering, bright light.'
+        }
+    },
+    'Cymbidium': {
+        light: 75, temperature: 60, humidity: 65, water: 70, fertilizer: 80, air: 70,
+        details: {
+            light: 'Bright light, 1500-2000 foot-candles. Morning sun, afternoon shade.',
+            temperature: 'Cool nights essential: 45-55°F (7-13°C). Day 65-75°F (18-24°C).',
+            humidity: '50-70%. Benefits from outdoor culture in many climates.',
+            water: 'Regular watering year-round. Never completely dry but don\'t overwater.',
+            fertilizer: 'Heavy feeders. Regular balanced fertilizer throughout growing season.',
+            air: 'Good air circulation. Outdoor culture preferred in suitable climates.'
+        },
+        seasonal: {
+            spring: 'Resume heavy feeding. Outdoor culture begins.',
+            summer: 'Outdoor growing season. Regular watering and heavy feeding.',
+            fall: 'Cool nights trigger blooming. Reduce fertilizing.',
+            winter: 'Bloom season for many. Reduce feeding, maintain moisture.'
+        }
+    }
+};
+
+function generateCareWheel() {
+    const genus = document.getElementById('genusSelect').value;
+    const container = document.getElementById('careWheelContainer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const genusTitle = document.getElementById('genusTitle');
+    
+    if (!genus || !careData[genus]) {
+        container.style.display = 'none';
+        downloadBtn.disabled = true;
+        return;
+    }
+    
+    container.style.display = 'block';
+    downloadBtn.disabled = false;
+    genusTitle.textContent = genus + ' Care Requirements';
+    
+    const data = careData[genus];
+    const ctx = document.getElementById('careWheelChart').getContext('2d');
+    
+    // Destroy existing chart
+    if (careWheelChart) {
+        careWheelChart.destroy();
+    }
+    
+    // Create new radar chart
+    careWheelChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Light', 'Temperature', 'Humidity', 'Watering', 'Fertilizer', 'Air Flow'],
+            datasets: [{
+                label: genus + ' Requirements',
+                data: [data.light, data.temperature, data.humidity, data.water, data.fertilizer, data.air],
+                backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 3,
+                pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(13, 110, 253, 1)',
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Update care details
+    const detailsContainer = document.getElementById('careRequirements');
+    let detailsHtml = '';
+    for (const [key, value] of Object.entries(data.details)) {
+        const iconMap = {
+            light: 'sun',
+            temperature: 'thermometer',
+            humidity: 'droplet',
+            water: 'droplet',
+            fertilizer: 'zap',
+            air: 'wind'
+        };
+        
+        detailsHtml += `
+            <div class="mb-3 p-3 border rounded">
+                <div class="d-flex align-items-center mb-2">
+                    <i data-feather="${iconMap[key] || 'circle'}" class="me-2 text-primary"></i>
+                    <strong class="text-capitalize">${key}:</strong>
+                </div>
+                <small class="text-muted">${value}</small>
+            </div>
+        `;
+    }
+    detailsContainer.innerHTML = detailsHtml;
+    
+    // Update seasonal care
+    const seasonalContainer = document.getElementById('seasonalCare');
+    let seasonalHtml = '<div class="row g-2">';
+    for (const [season, info] of Object.entries(data.seasonal)) {
+        seasonalHtml += `
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body p-3">
+                        <h6 class="card-title text-capitalize">${season}</h6>
+                        <p class="card-text small">${info}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    seasonalHtml += '</div>';
+    seasonalContainer.innerHTML = seasonalHtml;
+    
+    // Re-initialize feather icons
+    feather.replace();
+}
+
+function downloadCareWheelPDF() {
+    const genus = document.getElementById('genusSelect').value;
+    if (!genus) return;
+    
+    // In a real implementation, you would use jsPDF or similar library
+    alert(`Care wheel PDF for ${genus} would be generated here.\n\nThis feature can be implemented with libraries like jsPDF to create downloadable care sheets.`);
+}
+
+feather.replace();
+</script>
+{% endblock %}
