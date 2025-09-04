@@ -1,0 +1,168 @@
+MASTER PROMPT (paste this whole block into Replit AI)
+
+You are building The Orchid Continuum for the Five Cities Orchid Society (FCOS): an AI-enhanced orchid database and widget library that can be embedded on the FCOS website (Neon One CMS). Generate a production-grade, documented codebase with:
+
+STACK & STRUCTURE
+	•	Monorepo layout:
+	•	/apps/api → FastAPI (Python) or Node/TypeScript (Fastify). Use PostgreSQL (via Supabase or Neon.tech) and Prisma/SQLModel/SQLAlchemy. Include OpenAPI docs at /docs.
+	•	/apps/web → Next.js (React) SPA for public UI + widgets gallery. No server rendering required, but OK if used. Include env-based API base URL.
+	•	/apps/admin → Next.js (or a protected route in /apps/web) for Admin Dashboard.
+	•	/packages/ui → shared React components (buttons, cards, tables, charts).
+	•	/packages/utils → shared TS utils, types, GBIF/EOL SDK wrappers.
+	•	/infra → IaC: docker-compose for local dev, SQL migrations, seed scripts.
+	•	Environment: .env.example with all keys. CORS defaults allow fcos.org and Neon One domains (user will add final hostnames).
+	•	Auth: JWT (cookie + Bearer) with roles: admin, editor, member, viewer. Admin-only data mutation. Use password+email now; keep hooks for Google OAuth later.
+
+DATA MODEL (PostgreSQL)
+Create SQL migrations for these tables (and Prisma/ORM schema if applicable):
+	•	orchids (id PK, scientific_name, genus, species, hybrid_status, synonyms JSONB, description, growth_habit, iucn_status, notes, created_at, updated_at)
+	•	photos (id, orchid_id FK, source ENUM[‘google_drive’,‘gbif’,‘user’,‘other’], source_ref TEXT, url TEXT, storage_key TEXT, exif JSONB, credited_to, license, is_verified BOOL, created_at)
+	•	culture_sheets (id, orchid_id FK NULLABLE, source ENUM[‘baker’,‘aos’,‘custom’], light_low..light_high, temp_min/max, humidity_min/max, water_notes TEXT, media_notes TEXT, seasonal_notes TEXT, citations JSONB, version INT, created_at)
+	•	traits (id, orchid_id FK, phenotypic JSONB) — e.g., leaf_venation, flower_color_hex, scent_notes, pollination_syndrome, CAM_flag
+	•	occurrences (id, orchid_id FK, gbif_occurrence_id, lat, lon, elev_m, country, date_observed, raw JSONB)
+	•	citations (id, orchid_id FK, doi, title, source, url, year, notes)
+	•	collections (id, user_id FK, name, notes); collection_items (id, collection_id, orchid_id, nick_name, acquired_at, last_repot, status ENUM, care_prefs JSONB)
+	•	users (id, email unique, role, display_name, created_at, updated_at)
+	•	audit_log (id, user_id FK, action, entity, entity_id, diff JSONB, created_at)
+	•	sources (id, name, type ENUM[‘gbif’,‘eol’,‘google_drive’,‘internal’,‘other’], auth JSONB, status, last_sync_at)
+
+Add indexes (scientific_name trigram, occurrences gist on (lat,lon), text search vector on orchids & culture_sheets).
+
+INGESTION & SYNC
+	•	/apps/api/src/ingest/gbif.ts|py: functions to query GBIF for occurrence records + media given a scientific name; normalize to occurrences and photos.
+	•	/apps/api/src/ingest/eol.ts|py: functions to fetch EOL pages/traits; normalize to traits, citations.
+	•	/apps/api/src/ingest/google_drive.ts|py: pull FCOS Drive folder (by ID), list images, capture fileId, webViewLink, and EXIF (via exiftool lib). Store Drive file IDs; do not rehost images yet.
+	•	Scheduler (CRON): configurable jobs for 90-second (dev) and daily (prod) sync; write progress to sources.status and audit_log.
+
+AI & ANALYSIS (stubs)
+	•	Add endpoints that accept an image upload/URL and return:
+	•	tentative taxon (string), confidence, matched refs (citations).
+	•	EXIF summary (date, GPS).
+	•	“Care Wheel” vector: normalized [0–10] axes: Light, Temp, Humidity, Water, Fertilizer, Airflow.
+Provide a pure-rules fallback using Baker/AOS data if AI key isn’t present.
+	•	Provide a care_profile generator: given orchid_id and location (lat/lon or city), return location-adjusted guidance (seasonality, hemisphere aware).
+
+API ROUTES (document in OpenAPI)
+	•	GET /orchids?query=&genus=&traits=&light=&temp_min=&temp_max=&page=
+	•	GET /orchids/{id} (+ photos, traits, occurrences, citations)
+	•	POST /orchids (admin/editor)
+	•	GET /search/conditions?light=&temp=&humidity= (finder)
+	•	POST /identify (image: multipart or URL) → id guess + care profile
+	•	GET /care/{orchid_id}?lat=&lon= → care wheel + monthly calendar
+	•	GET /compare?ids=1,2,3 → side-by-side taxonomic & phenotypic compare
+	•	GET /export/citations?format=bibtex|csv
+	•	POST /collections and CRUD for items
+	•	POST /admin/reindex, POST /admin/sync/{source}, GET /admin/health
+
+WEB APP: PUBLIC UI
+	•	Home: quick search; spotlight gallery; “Orchid of the Day”.
+	•	Orchid Finder by Growing Conditions: sliders/toggles map → API query.
+	•	Orchid Detail: hero photo, taxonomy, care wheel, culture sheet, GBIF map.
+	•	Gallery Browser: filter by genus, growth habit, climate, traits.
+	•	Science Lab: comparison tool, EXIF inspector, citation export.
+	•	35th Parallel Globe: Leaflet + a globe layer (or use Leaflet with leaflet.glify/webgl overlay). Layers: GBIF occurrences (clustered), native range tiles (stub), climate tiles (stub); layer control and legend.
+	•	AI Identification: upload → guess → link to detail.
+	•	All pages responsive, keyboard and a11y-friendly.
+
+MAPS (Leaflet)
+	•	Use Leaflet with:
+	•	base tiles (OpenStreetMap),
+	•	clustered occurrence markers,
+	•	togglable layers: native ranges (vector tiles placeholder), climate (raster tiles placeholder), GBIF heatmap (generated client-side).
+	•	Provide reusable <LeafletMap /> React component with props for layers and markers. No Mapbox token required.
+
+WIDGETS (embeddable in Neon One)
+Each widget must build to a single script that can be embedded via a <script> tag OR an <iframe>. Provide both outputs:
+	•	widget-search: compact search + result list (link back to web app).
+	•	widget-finder: growing-conditions finder → top 12 matches grid.
+	•	widget-care: care wheel + month-by-month tips for one orchid.
+	•	widget-identifier: image upload → identification summary.
+	•	widget-gallery: rotating image gallery with credit + link.
+	•	widget-globe: small Leaflet map focused on current genus.
+	•	widget-mahjong: solitaire using approved orchid images.
+	•	widget-edu-quiz: educational quiz framework.
+
+EMBED API
+	•	Each widget exposes a vanilla init:
+window.OrchidContinuum.mount({ widget: 'finder', target: '#el', options: {...} })
+	•	Also produce iframe builds at /embed/{widget}.html?options=...
+	•	All widgets are fully responsive, no global CSS collisions. Avoid external CSS frameworks; use CSS modules or Tailwind scoped to shadow roots.
+	•	Provide copy-paste embed snippets in /apps/web/embed-help.
+
+ADMIN DASHBOARD
+	•	Login required; sections:
+	•	Data Quality: missing fields, dupe detection, photo failsafe status.
+	•	Sources: run on-demand sync; see last run, errors, diffs.
+	•	Editors: CRUD orchids, attach culture sheets, verify photos.
+	•	Audit Log: searchable.
+	•	Export: CSV/JSON dumps; BibTeX export chooser.
+	•	API Keys: masked, rotatable (stored in env/DB secrets table).
+	•	“Multi-layer Photo Failsafe”: for each needed image, attempt:
+	1.	local cache, 2) primary URL, 3) proxy URL, 4) Drive webContentLink, 5) Drive thumbnail, 6) placeholder. Log failures.
+
+TESTS & DOCS
+	•	Unit tests for API routes, DB queries, and a widget smoke test.
+	•	/README.md with:
+	•	one-command local dev (docker-compose up),
+	•	env setup,
+	•	how to connect Supabase/Neon Postgres,
+	•	how to build/host widgets,
+	•	Neon One embed instructions,
+	•	data model diagrams,
+	•	migration & backup scripts.
+
+DELIVERABLES
+	•	Full code with comments.
+	•	Seed script that creates:
+	•	3 orchids, 5 photos (mixed sources), 2 culture sheets (Baker/AOS), 10 GBIF occurrences (mock), 2 traits examples, 1 citation, a demo collection.
+	•	Example iframe and script embed snippets.
+	•	A “How To” help page in /apps/web for members (mini tutorial).
+
+Build now. If something is ambiguous, scaffold sensible defaults and leave // TODO: notes with pointers in the code and README.
+
+⸻
+
+MIGRATION & BACKUP PLAN (actionable)
+
+Goal: move from Replit miscellany → stable, backed-up stack with versioned database and clean embeds for Neon One.
+
+1) Choose the data home
+	•	Recommended: Supabase (Postgres + auth + storage) or Neon.tech (serverless Postgres).
+	•	Pros: SQL, row-level security, easy backups, predictable URLs, great with Prisma/SQLAlchemy.
+	•	Alt (quick local): SQLite for protos; not recommended for prod.
+
+2) Export what you have
+	•	If you used Replit DB or scattered JSON:
+	•	Write a small script to export to newline-delimited JSON per entity (orchids.jsonl, photos.jsonl, etc.).
+	•	Save any image references (Drive file IDs / GBIF media URLs) in the export.
+	•	If files live in Google Drive, don’t rehost yet—store Drive IDs + links.
+
+3) Create the new DB & load seeds
+	•	Stand up Supabase/Neon Postgres.
+	•	Run the generated SQL migrations.
+	•	Run the seed script (provided by the scaffold) to verify baseline.
+	•	Import your exported JSON into the new tables with a small loader script (include in /infra).
+
+4) Point the app at the new DB
+	•	In /apps/api, set DATABASE_URL to your Postgres connection string.
+	•	Configure CORS to allow:
+	•	https://*.neonone.com (or your exact Neon One domain),
+	•	https://fcos.org (and staging domains),
+	•	local dev http://localhost:3000.
+
+5) Media strategy (safe & simple)
+	•	Short-term: serve Google Drive images via thumbnailLink or webContentLink with proper sharing set to “Anyone with link can view”. Cache via the API’s proxy to avoid mixed content issues.
+	•	Medium-term: migrate to object storage (Supabase Storage, Backblaze B2, or Cloudflare R2) with a public CDN domain and image resizing.
+
+6) Backups & versioning
+	•	Database: enable daily automated backups in Supabase/Neon; additionally schedule a nightly pg_dump pushed to object storage (R2/B2/S3) with 30–90 day retention.
+	•	Images: keep originals in Drive (archival), and mirrored copies in object storage for serving (versioned buckets).
+	•	Code: push monorepo to GitHub. Protect main, require PRs.
+
+7) GBIF & EOL keys / compliance
+	•	Store API keys in Supabase/Neon secrets or .env (not in repo).
+	•	Use DOIs and citations when displaying GBIF/EOL content; the scaffold includes a citations table and UI elements.
+
+8) Embedding on Neon One (your CMS)
+	•	Use the iframe build for zero-dependency embedding (safest).
+	•	Example (Finder widget):
