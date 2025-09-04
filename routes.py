@@ -1204,12 +1204,16 @@ def gallery():
 def search():
     """Search orchids by various criteria"""
     query_text = request.args.get('q', '').strip()
+    light_requirement = request.args.get('light_requirement', '')
+    temperature_range = request.args.get('temperature_range', '')
+    humidity_range = request.args.get('humidity_range', '')
     
-    if not query_text:
-        orchids = []
-    else:
-        # Search across multiple fields
-        orchids = OrchidRecord.query.filter(
+    # Build base query
+    query = OrchidRecord.query
+    
+    # Text search
+    if query_text:
+        query = query.filter(
             or_(
                 OrchidRecord.display_name.ilike(f'%{query_text}%'),
                 OrchidRecord.scientific_name.ilike(f'%{query_text}%'),
@@ -1218,9 +1222,73 @@ def search():
                 OrchidRecord.cultural_notes.ilike(f'%{query_text}%'),
                 OrchidRecord.ai_description.ilike(f'%{query_text}%')
             )
-        ).order_by(OrchidRecord.view_count.desc()).limit(50).all()
+        )
     
-    return render_template('search.html', orchids=orchids, query=query_text)
+    # Growing conditions filters
+    if light_requirement:
+        light_keywords = {
+            'very_low': 'low light|shade|very low',
+            'low': 'low light|filtered|shade',
+            'medium': 'medium light|bright indirect|moderate',
+            'high': 'bright light|high light|direct',
+            'very_high': 'very bright|full sun|intense'
+        }
+        if light_requirement in light_keywords:
+            pattern = light_keywords[light_requirement]
+            query = query.filter(
+                or_(
+                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%') 
+                    for keyword in pattern.split('|')
+                )
+            )
+    
+    if temperature_range:
+        temp_keywords = {
+            'cool': 'cool|cold|60|65|50-65',
+            'cool_intermediate': 'cool|intermediate|65|70',
+            'intermediate': 'intermediate|70|75|65-75',
+            'cool_warm': 'cool|warm|wide range',
+            'warm': 'warm|hot|80|85|75-85'
+        }
+        if temperature_range in temp_keywords:
+            pattern = temp_keywords[temperature_range]
+            query = query.filter(
+                or_(
+                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
+                    for keyword in pattern.split('|')
+                )
+            )
+    
+    if humidity_range:
+        humidity_keywords = {
+            'low': 'low humidity|dry|40%|30%',
+            'moderate': 'moderate humidity|50%|60%',
+            'high': 'high humidity|70%|80%|humid',
+            'very_high': 'very high humidity|90%|very humid'
+        }
+        if humidity_range in humidity_keywords:
+            pattern = humidity_keywords[humidity_range]
+            query = query.filter(
+                or_(
+                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
+                    for keyword in pattern.split('|')
+                )
+            )
+    
+    # Get results
+    orchids = query.order_by(OrchidRecord.view_count.desc()).limit(50).all() if query_text or light_requirement or temperature_range or humidity_range else []
+    
+    return render_template('search.html', 
+                         orchids=orchids, 
+                         query=query_text,
+                         light_requirement=light_requirement,
+                         temperature_range=temperature_range,
+                         humidity_range=humidity_range)
+
+@app.route('/care-wheel')
+def care_wheel():
+    """Care Wheel Generator page"""
+    return render_template('care_wheel.html')
 
 @app.route('/map')
 def world_map():
