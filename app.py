@@ -124,3 +124,10 @@ try:
     print("Orchid Games system initialized")
 except Exception as e:
     print(f"Orchid Games initialization error: {e}")
+
+try:
+    from api_v2_routes import api_v2
+    app.register_blueprint(api_v2)
+    print("API v2 routes initialized - FastAPI-compatible endpoints available")
+except Exception as e:
+    print(f"API v2 routes initialization error: {e}")
