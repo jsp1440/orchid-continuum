@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import route modules
-from routers import orchids, auth, admin, widgets, search, ingest
+from routers import orchids, auth, admin, widgets, search, ingest, legacy_adapter
 from database import engine, Base
 from models import orchid_models
 
@@ -53,6 +53,7 @@ async def startup_event():
     print("🌺 Orchid Continuum API started successfully")
 
 # Include routers
+app.include_router(legacy_adapter.router, prefix="/api/v2", tags=["Legacy Data"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(orchids.router, prefix="/orchids", tags=["Orchids"])
 app.include_router(search.router, prefix="/search", tags=["Search"])
