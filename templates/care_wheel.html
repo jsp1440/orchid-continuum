@@ -316,6 +316,210 @@ function generateCareWheel() {
     feather.replace();
 }
 
+function getCareData(genus) {
+    // Convert the simple careData format to the detailed format needed for PDF
+    const data = careData[genus];
+    if (!data) return null;
+    
+    return {
+        common_name: getCommonName(genus),
+        care_level: getCareLevel(genus),
+        light: {
+            requirement: data.details.light.split('.')[0],
+            details: data.details.light
+        },
+        temperature: {
+            day: getTemperatureRange(genus, 'day'),
+            night: getTemperatureRange(genus, 'night'),
+            details: data.details.temperature
+        },
+        humidity: {
+            range: getHumidityRange(genus),
+            details: data.details.humidity
+        },
+        watering: {
+            frequency: getWateringFrequency(genus),
+            details: data.details.water
+        },
+        fertilizer: {
+            schedule: getFertilizerSchedule(genus),
+            details: data.details.fertilizer
+        },
+        potting_media: getPottingMedia(genus),
+        repotting: getRepotting(genus),
+        blooming_season: getBloomingSeason(genus),
+        special_notes: getSpecialNotes(genus)
+    };
+}
+
+function getCommonName(genus) {
+    const names = {
+        'Phalaenopsis': 'Moth Orchid',
+        'Cattleya': 'Corsage Orchid',
+        'Paphiopedilum': 'Lady Slipper Orchid',
+        'Dendrobium': 'Dendrobium Orchid',
+        'Oncidium': 'Dancing Lady Orchid',
+        'Cymbidium': 'Cymbidium Orchid',
+        'Vanda': 'Vanda Orchid',
+        'Miltonia': 'Pansy Orchid'
+    };
+    return names[genus] || genus + ' Orchid';
+}
+
+function getCareLevel(genus) {
+    const levels = {
+        'Phalaenopsis': 'Beginner',
+        'Cattleya': 'Intermediate',
+        'Paphiopedilum': 'Intermediate to Advanced',
+        'Dendrobium': 'Intermediate',
+        'Oncidium': 'Beginner to Intermediate',
+        'Cymbidium': 'Intermediate',
+        'Vanda': 'Advanced',
+        'Miltonia': 'Intermediate'
+    };
+    return levels[genus] || 'Intermediate';
+}
+
+function getTemperatureRange(genus, time) {
+    const ranges = {
+        'Phalaenopsis': { day: '75-85°F (24-29°C)', night: '65-75°F (18-24°C)' },
+        'Cattleya': { day: '80-85°F (27-29°C)', night: '60-65°F (15-18°C)' },
+        'Paphiopedilum': { day: '70-80°F (21-27°C)', night: '60-65°F (15-18°C)' },
+        'Dendrobium': { day: '75-85°F (24-29°C)', night: '55-65°F (13-18°C)' },
+        'Oncidium': { day: '75-85°F (24-29°C)', night: '60-70°F (15-21°C)' },
+        'Cymbidium': { day: '65-75°F (18-24°C)', night: '45-55°F (7-13°C)' },
+        'Vanda': { day: '80-90°F (27-32°C)', night: '65-75°F (18-24°C)' },
+        'Miltonia': { day: '70-80°F (21-27°C)', night: '60-65°F (15-18°C)' }
+    };
+    return ranges[genus] ? ranges[genus][time] : '70-80°F (21-27°C)';
+}
+
+function getHumidityRange(genus) {
+    const ranges = {
+        'Phalaenopsis': '60-80%',
+        'Cattleya': '50-70%',
+        'Paphiopedilum': '60-80%',
+        'Dendrobium': '50-70%',
+        'Oncidium': '50-70%',
+        'Cymbidium': '50-70%',
+        'Vanda': '60-80%',
+        'Miltonia': '60-80%'
+    };
+    return ranges[genus] || '50-70%';
+}
+
+function getWateringFrequency(genus) {
+    const frequencies = {
+        'Phalaenopsis': 'Weekly or when media is dry',
+        'Cattleya': 'Allow to dry between waterings',
+        'Paphiopedilum': 'Keep evenly moist',
+        'Dendrobium': 'Wet/dry cycle important',
+        'Oncidium': 'Regular watering when growing',
+        'Cymbidium': 'Regular watering year-round',
+        'Vanda': 'Daily watering in summer',
+        'Miltonia': 'Keep consistently moist'
+    };
+    return frequencies[genus] || 'Weekly or when dry';
+}
+
+function getFertilizerSchedule(genus) {
+    const schedules = {
+        'Phalaenopsis': 'Weekly weakly',
+        'Cattleya': 'High nitrogen during growth',
+        'Paphiopedilum': 'Low concentration monthly',
+        'Dendrobium': 'High nitrogen in growth',
+        'Oncidium': 'Balanced feeding during growth',
+        'Cymbidium': 'Heavy feeding during growing season',
+        'Vanda': 'Weekly balanced fertilizer',
+        'Miltonia': 'Weekly weak fertilizer'
+    };
+    return schedules[genus] || 'Weekly weakly';
+}
+
+function getPottingMedia(genus) {
+    const media = {
+        'Phalaenopsis': 'Fine to medium bark or sphagnum moss',
+        'Cattleya': 'Coarse bark with perlite',
+        'Paphiopedilum': 'Fine bark mix with perlite and sphagnum',
+        'Dendrobium': 'Coarse bark or mounted',
+        'Oncidium': 'Medium bark with perlite',
+        'Cymbidium': 'Medium bark with perlite and sphagnum',
+        'Vanda': 'Coarse bark or mounted',
+        'Miltonia': 'Fine to medium bark with sphagnum'
+    };
+    return media[genus] || 'Medium bark with perlite';
+}
+
+function getRepotting(genus) {
+    const schedules = {
+        'Phalaenopsis': 'Every 1-2 years or when media breaks down',
+        'Cattleya': 'Every 2-3 years or when overcrowded',
+        'Paphiopedilum': 'Annually or when media breaks down',
+        'Dendrobium': 'Every 2-3 years or when overcrowded',
+        'Oncidium': 'Every 2-3 years or when overcrowded',
+        'Cymbidium': 'Every 2-3 years in spring',
+        'Vanda': 'Rarely needed if mounted',
+        'Miltonia': 'Every 1-2 years'
+    };
+    return schedules[genus] || 'Every 2-3 years';
+}
+
+function getBloomingSeason(genus) {
+    const seasons = {
+        'Phalaenopsis': 'Can bloom any time of year',
+        'Cattleya': 'Spring to fall, varies by species',
+        'Paphiopedilum': 'Winter to spring usually',
+        'Dendrobium': 'Winter to spring for most species',
+        'Oncidium': 'Fall to spring typically',
+        'Cymbidium': 'Winter to spring',
+        'Vanda': 'Multiple times per year',
+        'Miltonia': 'Spring to summer'
+    };
+    return seasons[genus] || 'Varies by species';
+}
+
+function getSpecialNotes(genus) {
+    const notes = {
+        'Phalaenopsis': [
+            'Can rebloom on old flower spikes',
+            'Very sensitive to overwatering',
+            'Enjoys being slightly pot-bound',
+            'Remove yellowing leaves immediately'
+        ],
+        'Cattleya': [
+            'Needs distinct rest period',
+            'Light levels critical for blooming',
+            'Pseudobulbs store water and nutrients',
+            'Many are fragrant'
+        ],
+        'Paphiopedilum': [
+            'Terrestrial orchid - different care needs',
+            'Sensitive to salt buildup - flush regularly',
+            'Some prefer cooler temperatures',
+            'Single flower per spike typically'
+        ],
+        'Dendrobium': [
+            'Many species need distinct dry rest',
+            'High light essential for blooming',
+            'Keikis (plantlets) common on canes',
+            'Wide variety of species and requirements'
+        ],
+        'Oncidium': [
+            'Tolerance to varying conditions',
+            'Watch for accordion-pleated leaves (underwatering)',
+            'Many species fragrant',
+            'Some need cooler nights for blooming'
+        ],
+        'Cymbidium': [
+            'Cool nights essential for blooming',
+            'Benefit from outdoor culture',
+            'Heavy feeders during growing season',
+            'Long-lasting flowers'
+        ]
+    };
+    return notes[genus] || ['Follow general orchid care guidelines'];
+}
+
 function downloadCareWheelPDF() {
     const genus = document.getElementById('genusSelect').value;
     if (!genus) return;
