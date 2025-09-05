@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 class OrchidDriveProcessor:
     def __init__(self):
         self.photo_editor = AdvancedPhotoEditor()
-        self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        # Get OpenAI API key and clean it from any shell export syntax
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key and api_key.startswith("export "):
+            api_key = api_key.replace("export OPENAI_API_KEY=", "").strip().strip('"\'')
+        self.openai_client = openai.OpenAI(api_key=api_key)
     
     def process_orchid_folder(self, folder_id: str, limit: int = 25) -> Dict[str, Any]:
         """Process orchids from Google Drive folder with complete analysis"""
