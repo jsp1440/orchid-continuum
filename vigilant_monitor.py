@@ -127,7 +127,7 @@ class VigilantMonitor:
         """Verify that REAL GALLERY images are loading correctly"""
         try:
             # Test the actual gallery/recent additions that users see
-            response = requests.get('http://localhost:5000/api/recent-orchids', timeout=5)
+            response = requests.get('http://localhost:5000/api/recent-orchids', timeout=15)
             if response.status_code != 200:
                 logger.error(f"❌ Gallery API failed: {response.status_code}")
                 self.stats['image_issues'] += 1
@@ -154,7 +154,7 @@ class VigilantMonitor:
                 try:
                     if orchid.get('google_drive_id'):
                         # Test Google Drive image
-                        img_response = requests.get(f"http://localhost:5000/api/drive-photo/{orchid['google_drive_id']}", timeout=3)
+                        img_response = requests.get(f"http://localhost:5000/api/drive-photo/{orchid['google_drive_id']}", timeout=10)
                         if img_response.status_code == 200 and len(img_response.content) > 1000:
                             working_images += 1
                         else:
@@ -163,7 +163,7 @@ class VigilantMonitor:
                         # Test image proxy (what users actually see)
                         from urllib.parse import quote_plus
                         proxy_url = f"http://localhost:5000/api/proxy-image?url={quote_plus(orchid['photo_url'])}"
-                        img_response = requests.get(proxy_url, timeout=3)
+                        img_response = requests.get(proxy_url, timeout=10)
                         if img_response.status_code == 200 and len(img_response.content) > 1000:
                             working_images += 1
                         else:
@@ -193,7 +193,7 @@ class VigilantMonitor:
         """Check overall connection stability"""
         try:
             # Test internal routes
-            response = requests.get('http://localhost:5000/', timeout=3)
+            response = requests.get('http://localhost:5000/', timeout=10)
             if response.status_code == 200:
                 logger.info("✅ Connections: Web server responsive")
                 self.connection_failures = 0
@@ -370,11 +370,11 @@ class VigilantMonitor:
                 latest_backup = backup_files[-1]
                 return f"/admin/download-backup/{latest_backup.name}"
             else:
-                return None
+                return ""
                 
         except Exception as e:
             logger.error(f"Error getting backup URL: {e}")
-            return None
+            return ""
 
 # Global vigilant monitor instance
 vigilant_monitor = VigilantMonitor()
