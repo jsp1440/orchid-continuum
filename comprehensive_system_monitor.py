@@ -162,7 +162,7 @@ class ComprehensiveSystemMonitor:
             ('recent_orchids_api', 'api', '/api/recent-orchids'),
             ('drive_photos_api', 'api', '/api/drive-photo/test'),
             ('coordinates_api', 'api', '/mapping/api/coordinates'),
-            ('weather_api', 'api', '/api/weather'),
+            ('weather_api', 'api', '/api/weather?lat=35&lon=-120'),
             ('orchid_search_api', 'api', '/api/search'),
         ]
         
@@ -371,7 +371,7 @@ class ComprehensiveSystemMonitor:
         
         logger.info(f"📊 System Health: {self.dashboard_data['system_health']:.1f}% ({healthy_count}/{total_count})")
     
-    def _log_component_status(self, component: SystemComponent, success: bool, error_msg: str = None):
+    def _log_component_status(self, component: SystemComponent, success: bool, error_msg: str = ""):
         """Log component status to database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
