@@ -1128,7 +1128,9 @@ def gallery():
                 # Convert backup photos to orchid-like objects for template compatibility
                 class MockOrchid:
                     def __init__(self, photo_data):
-                        self.id = photo_data.get('id', f'backup_{len(working_orchids)}')
+                        # Ensure ID is always numeric for template compatibility
+                        backup_id = photo_data.get('id', 9000 + len(working_orchids))
+                        self.id = int(backup_id) if isinstance(backup_id, str) and backup_id.isdigit() else backup_id
                         self.display_name = photo_data.get('common_name', 'Beautiful Orchid')
                         self.scientific_name = photo_data.get('scientific_name', 'Orchidaceae sp.')
                         self.genus = photo_data.get('scientific_name', 'Unknown').split()[0]
@@ -1136,6 +1138,7 @@ def gallery():
                         self.ai_description = photo_data.get('description', 'Stunning orchid specimen')
                         self.created_at = datetime.now()
                         self.backup_image_url = photo_data.get('image_url')
+                        self.is_emergency_backup = True
                 
                 mock_orchids = [MockOrchid(photo) for photo in backup_photos]
                 working_orchids.extend(mock_orchids)
@@ -5098,6 +5101,279 @@ def research_stage(stage_id):
 def widget_gallery():
     """Widget gallery homepage"""
     return render_template('widgets/widget_gallery.html')
+
+@app.route('/widgets/climate')
+def climate_widget():
+    """Climate comparison widget page"""
+    try:
+        # Provide widget data structure expected by template
+        widget_data = {
+            'orchid': {
+                'display_name': 'Sample Orchid',
+                'scientific_name': 'Orchidaceae sp.',
+                'image_url': '/static/images/orchid_placeholder.svg',
+                'habitat_location': {
+                    'lat': 10.0,
+                    'lon': -75.0,
+                    'elev': 500
+                }
+            },
+            'user_location': {
+                'lat': 35.0,
+                'lon': -120.0,
+                'elev': 100
+            },
+            'climate_zones': ['cool', 'intermediate', 'warm'],
+            'widget_config': {
+                'default_zone': 'intermediate',
+                'show_temperature': True,
+                'show_humidity': True,
+                'show_images': True
+            }
+        }
+        return render_template('widgets/climate_widget.html', widget_data=widget_data)
+    except Exception as e:
+        logger.error(f"Error loading climate widget: {e}")
+        return jsonify({'error': 'Climate widget temporarily unavailable'}), 500
+
+@app.route('/widgets/climate-data')
+def climate_data_widget():
+    """API endpoint for climate widget data"""
+    try:
+        # Get basic climate data for widget
+        climate_zones = ['cool', 'intermediate', 'warm']
+        
+        # Sample orchid data with climate preferences
+        orchids_by_climate = {}
+        for zone in climate_zones:
+            orchids = OrchidRecord.query.filter(
+                OrchidRecord.climate_preference == zone,
+                OrchidRecord.google_drive_id.isnot(None)
+            ).limit(3).all()
+            
+            orchids_by_climate[zone] = [{
+                'id': orchid.id,
+                'name': orchid.display_name or orchid.scientific_name,
+                'scientific_name': orchid.scientific_name,
+                'image_url': f'/api/drive-photo/{orchid.google_drive_id}' if orchid.google_drive_id else '/static/images/orchid_placeholder.svg',
+                'temperature_range': orchid.temperature_range or 'Not specified',
+                'humidity_range': orchid.humidity_range or 'Not specified'
+            } for orchid in orchids]
+        
+        return jsonify({
+            'success': True,
+            'climate_zones': climate_zones,
+            'orchids_by_climate': orchids_by_climate,
+            'widget_config': {
+                'default_zone': 'intermediate',
+                'show_temperature': True,
+                'show_humidity': True,
+                'show_images': True
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting climate widget data: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load climate data',
+            'climate_zones': ['cool', 'intermediate', 'warm'],
+            'orchids_by_climate': {}
+        }), 500
+
+# Missing API endpoints 
+
+@app.route('/api/search')
+def api_search():
+    """API endpoint for orchid search"""
+    try:
+        # Get search parameters
+        q = request.args.get('q', '').strip()
+        genus = request.args.get('genus', '').strip()
+        species = request.args.get('species', '').strip()
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 20, type=int), 100)
+        
+        # Start with base query
+        query = OrchidRecord.query
+        
+        # Apply filters
+        if q:
+            query = query.filter(
+                or_(
+                    OrchidRecord.display_name.ilike(f'%{q}%'),
+                    OrchidRecord.scientific_name.ilike(f'%{q}%'),
+                    OrchidRecord.genus.ilike(f'%{q}%'),
+                    OrchidRecord.species.ilike(f'%{q}%')
+                )
+            )
+        
+        if genus:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+            
+        if species:
+            query = query.filter(OrchidRecord.species.ilike(f'%{species}%'))
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        orchids = query.offset((page - 1) * per_page).limit(per_page).all()
+        
+        # Format results
+        results = []
+        for orchid in orchids:
+            results.append({
+                'id': orchid.id,
+                'name': orchid.display_name or orchid.scientific_name,
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'image_url': f'/api/drive-photo/{orchid.google_drive_id}' if orchid.google_drive_id else '/static/images/orchid_placeholder.svg',
+                'region': orchid.region,
+                'climate_preference': orchid.climate_preference
+            })
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'pages': (total + per_page - 1) // per_page
+            },
+            'query': {
+                'q': q,
+                'genus': genus,
+                'species': species
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in search API: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Search service unavailable',
+            'results': [],
+            'pagination': {'page': 1, 'per_page': per_page, 'total': 0, 'pages': 0}
+        }), 500
+
+@app.route('/api/weather')
+def api_weather():
+    """API endpoint for weather data"""
+    try:
+        lat = request.args.get('lat', type=float)
+        lon = request.args.get('lon', type=float)
+        zip_code = request.args.get('zip')
+        
+        if not lat or not lon:
+            if zip_code:
+                # Try to get coordinates from zip code
+                from weather_service import get_coordinates_from_zip_code
+                location_data = get_coordinates_from_zip_code(zip_code, 'US')
+                if location_data:
+                    lat = location_data['latitude']
+                    lon = location_data['longitude']
+                else:
+                    return jsonify({'error': 'Invalid zip code'}), 400
+            else:
+                return jsonify({'error': 'Latitude and longitude or zip code required'}), 400
+        
+        # Get current weather using existing weather service
+        from weather_service import WeatherService
+        weather = WeatherService.get_current_weather(lat, lon)
+        
+        if weather:
+            response_data = {
+                'success': True,
+                'location': {
+                    'latitude': lat,
+                    'longitude': lon,
+                    'name': weather.location_name or 'Unknown'
+                },
+                'weather': {
+                    'temperature': weather.temperature,
+                    'humidity': weather.humidity,
+                    'wind_speed': weather.wind_speed,
+                    'pressure': weather.pressure,
+                    'weather_code': weather.weather_code,
+                    'description': weather.description or 'No description',
+                    'temperature_max': weather.temperature_max,
+                    'temperature_min': weather.temperature_min,
+                    'recorded_at': weather.recorded_at.isoformat() if weather.recorded_at else None
+                }
+            }
+            return jsonify(response_data)
+        else:
+            return jsonify({'error': 'Unable to fetch weather data'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in weather API: {e}")
+        return jsonify({'error': 'Weather service unavailable'}), 500
+
+@app.route('/compare')
+def compare_page():
+    """Orchid comparison page"""
+    try:
+        # Get orchid IDs from query parameters
+        orchid1_id = request.args.get('orchid1', type=int)
+        orchid2_id = request.args.get('orchid2', type=int)
+        species = request.args.get('species', '')
+        
+        orchids = []
+        if orchid1_id:
+            orchid1 = OrchidRecord.query.get(orchid1_id)
+            if orchid1:
+                orchids.append(orchid1)
+        
+        if orchid2_id:
+            orchid2 = OrchidRecord.query.get(orchid2_id)
+            if orchid2:
+                orchids.append(orchid2)
+        
+        # Get orchids by species if specified
+        if species and not orchids:
+            orchids = OrchidRecord.query.filter(
+                OrchidRecord.scientific_name.ilike(f'%{species}%')
+            ).limit(10).all()
+        
+        # Get some sample orchids if none specified
+        if not orchids:
+            sample_orchids = OrchidRecord.query.filter(
+                OrchidRecord.google_drive_id.isnot(None)
+            ).limit(10).all()
+            orchids = sample_orchids[:2] if len(sample_orchids) >= 2 else sample_orchids
+        
+        # Build data structure expected by template
+        if orchids:
+            species_name = orchids[0].scientific_name or orchids[0].genus or "Unknown"
+            photographers = list(set([o.photographer for o in orchids if o.photographer]))
+            climate_conditions = list(set([o.climate_preference for o in orchids if o.climate_preference]))
+            growth_habits = list(set([o.growth_habit for o in orchids if o.growth_habit]))
+            with_photos = [o for o in orchids if o.google_drive_id or o.image_url]
+        else:
+            species_name = "No Orchids"
+            photographers = []
+            climate_conditions = []
+            growth_habits = []
+            with_photos = []
+        
+        data = {
+            'species_name': species_name,
+            'specimen_count': len(orchids),
+            'with_photos': with_photos,
+            'photographers': photographers,
+            'climate_conditions': climate_conditions,
+            'growth_habits': growth_habits,
+            'specimens': orchids  # Pass orchids as specimens too
+        }
+        
+        return render_template('comparison.html', data=data, orchids=orchids)
+        
+    except Exception as e:
+        logger.error(f"Error loading comparison page: {e}")
+        return render_template('error.html', error="Could not load comparison page"), 500
 
 # Hollywood Orchids Movie Widget - moved to widgets section
 from hollywood_orchids_widget import hollywood_orchids

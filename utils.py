@@ -65,6 +65,38 @@ def get_orchid_of_the_day():
         
         candidate_orchids = orchids
         
+        # If no orchids meet strict criteria, try relaxed criteria
+        if not candidate_orchids:
+            logger.info("No orchids found with strict criteria, trying relaxed search...")
+            candidate_orchids = OrchidRecord.query.filter(
+                # Must have Google Drive ID (real photos only!)
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.google_drive_id != '',
+                OrchidRecord.google_drive_id != 'None',
+                # Has display name
+                OrchidRecord.display_name.isnot(None),
+                OrchidRecord.display_name != '',
+                # Not rejected
+                OrchidRecord.validation_status != 'rejected'
+            ).limit(50).all()
+        
+        # If still no results, get ANY orchid with an image (no validation status filter)
+        if not candidate_orchids:
+            logger.info("No orchids found with relaxed criteria, getting any orchid with image...")
+            candidate_orchids = OrchidRecord.query.filter(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.google_drive_id != '',
+                OrchidRecord.google_drive_id != 'None'
+            ).limit(50).all()
+        
+        # Final fallback - just get ANY orchid with display name
+        if not candidate_orchids:
+            logger.info("Still no results, getting any orchid from database...")
+            candidate_orchids = OrchidRecord.query.filter(
+                OrchidRecord.display_name.isnot(None),
+                OrchidRecord.display_name != ''
+            ).limit(20).all()
+        
         if candidate_orchids:
             # Select orchid based on seeded random
             selected_orchid = random.choice(candidate_orchids)
