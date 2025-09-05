@@ -3,8 +3,6 @@
 {% block title %}Care Wheel Generator - Orchid Continuum{% endblock %}
 
 {% block content %}
-<!-- jsPDF Library -->
-<script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
 <div class="container my-4">
     <!-- Header -->
     <div class="row mb-4">
@@ -524,226 +522,19 @@ function downloadCareWheelPDF() {
     const genus = document.getElementById('genusSelect').value;
     if (!genus) return;
     
-    // Check if jsPDF is loaded
-    if (typeof window.jspdf === 'undefined') {
-        alert('PDF library is loading... Please try again in a moment.');
-        return;
-    }
+    // Use server-side PDF generation instead of client-side
+    const downloadUrl = `/generate-care-wheel/${genus}`;
     
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `${genus}_Care_Wheel.pdf`;
+    link.style.display = 'none';
     
-    // Get the current care data
-    const careData = getCareData(genus);
-    
-    // Add title
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${genus} Care Wheel`, 20, 30);
-    
-    // Add subtitle
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'normal');
-    doc.text(`${careData.common_name} - ${careData.care_level}`, 20, 45);
-    
-    // Add care requirements
-    let yPosition = 65;
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-    doc.text('Care Requirements:', 20, yPosition);
-    
-    yPosition += 15;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    
-    // Light requirements
-    doc.setFont(undefined, 'bold');
-    doc.text('Light:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.light.requirement, 45, yPosition);
-    yPosition += 10;
-    doc.text(careData.light.details, 20, yPosition);
-    
-    yPosition += 15;
-    
-    // Temperature requirements
-    doc.setFont(undefined, 'bold');
-    doc.text('Temperature:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Day: ${careData.temperature.day}`, 45, yPosition);
-    yPosition += 10;
-    doc.text(`Night: ${careData.temperature.night}`, 20, yPosition);
-    yPosition += 10;
-    doc.text(careData.temperature.details, 20, yPosition);
-    
-    yPosition += 15;
-    
-    // Humidity requirements
-    doc.setFont(undefined, 'bold');
-    doc.text('Humidity:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.humidity.range, 45, yPosition);
-    yPosition += 10;
-    doc.text(careData.humidity.details, 20, yPosition);
-    
-    yPosition += 15;
-    
-    // Watering requirements
-    doc.setFont(undefined, 'bold');
-    doc.text('Watering:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.watering.frequency, 45, yPosition);
-    yPosition += 10;
-    doc.text(careData.watering.details, 20, yPosition);
-    
-    yPosition += 15;
-    
-    // Fertilizer requirements
-    doc.setFont(undefined, 'bold');
-    doc.text('Fertilizer:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.fertilizer.schedule, 45, yPosition);
-    yPosition += 10;
-    doc.text(careData.fertilizer.details, 20, yPosition);
-    
-    yPosition += 20;
-    
-    // Additional information
-    if (yPosition > 220) {
-        doc.addPage();
-        yPosition = 30;
-    }
-    
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
-    doc.text('Additional Care Information:', 20, yPosition);
-    
-    yPosition += 15;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Potting Media:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.potting_media, 55, yPosition);
-    
-    yPosition += 10;
-    doc.setFont(undefined, 'bold');
-    doc.text('Repotting:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.repotting, 45, yPosition);
-    
-    yPosition += 10;
-    doc.setFont(undefined, 'bold');
-    doc.text('Blooming Season:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(careData.blooming_season, 60, yPosition);
-    
-    // Special notes
-    if (careData.special_notes && careData.special_notes.length > 0) {
-        yPosition += 20;
-        if (yPosition > 220) {
-            doc.addPage();
-            yPosition = 30;
-        }
-        
-        doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text('Special Notes:', 20, yPosition);
-        
-        yPosition += 15;
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'normal');
-        
-        careData.special_notes.forEach(note => {
-            if (yPosition > 260) {
-                doc.addPage();
-                yPosition = 30;
-            }
-            doc.text(`• ${note}`, 20, yPosition);
-            yPosition += 10;
-        });
-    }
-    
-    // Add footer with attribution
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'normal');
-        doc.text('Generated by Five Cities Orchid Society Care Wheel Generator', 20, 285);
-        doc.text(`Page ${i} of ${pageCount}`, 170, 285);
-    }
-    
-        // Save the PDF
-        doc.save(`${genus}_Care_Wheel.pdf`);
-        
-    } catch (error) {
-        console.error('PDF generation failed:', error);
-        
-        // Fallback: create a new window with printable content
-        const careData = getCareData(genus);
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-        
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>${genus} Care Wheel</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1 { color: #333; }
-                    h2 { color: #666; margin-top: 20px; }
-                    .section { margin-bottom: 15px; }
-                    .label { font-weight: bold; }
-                    ul { margin: 5px 0; }
-                    @media print { body { margin: 0; } }
-                </style>
-            </head>
-            <body>
-                <h1>${genus} Care Wheel</h1>
-                <h2>${careData.common_name} - ${careData.care_level}</h2>
-                
-                <div class="section">
-                    <h2>Care Requirements</h2>
-                    <p><span class="label">Light:</span> ${careData.light.requirement}</p>
-                    <p><span class="label">Temperature (Day):</span> ${careData.temperature.day}</p>
-                    <p><span class="label">Temperature (Night):</span> ${careData.temperature.night}</p>
-                    <p><span class="label">Humidity:</span> ${careData.humidity.range}</p>
-                    <p><span class="label">Watering:</span> ${careData.watering.frequency}</p>
-                    <p><span class="label">Fertilizer:</span> ${careData.fertilizer.schedule}</p>
-                </div>
-                
-                <div class="section">
-                    <h2>Additional Information</h2>
-                    <p><span class="label">Potting Media:</span> ${careData.potting_media}</p>
-                    <p><span class="label">Repotting:</span> ${careData.repotting}</p>
-                    <p><span class="label">Blooming Season:</span> ${careData.blooming_season}</p>
-                </div>
-                
-                <div class="section">
-                    <h2>Special Notes</h2>
-                    <ul>
-                        ${careData.special_notes.map(note => `<li>${note}</li>`).join('')}
-                    </ul>
-                </div>
-                
-                <p><small>Generated by Five Cities Orchid Society Care Wheel Generator</small></p>
-            </body>
-            </html>
-        `);
-        
-        printWindow.document.close();
-        printWindow.focus();
-        
-        // Auto-print after a short delay
-        setTimeout(() => {
-            printWindow.print();
-        }, 500);
-        
-        alert('PDF generation failed, but a printable version has opened. You can save this as PDF using your browser\'s print function (Print → Save as PDF).');
-    }
+    // Add to DOM, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 feather.replace();
