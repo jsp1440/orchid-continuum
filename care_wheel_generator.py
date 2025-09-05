@@ -1,0 +1,829 @@
+#!/usr/bin/env python3
+"""
+Care Wheel Generator - Creates detailed PDF care wheels for orchid genera
+"""
+
+from flask import Blueprint, render_template, request, make_response, jsonify
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.units import inch
+from reportlab.lib.colors import HexColor, white, black
+from reportlab.pdfgen import canvas
+from reportlab.graphics.shapes import Drawing, Circle, Wedge, String
+from reportlab.graphics.renderPDF import drawToFile
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+import math
+import io
+import logging
+from attribution_system import attribution_manager, Sources, AIInferences
+
+logger = logging.getLogger(__name__)
+
+care_wheel_bp = Blueprint('care_wheel', __name__)
+
+# Comprehensive orchid care data
+ORCHID_CARE_DATA = {
+    'Cymbidium': {
+        'common_name': 'Cymbidium Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '2000-3000 foot-candles, morning sun acceptable',
+            'value': 75
+        },
+        'temperature': {
+            'day': '68-75°F (20-24°C)',
+            'night': '50-60°F (10-15°C)',
+            'details': 'Cool nights essential for blooming',
+            'value': 65
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Good air circulation prevents fungal issues',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'When media is nearly dry',
+            'details': 'Deep watering, allow excess to drain',
+            'value': 70
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents bacterial and fungal problems',
+            'value': 80
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growing season',
+            'details': '20-20-20 at 1/4 strength, less in winter',
+            'value': 50
+        },
+        'potting_media': 'Coarse bark mix with perlite',
+        'repotting': 'Every 2-3 years or when pseudobulbs crowd',
+        'blooming_season': 'Winter to early spring',
+        'rest_period': 'Reduce watering after blooming',
+        'special_notes': [
+            'Cool winter temperatures trigger blooming',
+            'Can tolerate brief temperature drops to 35°F',
+            'Remove spent flower spikes completely',
+            'Divide when repotting for new plants'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Royal Horticultural Society Orchid Care Guide',
+            'Five Cities Orchid Society Growing Guidelines'
+        ],
+        'source_notes': [
+            'AOS recommends 50-60°F nights; RHS suggests 45-55°F - both work well',
+            'Watering frequency varies: weekly (AOS) vs. when media nearly dry (RHS)'
+        ]
+    },
+    'Phalaenopsis': {
+        'common_name': 'Moth Orchid',
+        'care_level': 'Beginner',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '1000-1500 foot-candles, no direct sun',
+            'value': 60
+        },
+        'temperature': {
+            'day': '70-80°F (21-27°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Consistent temperatures preferred',
+            'value': 75
+        },
+        'humidity': {
+            'range': '50-80%',
+            'details': 'High humidity with good air movement',
+            'value': 70
+        },
+        'watering': {
+            'frequency': 'Weekly or when media is dry',
+            'details': 'Water early morning, avoid crown',
+            'value': 65
+        },
+        'air_flow': {
+            'requirement': 'Gentle air circulation',
+            'details': 'Prevents crown rot and fungal issues',
+            'value': 60
+        },
+        'fertilizer': {
+            'schedule': 'Weekly weakly',
+            'details': '20-20-20 at 1/4 strength year-round',
+            'value': 60
+        },
+        'potting_media': 'Fine to medium bark or sphagnum moss',
+        'repotting': 'Every 1-2 years or when media breaks down',
+        'blooming_season': 'Can bloom any time of year',
+        'rest_period': 'No specific rest period needed',
+        'special_notes': [
+            'Can rebloom on old flower spikes',
+            'Very sensitive to overwatering',
+            'Enjoys being slightly pot-bound',
+            'Remove yellowing leaves immediately'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Orchid Wiz Database',
+            'University of Florida IFAS Extension'
+        ],
+        'source_notes': [
+            'Light requirements vary: AOS suggests 1000-1500 fc; some growers prefer up to 2000 fc',
+            'Watering debates: weekly vs. ice cube method (we recommend weekly)'
+        ]
+    },
+    'Cattleya': {
+        'common_name': 'Cattleya Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'High light',
+            'details': '3000-4000 foot-candles, morning sun OK',
+            'value': 85
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': '15-20°F night temperature drop needed',
+            'value': 75
+        },
+        'humidity': {
+            'range': '50-80%',
+            'details': 'High humidity with excellent drainage',
+            'value': 70
+        },
+        'watering': {
+            'frequency': 'When pseudobulbs begin to shrivel',
+            'details': 'Thorough watering, then dry completely',
+            'value': 60
+        },
+        'air_flow': {
+            'requirement': 'Strong air circulation',
+            'details': 'Essential for healthy growth',
+            'value': 85
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/2 strength, reduce in winter',
+            'value': 65
+        },
+        'potting_media': 'Coarse bark chunks, excellent drainage',
+        'repotting': 'Every 2-3 years or when media deteriorates',
+        'blooming_season': 'Usually once per year, species dependent',
+        'rest_period': 'Reduce watering after pseudobulb matures',
+        'special_notes': [
+            'Needs distinct wet/dry cycle',
+            'Pseudobulbs store water - don\'t overwater',
+            'Some species need cool winter rest',
+            'Very sensitive to salt buildup'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Cattleya Society Publications',
+            'Brazilian Orchid Growers Association'
+        ],
+        'source_notes': [
+            'Light tolerance varies by species: mini-catts need less, standard catts more',
+            'Temperature preferences differ: Brazilian species vs. highland varieties'
+        ]
+    },
+    'Dendrobium': {
+        'common_name': 'Dendrobium Orchid',
+        'care_level': 'Intermediate to Advanced',
+        'light': {
+            'requirement': 'High light',
+            'details': '2500-3500 foot-candles, some direct sun',
+            'value': 80
+        },
+        'temperature': {
+            'day': '65-80°F (18-27°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': 'Varies by species - some need cool rest',
+            'value': 70
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Moderate humidity, excellent ventilation',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'Regular in growth, minimal in rest',
+            'details': 'Distinct wet and dry seasons',
+            'value': 55
+        },
+        'air_flow': {
+            'requirement': 'Excellent air movement',
+            'details': 'Critical for preventing rot',
+            'value': 90
+        },
+        'fertilizer': {
+            'schedule': 'Weekly during growth season only',
+            'details': '30-10-10 during growth, none during rest',
+            'value': 40
+        },
+        'potting_media': 'Very coarse bark, mounted preferred',
+        'repotting': 'Every 2-3 years, avoid disturbing roots',
+        'blooming_season': 'After rest period, usually spring',
+        'rest_period': 'Essential 2-3 month dry, cool rest',
+        'special_notes': [
+            'Most species require distinct rest period',
+            'Never repot during rest period',
+            'Old canes may produce keikis (baby plants)',
+            'Some species are deciduous'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Australian Orchid Society Guidelines',
+            'Asian Dendrobium Growers Manual'
+        ],
+        'source_notes': [
+            'Rest period timing varies: Australian sources suggest 3-4 months, AOS suggests 2-3 months',
+            'Watering during rest: some advocate complete dryness, others allow monthly misting'
+        ]
+    },
+    'Oncidium': {
+        'common_name': 'Dancing Lady Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '2000-3000 foot-candles',
+            'value': 75
+        },
+        'temperature': {
+            'day': '70-80°F (21-27°C)',
+            'night': '60-65°F (15-18°C)',
+            'details': 'Intermediate temperatures preferred',
+            'value': 70
+        },
+        'humidity': {
+            'range': '40-70%',
+            'details': 'Tolerates lower humidity than most orchids',
+            'value': 55
+        },
+        'watering': {
+            'frequency': 'Regular, but not constantly moist',
+            'details': 'Allow slight drying between waterings',
+            'value': 65
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents fungal issues',
+            'value': 70
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks year-round',
+            'details': '20-20-20 at 1/4 strength',
+            'value': 55
+        },
+        'potting_media': 'Medium bark mix with good drainage',
+        'repotting': 'Every 2 years or when pseudobulbs crowd',
+        'blooming_season': 'Fall to winter typically',
+        'rest_period': 'Brief rest after blooming',
+        'special_notes': [
+            'Pseudobulbs wrinkle when thirsty',
+            'Can tolerate drier conditions than most orchids',
+            'Spray flowers bloom in cascading sprays',
+            'Some species prefer mounted culture'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Oncidium Alliance Society',
+            'South American Orchid Research'
+        ],
+        'source_notes': [
+            'Humidity tolerance: AOS suggests 40-70%, some growers succeed with 30-60%',
+            'Mounting vs. potting: preferences vary by grower experience and climate'
+        ]
+    },
+    'Paphiopedilum': {
+        'common_name': 'Lady Slipper Orchid',
+        'care_level': 'Intermediate to Advanced',
+        'light': {
+            'requirement': 'Low to medium light',
+            'details': '800-1500 foot-candles, no direct sun',
+            'value': 45
+        },
+        'temperature': {
+            'day': '65-75°F (18-24°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': 'Cool to intermediate temperatures',
+            'value': 65
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Consistent moisture without sogginess',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'Keep evenly moist',
+            'details': 'Never allow to dry completely',
+            'value': 80
+        },
+        'air_flow': {
+            'requirement': 'Gentle air movement',
+            'details': 'Good ventilation at root level',
+            'value': 60
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks at low concentration',
+            'details': '20-20-20 at 1/4 strength or less',
+            'value': 40
+        },
+        'potting_media': 'Fine bark mix with perlite and sphagnum',
+        'repotting': 'Annually or when media breaks down',
+        'blooming_season': 'Winter to spring usually',
+        'rest_period': 'No distinct rest period',
+        'special_notes': [
+            'Terrestrial orchid - different care needs',
+            'Sensitive to salt buildup - flush regularly',
+            'Single blooms last several months',
+            'Rotate plant for even growth'
+        ],
+        'sources': [
+            'American Orchid Society (AOS) Culture Sheets',
+            'Paphiopedilum Society International',
+            'European Slipper Orchid Growers'
+        ],
+        'source_notes': [
+            'Temperature preferences vary by species: cool vs. warm growing types',
+            'Media preferences: European growers often use more moss, Americans prefer bark mixes'
+        ]
+    }
+}
+
+def create_care_wheel_pdf(genus_name):
+    """Generate a circular care wheel PDF for the specified orchid genus"""
+    
+    if genus_name not in ORCHID_CARE_DATA:
+        raise ValueError(f"Care data not available for {genus_name}")
+    
+    care_data = ORCHID_CARE_DATA[genus_name]
+    buffer = io.BytesIO()
+    
+    # Create PDF with custom canvas for circular wheel
+    from reportlab.pdfgen import canvas as pdf_canvas
+    from reportlab.lib.units import inch
+    import math
+    
+    c = pdf_canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    center_x, center_y = width/2, height/2 + 50
+    radius = 150
+    
+    # Title
+    c.setFont("Helvetica-Bold", 20)
+    c.setFillColor(HexColor('#2d5aa0'))
+    title = f"{care_data['common_name']} Care Wheel"
+    title_width = c.stringWidth(title, "Helvetica-Bold", 20)
+    c.drawString((width - title_width)/2, height - 50, title)
+    
+    # Draw circular wheel segments
+    care_factors = ['Light', 'Temperature', 'Humidity', 'Watering', 'Air Flow', 'Fertilizer']
+    colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3']
+    values = [care_data['light']['value'], care_data['temperature']['value'], 
+              care_data['humidity']['value'], care_data['watering']['value'], 
+              care_data['air_flow']['value'], care_data['fertilizer']['value']]
+    
+    segment_angle = 360 / len(care_factors)
+    
+    for i, (factor, color, value) in enumerate(zip(care_factors, colors, values)):
+        start_angle = i * segment_angle
+        
+        # Draw segment
+        c.setFillColor(HexColor(color))
+        c.setStrokeColor(HexColor('#333333'))
+        c.setLineWidth(2)
+        
+        # Calculate segment path
+        start_rad = math.radians(start_angle)
+        end_rad = math.radians(start_angle + segment_angle)
+        
+        # Draw pie segment
+        c.beginPath()
+        c.moveTo(center_x, center_y)
+        c.lineTo(center_x + radius * math.cos(start_rad), 
+                center_y + radius * math.sin(start_rad))
+        c.arcTo(center_x - radius, center_y - radius, 
+               center_x + radius, center_y + radius,
+               start_angle, segment_angle)
+        c.closePath()
+        c.fillPath()
+        c.strokePath()
+        
+        # Add labels
+        label_angle = start_angle + segment_angle/2
+        label_rad = math.radians(label_angle)
+        label_x = center_x + (radius + 20) * math.cos(label_rad)
+        label_y = center_y + (radius + 20) * math.sin(label_rad)
+        
+        c.setFillColor(HexColor('#333333'))
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(label_x - 20, label_y, factor)
+        c.drawString(label_x - 10, label_y - 15, f"{value}%")
+    
+    # Add center info
+    c.setFillColor(white)
+    c.circle(center_x, center_y, 50, fill=1)
+    c.setFillColor(HexColor('#2d5aa0'))
+    c.setFont("Helvetica-Bold", 12)
+    genus_width = c.stringWidth(genus_name, "Helvetica-Bold", 12)
+    c.drawString(center_x - genus_width/2, center_y + 5, genus_name)
+    c.setFont("Helvetica", 8)
+    level_width = c.stringWidth(care_data['care_level'], "Helvetica", 8)
+    c.drawString(center_x - level_width/2, center_y - 10, care_data['care_level'])
+    
+    # Add legend/details below wheel
+    y_pos = center_y - radius - 100
+    c.setFillColor(HexColor('#333333'))
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(72, y_pos, "Quick Care Guide:")
+    
+    y_pos -= 20
+    care_items = [
+        f"Light: {care_data['light']['requirement']}",
+        f"Water: {care_data['watering']['frequency']}",
+        f"Humidity: {care_data['humidity']['range']}",
+        f"Blooming: {care_data['blooming_season']}"
+    ]
+    
+    c.setFont("Helvetica", 10)
+    for item in care_items:
+        c.drawString(72, y_pos, item)
+        y_pos -= 15
+    
+    c.save()
+    pdf_value = buffer.getvalue()
+    buffer.close()
+    return pdf_value
+
+def create_care_card_pdf(genus_name):
+    """Generate a compact care card PDF for the specified orchid genus"""
+    
+    if genus_name not in ORCHID_CARE_DATA:
+        raise ValueError(f"Care data not available for {genus_name}")
+    
+    care_data = ORCHID_CARE_DATA[genus_name]
+    buffer = io.BytesIO()
+    
+    # Create PDF document (card size - 4x6 inches)
+    from reportlab.lib.pagesizes import landscape
+    card_size = (6*inch, 4*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=card_size,
+                          rightMargin=36, leftMargin=36,
+                          topMargin=36, bottomMargin=36)
+    
+    # Define styles for card
+    styles = getSampleStyleSheet()
+    card_title_style = ParagraphStyle(
+        'CardTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=HexColor('#2d5aa0'),
+        spaceAfter=10,
+        alignment=1
+    )
+    
+    small_text_style = ParagraphStyle(
+        'SmallText',
+        parent=styles['Normal'],
+        fontSize=8,
+        spaceAfter=4
+    )
+    
+    # Build card content
+    story = []
+    
+    # Title
+    title = f"{care_data['common_name']}<br/>({genus_name})"
+    story.append(Paragraph(title, card_title_style))
+    
+    # Compact care table
+    card_data = [
+        ['💡', 'Light', care_data['light']['requirement']],
+        ['🌡️', 'Temp', f"{care_data['temperature']['day']} / {care_data['temperature']['night']}"],
+        ['💧', 'Water', care_data['watering']['frequency']],
+        ['🌪️', 'Humidity', care_data['humidity']['range']],
+        ['🌸', 'Blooming', care_data['blooming_season']],
+        ['🏺', 'Medium', care_data['potting_media']]
+    ]
+    
+    card_table = Table(card_data, colWidths=[0.3*inch, 0.7*inch, 2.2*inch])
+    card_table.setStyle(TableStyle([
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+        ('ALIGN', (1, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0, 0), (-1, -1), [white, HexColor('#f8f9fa')]),
+        ('BOX', (0, 0), (-1, -1), 1, HexColor('#e0e0e0')),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, HexColor('#e0e0e0'))
+    ]))
+    
+    story.append(card_table)
+    
+    # Special notes (top 2 most important)
+    if care_data['special_notes']:
+        story.append(Spacer(1, 8))
+        story.append(Paragraph("<b>Key Tips:</b>", small_text_style))
+        for note in care_data['special_notes'][:2]:
+            story.append(Paragraph(f"• {note}", small_text_style))
+    
+    # Footer
+    story.append(Spacer(1, 8))
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=6, alignment=1)
+    story.append(Paragraph("Orchid Continuum - Five Cities Orchid Society", footer_style))
+    
+    doc.build(story)
+    pdf_value = buffer.getvalue()
+    buffer.close()
+    return pdf_value
+
+def create_care_sheet_pdf(genus_name):
+    """Generate a comprehensive care sheet PDF for the specified orchid genus"""
+    
+    if genus_name not in ORCHID_CARE_DATA:
+        raise ValueError(f"Care data not available for {genus_name}")
+    
+    care_data = ORCHID_CARE_DATA[genus_name]
+    buffer = io.BytesIO()
+    
+    # Create PDF document
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                          rightMargin=72, leftMargin=72,
+                          topMargin=72, bottomMargin=18)
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=HexColor('#2d5aa0'),
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=HexColor('#2d5aa0'),
+        spaceAfter=12
+    )
+    
+    # This is the original comprehensive care sheet - same as the original function
+    # Build story
+    story = []
+    
+    # Title
+    title = f"{care_data['common_name']} ({genus_name})"
+    story.append(Paragraph(title, title_style))
+    story.append(Paragraph(f"Care Level: {care_data['care_level']}", styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Care requirements table
+    care_table_data = [
+        ['Care Factor', 'Requirement', 'Details'],
+        ['Light', care_data['light']['requirement'], care_data['light']['details']],
+        ['Temperature', f"Day: {care_data['temperature']['day']}\nNight: {care_data['temperature']['night']}", 
+         care_data['temperature']['details']],
+        ['Humidity', care_data['humidity']['range'], care_data['humidity']['details']],
+        ['Watering', care_data['watering']['frequency'], care_data['watering']['details']],
+        ['Air Flow', care_data['air_flow']['requirement'], care_data['air_flow']['details']],
+        ['Fertilizer', care_data['fertilizer']['schedule'], care_data['fertilizer']['details']]
+    ]
+    
+    care_table = Table(care_table_data, colWidths=[1.5*inch, 2*inch, 2.5*inch])
+    care_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#2d5aa0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), HexColor('#f8f9fa')),
+        ('GRID', (0, 0), (-1, -1), 1, black),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, HexColor('#f8f9fa')])
+    ]))
+    
+    story.append(care_table)
+    story.append(Spacer(1, 20))
+    
+    # Additional care information
+    story.append(Paragraph("Growing Medium & Repotting", heading_style))
+    story.append(Paragraph(f"<b>Potting Media:</b> {care_data['potting_media']}", styles['Normal']))
+    story.append(Paragraph(f"<b>Repotting Schedule:</b> {care_data['repotting']}", styles['Normal']))
+    story.append(Spacer(1, 15))
+    
+    story.append(Paragraph("Blooming & Rest Periods", heading_style))
+    story.append(Paragraph(f"<b>Blooming Season:</b> {care_data['blooming_season']}", styles['Normal']))
+    story.append(Paragraph(f"<b>Rest Period:</b> {care_data['rest_period']}", styles['Normal']))
+    story.append(Spacer(1, 15))
+    
+    # Special care notes
+    story.append(Paragraph("Special Care Notes", heading_style))
+    for i, note in enumerate(care_data['special_notes'], 1):
+        story.append(Paragraph(f"{i}. {note}", styles['Normal']))
+    
+    story.append(Spacer(1, 20))
+    
+    # Care intensity chart data
+    chart_data = [
+        ['Light', care_data['light']['value']],
+        ['Temperature', care_data['temperature']['value']],
+        ['Humidity', care_data['humidity']['value']],
+        ['Watering', care_data['watering']['value']],
+        ['Air Flow', care_data['air_flow']['value']],
+        ['Fertilizer', care_data['fertilizer']['value']]
+    ]
+    
+    chart_table = Table(chart_data, colWidths=[2*inch, 3*inch])
+    chart_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#2d5aa0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, HexColor('#f8f9fa')])
+    ]))
+    
+    story.append(Paragraph("Care Intensity Guide (0-100 scale)", heading_style))
+    story.append(chart_table)
+    
+    # Footer
+    story.append(Spacer(1, 30))
+    footer_text = f"Generated by Orchid Continuum Care Wheel Generator<br/>Five Cities Orchid Society<br/>This care sheet is for general guidance. Adjust care based on your specific growing conditions."
+    story.append(Paragraph(footer_text, styles['Normal']))
+    
+    # Build PDF
+    doc.build(story)
+    pdf_value = buffer.getvalue()
+    buffer.close()
+    
+    return pdf_value
+    
+    # Build story
+    story = []
+    
+    # Title
+    title = f"{care_data['common_name']} ({genus_name})"
+    story.append(Paragraph(title, title_style))
+    story.append(Paragraph(f"Care Level: {care_data['care_level']}", styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Care requirements table
+    care_table_data = [
+        ['Care Factor', 'Requirement', 'Details'],
+        ['Light', care_data['light']['requirement'], care_data['light']['details']],
+        ['Temperature', f"Day: {care_data['temperature']['day']}\nNight: {care_data['temperature']['night']}", 
+         care_data['temperature']['details']],
+        ['Humidity', care_data['humidity']['range'], care_data['humidity']['details']],
+        ['Watering', care_data['watering']['frequency'], care_data['watering']['details']],
+        ['Air Flow', care_data['air_flow']['requirement'], care_data['air_flow']['details']],
+        ['Fertilizer', care_data['fertilizer']['schedule'], care_data['fertilizer']['details']]
+    ]
+    
+    care_table = Table(care_table_data, colWidths=[1.5*inch, 2*inch, 2.5*inch])
+    care_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#2d5aa0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), HexColor('#f8f9fa')),
+        ('GRID', (0, 0), (-1, -1), 1, black),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, HexColor('#f8f9fa')])
+    ]))
+    
+    story.append(care_table)
+    story.append(Spacer(1, 20))
+    
+    # Additional care information
+    story.append(Paragraph("Growing Medium & Repotting", heading_style))
+    story.append(Paragraph(f"<b>Potting Media:</b> {care_data['potting_media']}", styles['Normal']))
+    story.append(Paragraph(f"<b>Repotting Schedule:</b> {care_data['repotting']}", styles['Normal']))
+    story.append(Spacer(1, 15))
+    
+    story.append(Paragraph("Blooming & Rest Periods", heading_style))
+    story.append(Paragraph(f"<b>Blooming Season:</b> {care_data['blooming_season']}", styles['Normal']))
+    story.append(Paragraph(f"<b>Rest Period:</b> {care_data['rest_period']}", styles['Normal']))
+    story.append(Spacer(1, 15))
+    
+    # Special care notes
+    story.append(Paragraph("Special Care Notes", heading_style))
+    for i, note in enumerate(care_data['special_notes'], 1):
+        story.append(Paragraph(f"{i}. {note}", styles['Normal']))
+    
+    story.append(Spacer(1, 20))
+    
+    # Care intensity chart data
+    chart_data = [
+        ['Light', care_data['light']['value']],
+        ['Temperature', care_data['temperature']['value']],
+        ['Humidity', care_data['humidity']['value']],
+        ['Watering', care_data['watering']['value']],
+        ['Air Flow', care_data['air_flow']['value']],
+        ['Fertilizer', care_data['fertilizer']['value']]
+    ]
+    
+    chart_table = Table(chart_data, colWidths=[2*inch, 3*inch])
+    chart_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#2d5aa0')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, HexColor('#f8f9fa')])
+    ]))
+    
+    story.append(Paragraph("Care Intensity Guide (0-100 scale)", heading_style))
+    story.append(chart_table)
+    
+    # Footer
+    story.append(Spacer(1, 30))
+    footer_text = f"Generated by Orchid Continuum Care Wheel Generator<br/>Five Cities Orchid Society<br/>This care sheet is for general guidance. Adjust care based on your specific growing conditions."
+    story.append(Paragraph(footer_text, styles['Normal']))
+    
+    # Build PDF
+    doc.build(story)
+    pdf_value = buffer.getvalue()
+    buffer.close()
+    
+    return pdf_value
+
+@care_wheel_bp.route('/care-wheel-generator')
+def care_wheel_generator():
+    """Display the care wheel generator interface"""
+    # Add attribution to the page data
+    sources_used = [Sources.AOS, Sources.RHS, Sources.FCOS]
+    
+    page_data = {
+        'orchid_genera': list(ORCHID_CARE_DATA.keys()),
+        'care_data': ORCHID_CARE_DATA,
+        'attribution_html': attribution_manager.create_attribution_block(sources_used, format_type='html')
+    }
+    
+    return render_template('care_wheel_generator.html', **page_data)
+
+@care_wheel_bp.route('/api/care-wheel-data/<genus>')
+def api_care_wheel_data(genus):
+    """API endpoint to get care data for a specific genus"""
+    if genus not in ORCHID_CARE_DATA:
+        return jsonify({'error': 'Genus not found'}), 404
+    
+    return jsonify(ORCHID_CARE_DATA[genus])
+
+@care_wheel_bp.route('/generate-care-wheel/<genus>')
+@care_wheel_bp.route('/generate-care-wheel/<genus>/<format_type>')
+def generate_care_wheel(genus, format_type='wheel'):
+    """Generate and download a PDF in specified format (wheel, card, or sheet)"""
+    try:
+        if format_type == 'card':
+            pdf_data = create_care_card_pdf(genus)
+            filename = f"{genus}_Care_Card.pdf"
+        elif format_type == 'sheet':
+            pdf_data = create_care_sheet_pdf(genus)
+            filename = f"{genus}_Care_Sheet.pdf"
+        else:  # default to wheel
+            pdf_data = create_care_wheel_pdf(genus)
+            filename = f"{genus}_Care_Wheel.pdf"
+        
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except ValueError as e:
+        return f"Error: {str(e)}", 404
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        return "Error generating PDF", 500
+
+@care_wheel_bp.route('/api/available-genera')
+def api_available_genera():
+    """Get list of available orchid genera for care wheels"""
+    genera_info = []
+    for genus, data in ORCHID_CARE_DATA.items():
+        genera_info.append({
+            'genus': genus,
+            'common_name': data['common_name'],
+            'care_level': data['care_level']
+        })
+    
+    return jsonify(genera_info)
+
+if __name__ == '__main__':
+    # Test PDF generation
+    try:
+        pdf_data = create_care_wheel_pdf('Cymbidium')
+        with open('test_cymbidium_wheel.pdf', 'wb') as f:
+            f.write(pdf_data)
+        print("✅ Test PDF generated successfully")
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
