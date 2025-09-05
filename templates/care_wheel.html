@@ -522,12 +522,16 @@ function downloadCareWheelPDF() {
     const genus = document.getElementById('genusSelect').value;
     if (!genus) return;
     
-    // Use server-side PDF generation with absolute URL
-    const baseUrl = window.location.origin;
-    const downloadUrl = `${baseUrl}/generate-care-wheel/${genus}`;
+    // Create a form for reliable PDF download
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = `/generate-care-wheel/${genus}`;
+    form.target = '_blank'; // Open in new tab
+    form.style.display = 'none';
     
-    // Direct window navigation for reliable download
-    window.open(downloadUrl, '_blank');
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 
 feather.replace();
