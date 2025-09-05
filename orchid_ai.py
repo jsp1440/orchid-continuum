@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 # do not change this unless explicitly requested by the user
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "your-api-key-here")
+# Clean the API key to remove any shell export syntax
+if OPENAI_API_KEY.startswith("export "):
+    OPENAI_API_KEY = OPENAI_API_KEY.replace("export OPENAI_API_KEY=", "").strip().strip('"\'')
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 def encode_image_to_base64(image_path):
