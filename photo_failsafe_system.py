@@ -201,8 +201,10 @@ class PhotoFailsafeSystem:
         
         for i in range(count):
             backup_item = self.backup_images[i % backup_count].copy()
-            backup_item['id'] = f"emergency_{i+1}"
+            # Use a large base number to avoid conflicts with real orchid IDs
+            backup_item['id'] = 9000 + i + 1
             backup_item['emergency_mode'] = True
+            backup_item['emergency_id'] = f"emergency_{i+1}"
             photos.append(backup_item)
         
         return photos
