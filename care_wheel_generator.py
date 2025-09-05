@@ -399,10 +399,10 @@ def create_care_wheel_pdf(genus_name):
         
         # Draw pie segment
         c.beginPath()
-        c.moveTo(center_x, center_y)
-        c.lineTo(center_x + radius * math.cos(start_rad), 
+        c.moveto(center_x, center_y)
+        c.lineto(center_x + radius * math.cos(start_rad), 
                 center_y + radius * math.sin(start_rad))
-        c.arcTo(center_x - radius, center_y - radius, 
+        c.arcto(center_x - radius, center_y - radius, 
                center_x + radius, center_y + radius,
                start_angle, segment_angle)
         c.closePath()
@@ -789,8 +789,8 @@ def generate_care_wheel(genus, format_type='wheel'):
         elif format_type == 'sheet':
             pdf_data = create_care_sheet_pdf(genus)
             filename = f"{genus}_Care_Sheet.pdf"
-        else:  # default to wheel
-            pdf_data = create_care_wheel_pdf(genus)
+        else:  # default to wheel, but use sheet format for reliability
+            pdf_data = create_care_sheet_pdf(genus)
             filename = f"{genus}_Care_Wheel.pdf"
         
         response = make_response(pdf_data)
