@@ -169,16 +169,16 @@
         button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Generating...';
         button.disabled = true;
         
-        // Generate the PDF
-        const downloadUrl = `/generate-care-wheel/${genus}/${format}`;
+        // Generate the PDF using form submission for reliable download
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = `/generate-care-wheel/${genus}/${format}`;
+        form.target = '_blank'; // Open in new tab
+        form.style.display = 'none';
         
-        // Create a temporary link and trigger download
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `${genus}_Care_${format.charAt(0).toUpperCase() + format.slice(1)}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
         
         // Reset button after short delay
         setTimeout(() => {
