@@ -3,6 +3,8 @@
 {% block title %}Care Wheel Generator - Orchid Continuum{% endblock %}
 
 {% block content %}
+<!-- jsPDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <div class="container my-4">
     <!-- Header -->
     <div class="row mb-4">
@@ -318,8 +320,153 @@ function downloadCareWheelPDF() {
     const genus = document.getElementById('genusSelect').value;
     if (!genus) return;
     
-    // In a real implementation, you would use jsPDF or similar library
-    alert(`Care wheel PDF for ${genus} would be generated here.\n\nThis feature can be implemented with libraries like jsPDF to create downloadable care sheets.`);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Get the current care data
+    const careData = getCareData(genus);
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text(`${genus} Care Wheel`, 20, 30);
+    
+    // Add subtitle
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${careData.common_name} - ${careData.care_level}`, 20, 45);
+    
+    // Add care requirements
+    let yPosition = 65;
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text('Care Requirements:', 20, yPosition);
+    
+    yPosition += 15;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    
+    // Light requirements
+    doc.setFont(undefined, 'bold');
+    doc.text('Light:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.light.requirement, 45, yPosition);
+    yPosition += 10;
+    doc.text(careData.light.details, 20, yPosition);
+    
+    yPosition += 15;
+    
+    // Temperature requirements
+    doc.setFont(undefined, 'bold');
+    doc.text('Temperature:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Day: ${careData.temperature.day}`, 45, yPosition);
+    yPosition += 10;
+    doc.text(`Night: ${careData.temperature.night}`, 20, yPosition);
+    yPosition += 10;
+    doc.text(careData.temperature.details, 20, yPosition);
+    
+    yPosition += 15;
+    
+    // Humidity requirements
+    doc.setFont(undefined, 'bold');
+    doc.text('Humidity:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.humidity.range, 45, yPosition);
+    yPosition += 10;
+    doc.text(careData.humidity.details, 20, yPosition);
+    
+    yPosition += 15;
+    
+    // Watering requirements
+    doc.setFont(undefined, 'bold');
+    doc.text('Watering:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.watering.frequency, 45, yPosition);
+    yPosition += 10;
+    doc.text(careData.watering.details, 20, yPosition);
+    
+    yPosition += 15;
+    
+    // Fertilizer requirements
+    doc.setFont(undefined, 'bold');
+    doc.text('Fertilizer:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.fertilizer.schedule, 45, yPosition);
+    yPosition += 10;
+    doc.text(careData.fertilizer.details, 20, yPosition);
+    
+    yPosition += 20;
+    
+    // Additional information
+    if (yPosition > 220) {
+        doc.addPage();
+        yPosition = 30;
+    }
+    
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text('Additional Care Information:', 20, yPosition);
+    
+    yPosition += 15;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    
+    doc.setFont(undefined, 'bold');
+    doc.text('Potting Media:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.potting_media, 55, yPosition);
+    
+    yPosition += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text('Repotting:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.repotting, 45, yPosition);
+    
+    yPosition += 10;
+    doc.setFont(undefined, 'bold');
+    doc.text('Blooming Season:', 20, yPosition);
+    doc.setFont(undefined, 'normal');
+    doc.text(careData.blooming_season, 60, yPosition);
+    
+    // Special notes
+    if (careData.special_notes && careData.special_notes.length > 0) {
+        yPosition += 20;
+        if (yPosition > 220) {
+            doc.addPage();
+            yPosition = 30;
+        }
+        
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Special Notes:', 20, yPosition);
+        
+        yPosition += 15;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        
+        careData.special_notes.forEach(note => {
+            if (yPosition > 260) {
+                doc.addPage();
+                yPosition = 30;
+            }
+            doc.text(`• ${note}`, 20, yPosition);
+            yPosition += 10;
+        });
+    }
+    
+    // Add footer with attribution
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'normal');
+        doc.text('Generated by Five Cities Orchid Society Care Wheel Generator', 20, 285);
+        doc.text(`Page ${i} of ${pageCount}`, 170, 285);
+    }
+    
+    // Save the PDF
+    doc.save(`${genus}_Care_Wheel.pdf`);
 }
 
 feather.replace();
