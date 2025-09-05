@@ -3000,6 +3000,176 @@ def standalone_climate_widget():
                          widget_data=widget_data, 
                          standalone=True)
 
+# Register care wheel generator system
+try:
+    from care_wheel_generator import care_wheel_bp
+    app.register_blueprint(care_wheel_bp)
+    logger.info("Care Wheel Generator registered successfully")
+except ImportError as e:
+    logger.warning(f"Care Wheel Generator not available: {e}")
+
+# ============================================================================
+# RESEARCH-GRADE CITATION EXPORT API ENDPOINTS
+# ============================================================================
+
+@app.route('/api/citations/<format_type>')
+def export_citations_api(format_type):
+    """API endpoint for exporting citations in various academic formats"""
+    try:
+        from attribution_system import export_citations, Sources
+        
+        # Get sources from request parameters
+        source_param = request.args.get('sources', '')
+        if source_param:
+            source_keys = source_param.split(',')
+        else:
+            # Default to common research sources
+            source_keys = [Sources.AOS, Sources.GBIF, Sources.WORLD_ORCHIDS]
+        
+        # Validate format type
+        valid_formats = ['bibtex', 'ris', 'endnote', 'apa', 'mla', 'chicago']
+        if format_type not in valid_formats:
+            return jsonify({
+                'error': f'Invalid format. Supported formats: {", ".join(valid_formats)}'
+            }), 400
+        
+        citations = export_citations(source_keys, format_type)
+        
+        # Set appropriate content type
+        if format_type == 'bibtex':
+            content_type = 'application/x-bibtex'
+            extension = '.bib'
+        elif format_type == 'ris':
+            content_type = 'application/x-research-info-systems'
+            extension = '.ris'
+        elif format_type == 'endnote':
+            content_type = 'application/x-endnote-refer'
+            extension = '.enw'
+        else:
+            content_type = 'text/plain'
+            extension = '.txt'
+        
+        # Return as downloadable file
+        if request.args.get('download') == 'true':
+            response = make_response('\n\n'.join(citations))
+            response.headers['Content-Type'] = content_type
+            response.headers['Content-Disposition'] = f'attachment; filename="orchid_citations_{format_type}{extension}"'
+            return response
+        
+        # Return as JSON for API usage
+        return jsonify({
+            'format': format_type,
+            'sources': source_keys,
+            'citations': citations,
+            'count': len(citations),
+            'generated_at': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Citation export error: {e}")
+        return jsonify({'error': 'Citation export failed'}), 500
+
+@app.route('/api/research-report')
+def research_attribution_report():
+    """Generate comprehensive research-grade attribution report"""
+    try:
+        from attribution_system import get_research_report, Sources, AIInferences
+        
+        # Get parameters
+        source_param = request.args.get('sources', '')
+        ai_param = request.args.get('ai_inferences', '')
+        
+        # Parse sources
+        if source_param:
+            source_keys = source_param.split(',')
+        else:
+            source_keys = [Sources.AOS, Sources.GBIF, Sources.FCOS]
+        
+        # Parse AI inferences
+        ai_inferences = []
+        if ai_param:
+            ai_keys = ai_param.split(',')
+            ai_mapping = {
+                'image_analysis': AIInferences.IMAGE_ANALYSIS,
+                'care_recommendations': AIInferences.CARE_RECOMMENDATIONS,
+                'metadata_extraction': AIInferences.METADATA_EXTRACTION,
+                'similarity_analysis': AIInferences.SIMILARITY_ANALYSIS
+            }
+            ai_inferences = [ai_mapping.get(key) for key in ai_keys if key in ai_mapping]
+        
+        report = get_research_report(source_keys, ai_inferences)
+        
+        return jsonify(report)
+        
+    except Exception as e:
+        logger.error(f"Research report error: {e}")
+        return jsonify({'error': 'Research report generation failed'}), 500
+
+@app.route('/api/data-lineage')
+def data_lineage_api():
+    """API endpoint for data lineage documentation"""
+    try:
+        from attribution_system import create_data_lineage_trace
+        
+        # Get parameters
+        original_source = request.args.get('source', 'Unknown')
+        steps_param = request.args.get('steps', '')
+        final_output = request.args.get('output', 'Analysis result')
+        
+        # Parse processing steps
+        if steps_param:
+            processing_steps = [step.strip() for step in steps_param.split(',')]
+        else:
+            processing_steps = ['Data collection', 'Processing', 'Analysis']
+        
+        lineage_trace = create_data_lineage_trace(original_source, processing_steps, final_output)
+        
+        return jsonify(lineage_trace)
+        
+    except Exception as e:
+        logger.error(f"Data lineage error: {e}")
+        return jsonify({'error': 'Data lineage documentation failed'}), 500
+
+@app.route('/research-attribution-demo')
+def research_attribution_demo():
+    """Demonstration page for research-grade attribution system"""
+    try:
+        from attribution_system import (
+            attribution_manager, Sources, AIInferences, 
+            get_research_report, export_citations
+        )
+        
+        # Example data for demonstration
+        demo_sources = [Sources.AOS, Sources.GBIF, Sources.WORLD_ORCHIDS, Sources.OPENAI]
+        demo_ai = [AIInferences.IMAGE_ANALYSIS, AIInferences.CARE_RECOMMENDATIONS]
+        
+        # Generate sample research report
+        research_report = get_research_report(demo_sources, demo_ai)
+        
+        # Generate sample citations
+        sample_citations = {
+            'bibtex': export_citations(demo_sources[:3], 'bibtex'),
+            'apa': export_citations(demo_sources[:3], 'apa'),
+            'mla': export_citations(demo_sources[:3], 'mla')
+        }
+        
+        # Create attribution HTML
+        attribution_html = attribution_manager.create_attribution_block(demo_sources, demo_ai, 'html')
+        
+        demo_data = {
+            'research_report': research_report,
+            'sample_citations': sample_citations,
+            'attribution_html': attribution_html,
+            'available_sources': list(attribution_manager.data_sources.keys()),
+            'source_details': attribution_manager.data_sources
+        }
+        
+        return render_template('research_attribution_demo.html', **demo_data)
+        
+    except Exception as e:
+        logger.error(f"Research attribution demo error: {e}")
+        return "Research attribution demonstration unavailable", 500
+
 # Register media migration system
 try:
     from media_migration_system import migration_bp
