@@ -522,19 +522,12 @@ function downloadCareWheelPDF() {
     const genus = document.getElementById('genusSelect').value;
     if (!genus) return;
     
-    // Use server-side PDF generation instead of client-side
-    const downloadUrl = `/generate-care-wheel/${genus}`;
+    // Use server-side PDF generation with absolute URL
+    const baseUrl = window.location.origin;
+    const downloadUrl = `${baseUrl}/generate-care-wheel/${genus}`;
     
-    // Create a temporary anchor element to trigger download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `${genus}_Care_Wheel.pdf`;
-    link.style.display = 'none';
-    
-    // Add to DOM, click, and remove
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Direct window navigation for reliable download
+    window.open(downloadUrl, '_blank');
 }
 
 feather.replace();
