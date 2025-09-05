@@ -32,6 +32,7 @@ from ai_orchid_routes import ai_orchid_bp
 from geographic_mapping_routes import geo_mapping_bp
 from enhanced_mapping_routes import enhanced_mapping_bp
 from admin_orchid_approval import orchid_approval_bp
+from pattern_analysis_routes import pattern_analysis_bp
 import os
 import json
 import logging
@@ -213,6 +214,9 @@ app.register_blueprint(enhanced_mapping_bp)
 
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
+
+# Register Pattern Analysis routes
+app.register_blueprint(pattern_analysis_bp)
 
 # Register Globe Weather Widget routes
 from globe_weather_routes import globe_weather_bp
