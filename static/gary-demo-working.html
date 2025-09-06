@@ -5,48 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gary Yong Gee - Orchid Continuum Demo</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --orchid-purple: #8B5CF6;
+            --orchid-green: #10B981;
+            --orchid-blue: #3B82F6;
+            --orchid-pink: #EC4899;
+            --orchid-orange: #F59E0B;
+            --dark-bg: #1F2937;
+            --light-bg: #F9FAFB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --gradient-orchid: linear-gradient(135deg, var(--orchid-purple) 0%, var(--orchid-pink) 100%);
+            --gradient-nature: linear-gradient(135deg, var(--orchid-green) 0%, var(--orchid-blue) 100%);
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
-            padding: 20px;
-            background: #f5f7fa;
-            color: #2c3e50;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
             line-height: 1.6;
         }
+        
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
+        
         .header {
             text-align: center;
             margin-bottom: 40px;
-            padding: 30px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
+        
         .header h1 {
-            color: #2c3e50;
+            background: var(--gradient-orchid);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
-            font-size: 32px;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
         }
         .widget-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 30px;
             margin-bottom: 40px;
         }
+        
         .widget-section {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+        
+        .widget-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-orchid);
+        }
+        
+        .widget-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
         .widget-section h2 {
-            color: #34495e;
+            color: var(--text-primary);
             margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 24px;
+            margin-bottom: 16px;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         .code-block {
             background: #2c3e50;
@@ -59,11 +116,23 @@
             margin: 15px 0;
         }
         .api-info {
-            background: #e8f4f8;
-            border: 1px solid #d4edda;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .api-info::before {
+            content: '✨';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: white;
+            padding: 4px 8px;
             border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            font-size: 16px;
         }
         .api-key {
             font-family: 'Monaco', 'Consolas', monospace;
@@ -74,23 +143,48 @@
             word-break: break-all;
         }
         .demo-box {
-            border: 2px dashed #007bff;
-            padding: 20px;
-            border-radius: 8px;
-            background: #f8f9ff;
-            margin: 15px 0;
+            border: 2px solid var(--orchid-blue);
+            padding: 28px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
         }
+        
+        .demo-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-nature);
+        }
+        
         .demo-box h4 {
             margin-top: 0;
-            color: #007bff;
+            color: var(--orchid-blue);
+            font-weight: 600;
+            font-size: 20px;
         }
         .search-input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 16px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
             font-size: 16px;
+            font-family: 'Inter', sans-serif;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--orchid-purple);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
         }
         .search-results {
             min-height: 50px;
@@ -182,20 +276,37 @@
         .footer {
             text-align: center;
             margin-top: 40px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .next-steps {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 2px solid rgba(245, 158, 11, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            margin: 24px 0;
+            position: relative;
         }
+        
+        .next-steps::before {
+            content: '🚀';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
         .next-steps h3 {
-            color: #856404;
+            color: var(--orchid-orange);
             margin-top: 0;
+            font-weight: 600;
         }
         label {
             margin-right: 15px;
@@ -220,17 +331,28 @@
             <p>See exactly how the orchid widgets will work on your website</p>
             
             <div class="api-info">
-                <h3>✅ Your Partnership Is Ready!</h3>
-                <p><strong>Partner:</strong> Gary Yong Gee</p>
-                <p><strong>API Key:</strong> <span class="api-key">GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</span></p>
-                <p><strong>Website:</strong> https://orchids.yonggee.name</p>
+                <h3 style="color: var(--orchid-green); font-weight: 600; margin-bottom: 16px; font-size: 24px;">✅ Your Partnership Is Ready!</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    <div>
+                        <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">Partner</p>
+                        <p style="margin: 0; font-weight: 600; color: var(--text-primary);">Gary Yong Gee</p>
+                    </div>
+                    <div>
+                        <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">Website</p>
+                        <p style="margin: 0; font-weight: 600; color: var(--orchid-blue);">orchids.yonggee.name</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">API Key</p>
+                    <div class="api-key" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--orchid-purple); font-weight: 600;">GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</div>
+                </div>
             </div>
         </div>
 
         <div class="widget-grid">
-            <div class="widget-section">
-                <h2>🔍 Search Widget</h2>
-                <p>Your visitors can search through Gary's orchid collection + 15,431 GBIF orchids + Five Cities Society data.</p>
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-blue);">
+                <h2><span style="color: var(--orchid-blue);">🔍</span> Advanced Search Widget</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Your visitors can search through Gary's orchid collection + 15,431 GBIF orchids + Five Cities Society data.</p>
                 
                 <div class="demo-box">
                     <h4>🎯 Live Demo - Advanced Search Beyond Basic Genus!</h4>
@@ -246,8 +368,15 @@
                         • <code>"fragrant"</code> - Search for scented varieties<br>
                         • <code>"easy to grow"</code> - Beginner-friendly orchids
                     </div>
-                    <input type="text" class="search-input" id="searchInput" 
-                           placeholder="Try: 'winter blooming' or 'cool temperatures' or 'bright light'">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" class="search-input" id="searchInput" 
+                               placeholder="Try: 'winter blooming' or 'cool temperatures' or 'bright light'"
+                               style="flex: 1; margin-bottom: 0;">
+                        <button id="searchButton" onclick="performSearch()" 
+                                style="padding: 16px 28px; background: var(--gradient-orchid); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            🔍 Search
+                        </button>
+                    </div>
                     <div class="search-results" id="searchResults">
                         <p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>
                     </div>
@@ -256,9 +385,9 @@
                 <div class="code-block">&lt;ocw-search data-placeholder="Search Gary's orchids..."&gt;&lt;/ocw-search&gt;</div>
             </div>
 
-            <div class="widget-section" style="border: 2px dashed #28a745; background: #f8fff8;">
-                <h2>🗺️ Map Widget</h2>
-                <p>Interactive map with privacy controls - partners get exact coordinates, public sees generalized locations.</p>
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-green);">
+                <h2><span style="color: var(--orchid-green);">🗺️</span> Privacy-Controlled Mapping</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Interactive map with privacy controls - partners get exact coordinates, public sees generalized locations.</p>
                 
                 <div class="demo-box" style="border-color: #28a745; background: #f0fff4;">
                     <h4 style="color: #28a745;">🎯 Live Demo - Privacy Controls!</h4>
@@ -269,6 +398,10 @@
                         <label>
                             <input type="radio" name="mapMode" value="private"> 🔒 Partner Mode (exact coordinates)
                         </label>
+                        <button onclick="updateMapMode()" 
+                                style="margin-left: 15px; padding: 12px 24px; background: var(--gradient-nature); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            🗺️ Update Map
+                        </button>
                     </div>
                     <div class="map-demo" id="mapDemo">
                         <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
@@ -283,17 +416,23 @@
                 <div class="code-block">&lt;ocw-map&gt;&lt;/ocw-map&gt;</div>
             </div>
 
-            <div class="widget-section" style="border: 2px dashed #dc3545; background: #fff8f8;">
-                <h2>📊 Phenology Widget</h2>
-                <p>Shows flowering patterns throughout the year - when do different orchids bloom?</p>
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-pink);">
+                <h2><span style="color: var(--orchid-pink);">📊</span> Flowering Phenology Analytics</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Shows flowering patterns throughout the year - when do different orchids bloom?</p>
                 
                 <div class="demo-box" style="border-color: #dc3545; background: #fff0f0;">
                     <h4 style="color: #dc3545;">🎯 Live Demo - Flowering Patterns!</h4>
-                    <select id="taxonSelect">
-                        <option value="Cattleya">Cattleya Species</option>
-                        <option value="Dendrobium">Dendrobium Species</option>
-                        <option value="Phalaenopsis">Phalaenopsis Species</option>
-                    </select>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <select id="taxonSelect" style="flex: 1;">
+                            <option value="Cattleya">Cattleya Species</option>
+                            <option value="Dendrobium">Dendrobium Species</option>
+                            <option value="Phalaenopsis">Phalaenopsis Species</option>
+                        </select>
+                        <button onclick="updatePhenologyChart()" 
+                                style="padding: 12px 24px; background: linear-gradient(135deg, var(--orchid-pink) 0%, var(--orchid-orange) 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            📊 Update Chart
+                        </button>
+                    </div>
                     <div class="chart-container" id="phenologyChart">
                         <div class="chart-bar" style="height: 20%;"><div class="chart-label">Jan</div></div>
                         <div class="chart-bar" style="height: 30%;"><div class="chart-label">Feb</div></div>
@@ -569,8 +708,21 @@
             // Helper function for example searches
             function searchExample(term) {
                 document.getElementById('searchInput').value = term;
-                document.getElementById('searchInput').dispatchEvent(new Event('input'));
+                performSearch();
             }
+            
+            // Perform search function
+            function performSearch() {
+                const event = new Event('input');
+                document.getElementById('searchInput').dispatchEvent(event);
+            }
+            
+            // Add Enter key support for search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
             
             // Function to explain why an orchid matched the search
             function getSearchReason(query, orchid) {
@@ -598,38 +750,42 @@
             // Map functionality
             const mapRadios = document.querySelectorAll('input[name="mapMode"]');
             const mapDemo = document.getElementById('mapDemo');
+            
+            function updateMapMode() {
+                const selectedMode = document.querySelector('input[name="mapMode"]:checked').value;
+                
+                if (selectedMode === 'private') {
+                    mapDemo.innerHTML = `
+                        <span class="map-pin" style="left: 34%; top: 42%;">📍</span>
+                        <span class="map-pin" style="left: 68%; top: 58%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>🔒 Partner Mode</strong><br>
+                            <small>Exact coordinates: 34.0522°N, -118.2437°W<br>37.7749°N, -122.4194°W</small>
+                        </div>
+                    `;
+                } else {
+                    mapDemo.innerHTML = `
+                        <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
+                        <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>📍 Public Mode</strong><br>
+                            <small>Showing generalized locations for privacy</small>
+                        </div>
+                    `;
+                }
+            }
 
             mapRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.value === 'private') {
-                        mapDemo.innerHTML = `
-                            <span class="map-pin" style="left: 34%; top: 42%;">📍</span>
-                            <span class="map-pin" style="left: 68%; top: 58%;">🌺</span>
-                            <div style="text-align: center;">
-                                <strong>🔒 Partner Mode</strong><br>
-                                <small>Exact coordinates: 34.0522°N, -118.2437°W<br>37.7749°N, -122.4194°W</small>
-                            </div>
-                        `;
-                    } else {
-                        mapDemo.innerHTML = `
-                            <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
-                            <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
-                            <div style="text-align: center;">
-                                <strong>📍 Public Mode</strong><br>
-                                <small>Showing generalized locations for privacy</small>
-                            </div>
-                        `;
-                    }
-                });
+                radio.addEventListener('change', updateMapMode);
             });
 
             // Phenology functionality
             const taxonSelect = document.getElementById('taxonSelect');
             const selectedSpecies = document.getElementById('selectedSpecies');
             const phenologyChart = document.getElementById('phenologyChart');
-
-            taxonSelect.addEventListener('change', function() {
-                const species = this.value;
+            
+            function updatePhenologyChart() {
+                const species = taxonSelect.value;
                 selectedSpecies.textContent = species;
                 
                 const data = phenologyData[species];
@@ -640,8 +796,13 @@
                 });
 
                 // Update peak info
-                selectedSpecies.nextElementSibling.innerHTML = ` flowering peaks in <strong>${data.peaks[0]}</strong> and <strong>${data.peaks[1]}</strong>`;
-            });
+                const peakInfo = selectedSpecies.parentElement.querySelector('span:last-child');
+                if (peakInfo) {
+                    peakInfo.innerHTML = ` flowering peaks in <strong>${data.peaks[0]}</strong> and <strong>${data.peaks[1]}</strong>`;
+                }
+            }
+
+            taxonSelect.addEventListener('change', updatePhenologyChart);
         </script>
 
         <div class="next-steps">
@@ -656,21 +817,26 @@
         </div>
 
         <div class="footer">
-            <h3>🎯 Integration Code</h3>
-            <p>Add this once to your website's &lt;head&gt; section:</p>
+            <h3 style="background: var(--gradient-orchid); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 32px; font-weight: 700; margin-bottom: 20px;">🎯 Integration Code</h3>
+            <p style="color: var(--text-secondary); font-size: 18px; margin-bottom: 24px;">Add this once to your website's &lt;head&gt; section:</p>
             
-            <div class="code-block">
+            <div class="code-block" style="background: var(--dark-bg); border-radius: 16px; padding: 24px; position: relative;">
+                <div style="position: absolute; top: 12px; right: 16px; background: rgba(16, 185, 129, 0.2); color: var(--orchid-green); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">Copy & Paste Ready</div>
 &lt;script src="https://cdn.orchidcontinuum.org/widgets/ocw-widgets.umd.js"
         data-api-base="https://api.orchidcontinuum.org"
         data-api-key="GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2"
         data-partner="gary-yong-gee"&gt;&lt;/script&gt;
             </div>
 
-            <p><strong>Then add widgets anywhere:</strong> Just copy the widget code from above!</p>
+            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); padding: 24px; border-radius: 16px; margin: 24px 0; border: 2px solid rgba(139, 92, 246, 0.2);">
+                <p style="margin: 0; font-weight: 600; color: var(--orchid-purple); font-size: 18px;">✨ Then add widgets anywhere: Just copy the widget code from above!</p>
+            </div>
             
-            <p style="margin-top: 30px;"><strong>Questions?</strong> Email: partners@orchidcontinuum.org</p>
-            <p><strong>Gary Yong Gee × Orchid Continuum Partnership</strong><br>
-            Expanding orchid knowledge through collaboration</p>
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--border-color);">
+                <p style="color: var(--text-secondary); margin-bottom: 8px;"><strong>Questions?</strong> <span style="color: var(--orchid-blue); font-weight: 600;">partners@orchidcontinuum.org</span></p>
+                <p style="font-size: 20px; font-weight: 600; color: var(--text-primary); margin: 0;"><strong>Gary Yong Gee × Orchid Continuum Partnership</strong></p>
+                <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-style: italic;">Expanding orchid knowledge through collaboration</p>
+            </div>
         </div>
     </div>
 </body>
