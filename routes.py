@@ -34,6 +34,8 @@ from enhanced_mapping_routes import enhanced_mapping_bp
 from admin_orchid_approval import orchid_approval_bp
 from pattern_analysis_routes import pattern_analysis_bp
 from ai_batch_processor import ai_batch_processor
+from enhanced_data_collection_system import start_enhanced_collection, get_collection_progress, get_source_analytics
+from data_progress_dashboard import data_dashboard_bp
 import os
 import json
 import logging
@@ -61,6 +63,13 @@ try:
     logger.info("🔧 Comprehensive diagnostic system started")
 except Exception as e:
     logger.error(f"❌ Failed to start diagnostic system: {e}")
+
+# Start enhanced data collection system
+try:
+    start_enhanced_collection()
+    logger.info("🌐 Enhanced data collection system started")
+except Exception as e:
+    logger.error(f"❌ Failed to start enhanced collection: {e}")
 
 try:
     from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
@@ -120,6 +129,16 @@ def restart_media():
     try:
         logger.info("🔧 Restarting media services")
         return jsonify({'status': 'media services restarted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/start-enhanced-collection', methods=['POST'])
+def start_enhanced_collection_route():
+    """Start enhanced data collection"""
+    try:
+        start_enhanced_collection()
+        logger.info("🌐 Enhanced data collection started manually")
+        return jsonify({'status': 'enhanced collection started'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -5887,6 +5906,7 @@ app.register_blueprint(mythology_orchids, url_prefix='/widgets/mythology-orchids
 
 # Register Bug Report System for Beta Testing
 app.register_blueprint(bug_report_bp)
+app.register_blueprint(data_dashboard_bp)
 
 # Register Orchid Book Club
 from orchid_book_club import orchid_book_club_bp
