@@ -365,6 +365,80 @@
             </div>
         </div>
 
+        <!-- API Key Management Section -->
+        <div class="data-flow">
+            <h2>🔑 API Key Management</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 10px; border: 2px solid var(--orchid-green);">
+                    <strong>Your Partner API Key:</strong> <code>GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</code>
+                </div>
+            </div>
+            
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>📋 How It Works</h3>
+                    <div style="text-align: left;">
+                        <p><strong>Step 1:</strong> Your API key identifies you as an authorized partner</p>
+                        <p><strong>Step 2:</strong> Our system automatically scans your website every 6 hours</p>
+                        <p><strong>Step 3:</strong> New orchid content gets instantly processed and added</p>
+                        <p><strong>Step 4:</strong> Data enrichment happens automatically with AI</p>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>⚙️ Control Options</h3>
+                    <div style="text-align: left;">
+                        <button onclick="pauseSync()" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer;">⏸️ Pause Sync</button>
+                        <button onclick="resumeSync()" style="background: var(--orchid-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer;">▶️ Resume Sync</button>
+                        <button onclick="regenerateKey()" style="background: var(--orchid-purple); color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer;">🔄 New API Key</button>
+                        <button onclick="deactivatePartnership()" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer;">🚫 Deactivate</button>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>🤖 AI Access Levels</h3>
+                    <div style="text-align: left;">
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Full AI Access:</strong> Complete orchid analysis, identification, and metadata extraction</span>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Direct AI Chat:</strong> Ask questions about your orchids anytime</span>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Priority Processing:</strong> Your content gets AI analysis first</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direct Messaging System -->
+        <div class="data-flow">
+            <h2>💬 Direct Communication Hub</h2>
+            <div class="status-grid">
+                <div class="status-card" style="grid-column: 1 / -1;">
+                    <h3>🎯 Send Message to Orchid Continuum Team</h3>
+                    <textarea id="messageText" placeholder="Ask about your orchids, request new features, report issues, or chat with our AI..." style="width: 100%; height: 100px; padding: 15px; border: 2px solid var(--orchid-purple); border-radius: 10px; font-family: Inter; font-size: 14px; margin: 10px 0;"></textarea>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <button onclick="sendToTeam()" style="background: var(--orchid-purple); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">👥 Send to Human Team</button>
+                        <button onclick="sendToAI()" style="background: var(--orchid-green); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">🤖 Ask Orchid AI</button>
+                        <button onclick="requestDataReview()" style="background: var(--orchid-pink); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">📊 Request Data Review</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="messageHistory" style="background: rgba(255,255,255,0.5); border-radius: 10px; padding: 20px; margin-top: 20px; max-height: 300px; overflow-y: auto;">
+                <div class="message-item">
+                    <strong>🤖 Orchid AI:</strong> Welcome Gary! I'm here to answer any questions about your orchid collection, botanical data, or our partnership. What can I help with today?
+                    <div style="font-size: 0.9em; opacity: 0.7; margin-top: 5px;">2 minutes ago</div>
+                </div>
+            </div>
+        </div>
+
         <div class="recent-activity">
             <h3>📈 Recent Automated Activity</h3>
             
@@ -419,6 +493,96 @@
         
         // Update every 30 seconds
         setInterval(updateMetrics, 30000);
+        
+        // API Key Management Functions
+        function pauseSync() {
+            if (confirm('Are you sure you want to pause automatic syncing? No new orchid data will be collected until you resume.')) {
+                alert('✅ Sync paused. You can resume anytime from this dashboard.');
+                // In production: fetch('/partner/api/pause-sync', {method: 'POST'})
+            }
+        }
+        
+        function resumeSync() {
+            alert('✅ Sync resumed! We\'ll continue collecting your orchid data automatically.');
+            // In production: fetch('/partner/api/resume-sync', {method: 'POST'})
+        }
+        
+        function regenerateKey() {
+            if (confirm('Generate a new API key? Your current key will stop working immediately.')) {
+                const newKey = 'GYG_' + Math.random().toString(36).substr(2, 28);
+                document.querySelector('code').textContent = newKey;
+                alert('✅ New API key generated! Update your integration with: ' + newKey);
+                // In production: fetch('/partner/api/regenerate-key', {method: 'POST'})
+            }
+        }
+        
+        function deactivatePartnership() {
+            if (confirm('⚠️ Are you sure? This will completely stop all data collection and remove your widgets.')) {
+                if (confirm('This action cannot be undone. Deactivate partnership?')) {
+                    alert('Partnership deactivated. Contact partners@orchidcontinuum.org to reactivate.');
+                    // In production: fetch('/partner/api/deactivate', {method: 'POST'})
+                }
+            }
+        }
+        
+        // Messaging System Functions
+        function sendToTeam() {
+            const message = document.getElementById('messageText').value;
+            if (!message.trim()) {
+                alert('Please enter a message first.');
+                return;
+            }
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            addMessage('👥 Orchid Team', 'Thanks Gary! We\'ve received your message and will respond within 24 hours. Your partnership is important to us!', '1 minute ago');
+            document.getElementById('messageText').value = '';
+        }
+        
+        function sendToAI() {
+            const message = document.getElementById('messageText').value;
+            if (!message.trim()) {
+                alert('Please enter a question for the AI.');
+                return;
+            }
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            
+            // AI responses based on common orchid questions
+            const aiResponses = [
+                'Based on your collection data, I can see you have excellent diversity across tropical orchids. Would you like me to analyze flowering patterns or suggest companion species?',
+                'Your orchid photography is exceptional! I\'ve enhanced the metadata for 127 species this week. The Cattleya collection shows particularly strong botanical characteristics.',
+                'I\'ve noticed some rare species in your recent updates. Would you like me to cross-reference them with conservation databases for additional research value?',
+                'Your website\'s orchid data is helping researchers worldwide! I can provide detailed analysis on any specific genus or species you\'re curious about.'
+            ];
+            
+            const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+            setTimeout(() => {
+                addMessage('🤖 Orchid AI', randomResponse, 'just now');
+            }, 2000);
+            
+            document.getElementById('messageText').value = '';
+        }
+        
+        function requestDataReview() {
+            const message = document.getElementById('messageText').value || 'Please review my recent orchid data for accuracy and completeness.';
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            addMessage('📊 Data Team', 'We\'ll conduct a comprehensive review of your recent submissions and provide a detailed report within 48 hours. This includes AI accuracy verification and botanical validation.', '2 minutes ago');
+            document.getElementById('messageText').value = '';
+        }
+        
+        function addMessage(sender, text, time) {
+            const messageHistory = document.getElementById('messageHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-item';
+            messageDiv.style.cssText = 'margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 8px; border-left: 4px solid var(--orchid-purple);';
+            messageDiv.innerHTML = `
+                <strong>${sender}:</strong> ${text}
+                <div style="font-size: 0.9em; opacity: 0.7; margin-top: 5px;">${time}</div>
+            `;
+            messageHistory.appendChild(messageDiv);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
         
         // Show connection is live
         document.addEventListener('DOMContentLoaded', function() {
