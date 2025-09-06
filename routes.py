@@ -66,7 +66,12 @@ except ImportError as e:
 @app.route('/gary-demo')
 def gary_demo():
     """Gary Yong Gee Partnership Demo"""
-    return send_file('static/gary-demo.html')
+    return send_file('static/gary-demo-working.html')
+
+@app.route('/gary-demo-working')
+def gary_demo_working():
+    """Gary Yong Gee Working Partnership Demo"""
+    return send_file('static/gary-demo-working.html')
 
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
