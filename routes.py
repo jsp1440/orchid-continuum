@@ -73,6 +73,11 @@ def gary_demo_working():
     """Gary Yong Gee Working Partnership Demo"""
     return send_file('static/gary-demo-working.html')
 
+@app.route('/partner/gary/dashboard')
+def gary_partner_dashboard():
+    """Gary's partner dashboard - shows automated sync status"""
+    return send_file('static/gary-partner-dashboard.html')
+
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
 def gary_search():

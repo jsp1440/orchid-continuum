@@ -69,9 +69,9 @@ class GaryBotanicalScraper:
             logger.info(f"🎯 Discovered {len(species_urls)} species for deep scraping")
             
             # Step 3: Deep scrape each species page (like user's screenshots)
-            for i, species_info in enumerate(species_urls[:max_species]):
-                if i >= max_species:
-                    break
+            # UNLIMITED PROCESSING - Gary wants this fully automated with no limits
+            for i, species_info in enumerate(species_urls):
+                # No artificial limits - process everything Gary has
                     
                 logger.info(f"🌸 [{i+1}/{min(len(species_urls), max_species)}] Deep scraping: {species_info['name']}")
                 
