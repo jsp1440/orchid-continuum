@@ -33,6 +33,7 @@ from geographic_mapping_routes import geo_mapping_bp
 from enhanced_mapping_routes import enhanced_mapping_bp
 from admin_orchid_approval import orchid_approval_bp
 from pattern_analysis_routes import pattern_analysis_bp
+from ai_batch_processor import ai_batch_processor
 import os
 import json
 import logging
@@ -5733,6 +5734,80 @@ def get_room_status(room_code):
             'max_players': 4,
             'players': [{'name': 'DemoPlayer', 'position': 1}]
         })
+
+# AI Batch Processing Routes
+@app.route('/admin/start-ai-batch', methods=['POST'])
+def start_ai_batch_processing():
+    """Start AI batch processing of orchid images"""
+    try:
+        limit = request.json.get('limit') if request.json else None
+        result = ai_batch_processor.start_batch_analysis(limit=limit)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error starting AI batch processing: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/ai-batch-progress')
+def get_ai_batch_progress():
+    """Get current AI batch processing progress"""
+    try:
+        progress = ai_batch_processor.get_progress()
+        return jsonify({
+            'success': True,
+            'progress': progress
+        })
+    except Exception as e:
+        logger.error(f"Error getting AI batch progress: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/stop-ai-batch', methods=['POST'])
+def stop_ai_batch_processing():
+    """Stop AI batch processing"""
+    try:
+        result = ai_batch_processor.stop_processing()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error stopping AI batch processing: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/ai-dashboard')
+def ai_dashboard():
+    """AI Processing Dashboard"""
+    return render_template('admin/ai_dashboard.html')
+
+@app.route('/api/database-stats')
+def database_stats():
+    """Get comprehensive database statistics"""
+    try:
+        total_orchids = db.session.query(OrchidRecord).count()
+        with_ai_analysis = db.session.query(OrchidRecord).filter(OrchidRecord.ai_description.isnot(None)).count()
+        with_images = db.session.query(OrchidRecord).filter(
+            or_(
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.image_url.isnot(None),
+                OrchidRecord.image_filename.isnot(None)
+            )
+        ).count()
+        needing_ai = db.session.query(OrchidRecord).filter(
+            and_(
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_url.isnot(None),
+                    OrchidRecord.image_filename.isnot(None)
+                ),
+                OrchidRecord.ai_description.is_(None)
+            )
+        ).count()
+        
+        return jsonify({
+            'total_orchids': total_orchids,
+            'with_ai_analysis': with_ai_analysis,
+            'with_images': with_images,
+            'needing_ai': needing_ai
+        })
+    except Exception as e:
+        logger.error(f"Error getting database stats: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/mahjong/orchid-facts')
 def get_orchid_facts():
