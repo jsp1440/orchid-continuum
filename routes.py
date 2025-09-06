@@ -304,6 +304,65 @@ def test_sunset_valley_scraper():
             'message': 'Scraper test failed'
         })
 
+@app.route('/admin/run-svo-intergeneric-scraper', methods=['POST'])
+def run_svo_intergeneric_scraper_route():
+    """Run SVO intergeneric cross scraper"""
+    try:
+        from sunset_valley_orchids_scraper import run_svo_intergeneric_scraper
+        
+        logger.info("🌈 Starting SVO intergeneric cross collection")
+        summary = run_svo_intergeneric_scraper()
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'message': f"Successfully collected {summary['total_intergenerics']} intergeneric crosses from Sunset Valley Orchids"
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ SVO intergeneric scraper error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/test_svo_intergeneric_scraper')
+def test_svo_intergeneric_scraper():
+    """Test SVO intergeneric cross scraper"""
+    try:
+        from sunset_valley_orchids_scraper import SunsetValleyOrchidsScraper
+        
+        scraper = SunsetValleyOrchidsScraper()
+        
+        # Test connection and search for intergeneric content
+        response = scraper.session.get(scraper.base_url, timeout=10)
+        
+        if response.status_code == 200:
+            # Test intergeneric data extraction
+            crosses = scraper.scrape_intergeneric_crosses()
+            
+            return jsonify({
+                'success': True,
+                'connection': 'OK',
+                'intergenerics_found': len(crosses),
+                'sample_crosses': crosses[:3] if crosses else [],
+                'message': f'Successfully found {len(crosses)} intergeneric crosses'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'connection': 'FAILED',
+                'status_code': response.status_code,
+                'message': 'Could not connect to Sunset Valley Orchids website'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Intergeneric scraper test failed'
+        })
+
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
 def gary_search():
