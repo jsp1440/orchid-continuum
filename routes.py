@@ -1887,20 +1887,42 @@ def _get_approximate_location(region, habitat):
 @app.route('/orchid/<int:id>')
 def orchid_detail(id):
     """Display detailed orchid information"""
-    orchid = OrchidRecord.query.get_or_404(id)
-    
-    # Increment view count
-    orchid.view_count += 1
-    db.session.commit()
-    
-    # Get related orchids (same genus) with Google Drive images only
-    related_orchids = OrchidRecord.query.filter(
-        OrchidRecord.genus == orchid.genus,
-        OrchidRecord.id != orchid.id,
-        OrchidRecord.google_drive_id.isnot(None)
-    ).limit(4).all()
-    
-    return render_template('orchid_detail.html', orchid=orchid, related_orchids=related_orchids)
+    try:
+        # Query with specific columns to avoid column mapping issues
+        orchid = db.session.query(OrchidRecord).filter(OrchidRecord.id == id).first()
+        
+        if not orchid:
+            abort(404)
+        
+        # Safely increment view count
+        try:
+            if orchid.view_count is None:
+                orchid.view_count = 1
+            else:
+                orchid.view_count += 1
+            db.session.commit()
+        except Exception as e:
+            print(f"Warning: Could not update view count: {e}")
+            db.session.rollback()
+        
+        # Get related orchids with error handling
+        related_orchids = []
+        try:
+            if orchid.genus:
+                related_orchids = db.session.query(OrchidRecord).filter(
+                    OrchidRecord.genus == orchid.genus,
+                    OrchidRecord.id != orchid.id,
+                    OrchidRecord.google_drive_id.isnot(None)
+                ).limit(4).all()
+        except Exception as e:
+            print(f"Warning: Could not load related orchids: {e}")
+        
+        return render_template('orchid_detail.html', orchid=orchid, related_orchids=related_orchids)
+        
+    except Exception as e:
+        print(f"Error loading orchid detail for ID {id}: {e}")
+        flash(f"Error loading orchid details: {str(e)}", 'error')
+        return redirect(url_for('gallery'))
 
 @app.route('/mission')
 def mission():
