@@ -245,6 +245,65 @@ def gary_data_review():
         logger.error(f"❌ Data review error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/admin/run-sunset-valley-scraper', methods=['POST'])
+def run_sunset_valley_scraper():
+    """Run Sunset Valley Orchids scraper for Sarcochilus hybrids"""
+    try:
+        from sunset_valley_orchids_scraper import run_sunset_valley_scraper
+        
+        logger.info("🌅 Starting Sunset Valley Orchids scraper")
+        summary = run_sunset_valley_scraper()
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'message': f"Successfully collected {summary['total_hybrids']} Sarcochilus hybrids from Sunset Valley Orchids"
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Sunset Valley scraper error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/test_sunset_valley_scraper')
+def test_sunset_valley_scraper():
+    """Test endpoint for Sunset Valley Orchids scraper"""
+    try:
+        from sunset_valley_orchids_scraper import SunsetValleyOrchidsScraper
+        
+        scraper = SunsetValleyOrchidsScraper()
+        
+        # Test connection
+        response = scraper.session.get(scraper.base_url, timeout=10)
+        
+        if response.status_code == 200:
+            # Test data extraction
+            hybrids = scraper.scrape_sarcochilus_hybrids()
+            
+            return jsonify({
+                'success': True,
+                'connection': 'OK',
+                'hybrids_found': len(hybrids),
+                'sample_hybrids': hybrids[:3] if hybrids else [],
+                'message': f'Successfully connected and found {len(hybrids)} Sarcochilus hybrids'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'connection': 'FAILED',
+                'status_code': response.status_code,
+                'message': 'Could not connect to Sunset Valley Orchids website'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Scraper test failed'
+        })
+
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
 def gary_search():
