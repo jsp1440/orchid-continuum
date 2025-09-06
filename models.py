@@ -430,13 +430,19 @@ class WidgetConfig(db.Model):
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class User(UserMixin, db.Model):
-    """Enhanced user management system with gamification"""
+    """Enhanced user management system with gamification and breeding labs"""
     __tablename__ = 'users'
     id = db.Column(String, primary_key=True)  # String ID for compatibility
     user_id = db.Column(String(20), unique=True, nullable=True)  # Distinctive user ID
     email = db.Column(String(120), unique=True, nullable=True, index=True)
     password_hash = db.Column(String(256))
     is_admin = db.Column(Boolean, default=False)
+    
+    # OrchidStein Lab settings
+    lab_name = db.Column(String(200), default='My OrchidStein Lab')
+    lab_established_date = db.Column(DateTime, default=datetime.utcnow)
+    breeding_specialization = db.Column(String(100))  # e.g., 'Phalaenopsis', 'Cattleya'
+    research_interests = db.Column(Text)  # JSON string of research areas
     
     # User profile
     first_name = db.Column(String(100))
@@ -611,6 +617,184 @@ class PasswordResetToken(db.Model):
     
     def __repr__(self):
         return f'<PasswordResetToken for User {self.user_id}>'
+
+# OrchidStein Lab Breeding Models
+class BreedingProject(db.Model):
+    """Individual breeding projects within user's OrchidStein lab"""
+    __tablename__ = 'breeding_projects'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    project_name = db.Column(String(200), nullable=False)
+    project_code = db.Column(String(20), unique=True, nullable=False)  # e.g., "PH-2025-001"
+    
+    # Project goals and traits
+    target_traits = db.Column(Text)  # JSON string of desired traits
+    success_criteria = db.Column(Text)  # JSON string of success metrics
+    expected_generations = db.Column(Integer, default=3)
+    
+    # Status
+    status = db.Column(String(50), default='planning')  # planning, active, paused, completed, abandoned
+    progress_percentage = db.Column(Integer, default=0)
+    
+    # Statistics
+    total_crosses_made = db.Column(Integer, default=0)
+    total_seedlings_produced = db.Column(Integer, default=0)
+    successful_traits_achieved = db.Column(Integer, default=0)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='breeding_projects')
+
+class LabCollection(db.Model):
+    """User's personal orchid collection in their OrchidStein lab"""
+    __tablename__ = 'lab_collections'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    orchid_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    
+    # Lab-specific data
+    lab_accession_number = db.Column(String(50), unique=True)  # User's internal tracking number
+    acquisition_date = db.Column(DateTime)
+    acquisition_source = db.Column(String(200))  # vendor, trade, division, etc.
+    location_in_collection = db.Column(String(100))  # bench position, greenhouse section
+    
+    # Breeding status
+    is_breeding_stock = db.Column(Boolean, default=False)
+    breeding_value_score = db.Column(Float)  # calculated breeding value
+    proven_traits = db.Column(Text)  # JSON string of confirmed traits
+    
+    # Health and performance tracking
+    health_status = db.Column(String(50), default='healthy')
+    flowering_frequency = db.Column(String(50))  # annual, biannual, irregular
+    last_flowering_date = db.Column(DateTime)
+    award_potential = db.Column(String(50))  # high, medium, low, unknown
+    
+    notes = db.Column(Text)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='lab_collection')
+    orchid = db.relationship('OrchidRecord', backref='in_lab_collections')
+
+class BreedingCross(db.Model):
+    """Individual breeding crosses with detailed tracking"""
+    __tablename__ = 'breeding_crosses'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    project_id = db.Column(Integer, db.ForeignKey('breeding_projects.id'), nullable=True)
+    
+    # Cross identification
+    cross_code = db.Column(String(50), unique=True, nullable=False)  # e.g., "PH001 x PH002"
+    cross_name = db.Column(String(200))  # Optional grex name
+    
+    # Parents
+    pod_parent_id = db.Column(Integer, db.ForeignKey('lab_collections.id'), nullable=False)
+    pollen_parent_id = db.Column(Integer, db.ForeignKey('lab_collections.id'), nullable=False)
+    
+    # Pollination details
+    pollination_date = db.Column(DateTime, nullable=False)
+    pollination_method = db.Column(String(100))  # hand pollination, assisted, etc.
+    
+    # Predicted outcomes using AI
+    predicted_traits = db.Column(Text)  # JSON string of predicted offspring traits
+    success_probability = db.Column(Float)  # 0.0 to 1.0 success likelihood
+    ai_analysis = db.Column(Text)  # Detailed AI analysis and recommendations
+    
+    # Actual results
+    pod_set_date = db.Column(DateTime)
+    pod_harvest_date = db.Column(DateTime)
+    seeds_count = db.Column(Integer)
+    germination_percentage = db.Column(Float)
+    
+    # Progress tracking
+    current_stage = db.Column(String(50), default='pollinated')  # pollinated, pod_set, harvested, flasked, deflasked, first_bloom
+    stage_progression = db.Column(Text)  # JSON array of stage dates
+    
+    notes = db.Column(Text)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='breeding_crosses')
+
+class OffspringPlant(db.Model):
+    """Individual offspring plants from breeding crosses"""
+    __tablename__ = 'offspring_plants'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    cross_id = db.Column(Integer, db.ForeignKey('breeding_crosses.id'), nullable=False)
+    
+    # Plant identification
+    plant_code = db.Column(String(50), nullable=False)  # e.g., "PH001xPH002-001"
+    
+    # Development tracking
+    germination_date = db.Column(DateTime)
+    deflasking_date = db.Column(DateTime)
+    first_flowering_date = db.Column(DateTime)
+    
+    # Trait analysis
+    observed_traits = db.Column(Text)  # JSON string of measured/observed traits
+    trait_scores = db.Column(Text)  # JSON string of quantified trait measurements
+    breeding_value = db.Column(Float)  # calculated breeding value
+    
+    # Performance metrics
+    survival_stage = db.Column(String(50), default='germinated')  # germinated, juvenile, mature, flowering, deceased
+    health_score = db.Column(Float)  # 0.0 to 10.0 health rating
+    award_potential = db.Column(String(50))  # exceptional, high, medium, low
+    
+    # Selection decisions
+    selected_for_breeding = db.Column(Boolean, default=False)
+    selection_reasons = db.Column(Text)
+    
+    notes = db.Column(Text)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='offspring_plants')
+    cross = db.relationship('BreedingCross', backref='offspring_plants')
+
+class TraitAnalysis(db.Model):
+    """Statistical analysis of trait inheritance patterns"""
+    __tablename__ = 'trait_analyses'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    cross_id = db.Column(Integer, db.ForeignKey('breeding_crosses.id'), nullable=False)
+    
+    # Analysis metadata
+    analysis_date = db.Column(DateTime, default=datetime.utcnow)
+    sample_size = db.Column(Integer, nullable=False)  # number of offspring analyzed
+    
+    # Statistical results
+    trait_segregation_ratios = db.Column(Text)  # JSON string of observed ratios
+    expected_vs_observed = db.Column(Text)  # JSON comparison of expected vs actual
+    statistical_significance = db.Column(Text)  # JSON of chi-square or other tests
+    heritability_estimates = db.Column(Text)  # JSON of calculated heritability values
+    
+    # Success metrics
+    breeding_success_rate = db.Column(Float)  # percentage of goals achieved
+    unexpected_outcomes = db.Column(Text)  # JSON of surprising results
+    
+    # AI insights
+    ai_interpretation = db.Column(Text)  # AI analysis of the statistical patterns
+    breeding_recommendations = db.Column(Text)  # AI suggestions for future crosses
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='trait_analyses')
+    cross = db.relationship('BreedingCross', backref='analyses')
 
 class JudgingStandard(db.Model):
     """Orchid judging standards from different organizations"""
