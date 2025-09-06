@@ -390,99 +390,187 @@
                 'Phalaenopsis': { peaks: ['January (60%)', 'November (45%)'], pattern: [90, 70, 40, 30, 20, 15, 10, 15, 25, 35, 85, 70] }
             };
 
-            // Enhanced search functionality
+            // Real database search functionality
             const searchInput = document.getElementById('searchInput');
             const searchResults = document.getElementById('searchResults');
+            let searchTimeout;
 
             searchInput.addEventListener('input', function() {
-                const query = this.value.toLowerCase().trim();
+                const query = this.value.trim();
+                
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
                 
                 if (query.length < 2) {
                     searchResults.innerHTML = '<p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>';
                     return;
                 }
 
-                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching across multiple databases (Gary\'s + 15,431+ GBIF + Five Cities Society)...</p>';
+                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching real Orchid Continuum database (1,630+ orchids)...</p>';
 
-                // Simulate search delay
-                setTimeout(() => {
-                    let results = [];
-                    
-                    // Advanced search across all data
-                    for (let genus in orchidData) {
-                        orchidData[genus].forEach(orchid => {
-                            let match = false;
-                            
-                            // Basic genus/species match
-                            if (genus.includes(query) || orchid.name.toLowerCase().includes(query)) {
-                                match = true;
-                            }
-                            
-                            // Advanced characteristic search
-                            if (orchid.characteristics && orchid.characteristics.some(char => char.includes(query))) {
-                                match = true;
-                            }
-                            
-                            // Origin search
-                            if (orchid.origin && orchid.origin.toLowerCase().includes(query)) {
-                                match = true;
-                            }
-                            
-                            // Season/care search
-                            if (orchid.season.toLowerCase().includes(query) || orchid.care.toLowerCase().includes(query)) {
-                                match = true;
-                            }
-                            
-                            // Description search
-                            if (orchid.description.toLowerCase().includes(query)) {
-                                match = true;
-                            }
-                            
-                            if (match) {
-                                results.push({
-                                    ...orchid,
-                                    searchReason: getSearchReason(query, orchid)
-                                });
-                            }
-                        });
-                    }
-
-                    if (results.length > 0) {
-                        searchResults.innerHTML = results.map(orchid => `
-                            <div class="orchid-result">
-                                <div class="orchid-info">
-                                    <h5>${orchid.name}</h5>
-                                    <p><strong>${orchid.common}</strong> • ${orchid.description}</p>
-                                    <p style="color: #007bff;">🌸 Blooms: ${orchid.season} • 🌍 Origin: ${orchid.origin}</p>
-                                    <div class="care-tip">${orchid.care}</div>
-                                    <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
-                                        ✨ <strong>Match reason:</strong> ${orchid.searchReason}
-                                    </p>
+                // Debounce search requests
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        // Use the actual Orchid Continuum search API
+                        const response = await fetch(`/api/search-orchids?q=${encodeURIComponent(query)}&limit=6`);
+                        
+                        if (!response.ok) {
+                            throw new Error('Search failed');
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.orchids && data.orchids.length > 0) {
+                            searchResults.innerHTML = `
+                                <div style="background: #e8f5e8; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                    🎯 <strong>Real Results from Orchid Continuum Database</strong><br>
+                                    Found ${data.orchids.length} orchids matching "${query}" from ${data.total || '1,630+'} total records
                                 </div>
-                            </div>
-                        `).join('');
-                    } else {
+                            ` + data.orchids.map(orchid => `
+                                <div class="orchid-result">
+                                    ${orchid.google_drive_id ? `
+                                        <img src="/api/drive-photo/${orchid.google_drive_id}" 
+                                             alt="${orchid.name || orchid.scientific_name}" class="orchid-image"
+                                             onerror="this.src='/static/images/orchid_placeholder.svg'">
+                                    ` : ''}
+                                    <div class="orchid-info">
+                                        <h5>${orchid.name || orchid.scientific_name || (orchid.genus + ' ' + orchid.species)}</h5>
+                                        <p><strong>${orchid.genus} ${orchid.species}</strong> • Real database record</p>
+                                        ${orchid.habitat ? `<p style="color: #007bff;">🌍 Habitat: ${orchid.habitat}</p>` : ''}
+                                        ${orchid.climate ? `<p style="color: #007bff;">🌡️ Climate: ${orchid.climate}</p>` : ''}
+                                        <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
+                                            ✨ <strong>Source:</strong> Live Orchid Continuum Database
+                                            <br>📊 This shows real data from the 1,630+ orchid collection
+                                        </p>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            // Fallback to sample data with real database message
+                            searchResults.innerHTML = `
+                                <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                    🔍 <strong>No exact matches in current database for "${query}"</strong><br>
+                                    Showing sample results to demonstrate advanced search capabilities:
+                                </div>
+                                ${getFallbackResults(query)}
+                                <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px;">
+                                    💡 <strong>In the full system:</strong> This would search across Gary's collection + 15,431+ GBIF orchids + institutional databases
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Search error:', error);
+                        
+                        // Show fallback with error explanation
                         searchResults.innerHTML = `
-                            <p style="color: #6c757d;">No results found for "${query}"</p>
-                            <p style="color: #666; font-size: 14px;">Try these advanced searches:</p>
-                            <div style="margin-top: 10px;">
-                                <button onclick="document.getElementById('searchInput').value='winter blooming'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
-                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
-                                    "winter blooming"
-                                </button>
-                                <button onclick="document.getElementById('searchInput').value='cool temperatures'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
-                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
-                                    "cool temperatures"
-                                </button>
-                                <button onclick="document.getElementById('searchInput').value='easy to grow'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
-                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
-                                    "easy to grow"
-                                </button>
+                            <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                🔍 <strong>Demo Mode:</strong> Showing how advanced search would work<br>
+                                (Database temporarily unavailable - this demonstrates the widget capabilities)
                             </div>
+                            ${getFallbackResults(query)}
                         `;
                     }
-                }, 800);
+                }, 500);
             });
+            
+            // Fallback results for demo purposes
+            function getFallbackResults(query) {
+                const lowerQuery = query.toLowerCase();
+                let results = [];
+                
+                // Advanced search across sample data
+                for (let genus in orchidData) {
+                    orchidData[genus].forEach(orchid => {
+                        let match = false;
+                        let reason = '';
+                        
+                        // Basic genus/species match
+                        if (genus.includes(lowerQuery) || orchid.name.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Scientific name contains "${query}"`;
+                        }
+                        
+                        // Advanced characteristic search
+                        if (orchid.characteristics && orchid.characteristics.some(char => char.includes(lowerQuery))) {
+                            match = true;
+                            reason = `Growing characteristic: "${query}"`;
+                        }
+                        
+                        // Origin search
+                        if (orchid.origin && orchid.origin.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Geographic origin: ${orchid.origin}`;
+                        }
+                        
+                        // Season/care search
+                        if (orchid.season.toLowerCase().includes(lowerQuery) || orchid.care.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = orchid.season.toLowerCase().includes(lowerQuery) ? 
+                                    `Blooming season: ${orchid.season}` : 'Care requirement matches search';
+                        }
+                        
+                        // Description search
+                        if (orchid.description.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Description contains "${query}"`;
+                        }
+                        
+                        if (match) {
+                            results.push({
+                                ...orchid,
+                                searchReason: reason
+                            });
+                        }
+                    });
+                }
+
+                if (results.length > 0) {
+                    return results.map(orchid => `
+                        <div class="orchid-result">
+                            <div class="orchid-info">
+                                <h5>${orchid.name}</h5>
+                                <p><strong>${orchid.common}</strong> • ${orchid.description}</p>
+                                <p style="color: #007bff;">🌸 Blooms: ${orchid.season} • 🌍 Origin: ${orchid.origin}</p>
+                                <div class="care-tip">${orchid.care}</div>
+                                <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
+                                    ✨ <strong>Match reason:</strong> ${orchid.searchReason}
+                                </p>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    return `
+                        <p style="color: #6c757d;">No results found for "${query}"</p>
+                        <p style="color: #666; font-size: 14px;">Try these advanced searches:</p>
+                        <div style="margin-top: 10px;">
+                            <button onclick="searchExample('winter blooming')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "winter blooming"
+                            </button>
+                            <button onclick="searchExample('cool temperatures')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "cool temperatures"
+                            </button>
+                            <button onclick="searchExample('easy to grow')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "easy to grow"
+                            </button>
+                            <button onclick="searchExample('brazil')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "brazil"
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Helper function for example searches
+            function searchExample(term) {
+                document.getElementById('searchInput').value = term;
+                document.getElementById('searchInput').dispatchEvent(new Event('input'));
+            }
             
             // Function to explain why an orchid matched the search
             function getSearchReason(query, orchid) {
