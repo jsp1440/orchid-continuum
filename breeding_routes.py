@@ -21,6 +21,12 @@ def breeding_assistant():
     """Main breeding assistant interface"""
     return render_template('breeding_assistance.html')
 
+@app.route('/breeder-assist-prototype')
+def breeder_assist_prototype():
+    """Comprehensive single-file breeder assist prototype"""
+    from flask import send_from_directory
+    return send_from_directory('static', 'orchid_continuum_breeder_assist.html')
+
 @app.route('/api/breeding-parents')
 def api_breeding_parents():
     """Get list of potential breeding parents"""
