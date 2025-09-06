@@ -38,6 +38,7 @@ from enhanced_data_collection_system import start_enhanced_collection, get_colle
 from data_progress_dashboard import data_dashboard_bp
 from breeding_ai import breeding_ai
 import breeding_routes  # Import breeding routes
+from lab_routes import lab_bp  # Import OrchidStein Lab routes
 import os
 import json
 import logging
@@ -712,6 +713,9 @@ app.register_blueprint(orchid_approval_bp)
 
 # Register Pattern Analysis routes
 app.register_blueprint(pattern_analysis_bp)
+
+# Register OrchidStein Lab routes
+app.register_blueprint(lab_bp)
 
 # Register Globe Weather Widget routes
 from globe_weather_routes import globe_weather_bp
