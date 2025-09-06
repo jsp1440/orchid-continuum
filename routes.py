@@ -5803,7 +5803,8 @@ def database_stats():
             'total_orchids': total_orchids,
             'with_ai_analysis': with_ai_analysis,
             'with_images': with_images,
-            'needing_ai': needing_ai
+            'needing_ai': needing_ai,
+            'last_updated': datetime.now().isoformat()
         })
     except Exception as e:
         logger.error(f"Error getting database stats: {e}")
