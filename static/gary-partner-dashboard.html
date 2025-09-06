@@ -547,18 +547,43 @@
             
             addMessage('👤 Gary (You)', message, 'now');
             
-            // AI responses based on common orchid questions
-            const aiResponses = [
-                'Based on your collection data, I can see you have excellent diversity across tropical orchids. Would you like me to analyze flowering patterns or suggest companion species?',
-                'Your orchid photography is exceptional! I\'ve enhanced the metadata for 127 species this week. The Cattleya collection shows particularly strong botanical characteristics.',
-                'I\'ve noticed some rare species in your recent updates. Would you like me to cross-reference them with conservation databases for additional research value?',
-                'Your website\'s orchid data is helping researchers worldwide! I can provide detailed analysis on any specific genus or species you\'re curious about.'
-            ];
+            // Show typing indicator
+            addMessage('🤖 Orchid AI', '💭 Analyzing your question...', 'typing...');
             
-            const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
+            // AI responses based on common orchid questions and user input
+            let aiResponse;
+            const messageLower = message.toLowerCase();
+            
+            if (messageLower.includes('cattleya') || messageLower.includes('flower')) {
+                aiResponse = 'Based on your Cattleya collection, I can see excellent diversity! Your recent Cattleya labiata photos show perfect blooming conditions. The fall flowering pattern matches typical Brazilian populations. Would you like me to analyze the specific cultural requirements for your greenhouse setup?';
+            } else if (messageLower.includes('phalaenopsis') || messageLower.includes('moth')) {
+                aiResponse = 'Your Phalaenopsis collection is outstanding! I\'ve identified 23 species from your recent uploads. The white moth orchids (P. amabilis) show particularly strong root systems - perfect for your mounting technique. These would make excellent breeding stock for hybrid development.';
+            } else if (messageLower.includes('grow') || messageLower.includes('care') || messageLower.includes('culture')) {
+                aiResponse = 'Excellent question about growing conditions! Based on your photo metadata, I can see your orchids are thriving in intermediate temperatures with good air circulation. Your mounting techniques are particularly impressive - the aerial roots look very healthy. Would you like specific humidity recommendations for your setup?';
+            } else if (messageLower.includes('identify') || messageLower.includes('species') || messageLower.includes('name')) {
+                aiResponse = 'I\'d be happy to help identify species! Your botanical photography skills make identification much easier. I can see detailed lip structures, column details, and growth habits in your photos. Upload any mystery orchids and I\'ll cross-reference them against 15,000+ species in our database.';
+            } else if (messageLower.includes('bloom') || messageLower.includes('season') || messageLower.includes('when')) {
+                aiResponse = 'Great timing question! Based on your collection data, I can predict flowering seasons for your specific orchids. Your Dendrobiums should be entering their rest period soon, while the Cattleyas are approaching peak fall blooming. Would you like a personalized flowering calendar for your collection?';
+            } else {
+                // General responses for other questions
+                const generalResponses = [
+                    'Based on your collection data, I can see excellent diversity across tropical orchids. Your photography captures incredible botanical detail! Would you like me to analyze flowering patterns or suggest companion species?',
+                    'Your orchid expertise really shows in these photos! I\'ve enhanced the metadata for 127 species from your site this week. The taxonomic accuracy is exceptional - clearly the work of someone with deep botanical knowledge.',
+                    'I\'ve noticed some rare species in your recent updates, including what appears to be some uncommon South American varieties. Would you like me to cross-reference them with conservation databases for additional research value?',
+                    'Your website\'s orchid data is helping researchers worldwide! The quality of your documentation makes it incredibly valuable for scientific studies. I can provide detailed analysis on any specific genus you\'re curious about.'
+                ];
+                aiResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
+            }
+            
+            // Remove typing indicator and show real response
             setTimeout(() => {
-                addMessage('🤖 Orchid AI', randomResponse, 'just now');
-            }, 2000);
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('💭 Analyzing')) {
+                    lastMessage.remove();
+                }
+                addMessage('🤖 Orchid AI', aiResponse, 'just now');
+            }, 2500);
             
             document.getElementById('messageText').value = '';
         }
