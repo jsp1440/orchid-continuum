@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_DB: orchid_dev
+      POSTGRES_USER: orchid_user
+      POSTGRES_PASSWORD: orchid_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orchid_user -d orchid_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://orchid_user:orchid_dev_password@postgres:5432/orchid_dev
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DEBUG=true
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - OTEL_ENDPOINT=${OTEL_ENDPOINT:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/api:/app/services/api
+      - ./uploads:/app/uploads
+    command: uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  ai-worker:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.ai-worker
+    environment:
+      - DATABASE_URL=postgresql://orchid_user:orchid_dev_password@postgres:5432/orchid_dev
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/ai-worker:/app/services/ai-worker
+      - ./uploads:/app/uploads
+
+  ingest-worker:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.ingest
+    environment:
+      - DATABASE_URL=postgresql://orchid_user:orchid_dev_password@postgres:5432/orchid_dev
+      - REDIS_URL=redis://redis:6379
+      - GBIF_API_KEY=${GBIF_API_KEY:-}
+      - FLICKR_API_KEY=${FLICKR_API_KEY:-}
+      - INGEST_SCHEDULE_ENABLED=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/ingest:/app/services/ingest
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./apps/admin:/usr/share/nginx/html/admin
+      - ./apps/widgets/dist:/usr/share/nginx/html/widgets
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: orchid-continuum-dev
