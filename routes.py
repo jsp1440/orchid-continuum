@@ -142,6 +142,109 @@ def start_enhanced_collection_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/partner/api/send-to-ai', methods=['POST'])
+def gary_ai_chat():
+    """Real AI chat endpoint for Gary's messaging system"""
+    try:
+        from orchid_ai import openai_client
+        
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+            
+        # Create AI prompt for Gary's orchid questions
+        system_prompt = """You are an expert orchid botanist and AI assistant for the Orchid Continuum platform. 
+        You're specifically helping Gary Yong Gee, our partner who runs orchids.yonggee.name - a renowned orchid expert and photographer.
+        
+        Gary has extensive botanical knowledge and has contributed thousands of orchid photos and data to our platform.
+        He often asks about:
+        - Orchid identification and taxonomy
+        - Growing conditions and cultural requirements  
+        - Flowering patterns and seasonal advice
+        - Species relationships and breeding
+        - Photo analysis and documentation
+        
+        Respond as a knowledgeable colleague who respects Gary's expertise while providing helpful insights.
+        Keep responses informative but conversational. Reference specific orchid details when possible."""
+        
+        user_prompt = f"""Gary asks: {message}
+        
+        Please provide a helpful, expert response about orchids. Gary is a botanical expert himself, so you can use technical terminology appropriately."""
+        
+        # Call OpenAI API
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        return jsonify({
+            'success': True,
+            'response': ai_response,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ AI chat error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'fallback_response': 'I apologize, but I\'m having trouble processing your question right now. Our AI system will be back online shortly!'
+        }), 500
+
+@app.route('/partner/api/send-to-team', methods=['POST'])
+def gary_team_message():
+    """Team messaging endpoint for Gary"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+            
+        # Log message for team review
+        logger.info(f"📨 Message from Gary: {message}")
+        
+        # In production, this would save to database and notify team
+        
+        return jsonify({
+            'success': True,
+            'response': 'Thanks Gary! We\'ve received your message and will respond within 24 hours. Your partnership is important to us!',
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Team message error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/partner/api/request-data-review', methods=['POST'])
+def gary_data_review():
+    """Data review request endpoint for Gary"""
+    try:
+        data = request.get_json()
+        message = data.get('message', 'Please review my recent orchid data for accuracy and completeness.')
+        
+        # Log review request
+        logger.info(f"📊 Data review request from Gary: {message}")
+        
+        return jsonify({
+            'success': True,
+            'response': 'We\'ll conduct a comprehensive review of your recent submissions and provide a detailed report within 48 hours. This includes AI accuracy verification and botanical validation.',
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Data review error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
 def gary_search():

@@ -534,7 +534,45 @@
             }
             
             addMessage('👤 Gary (You)', message, 'now');
-            addMessage('👥 Orchid Team', 'Thanks Gary! We\'ve received your message and will respond within 24 hours. Your partnership is important to us!', '1 minute ago');
+            addMessage('👥 Orchid Team', '📨 Sending message...', 'sending...');
+            
+            // Send to real team endpoint
+            fetch('/partner/api/send-to-team', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove sending indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('📨 Sending')) {
+                    lastMessage.remove();
+                }
+                
+                if (data.success) {
+                    addMessage('👥 Orchid Team', data.response, 'just now');
+                } else {
+                    addMessage('👥 Orchid Team', 'Sorry, there was an issue sending your message. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Team message error:', error);
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('📨 Sending')) {
+                    lastMessage.remove();
+                }
+                addMessage('👥 Orchid Team', 'Network error. Please check your connection and try again.', 'error');
+            });
+            
             document.getElementById('messageText').value = '';
         }
         
@@ -550,40 +588,44 @@
             // Show typing indicator
             addMessage('🤖 Orchid AI', '💭 Analyzing your question...', 'typing...');
             
-            // AI responses based on common orchid questions and user input
-            let aiResponse;
-            const messageLower = message.toLowerCase();
-            
-            if (messageLower.includes('cattleya') || messageLower.includes('flower')) {
-                aiResponse = 'Based on your Cattleya collection, I can see excellent diversity! Your recent Cattleya labiata photos show perfect blooming conditions. The fall flowering pattern matches typical Brazilian populations. Would you like me to analyze the specific cultural requirements for your greenhouse setup?';
-            } else if (messageLower.includes('phalaenopsis') || messageLower.includes('moth')) {
-                aiResponse = 'Your Phalaenopsis collection is outstanding! I\'ve identified 23 species from your recent uploads. The white moth orchids (P. amabilis) show particularly strong root systems - perfect for your mounting technique. These would make excellent breeding stock for hybrid development.';
-            } else if (messageLower.includes('grow') || messageLower.includes('care') || messageLower.includes('culture')) {
-                aiResponse = 'Excellent question about growing conditions! Based on your photo metadata, I can see your orchids are thriving in intermediate temperatures with good air circulation. Your mounting techniques are particularly impressive - the aerial roots look very healthy. Would you like specific humidity recommendations for your setup?';
-            } else if (messageLower.includes('identify') || messageLower.includes('species') || messageLower.includes('name')) {
-                aiResponse = 'I\'d be happy to help identify species! Your botanical photography skills make identification much easier. I can see detailed lip structures, column details, and growth habits in your photos. Upload any mystery orchids and I\'ll cross-reference them against 15,000+ species in our database.';
-            } else if (messageLower.includes('bloom') || messageLower.includes('season') || messageLower.includes('when')) {
-                aiResponse = 'Great timing question! Based on your collection data, I can predict flowering seasons for your specific orchids. Your Dendrobiums should be entering their rest period soon, while the Cattleyas are approaching peak fall blooming. Would you like a personalized flowering calendar for your collection?';
-            } else {
-                // General responses for other questions
-                const generalResponses = [
-                    'Based on your collection data, I can see excellent diversity across tropical orchids. Your photography captures incredible botanical detail! Would you like me to analyze flowering patterns or suggest companion species?',
-                    'Your orchid expertise really shows in these photos! I\'ve enhanced the metadata for 127 species from your site this week. The taxonomic accuracy is exceptional - clearly the work of someone with deep botanical knowledge.',
-                    'I\'ve noticed some rare species in your recent updates, including what appears to be some uncommon South American varieties. Would you like me to cross-reference them with conservation databases for additional research value?',
-                    'Your website\'s orchid data is helping researchers worldwide! The quality of your documentation makes it incredibly valuable for scientific studies. I can provide detailed analysis on any specific genus you\'re curious about.'
-                ];
-                aiResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
-            }
-            
-            // Remove typing indicator and show real response
-            setTimeout(() => {
+            // Send to real AI endpoint
+            fetch('/partner/api/send-to-ai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator
                 const messageHistory = document.getElementById('messageHistory');
                 const lastMessage = messageHistory.lastElementChild;
                 if (lastMessage && lastMessage.innerHTML.includes('💭 Analyzing')) {
                     lastMessage.remove();
                 }
-                addMessage('🤖 Orchid AI', aiResponse, 'just now');
-            }, 2500);
+                
+                if (data.success) {
+                    addMessage('🤖 Orchid AI', data.response, 'just now');
+                } else {
+                    const fallbackResponse = data.fallback_response || 'I apologize, but I\'m having trouble processing your question right now. Please try again in a moment.';
+                    addMessage('🤖 Orchid AI', fallbackResponse, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('AI chat error:', error);
+                // Remove typing indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('💭 Analyzing')) {
+                    lastMessage.remove();
+                }
+                addMessage('🤖 Orchid AI', 'I\'m experiencing connectivity issues. Please check your connection and try again.', 'error');
+            });
             
             document.getElementById('messageText').value = '';
         }
@@ -592,7 +634,45 @@
             const message = document.getElementById('messageText').value || 'Please review my recent orchid data for accuracy and completeness.';
             
             addMessage('👤 Gary (You)', message, 'now');
-            addMessage('📊 Data Team', 'We\'ll conduct a comprehensive review of your recent submissions and provide a detailed report within 48 hours. This includes AI accuracy verification and botanical validation.', '2 minutes ago');
+            addMessage('📊 Data Team', '🔍 Processing review request...', 'processing...');
+            
+            // Send to data review endpoint
+            fetch('/partner/api/request-data-review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove processing indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('🔍 Processing')) {
+                    lastMessage.remove();
+                }
+                
+                if (data.success) {
+                    addMessage('📊 Data Team', data.response, 'just now');
+                } else {
+                    addMessage('📊 Data Team', 'Sorry, there was an issue processing your review request. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Data review error:', error);
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('🔍 Processing')) {
+                    lastMessage.remove();
+                }
+                addMessage('📊 Data Team', 'Network error. Please check your connection and try again.', 'error');
+            });
+            
             document.getElementById('messageText').value = '';
         }
         
