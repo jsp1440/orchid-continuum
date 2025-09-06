@@ -1,0 +1,82 @@
+PROMPT 1 — Rename + Onboarding + Brand Story
+
+Goal: Rename app to “Orchid Continuum Studio”, add a warm welcome screen, brand story, and a 2-minute product tour that launches on first run.
+
+Prompt (copy-paste):
+
+Modify the existing single-file app to:
+	1.	Rename everywhere to Orchid Continuum Studio (OCS).
+	2.	Add a Welcome overlay with: title, short brand story (what OCS is), and three buttons: “Load Sarcochilus Demo,” “Create New Project,” “Watch 2-minute tour.”
+	3.	Implement a 2-minute guided tour that steps through: Projects → Collection → Trait Inheritance Explorer → Compare Genera → Reverse Design → Forward Recommend → Journal → Export. Use a small tooltip box that highlights each tab/element and a “Next” button. Persist a flag in localStorage so it only autoplays once (with a “Replay tour” link in the footer).
+	4.	Add a short brand story paragraph to the Welcome overlay:
+“Orchid Continuum Studio is a living web of orchids, people, pollinators, and data. It helps breeders analyze inheritance, compare genera, simulate crosses, and learn—securely, on your device.”
+Keep to index.html only; no external libs.
+
+⸻
+
+PROMPT 2 — Friendlier Main Navigation (Journey Bar)
+
+Goal: Make the UI read like a guided journey, not just tabs.
+
+Prompt:
+
+Replace the tab row with a journey bar showing 6 steps: Data → Explore → Compare → Design → Journal → Export.
+	•	Map to existing sections:
+Data=Projects+Collection; Explore=Inheritance Explorer; Compare=Cross-Genus+Intergeneric; Design=Reverse+Forward; Journal=Journal; Export=Export.
+	•	Keep keyboard navigation (←/→ to move steps).
+	•	Display a short sentence under the journey bar describing the current step (contextual helper text).
+Keep everything in the existing single file.
+
+⸻
+
+PROMPT 3 — Sarcochilus Demo: Curated Example + Guided Walkthrough
+
+Goal: Ship with a believable demo (photos optional placeholders), and a click-through example that “tells the story.”
+
+Prompt:
+
+Add a “Load Sarcochilus Demo (Sunset-style)” button that:
+	•	Loads ~30 synthetic demo entries modeled on Sarcochilus hybrids (realistic but NOT real vendor text).
+	•	For each plant: parentage, plausible trait JSON, 1 tiny base64 placeholder image, and a short two-sentence description.
+	•	After loading, run a guided walkthrough popover series that explains:
+a) how photos were auto-scored,
+b) how roundness & lip color distribute,
+c) a reverse design example (white, round, ≥12 flowers),
+d) a forward recommend example.
+Include a “Skip walkthrough” button. Single-file; no external calls.
+
+⸻
+
+PROMPT 4 — Inheritance Explorer (real charts + trait tabs)
+
+Goal: Replace placeholder plots with simple but clear charts; add trait tabs.
+
+Prompt:
+
+Upgrade the Explorer to Trait Inheritance Explorer with tabs: Roundness, Saturation, Color, Flowers/Spike, Symmetry.
+	•	For the selected trait, show 3 charts (HTML5 canvas, no libs):
+	1.	Offspring histogram (0–1 or numeric range)
+	2.	Parent mean vs offspring scatter (x = average of parents, y = offspring) with a 1:1 reference line
+	3.	Parent A vs Parent B bubble chart (size = offspring mean)
+	•	Compute and display: correlation r, simple parent–offspring slope, and a naive heritability proxy h²≈slope (bounded 0–1).
+	•	Clicking any point shows a mini panel with the cross and its trait values.
+Keep it inside index.html.
+
+⸻
+
+PROMPT 5 — Cross-Genus & Intergeneric Compare
+
+Goal: Compare Sarcochilus vs Mini Cattleyas; add an Intergeneric “what if?” explorer.
+
+Prompt:
+
+Add a Compare screen with two subpanels:
+A. Cross-Genus Compare
+	•	Dropdowns to pick two genera from the current dataset (e.g., Sarcochilus vs Cattleya).
+	•	For each: compute trait stability metrics (variance ratio offspring vs parent mean), display side-by-side bar charts and short textual insight.
+B. Intergeneric Explorer
+	•	Select Genus X × Genus Y (from data).
+	•	Show a simple fertility likelihood heuristic (based on presence of documented intergenerics in dataset; if absent, show “unknown”).
+	•	Predict trait blending as weighted averages with wider SD and a “novelty” score.
+	•	Very clear disclaimer: “Exploratory; requires calibration with real data.”
+No external libs; single file.

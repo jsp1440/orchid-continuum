@@ -1,0 +1,59 @@
+PROMPT 1 — Frontend Vendor Import (provenance + rights flags)
+
+Modify index.html to add a Vendor Import panel:
+	•	UI: textarea to paste a list of product/detail URLs (one per line) from vendor sites (e.g., SVO, Australian vendors).
+	•	Fields to set defaults per batch: source_domain, collection_tag (e.g., “Sarcochilus—SVO 2021–2024”), and rights policy dropdown with three choices:
+	1.	“Analyze only; do not store images” (store URLs; fetch at analysis time only),
+	2.	“Store low-res thumbnails for research” (<= 512px longest side),
+	3.	“Store full images” (requires explicit permission; warn user).
+	•	On submit, send URLs to backend /fetch/queue (see Prompt 2). Show a live ingest queue with status: pending, fetched, parsed, images processed.
+	•	For each fetched page, display a parse mapping view where the user confirms which CSS selectors map to: plant_name, parent1, parent2, description_text, image_urls[], award_text, bloom_month, etc. Save the mapping per source_domain so future pages auto-parse.
+	•	When saving records into the encrypted project, always store: source_domain, source_url, fetched_at, rights_flag, parse_profile_id, text_hash.
+	•	Add a Provenance column in Collection and an “Exclude this source from exports” toggle (per record and per domain).
+	•	In Publication Export, include a citations.csv with columns: plant_id, source_domain, source_url, excerpt_hash, first_seen, rights_flag.
+	•	Add a Takedown panel: user enters a domain or URL pattern to immediately exclude matching records from charts/exports (but keep for internal viewing).
+Keep single-file (HTML/CSS/JS). Don’t scrape in the browser; all network fetches go to the backend endpoints from Prompt 2.
+
+⸻
+
+PROMPT 2 — Backend Fetcher (robots-aware, rate-limited, provenance)
+
+Create a small FastAPI backend with these endpoints and behaviors (SQLite for metadata, local /data for files):
+
+Endpoints
+	•	POST /fetch/queue {urls:[...], rights_policy:"analyze_only"|"thumbs"|"full", source_domain, collection_tag}: enqueues fetch jobs.
+	•	GET /fetch/status → list of jobs with state and messages.
+	•	POST /parse/profile {source_domain, selectors:{name, parent1, parent2, description, image, award, bloom}}: saves a parsing profile for a domain.
+	•	POST /fetch/run (dev button): processes N queued jobs now (or run a background worker).
+	•	GET /robots/{domain}: cached robots.txt and per-path allow/deny summary (for the UI).
+	•	POST /plant / POST /image / POST /trait as in our earlier schema; store provenance and rights_flag.
+	•	GET /export/publication → ZIP with plants.csv, traits.csv, figures (PNG), citations.csv, and methods.txt.
+
+Fetcher rules
+	•	Before requesting any URL, fetch and cache robots.txt (10-minute TTL). Respect Disallow; if disallowed, mark job as blocked and surface in UI.
+	•	Rate limit per domain (e.g., 1 request/sec, burst 3).
+	•	Store raw HTML snapshot (/data/html/{uuid}.html) and compute a text hash (for dedupe).
+	•	Parse using the saved selectors for that domain; if none, return needs mapping state so the UI can prompt the user to define selectors.
+	•	Images:
+	•	If rights_policy="analyze_only" → store only URLs; don’t save files.
+	•	If "thumbs" → download, resize to 512px max, save /data/thumb/{uuid}.jpg; record width,height,sha256.
+	•	If "full" → save original under /data/orig/{uuid}.ext and generate a 512px thumb.
+	•	Always record: source_domain, source_url, fetched_at, rights_flag, robots_status, user_agent, and HTTP status.
+
+Security & Docs
+	•	Add a simple admin token in env to protect endpoints.
+	•	CORS allow your Replit front-end origin.
+	•	Include README notes in main.py explaining ethical use, non-substitution, and takedown.
+
+Files created
+	•	main.py (FastAPI app with queue/table models),
+	•	models.py (SQLAlchemy tables: page_job, parse_profile, plant, image, trait_measurement),
+	•	utils_img.py (Pillow resize), utils_robot.py (robots parser),
+	•	requirements.txt (fastapi, uvicorn, sqlalchemy, pillow, requests, urllib3, pydantic, python-robots-txt or similar),
+	•	/data/ folders (html, thumb, orig).
+
+Wire the existing index.html to:
+	•	post URL lists to /fetch/queue,
+	•	poll /fetch/status,
+	•	send/receive parse profiles,
+	•	receive parsed records and let user confirm + save into the encrypted project (and optionally also push to backend tables).
