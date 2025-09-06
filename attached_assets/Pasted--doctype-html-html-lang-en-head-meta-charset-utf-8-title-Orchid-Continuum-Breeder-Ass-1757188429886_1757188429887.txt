@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orchid Continuum — Breeder Assist (Secure Prototype)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#fafafa; --fg:#111; --muted:#666; --accent:#5b4b9a; --ok:#2e7d32; --warn:#b26a00; --danger:#b00020; }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif}
+  header{padding:16px 12px;border-bottom:1px solid #ddd;background:#fff;position:sticky;top:0;z-index:5}
+  header h1{margin:0;font-size:20px}
+  header small{color:var(--muted)}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .tabs button{border:1px solid #ddd;background:#fff;padding:8px 10px;border-radius:6px;cursor:pointer}
+  .tabs button.active{border-color:var(--accent);color:#fff;background:var(--accent)}
+  main{padding:16px;max-width:1100px;margin:0 auto}
+  section{display:none}
+  section.active{display:block}
+  h2{margin:10px 0 8px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px}
+  .grid{display:grid;gap:8px}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  label{display:block;font-size:13px;color:var(--muted);margin:6px 0 4px}
+  input,select,textarea{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:6px;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border-bottom:1px solid #eee;padding:8px;text-align:left;vertical-align:top}
+  .btn{display:inline-block;padding:8px 12px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer}
+  .btn.primary{border-color:var(--accent);background:var(--accent);color:#fff}
+  .btn.ok{border-color:var(--ok);background:var(--ok);color:#fff}
+  .btn.warn{border-color:var(--warn);background:var(--warn);color:#fff}
+  .btn.danger{border-color:var(--danger);background:var(--danger);color:#fff}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#f1f1ff;color:#3a2d79;font-size:12px;border:1px solid #dedbf7}
+  .muted{color:var(--muted)}
+  .right{float:right}
+  .footer{color:var(--muted);font-size:12px;margin-top:24px;text-align:center}
+  .lock{font-size:12px;color:var(--muted)}
+  .badge-lock{display:inline-flex;align-items:center;gap:6px;background:#eef7ee;border:1px solid #cfe9cf;color:#1b5e20;padding:4px 8px;border-radius:999px}
+  .result{border:1px solid #e5e5ff;background:#fbfbff;padding:10px;border-radius:8px;margin:8px 0}
+  .range-row{display:grid;grid-template-columns:120px 1fr 60px;gap:8px;align-items:center}
+  canvas{max-width:100%;background:#fff;border:1px dashed #ddd;border-radius:6px}
+  .small{font-size:12px}
+  .sticky-panel{position:fixed;bottom:12px;right:12px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 10px;max-width:280px}
+  .warning{background:#fff7e6;border:1px solid #ffe0a3;padding:8px;border-radius:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Orchid Continuum — Breeder Assist <small class="muted">(Secure Prototype)</small></h1>
+  <div class="row" style="align-items:center;justify-content:space-between;">
+    <div class="tabs" id="tabs"></div>
+    <div class="lock"><span id="lockBadge" class="badge-lock">🔒 Local-only vault</span></div>
+  </div>
+</header>
+
+<main>
+  <!-- Tabs will be injected; sections below must match order -->
+  <section id="sec-projects" class="active">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Vault</h2>
+        <label>Project name</label>
+        <input id="projName" placeholder="e.g., Sarcochilus — Scott Private Line">
+        <div class="grid cols-2">
+          <div>
+            <label>Passphrase</label>
+            <input id="pass1" type="password" placeholder="Create or enter passphrase">
+          </div>
+          <div>
+            <label>Confirm</label>
+            <input id="pass2" type="password" placeholder="Confirm (for new)">
+          </div>
+        </div>
+        <div class="grid cols-2" style="margin-top:8px">
+          <button class="btn primary" id="btnCreate">New Project</button>
+          <button class="btn" id="btnOpen">Open Project</button>
+        </div>
+        <div class="grid cols-2" style="margin-top:8px">
+          <button class="btn" id="btnLock">Lock Vault</button>
+          <button class="btn danger" id="btnDelete">Delete Project</button>
+        </div>
+        <p class="small muted" id="vaultMsg">Create a vault or open an existing one. Encrypted with AES-GCM in your browser; stored in IndexedDB.</p>
+      </div>
+
+      <div class="card">
+        <h2>Project Settings</h2>
+        <label>Mode</label>
+        <select id="mode">
+          <option value="local">Local-Only (recommended)</option>
+          <option value="share">Local + I may export anonymized insights</option>
+        </select>
+        <label>Genus focus (comma-separated)</label>
+        <input id="genusFocus" placeholder="Sarcochilus, Phalaenopsis">
+        <label>Default judging profile</label>
+        <select id="defaultProfile">
+          <option>AOS</option><option>JOGA</option><option>ANOS</option><option>NZOS</option><option>EOJC</option><option>Custom</option>
+        </select>
+        <div style="margin-top:8px">
+          <button class="btn ok" id="btnSaveSettings">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-collection">
+    <div class="row">
+      <div>
+        <input type="file" id="csvFile" accept=".csv" style="display:none">
+        <button class="btn" onclick="csvFile.click()">Import CSV</button>
+        <button class="btn" id="btnDemo">Load Demo Data</button>
+        <button class="btn" id="btnAddPlant">Add Plant</button>
+        <button class="btn ok" id="btnSaveProject">Save Project</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;overflow:auto">
+      <table id="plantTable">
+        <thead><tr>
+          <th>id</th><th>genus</th><th>grex_or_species</th><th>clonal_name</th><th>parent1</th><th>parent2</th>
+          <th>awards</th><th>bloom_month</th><th>fragrance</th><th>climate_json</th><th>traits_json</th><th>proprietary</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="sec-design">
+    <div class="grid cols-3">
+      <div class="card">
+        <h2>Trait Goals (Reverse)</h2>
+        <div class="range-row"><span>Roundness</span><input type="range" min="0" max="1" step="0.01" id="g_roundness"><input id="g_roundness_v" value="0.8"></div>
+        <div class="range-row"><span>Flatness</span><input type="range" min="0" max="1" step="0.01" id="g_flatness"><input id="g_flatness_v" value="0.7"></div>
+        <label>Color family</label>
+        <select id="g_color"><option value="">(any)</option><option>white</option><option>yellow</option><option>orange</option><option>red</option><option>magenta</option><option>purple</option><option>green</option><option>multi</option></select>
+        <div class="range-row"><span>Saturation</span><input type="range" min="0" max="1" step="0.01" id="g_sat"><input id="g_sat_v" value="0.75"></div>
+        <label>Flowers / spike (≥)</label><input id="g_fps" type="number" value="8">
+        <label>Flower size (mm ≥)</label><input id="g_size" type="number" value="70">
+        <label>Pattern</label>
+        <select id="g_pattern"><option value="">(any)</option><option>solid</option><option>spots</option><option>splash</option><option>picotee</option><option>venose</option><option>barred</option></select>
+        <div class="range-row"><span>Symmetry</span><input type="range" min="0" max="1" step="0.01" id="g_sym"><input id="g_sym_v" value="0.7"></div>
+        <h3>Climate goal</h3>
+        <label>Min night (°F ≤)</label><input id="g_tnight" type="number" value="55">
+        <label><input type="checkbox" id="g_chill"> Chill trigger useful</label>
+        <label><input type="checkbox" id="useJudge"> Use judging weights</label>
+        <button class="btn primary" id="btnFindCrosses">Find Crosses</button>
+      </div>
+      <div class="card" style="grid-column: span 2;">
+        <h2>Results</h2>
+        <div id="designResults" class="small"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-recommend">
+    <div class="grid cols-3">
+      <div class="card">
+        <h2>Forward Recommend</h2>
+        <label>Genus filter (optional)</label><input id="r_genus" placeholder="Sarcochilus">
+        <label>Optimization</label>
+        <select id="r_obj">
+          <option value="award">Max awardability</option>
+          <option value="flor">Max floriferousness</option>
+          <option value="novel">Color novelty</option>
+          <option value="climate">Climate fit</option>
+          <option value="balanced">Balanced</option>
+        </select>
+        <button class="btn primary" id="btnRecommend">Recommend Pairings</button>
+      </div>
+      <div class="card" style="grid-column: span 2;">
+        <h2>Pairings</h2>
+        <div id="recResults" class="small"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-journal">
+    <div class="row">
+      <button class="btn" id="btnAddCross">New Cross</button>
+    </div>
+    <table id="journalTable" style="margin-top:10px">
+      <thead><tr>
+        <th>seed × pollen</th><th>date</th><th>pod?</th><th>sow</th><th>deflask</th><th>outplant</th><th>first bloom</th><th>awards</th><th>notes</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="sec-judging">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Judging Profile</h2>
+        <select id="judgeProfileSel"></select>
+        <div id="judgeWeights"></div>
+        <div style="margin-top:8px">
+          <button class="btn" id="btnResetProfile">Reset</button>
+          <button class="btn ok" id="btnSaveProfile">Save</button>
+        </div>
+        <p class="small muted" id="judgeSum"></p>
+      </div>
+      <div class="card">
+        <h2>Heritability (h²)</h2>
+        <div id="heritSliders"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-explorer">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Roundness vs Saturation</h2>
+        <canvas id="plot1" width="500" height="320"></canvas>
+      </div>
+      <div class="card">
+        <h2>Flowers/spike vs Roundness</h2>
+        <canvas id="plot2" width="500" height="320"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-learn">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Lessons</h2>
+        <ol id="lessonList" class="small"></ol>
+      </div>
+      <div class="card">
+        <h2>Lesson Content</h2>
+        <div id="lessonContent" class="small"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-poc">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Public Dataset Import</h2>
+        <p class="small">Imports must comply with source terms. Automated scraping is not included.</p>
+        <label>Preset</label>
+        <select id="pocPreset">
+          <option value="rhs">RHS-style</option>
+          <option value="roots">OrchidRoots-style</option>
+          <option value="orchidpro">OrchidPro report</option>
+          <option value="custom">Custom</option>
+        </select>
+        <label>Paste CSV (or choose a file)</label>
+        <textarea id="pocText" rows="8" placeholder="grex,seed_parent,pollen_parent,registrant,date,url"></textarea>
+        <input type="file" id="pocFile" accept=".csv">
+        <div style="margin-top:8px">
+          <button class="btn primary" id="btnIngestPoC">Ingest</button>
+          <button class="btn" id="btnShowPoC">Show Summaries</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Summaries</h2>
+        <div id="pocSummary" class="small"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-export">
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Export / Backup</h2>
+        <button class="btn primary" id="btnExportEncrypted">Export Project (.ocp encrypted)</button>
+        <div class="warning small" style="margin-top:8px">
+          <strong>Warning:</strong> Decrypted export contains sensitive data. Keep it offline and private.
+        </div>
+        <button class="btn" id="btnExportDecrypted">Export Decrypted JSON</button>
+        <button class="btn" id="btnExportAnon">Export Anonymized Insights (CSV)</button>
+        <h2 style="margin-top:18px">Import Encrypted</h2>
+        <input type="file" id="ocpImport" accept=".ocp,application/json">
+        <button class="btn" id="btnImportEncrypted">Import to Vault</button>
+      </div>
+      <div class="card">
+        <h2>Print Journal</h2>
+        <button class="btn" onclick="window.print()">Open Print View</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="sticky-panel small" id="modelPanel">
+    <strong>Model Settings</strong>
+    <div class="range-row"><span>h² roundness</span><input type="range" min="0" max="1" step="0.01" id="h_roundness" value="0.5"><input id="h_roundness_v" value="0.5"></div>
+    <div class="range-row"><span>h² flatness</span><input type="range" min="0" max="1" step="0.01" id="h_flatness" value="0.4"><input id="h_flatness_v" value="0.4"></div>
+    <div class="range-row"><span>h² saturation</span><input type="range" min="0" max="1" step="0.01" id="h_sat2" value="0.6"><input id="h_sat2_v" value="0.6"></div>
+    <div class="range-row"><span>h² size</span><input type="range" min="0" max="1" step="0.01" id="h_size" value="0.4"><input id="h_size_v" value="0.4"></div>
+    <div class="range-row"><span>h² flowers</span><input type="range" min="0" max="1" step="0.01" id="h_flw" value="0.5"><input id="h_flw_v" value="0.5"></div>
+    <div class="range-row"><span>h² symmetry</span><input type="range" min="0" max="1" step="0.01" id="h_sym" value="0.5"><input id="h_sym_v" value="0.5"></div>
+  </div>
+
+  <div class="footer">🔒 Your proprietary data stays on this device unless you export it.</div>
+</main>
+
+<script>
+/*** ---------------------------------------------------------
+ * Minimal state & helpers
+ * --------------------------------------------------------- */
+const $ = (id)=>document.getElementById(id);
+const state = {
+  unlocked:false,
+  projectName:null,
+  vaultKey:null,      // CryptoKey derived from passphrase
+  project:{ settings:{mode:'local', genusFocus:[], profile:'AOS'}, plants:[], journal:[], judgingProfiles:defaultProfiles(), heritability:defaultHerit() },
+  publicDatasets:[],  // stored separately, not encrypted
+};
+const DB_NAME='oc_projects_v1';
+let db;
+
+/*** Tabs ***/
+const tabDefs = [
+  {id:'projects', label:'Projects'},
+  {id:'collection', label:'Collection'},
+  {id:'design', label:'Design (Reverse)'},
+  {id:'recommend', label:'Recommend (Forward)'},
+  {id:'journal', label:'Journal'},
+  {id:'judging', label:'Judging'},
+  {id:'explorer', label:'Explorer'},
+  {id:'learn', label:'Learn'},
+  {id:'poc', label:'PoC Import'},
+  {id:'export', label:'Export'},
+];
+const tabsEl = $('tabs');
+tabDefs.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.textContent=t.label; b.dataset.sec=t.id;
+  if(i===0) b.classList.add('active');
+  b.onclick=()=>switchTab(t.id);
+  tabsEl.appendChild(b);
+});
+function switchTab(id){
+  document.querySelectorAll('header .tabs button').forEach(b=>b.classList.toggle('active', b.dataset.sec===id));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  $('sec-'+id).classList.add('active');
+  if(id==='collection') renderPlants();
+  if(id==='journal') renderJournal();
+  if(id==='judging'){ renderJudging(); renderHerit(); }
+  if(id==='explorer') drawPlots();
+}
+
+/*** IndexedDB setup ***/
+initDB();
+function initDB(){
+  const req = indexedDB.open(DB_NAME,1);
+  req.onupgradeneeded = (e)=>{
+    db = e.target.result;
+    if(!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', {keyPath:'name'});
+    if(!db.objectStoreNames.contains('public')) db.createObjectStore('public', {autoIncrement:true});
+  };
+  req.onsuccess = (e)=>{ db = e.target.result; };
+  req.onerror = ()=> alert('IndexedDB error');
+}
+
+/*** Crypto helpers ***/
+async function deriveKey(pass, salt){
+  const enc=new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'},
+    baseKey,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+function b64(bytes){ return btoa(String.fromCharCode(...new Uint8Array(bytes))); }
+function u8(b64s){ return Uint8Array.from(atob(b64s), c=>c.charCodeAt(0)); }
+
+/*** Vault actions ***/
+$('btnCreate').onclick = async ()=>{
+  const name=$('projName').value.trim(); const p1=$('pass1').value; const p2=$('pass2').value;
+  if(!name||!p1||p1!==p2){ alert('Enter name and matching passphrases.'); return; }
+  state.projectName=name;
+  state.project = { settings:{mode:$('mode').value, genusFocus: parseGenus($('genusFocus').value), profile:$('defaultProfile').value}, plants:[], journal:[], judgingProfiles:defaultProfiles(), heritability:defaultHerit() };
+  await saveEncrypted(p1); await openVault(name, p1);
+  $('vaultMsg').textContent='Created & opened.';
+};
+$('btnOpen').onclick = async ()=>{
+  const name=$('projName').value.trim(); const p1=$('pass1').value;
+  if(!name||!p1){ alert('Enter project name and passphrase.'); return; }
+  await openVault(name, p1);
+};
+$('btnLock').onclick = ()=>{ state.unlocked=false; state.vaultKey=null; $('vaultMsg').textContent='Locked.'; updateLockBadge(); };
+$('btnDelete').onclick = ()=>{
+  if(!confirm('Delete this project from this device?')) return;
+  const tx=db.transaction('projects','readwrite'); tx.objectStore('projects').delete(state.projectName);
+  state.unlocked=false; state.projectName=null; state.project={ settings:{mode:'local',genusFocus:[],profile:'AOS'}, plants:[], journal:[], judgingProfiles:defaultProfiles(), heritability:defaultHerit() };
+  $('vaultMsg').textContent='Deleted.';
+  updateLockBadge();
+};
+$('btnSaveSettings').onclick = ()=> {
+  state.project.settings.mode = $('mode').value;
+  state.project.settings.genusFocus = parseGenus($('genusFocus').value);
+  state.project.settings.profile = $('defaultProfile').value;
+  toast('Settings saved (local). Use "Save Project" to persist.');
+};
+
+function parseGenus(s){ return s.split(',').map(x=>x.trim()).filter(Boolean); }
+
+async function openVault(name, pass){
+  const tx=db.transaction('projects','readonly'); const req=tx.objectStore('projects').get(name);
+  req.onsuccess = async ()=>{
+    const rec=req.result;
+    if(!rec){ $('vaultMsg').textContent='No such project. Create a new one.'; return; }
+    try{
+      const enc=new TextEncoder();
+      const salt=u8(rec.salt), iv=u8(rec.iv); const key=await deriveKey(pass, salt);
+      const clear = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, u8(rec.cipher));
+      const text=new TextDecoder().decode(clear);
+      state.project=JSON.parse(text); state.projectName=name; state.vaultKey=key; state.unlocked=true;
+      $('vaultMsg').textContent='Opened.';
+      updateLockBadge();
+      hydrateSettingsUI();
+      renderPlants();
+      renderJournal();
+    }catch(e){ $('vaultMsg').textContent='Wrong passphrase or corrupted data.'; }
+  };
+}
+
+async function saveEncrypted(passIfNoKey){
+  const pass = state.vaultKey ? null : passIfNoKey;
+  const enc=new TextEncoder();
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key = state.vaultKey || await deriveKey(pass, salt);
+  const data = enc.encode(JSON.stringify(state.project));
+  const cipher = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data);
+  const tx=db.transaction('projects','readwrite');
+  tx.objectStore('projects').put({name:state.projectName, salt:b64(salt), iv:b64(iv), cipher:b64(cipher)});
+  tx.oncomplete=()=>{ state.vaultKey=key; state.unlocked=true; updateLockBadge(); toast('Project saved.'); };
+}
+
+/*** UI wiring for Collection ***/
+$('btnAddPlant').onclick = ()=>{
+  if(!state.unlocked) return alert('Unlock the vault first.');
+  state.project.plants.push(samplePlant());
+  renderPlants();
+};
+$('btnSaveProject').onclick = async ()=>{
+  if(!state.unlocked) return alert('Unlock the vault first.');
+  await saveEncrypted(null);
+};
+$('btnDemo').onclick = ()=>{ if(!state.unlocked) return alert('Unlock vault'); loadDemo(); renderPlants(); drawPlots(); toast('Demo plants loaded.'); };
+
+$('csvFile').addEventListener('change', async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const text=await f.text();
+  csvToPlants(text).forEach(p=>state.project.plants.push(p));
+  renderPlants();
+});
+
+/*** Plants table (very lightweight inline edit) ***/
+function renderPlants(){
+  const tb = $('plantTable').querySelector('tbody'); tb.innerHTML='';
+  (state.project.plants||[]).forEach((p,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = rowHTML(p);
+    tb.appendChild(tr);
+    // attach change listeners
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.onchange = (ev)=>{
+        const key=inp.dataset.key;
+        let val=inp.value;
+        if(key==='proprietary') val = inp.checked;
+        if(key==='traits_json' || key==='climate_json'){ try{ val=JSON.parse(val);}catch{ val=inp.value; } }
+        state.project.plants[idx][key]=val;
+      };
+    });
+    tr.querySelectorAll('textarea').forEach(inp=>{
+      inp.onchange = ()=>{ try{ state.project.plants[idx][inp.dataset.key]=JSON.parse(inp.value);}catch{ state.project.plants[idx][inp.dataset.key]=inp.value; } };
+    });
+  });
+}
+function rowHTML(p){
+  return `
+  <td><input data-key="id" value="${esc(p.id)}"></td>
+  <td><input data-key="genus" value="${esc(p.genus)}"></td>
+  <td><input data-key="grex_or_species" value="${esc(p.grex_or_species||'')}"></td>
+  <td><input data-key="clonal_name" value="${esc(p.clonal_name||'')}"></td>
+  <td><input data-key="parent1" value="${esc(p.parent1||'')}"></td>
+  <td><input data-key="parent2" value="${esc(p.parent2||'')}"></td>
+  <td><input data-key="awards" value="${esc(p.awards||'')}"></td>
+  <td><input data-key="bloom_month" value="${esc(p.bloom_month||'')}"></td>
+  <td><input data-key="fragrance" value="${esc(p.fragrance||'')}"></td>
+  <td><textarea data-key="climate_json" rows="2">${esc(JSON.stringify(p.climate_json||{}))}</textarea></td>
+  <td><textarea data-key="traits_json" rows="2">${esc(JSON.stringify(p.traits_json||{}))}</textarea></td>
+  <td><input type="checkbox" data-key="proprietary" ${p.proprietary?'checked':''}></td>`;
+}
+
+/*** Reverse design (Find Crosses) — stub scoring ***/
+['g_roundness','g_flatness','g_sat','g_sym'].forEach((id)=>{
+  $(id).addEventListener('input',()=>{ $(id+'_v').value = $(id).value; });
+  $(id+'_v').addEventListener('input',()=>{ $(id).value = $(id+'_v').value; });
+});
+$('btnFindCrosses').onclick = ()=>{
+  const G = goalFromUI();
+  const pairs = allPairs(state.project.plants||[]);
+  const scored = pairs.slice(0, 1000).map(([A,B])=>{
+    const s = fakeGoalScore(A,B,G);
+    return {A,B,score:s.score,pct:s.pct,why:s.why};
+  }).sort((a,b)=>b.score-a.score).slice(0,20);
+  const out = scored.map(r=>renderResult(r)).join('');
+  $('designResults').innerHTML = out || '<p class="muted">Add plants to Collection to see results.</p>';
+};
+
+/*** Forward recommend — stub scoring ***/
+$('btnRecommend').onclick = ()=>{
+  const genus = $('r_genus').value.trim().toLowerCase();
+  const subset = (state.project.plants||[]).filter(p=>!genus || (p.genus||'').toLowerCase().includes(genus));
+  const pairs = allPairs(subset);
+  const obj = $('r_obj').value;
+  const scored = pairs.slice(0,1000).map(([A,B])=>{
+    const s = fakeForwardScore(A,B,obj);
+    return {A,B,score:s.score,why:s.why};
+  }).sort((a,b)=>b.score-a.score).slice(0,20);
+  $('recResults').innerHTML = scored.map(r=>renderResult(r,true)).join('') || '<p class="muted">No pairs.</p>';
+};
+
+function renderResult(r, forward=false){
+  return `<div class="result">
+    <div><strong>${esc(r.A.id||'?')}</strong> × <strong>${esc(r.B.id||'?')}</strong>
+      <span class="pill right">${(r.score*100).toFixed(1)} score</span></div>
+    ${forward?``:`<div class="small">Predicted within-goal: <strong>${(r.pct*100).toFixed(1)}%</strong></div>`}
+    <div class="small muted">${esc(r.why)}</div>
+  </div>`;
+}
+
+/*** Journal ***/
+$('btnAddCross').onclick = ()=>{
+  if(!state.unlocked) return alert('Unlock vault.');
+  state.project.journal.push({seed:'',pollen:'',date:new Date().toISOString().slice(0,10),pod:'',sow:'',deflask:'',outplant:'',bloom:'',awards:'',notes:''});
+  renderJournal();
+};
+function renderJournal(){
+  const tb=$('journalTable').querySelector('tbody'); tb.innerHTML='';
+  (state.project.journal||[]).forEach((j,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td><input data-k="seed" value="${esc(j.seed)}" placeholder="Seed parent"> × <input data-k="pollen" value="${esc(j.pollen)}" placeholder="Pollen parent"></td>
+      <td><input data-k="date" value="${esc(j.date)}" type="date"></td>
+      <td><input data-k="pod" value="${esc(j.pod)}" placeholder="y/n"></td>
+      <td><input data-k="sow" value="${esc(j.sow)}" type="date"></td>
+      <td><input data-k="deflask" value="${esc(j.deflask)}" type="date"></td>
+      <td><input data-k="outplant" value="${esc(j.outplant)}" type="date"></td>
+      <td><input data-k="bloom" value="${esc(j.bloom)}" type="date"></td>
+      <td><input data-k="awards" value="${esc(j.awards)}"></td>
+      <td><input data-k="notes" value="${esc(j.notes)}"></td>`;
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.onchange=()=>{ j[inp.dataset.k]=inp.value; };
+    });
+    tb.appendChild(tr);
+  });
+}
+
+/*** Judging profiles & heritability ***/
+function defaultProfiles(){
+  return {
+    AOS:{roundness:.20,flatness:.10,color_saturation:.18,presentation:.08,symmetry:.10,flower_size:.10,flowers_per_spike:.08,substance_texture:.08,lip_definition:.05,pattern_quality:.03},
+    JOGA:{roundness:.18,flatness:.10,color_saturation:.15,presentation:.12,symmetry:.12,flower_size:.09,flowers_per_spike:.08,substance_texture:.08,lip_definition:.05,pattern_quality:.03},
+    ANOS:{roundness:.19,flatness:.10,color_saturation:.16,presentation:.09,symmetry:.11,flower_size:.10,flowers_per_spike:.08,substance_texture:.08,lip_definition:.05,pattern_quality:.04},
+    NZOS:{roundness:.19,flatness:.10,color_saturation:.17,presentation:.10,symmetry:.10,flower_size:.09,flowers_per_spike:.08,substance_texture:.08,lip_definition:.05,pattern_quality:.04},
+    EOJC:{roundness:.18,flatness:.10,color_saturation:.16,presentation:.11,symmetry:.11,flower_size:.09,flowers_per_spike:.08,substance_texture:.08,lip_definition:.05,pattern_quality:.04},
+    Custom:{}
+  };
+}
+function renderJudging(){
+  const sel=$('judgeProfileSel'); sel.innerHTML='';
+  Object.keys(state.project.judgingProfiles).forEach(k=>{
+    const o=document.createElement('option'); o.textContent=k; sel.appendChild(o);
+  });
+  sel.value=state.project.settings.profile||'AOS';
+  buildWeightSliders(sel.value);
+  sel.onchange=()=>buildWeightSliders(sel.value);
+}
+function buildWeightSliders(profileName){
+  const box=$('judgeWeights'); box.innerHTML='';
+  const W = state.project.judgingProfiles[profileName] || {};
+  const keys = ["roundness","flatness","color_saturation","presentation","symmetry","flower_size","flowers_per_spike","substance_texture","lip_definition","pattern_quality"];
+  keys.forEach(k=>{
+    const v = W[k] ?? 0.1;
+    const row=document.createElement('div'); row.className='range-row';
+    row.innerHTML = `<span>${k}</span><input type="range" min="0" max="1" step="0.01" value="${v}" data-k="${k}"><input value="${v}" data-k="${k}_v">`;
+    box.appendChild(row);
+  });
+  const update=()=>{
+    const sliders = box.querySelectorAll('input[type=range]');
+    let sum=0; sliders.forEach(s=>sum+=parseFloat(s.value));
+    $('judgeSum').textContent='Sum = '+sum.toFixed(2)+' (will normalize to 1 during scoring)';
+    sliders.forEach(s=>{
+      const txt = box.querySelector(`input[data-k="${s.dataset.k}_v"]`);
+      txt.value = parseFloat(s.value).toFixed(2);
+      txt.oninput = ()=>{ s.value=txt.value; update(); };
+      s.oninput = ()=>{ txt.value=s.value; update(); };
+    });
+  };
+  update();
+}
+$('btnResetProfile').onclick = ()=>{ state.project.judgingProfiles = defaultProfiles(); renderJudging(); toast('Profiles reset'); };
+$('btnSaveProfile').onclick = ()=>{
+  const name=$('judgeProfileSel').value;
+  const W={}; document.querySelectorAll('#judgeWeights input[type=range]').forEach(s=>W[s.dataset.k]=parseFloat(s.value));
+  // Normalize to 1
+  const sum=Object.values(W).reduce((a,b)=>a+b,0)||1; Object.keys(W).forEach(k=>W[k]=W[k]/sum);
+  state.project.judgingProfiles[name]=W;
+  state.project.settings.profile=name;
+  toast('Profile saved for '+name);
+};
+
+function defaultHerit(){ return {roundness:.5,flatness:.4,saturation:.6,flower_size:.4,flowers_per_spike:.5,symmetry:.5}; }
+function renderHerit(){
+  const ids=[['h_roundness','h_roundness_v','roundness'],['h_flatness','h_flatness_v','flatness'],['h_sat2','h_sat2_v','saturation'],['h_size','h_size_v','flower_size'],['h_flw','h_flw_v','flowers_per_spike'],['h_sym','h_sym_v','symmetry']];
+  ids.forEach(([r,t,key])=>{
+    $(r).value=state.project.heritability[key];
+    $(t).value=state.project.heritability[key];
+    $(r).oninput=()=>{ $(t).value=$(r).value; state.project.heritability[key]=parseFloat($(r).value); };
+    $(t).oninput=()=>{ $(r).value=$(t).value; state.project.heritability[key]=parseFloat($(t).value); };
+  });
+}
+
+/*** Explorer plots (very simple) ***/
+function drawPlots(){
+  drawScatter($('plot1'), (p)=>[num(p.traits_json?.roundness), num(p.traits_json?.saturation)], 'roundness','saturation');
+  drawScatter($('plot2'), (p)=>[num(p.traits_json?.roundness), num(p.traits_json?.flowers_per_spike)], 'roundness','flowers/spike');
+}
+function drawScatter(canvas, accessor, xlabel, ylabel){
+  const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+  const pts=(state.project.plants||[]).map(p=>({p,xy:accessor(p)})).filter(o=>isFinite(o.xy[0])&&isFinite(o.xy[1]));
+  // axes
+  ctx.strokeStyle='#aaa'; ctx.beginPath(); ctx.moveTo(40,280); ctx.lineTo(480,280); ctx.moveTo(40,20); ctx.lineTo(40,280); ctx.stroke();
+  ctx.fillStyle='#333'; ctx.fillText(xlabel, 240, 300); ctx.save(); ctx.translate(12,170); ctx.rotate(-Math.PI/2); ctx.fillText(ylabel, 0,0); ctx.restore();
+  // scale 0..1 to plot box
+  pts.forEach(o=>{
+    const x=40 + o.xy[0]* (480-50);
+    const y=280 - o.xy[1]* (280-30);
+    ctx.fillStyle='#5b4b9a'; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+  });
+}
+
+/*** Learn (stub content) ***/
+const lessons = [
+  {id:'genetics', title:'Orchid genetics basics', html:'<p>Mendelian vs polygenic, dominance, epistasis, and long juvenile phases.</p>'},
+  {id:'records', title:'Record-keeping for breeders', html:'<p>Parentage notation, label hygiene, dates and milestones.</p>'},
+  {id:'photo', title:'Photographing for traits', html:'<p>Neutral background, scale marker, straight-on bloom.</p>'},
+  {id:'herit', title:'Estimating heritability', html:'<p>Parent–offspring regression and practical proxies.</p>'},
+  {id:'judging', title:'Judging systems overview', html:'<p>AOS/JOGA/ANOS/NZOS/EOJC weighting concepts.</p>'},
+  {id:'planning', title:'Planning a crossing program', html:'<p>Forward vs reverse design with constraints.</p>'},
+];
+const ll=$('lessonList'); lessons.forEach(L=>{
+  const li=document.createElement('li'); const a=document.createElement('a');
+  a.href='#'; a.textContent=L.title; a.onclick=(e)=>{ e.preventDefault(); $('lessonContent').innerHTML=L.html; };
+  li.appendChild(a); ll.appendChild(li);
+});
+
+/*** PoC import (basic) ***/
+$('btnIngestPoC').onclick = async ()=>{
+  let csv = $('pocText').value.trim();
+  if(!csv && $('pocFile').files[0]) csv = await $('pocFile').files[0].text();
+  if(!csv){ alert('Paste CSV or choose a file.'); return; }
+  const rows = csvToRows(csv);
+  state.publicDatasets.push({preset:$('pocPreset').value, rows, t:Date.now()});
+  toast('Public dataset ingested ('+rows.length+' rows).');
+};
+$('btnShowPoC').onclick = ()=>{
+  const out=[];
+  state.publicDatasets.forEach((d,i)=>{
+    out.push(`<h4>Dataset #${i+1} — ${d.preset}</h4><div>Rows: ${d.rows.length}</div>`);
+    // quick parent frequency
+    const freq={}; d.rows.forEach(r=>{
+      const p1=r.seed_parent||r.parent1||r.parents?.split('×')[0]||'';
+      const p2=r.pollen_parent||r.parent2||r.parents?.split('×')[1]||'';
+      [p1.trim(),p2.trim()].forEach(x=>{ if(!x) return; freq[x]=(freq[x]||0)+1; });
+    });
+    const top = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>`${esc(k)}: ${v}`).join('<br>');
+    out.push(`<div class="card"><strong>Common parents</strong><div class="small">${top||'(n/a)'}</div></div>`);
+  });
+  $('pocSummary').innerHTML = out.join('') || '<p class="muted">No datasets yet.</p>';
+};
+
+/*** Export / Import ***/
+$('btnExportEncrypted').onclick = async ()=>{
+  if(!state.unlocked) return alert('Unlock vault.');
+  await saveEncrypted(null);
+  const tx=db.transaction('projects','readonly');
+  const req=tx.objectStore('projects').get(state.projectName);
+  req.onsuccess=()=>{
+    const blob=new Blob([JSON.stringify(req.result)],{type:'application/json'});
+    downloadBlob(blob, (state.projectName||'project')+'.ocp');
+  };
+};
+$('btnExportDecrypted').onclick = ()=>{
+  if(!state.unlocked) return alert('Unlock vault.');
+  const blob=new Blob([JSON.stringify(state.project,null,2)],{type:'application/json'});
+  downloadBlob(blob, (state.projectName||'project')+'.json');
+};
+$('btnExportAnon').onclick = ()=>{
+  if(!state.unlocked) return alert('Unlock vault.');
+  // very simple anonymization: only numeric trait means
+  const traits = ['roundness','flatness','saturation','flower_size','flowers_per_spike','symmetry'];
+  const rows = ['trait,mean'];
+  traits.forEach(t=>{
+    const vals=(state.project.plants||[]).map(p=>num(p.traits_json?.[t])).filter(v=>isFinite(v));
+    const mean = vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length):'';
+    rows.push(`${t},${mean}`);
+  });
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  downloadBlob(blob, (state.projectName||'project')+'_anon.csv');
+};
+$('btnImportEncrypted').onclick = async ()=>{
+  const f=$('ocpImport').files[0]; if(!f) return alert('Choose a .ocp file');
+  const json = JSON.parse(await f.text());
+  const tx=db.transaction('projects','readwrite'); tx.objectStore('projects').put(json);
+  toast('Imported encrypted project. Enter its name + passphrase to open.');
+};
+
+/*** Helpers ***/
+function hydrateSettingsUI(){
+  $('mode').value = state.project.settings.mode||'local';
+  $('genusFocus').value = (state.project.settings.genusFocus||[]).join(', ');
+  $('defaultProfile').value = state.project.settings.profile||'AOS';
+}
+function updateLockBadge(){
+  $('lockBadge').textContent = state.unlocked ? '🔓 Vault open (local-only)' : '🔒 Local-only vault';
+}
+function csvToPlants(text){
+  const rows=csvToRows(text);
+  const hdr=rows[0]||[]; const body=rows.slice(1);
+  const idx = (k)=>hdr.indexOf(k);
+  return body.map(r=>{
+    const get=(k)=> r[idx(k)] ?? '';
+    let traits={}; try{ traits = JSON.parse(get('traits_json')||'{}'); }catch{}
+    let climate={}; try{ climate= JSON.parse(get('climate_json')||'{}'); }catch{}
+    return {
+      id:get('id'), genus:get('genus'), grex_or_species:get('grex_or_species'), clonal_name:get('clonal_name'),
+      parent1:get('parent1'), parent2:get('parent2'), awards:get('awards'), bloom_month:get('bloom_month'),
+      fragrance:get('fragrance'), climate_json:climate, traits_json:traits, proprietary:(get('proprietary')==='true')
+    };
+  });
+}
+function csvToRows(text){
+  const lines=text.trim().split(/\r?\n/);
+  return lines.map(line=>{
+    // simple CSV split (no quoted commas handling for brevity)
+    return line.split(',').map(x=>x.trim());
+  });
+}
+function downloadBlob(blob, filename){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function num(v){ const n=Number(v); return isFinite(n)?n:NaN; }
+function toast(msg){ console.log(msg); }
+
+/*** Demo data ***/
+function loadDemo(){
+  state.project.plants = [
+    {id:'S1',genus:'Sarcochilus',grex_or_species:'Fitzhart',clonal_name:'Ruby Star',awards:'HCC/AOS',bloom_month:'10',fragrance:'yes',
+     parent1:'',parent2:'',proprietary:true,
+     climate_json:{t_night_min:55,t_day_opt:72,chill_trigger:false,diurnal_min:8},
+     traits_json:{roundness:.76,flatness:.68,color_family:'red',saturation:.82,flower_size:48,flowers_per_spike:12,pattern_class:'spots',symmetry:.73}},
+    {id:'S2',genus:'Sarcochilus',grex_or_species:'Heidi',clonal_name:'Snow Kiss',awards:'AM/AOS',bloom_month:'9',fragrance:'no',
+     parent1:'',parent2:'',proprietary:true,
+     climate_json:{t_night_min:55,t_day_opt:72,chill_trigger:false,diurnal_min:8},
+     traits_json:{roundness:.84,flatness:.70,color_family:'white',saturation:.65,flower_size:52,flowers_per_spike:9,pattern_class:'solid',symmetry:.79}},
+    {id:'S3',genus:'Sarcochilus',grex_or_species:'Pluto',clonal_name:'Cherry Pop',awards:'',bloom_month:'10',fragrance:'yes',
+     parent1:'S1',parent2:'S2',proprietary:true,
+     climate_json:{t_night_min:55,t_day_opt:72,chill_trigger:false,diurnal_min:8},
+     traits_json:{roundness:.81,flatness:.69,color_family:'red',saturation:.78,flower_size:50,flowers_per_spike:10,pattern_class:'spots',symmetry:.76}},
+    {id:'C1',genus:'Cattleya',grex_or_species:'trianae',clonal_name:'Rose Glow',awards:'AM/AOS',bloom_month:'2',fragrance:'yes',
+     parent1:'',parent2:'',proprietary:true,
+     traits_json:{roundness:.72,flatness:.62,color_family:'magenta',saturation:.80,flower_size:135,flowers_per_spike:3,pattern_class:'solid',symmetry:.68}},
+    {id:'C2',genus:'Cattleya',grex_or_species:'labiata',clonal_name:'Satin Veil',awards:'HCC/AOS',bloom_month:'11',fragrance:'yes',
+     parent1:'',parent2:'',proprietary:true,
+     traits_json:{roundness:.78,flatness:.66,color_family:'magenta',saturation:.77,flower_size:145,flowers_per_spike:2,pattern_class:'solid',symmetry:.71}},
+    {id:'C4',genus:'Cattleya',grex_or_species:'hybrid',clonal_name:'Sun Ember',awards:'',bloom_month:'3',fragrance:'yes',
+     parent1:'C1',parent2:'C2',proprietary:true,
+     traits_json:{roundness:.76,flatness:.65,color_family:'magenta',saturation:.79,flower_size:140,flowers_per_spike:3,pattern_class:'solid',symmetry:.70}},
+  ];
+  state.project.journal = [
+    {seed:'S1',pollen:'S2',date:'2023-10-03',pod:'y',sow:'2024-01-15',deflask:'',outplant:'',bloom:'',awards:'',notes:'Demo cross'},
+  ];
+}
+
+/*** Very simple scoring (placeholders) ***/
+function goalFromUI(){
+  return {
+    roundness: parseFloat($('g_roundness_v').value||0),
+    flatness: parseFloat($('g_flatness_v').value||0),
+    color: $('g_color').value,
+    sat: parseFloat($('g_sat_v').value||0),
+    fps: parseFloat($('g_fps').value||0),
+    size: parseFloat($('g_size').value||0),
+    pattern: $('g_pattern').value,
+    sym: parseFloat($('g_sym_v').value||0),
+    tnight: parseFloat($('g_tnight').value||999),
+    chill: $('g_chill').checked,
+    judge: $('useJudge').checked ? (state.project.judgingProfiles[state.project.settings.profile]||{}) : null
+  };
+}
+function allPairs(arr){
+  const out=[]; for(let i=0;i<arr.length;i++) for(let j=i+1;j<arr.length;j++) out.push([arr[i],arr[j]]);
+  return out;
+}
+function fakeGoalScore(A,B,G){
+  const T = blendTraits(A,B);
+  let hit=0,need=0;
+  const chk=(v,min)=>{ need++; if(v>=min) hit++; };
+  chk(T.roundness, G.roundness);
+  chk(T.flatness, G.flatness);
+  chk(T.saturation, G.sat);
+  chk(T.symmetry, G.sym);
+  if(G.fps){ need++; if((T.flowers_per_spike||0)>=G.fps) hit++; }
+  if(G.size){ need++; if((T.flower_size||0)>=G.size) hit++; }
+  if(G.color){ need++; if(T.color_family===G.color) hit++; }
+  if(G.pattern){ need++; if(T.pattern_class===G.pattern) hit++; }
+  // climate: simple threshold
+  if(G.tnight<999){ need++; if((A.climate_json?.t_night_min??60)<=G.tnight && (B.climate_json?.t_night_min??60)<=G.tnight) hit++; }
+  const base = hit/(need||1);
+  // judging weight (placeholder: increase score slightly if roundness/symmetry high when enabled)
+  let judgeBoost=0;
+  if(G.judge){ judgeBoost = 0.1 * ((T.roundness||0)+(T.symmetry||0)); }
+  return {score: Math.min(1, base + judgeBoost), pct: base, why: `Matches ${hit}/${need} goal constraints.`};
+}
+function fakeForwardScore(A,B,obj){
+  const T=blendTraits(A,B);
+  let s=0,why='';
+  if(obj==='award'){ s=(T.roundness+T.symmetry+(T.saturation||0))/3; why='Award proxy: roundness+symmetry+saturation'; }
+  if(obj==='flor'){ s=(T.flowers_per_spike||0)/12; why='Floriferousness proxy: flowers/spike'; }
+  if(obj==='novel'){ s=(T.pattern_class==='spots'||T.color_family==='red')?0.8:0.4; why='Novelty proxy: pattern/color'; }
+  if(obj==='climate'){ s= ((A.climate_json?.t_night_min||60)+(B.climate_json?.t_night_min||60))/2; s = s<58?0.8:0.4; why='Climate proxy: cooler tolerance'; }
+  if(obj==='balanced'){ s=(fakeForwardScore(A,B,'award').score+fakeForwardScore(A,B,'flor').score)/2; why='Balanced (award+floriferousness)'; }
+  return {score:Math.max(0,Math.min(1,s)), why};
+}
+function blendTraits(A,B){
+  const a=A.traits_json||{}, b=B.traits_json||{};
+  const mean=(x,y)=> (isFinite(x)&&isFinite(y))? (x+y)/2 : (isFinite(x)?x:(isFinite(y)?y:NaN));
+  return {
+    roundness: mean(a.roundness, b.roundness),
+    flatness: mean(a.flatness, b.flatness),
+    saturation: mean(a.saturation, b.saturation),
+    symmetry: mean(a.symmetry, b.symmetry),
+    color_family: a.color_family===b.color_family ? a.color_family : (a.color_family||b.color_family||''),
+    flower_size: mean(a.flower_size, b.flower_size),
+    flowers_per_spike: mean(a.flowers_per_spike, b.flowers_per_spike),
+    pattern_class: a.pattern_class===b.pattern_class ? a.pattern_class : (a.pattern_class||b.pattern_class||'')
+  };
+}
+</script>
+</body>
+</html>
