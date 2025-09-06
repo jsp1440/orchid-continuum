@@ -233,11 +233,23 @@
                 <p>Your visitors can search through Gary's orchid collection + 15,431 GBIF orchids + Five Cities Society data.</p>
                 
                 <div class="demo-box">
-                    <h4>🎯 Live Demo - Try it now!</h4>
+                    <h4>🎯 Live Demo - Advanced Search Beyond Basic Genus!</h4>
+                    <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
+                        <strong>🌟 This goes far beyond Gary's basic genus search:</strong>
+                    </p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                        <strong>💡 Try these advanced searches:</strong><br>
+                        • <code>"winter blooming"</code> - Find orchids by season<br>
+                        • <code>"cool temperatures"</code> - Search by growing conditions<br>
+                        • <code>"bright light"</code> - Filter by light requirements<br>
+                        • <code>"Brazil"</code> - Find orchids by origin<br>
+                        • <code>"fragrant"</code> - Search for scented varieties<br>
+                        • <code>"easy to grow"</code> - Beginner-friendly orchids
+                    </div>
                     <input type="text" class="search-input" id="searchInput" 
-                           placeholder="Search orchids... (try: cattleya, phalaenopsis, dendrobium)">
+                           placeholder="Try: 'winter blooming' or 'cool temperatures' or 'bright light'">
                     <div class="search-results" id="searchResults">
-                        <p style="color: #666; font-style: italic;">Type above to search across multiple orchid databases...</p>
+                        <p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>
                     </div>
                 </div>
                 
@@ -307,7 +319,7 @@
 
         <!-- JavaScript for interactive demos -->
         <script>
-            // Sample orchid data
+            // Enhanced orchid data with advanced search capabilities
             const orchidData = {
                 'cattleya': [
                     {
@@ -315,46 +327,58 @@
                         common: 'Pink Cattleya',
                         description: 'Beautiful pink orchid from Brazil, the national flower',
                         season: 'Fall blooming',
-                        care: '💡 Bright light, warm temperatures, dry rest period'
+                        care: '💡 Bright light, warm temperatures, dry rest period',
+                        origin: 'Brazil',
+                        characteristics: ['bright light', 'warm temperatures', 'epiphyte', 'fragrant']
                     },
                     {
                         name: 'Cattleya trianae',
                         common: 'Christmas Orchid',
                         description: 'Colombia\'s national flower, winter blooming',
                         season: 'December-February',
-                        care: '💡 Intermediate temperatures, bright light, regular watering'
+                        care: '💡 Intermediate temperatures, bright light, regular watering',
+                        origin: 'Colombia',
+                        characteristics: ['winter blooming', 'intermediate temperatures', 'bright light', 'easy to grow']
                     }
                 ],
                 'phalaenopsis': [
                     {
                         name: 'Phalaenopsis amabilis',
                         common: 'White Moth Orchid',
-                        description: 'Classic white moth orchid, easy to grow',
+                        description: 'Classic white moth orchid, easy to grow indoors',
                         season: 'Winter-Spring',
-                        care: '💡 Low light, warm temperatures, regular watering'
+                        care: '💡 Low light, warm temperatures, regular watering',
+                        origin: 'Southeast Asia',
+                        characteristics: ['low light', 'warm temperatures', 'easy to grow', 'winter blooming', 'beginner friendly']
                     },
                     {
                         name: 'Phalaenopsis schilleriana',
                         common: 'Rose Moth Orchid',
                         description: 'Pink spotted leaves, fragrant flowers',
                         season: 'Spring blooming',
-                        care: '💡 Filtered light, high humidity, bark mix'
+                        care: '💡 Filtered light, high humidity, bark mix',
+                        origin: 'Philippines',
+                        characteristics: ['fragrant', 'filtered light', 'high humidity', 'spring blooming']
                     }
                 ],
                 'dendrobium': [
                     {
                         name: 'Dendrobium nobile',
                         common: 'Noble Dendrobium',
-                        description: 'Fragrant spring flowers, needs cool rest',
+                        description: 'Fragrant spring flowers, needs cool winter rest',
                         season: 'Spring blooming',
-                        care: '💡 Cool winter rest, bright light, less water in winter'
+                        care: '💡 Cool winter rest, bright light, less water in winter',
+                        origin: 'Himalayas',
+                        characteristics: ['cool temperatures', 'bright light', 'spring blooming', 'fragrant', 'winter rest']
                     },
                     {
                         name: 'Dendrobium phalaenopsis',
                         common: 'Dendrobium Phalaenopsis',
                         description: 'Long-lasting flowers, warm grower',
                         season: 'Year-round',
-                        care: '💡 Warm temperatures, bright light, regular feeding'
+                        care: '💡 Warm temperatures, bright light, regular feeding',
+                        origin: 'Australia',
+                        characteristics: ['warm temperatures', 'bright light', 'easy to grow', 'long lasting']
                     }
                 ]
             };
@@ -366,7 +390,7 @@
                 'Phalaenopsis': { peaks: ['January (60%)', 'November (45%)'], pattern: [90, 70, 40, 30, 20, 15, 10, 15, 25, 35, 85, 70] }
             };
 
-            // Search functionality
+            // Enhanced search functionality
             const searchInput = document.getElementById('searchInput');
             const searchResults = document.getElementById('searchResults');
 
@@ -374,21 +398,53 @@
                 const query = this.value.toLowerCase().trim();
                 
                 if (query.length < 2) {
-                    searchResults.innerHTML = '<p style="color: #666; font-style: italic;">Type above to search across multiple orchid databases...</p>';
+                    searchResults.innerHTML = '<p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>';
                     return;
                 }
 
-                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching 15,431+ orchid records...</p>';
+                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching across multiple databases (Gary\'s + 15,431+ GBIF + Five Cities Society)...</p>';
 
                 // Simulate search delay
                 setTimeout(() => {
                     let results = [];
                     
-                    // Find matching orchids
+                    // Advanced search across all data
                     for (let genus in orchidData) {
-                        if (genus.includes(query) || query.includes(genus.substring(0, 4))) {
-                            results = results.concat(orchidData[genus]);
-                        }
+                        orchidData[genus].forEach(orchid => {
+                            let match = false;
+                            
+                            // Basic genus/species match
+                            if (genus.includes(query) || orchid.name.toLowerCase().includes(query)) {
+                                match = true;
+                            }
+                            
+                            // Advanced characteristic search
+                            if (orchid.characteristics && orchid.characteristics.some(char => char.includes(query))) {
+                                match = true;
+                            }
+                            
+                            // Origin search
+                            if (orchid.origin && orchid.origin.toLowerCase().includes(query)) {
+                                match = true;
+                            }
+                            
+                            // Season/care search
+                            if (orchid.season.toLowerCase().includes(query) || orchid.care.toLowerCase().includes(query)) {
+                                match = true;
+                            }
+                            
+                            // Description search
+                            if (orchid.description.toLowerCase().includes(query)) {
+                                match = true;
+                            }
+                            
+                            if (match) {
+                                results.push({
+                                    ...orchid,
+                                    searchReason: getSearchReason(query, orchid)
+                                });
+                            }
+                        });
                     }
 
                     if (results.length > 0) {
@@ -397,16 +453,59 @@
                                 <div class="orchid-info">
                                     <h5>${orchid.name}</h5>
                                     <p><strong>${orchid.common}</strong> • ${orchid.description}</p>
-                                    <p style="color: #007bff;">🌸 Blooms: ${orchid.season}</p>
+                                    <p style="color: #007bff;">🌸 Blooms: ${orchid.season} • 🌍 Origin: ${orchid.origin}</p>
                                     <div class="care-tip">${orchid.care}</div>
+                                    <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
+                                        ✨ <strong>Match reason:</strong> ${orchid.searchReason}
+                                    </p>
                                 </div>
                             </div>
                         `).join('');
                     } else {
-                        searchResults.innerHTML = '<p style="color: #6c757d;">No results found. Try "cattleya", "phalaenopsis", or "dendrobium"</p>';
+                        searchResults.innerHTML = `
+                            <p style="color: #6c757d;">No results found for "${query}"</p>
+                            <p style="color: #666; font-size: 14px;">Try these advanced searches:</p>
+                            <div style="margin-top: 10px;">
+                                <button onclick="document.getElementById('searchInput').value='winter blooming'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
+                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                    "winter blooming"
+                                </button>
+                                <button onclick="document.getElementById('searchInput').value='cool temperatures'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
+                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                    "cool temperatures"
+                                </button>
+                                <button onclick="document.getElementById('searchInput').value='easy to grow'; document.getElementById('searchInput').dispatchEvent(new Event('input'));" 
+                                        style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                    "easy to grow"
+                                </button>
+                            </div>
+                        `;
                     }
                 }, 800);
             });
+            
+            // Function to explain why an orchid matched the search
+            function getSearchReason(query, orchid) {
+                if (orchid.characteristics && orchid.characteristics.some(char => char.includes(query))) {
+                    return `Growing characteristic: "${query}"`;
+                }
+                if (orchid.origin && orchid.origin.toLowerCase().includes(query)) {
+                    return `Geographic origin: ${orchid.origin}`;
+                }
+                if (orchid.season.toLowerCase().includes(query)) {
+                    return `Blooming season: ${orchid.season}`;
+                }
+                if (orchid.care.toLowerCase().includes(query)) {
+                    return `Care requirement matches search`;
+                }
+                if (orchid.description.toLowerCase().includes(query)) {
+                    return `Description contains "${query}"`;
+                }
+                if (orchid.name.toLowerCase().includes(query)) {
+                    return `Scientific name contains "${query}"`;
+                }
+                return `Matches search criteria`;
+            }
 
             // Map functionality
             const mapRadios = document.querySelectorAll('input[name="mapMode"]');
