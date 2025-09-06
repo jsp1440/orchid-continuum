@@ -62,6 +62,125 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Widget integration modules not available: {e}")
 
+# Add Gary Yong Gee Partnership Demo route
+@app.route('/gary-demo')
+def gary_demo():
+    """Gary Yong Gee Partnership Demo"""
+    return send_file('static/gary-demo.html')
+
+# Add API endpoints for Gary Yong Gee widget demo
+@app.route('/api/gary-search')
+def gary_search():
+    """Simulated search endpoint for Gary's widget demo"""
+    query = request.args.get('q', '').lower()
+    
+    # Mock data for demo purposes
+    mock_results = [
+        {
+            'id': '1',
+            'scientific_name': 'Cattleya labiata',
+            'common_name': 'Pink Cattleya',
+            'image_url': '/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I',
+            'description': 'Beautiful pink orchid from Brazil',
+            'flowering_season': 'Fall',
+            'cultural_notes': 'Bright light, warm temperatures'
+        },
+        {
+            'id': '2', 
+            'scientific_name': 'Phalaenopsis amabilis',
+            'common_name': 'White Moth Orchid',
+            'image_url': '/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY',
+            'description': 'Classic white moth orchid',
+            'flowering_season': 'Winter-Spring',
+            'cultural_notes': 'Low light, warm temperatures, regular watering'
+        }
+    ]
+    
+    if query:
+        # Filter results based on query
+        filtered = [r for r in mock_results if query in r['scientific_name'].lower() or query in r['common_name'].lower()]
+        return jsonify({'results': filtered})
+    
+    return jsonify({'results': mock_results})
+
+@app.route('/api/gary-phenology')
+def gary_phenology():
+    """Simulated phenology endpoint for Gary's widget demo"""
+    taxon = request.args.get('taxon', 'Cattleya')
+    
+    # Mock phenology data
+    mock_data = {
+        'taxon': taxon,
+        'flowering_periods': [
+            {'month': 'January', 'percentage': 5},
+            {'month': 'February', 'percentage': 10},
+            {'month': 'March', 'percentage': 25},
+            {'month': 'April', 'percentage': 45},
+            {'month': 'May', 'percentage': 30},
+            {'month': 'June', 'percentage': 15},
+            {'month': 'July', 'percentage': 5},
+            {'month': 'August', 'percentage': 5},
+            {'month': 'September', 'percentage': 15},
+            {'month': 'October', 'percentage': 35},
+            {'month': 'November', 'percentage': 25},
+            {'month': 'December', 'percentage': 10}
+        ]
+    }
+    
+    return jsonify(mock_data)
+
+@app.route('/api/gary-map-data')
+def gary_map_data():
+    """Simulated map data endpoint for Gary's widget demo"""
+    privacy_mode = request.args.get('privacy', 'public')
+    
+    if privacy_mode == 'private':
+        # Show detailed location data for partners
+        mock_data = {
+            'orchids': [
+                {
+                    'id': '1',
+                    'lat': 34.0522,
+                    'lng': -118.2437,
+                    'name': 'Cattleya labiata',
+                    'location': 'Los Angeles, CA',
+                    'elevation': '100m'
+                },
+                {
+                    'id': '2',
+                    'lat': 37.7749,
+                    'lng': -122.4194,
+                    'name': 'Phalaenopsis amabilis',
+                    'location': 'San Francisco, CA',
+                    'elevation': '50m'
+                }
+            ]
+        }
+    else:
+        # Show generalized locations for public
+        mock_data = {
+            'orchids': [
+                {
+                    'id': '1',
+                    'lat': 34.0,
+                    'lng': -118.0,
+                    'name': 'Cattleya labiata',
+                    'location': 'Southern California',
+                    'elevation': '~100m'
+                },
+                {
+                    'id': '2',
+                    'lat': 37.7,
+                    'lng': -122.4,
+                    'name': 'Phalaenopsis amabilis',
+                    'location': 'Northern California',
+                    'elevation': '~50m'
+                }
+            ]
+        }
+    
+    return jsonify(mock_data)
+
 # Add Orchid Mahjong demo route
 @app.route('/orchid-mahjong-demo')
 def orchid_mahjong_demo():
