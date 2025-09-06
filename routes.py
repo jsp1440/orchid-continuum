@@ -40,6 +40,7 @@ import os
 import json
 import logging
 import requests
+import re
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_
 from io import BytesIO
@@ -372,44 +373,57 @@ def intergeneric_crosses():
 def api_intergeneric_crosses():
     """API endpoint for intergeneric crosses data"""
     try:
-        # Query intergeneric crosses from database
-        intergeneric_records = OrchidRecord.query.filter(
-            OrchidRecord.genus == 'Intergeneric',
-            OrchidRecord.species == 'hybrid',
-            OrchidRecord.data_source == 'Sunset Valley Orchids'
-        ).all()
+        # Query intergeneric crosses from database using raw SQL to avoid column issues
+        with app.app_context():
+            from app import db
+            
+            # Use raw SQL query to get intergeneric crosses
+            from sqlalchemy import text
+            sql = text("""
+                SELECT id, display_name, parentage_formula, ai_description, 
+                       cultural_notes, image_url, created_at
+                FROM orchid_record 
+                WHERE genus = 'Intergeneric' 
+                AND species = 'hybrid' 
+                AND data_source = 'Sunset Valley Orchids'
+                AND validation_status = 'approved'
+                ORDER BY created_at DESC
+            """)
+            
+            result = db.session.execute(sql)
+            records = result.fetchall()
         
         crosses = []
-        for record in intergeneric_records:
+        for record in records:
             # Extract genera from cultural notes
             genera_involved = []
-            if record.cultural_notes:
-                genera_match = re.search(r'Genera: ([^|]+)', record.cultural_notes)
+            if record[4]:  # cultural_notes
+                genera_match = re.search(r'Genera: ([^|]+)', record[4])
                 if genera_match:
                     genera_involved = [g.strip() for g in genera_match.group(1).split(',')]
             
             # Extract price and availability
             price = None
             availability = None
-            if record.cultural_notes:
-                price_match = re.search(r'Price: ([^|]+)', record.cultural_notes)
+            if record[4]:  # cultural_notes
+                price_match = re.search(r'Price: ([^|]+)', record[4])
                 if price_match:
                     price = price_match.group(1).strip()
                 
-                avail_match = re.search(r'Availability: ([^|]+)', record.cultural_notes)
+                avail_match = re.search(r'Availability: ([^|]+)', record[4])
                 if avail_match:
                     availability = avail_match.group(1).strip()
             
             cross_data = {
-                'id': record.id,
-                'cross_name': record.display_name,
+                'id': record[0],
+                'cross_name': record[1],
                 'genera_involved': genera_involved,
-                'parentage': record.parentage_formula,
-                'description': record.ai_description,
-                'parent_images': [{'url': record.image_url, 'alt_text': 'Parent image', 'title': record.display_name}] if record.image_url else [],
+                'parentage': record[2],
+                'description': record[3],
+                'parent_images': [{'url': record[5], 'alt_text': 'Parent image', 'title': record[1]}] if record[5] else [],
                 'price': price,
                 'availability': availability,
-                'extracted_at': record.created_at.isoformat() if record.created_at else None
+                'extracted_at': record[6].isoformat() if record[6] else None
             }
             crosses.append(cross_data)
         

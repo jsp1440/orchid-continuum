@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intergeneric Cross Relationships - The Orchid Continuum</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #2c1810 0%, #1a1a2e 25%, #16213e 50%, #0f0a1e 75%, #2c1810 100%);
+            min-height: 100vh;
+            color: #e2d5f1;
+        }
+        
+        .visualization-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        #network-graph {
+            width: 100%;
+            height: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .node {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: pointer;
+        }
+        
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+        }
+        
+        .node-label {
+            font-family: 'Arial', sans-serif;
+            font-size: 10px;
+            text-anchor: middle;
+            fill: white;
+            pointer-events: none;
+        }
+        
+        .legend {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .genus-color {
+            background: #8b5cf6;
+        }
+        
+        .hybrid-color {
+            background: #f97316;
+        }
+        
+        .controls {
+            margin-bottom: 2rem;
+        }
+        
+        .btn-visualization {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            border: none;
+            color: white;
+            font-weight: 500;
+            margin: 0.25rem;
+        }
+        
+        .btn-visualization:hover {
+            background: linear-gradient(45deg, #7c3aed, #9333ea);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <i data-feather="flower" style="color: #8b5cf6;"></i>
+                    <strong>The Orchid Continuum</strong>
+                </a>
+                <div class="navbar-nav">
+                    <a class="nav-link" href="/intergeneric-crosses">← Back to Crosses</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="text-center mb-4">
+                        <i data-feather="share-2" class="me-3"></i>
+                        Intergeneric Cross Relationship Network
+                    </h1>
+                    <p class="text-center text-muted mb-4">
+                        Explore the complex relationships between orchid genera in intergeneric hybridization
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <button class="btn btn-visualization" onclick="resetZoom()">
+                            <i data-feather="maximize" class="me-2"></i>Reset View
+                        </button>
+                        <button class="btn btn-visualization" onclick="toggleLabels()">
+                            <i data-feather="tag" class="me-2"></i>Toggle Labels
+                        </button>
+                        <button class="btn btn-visualization" onclick="reorganizeLayout()">
+                            <i data-feather="shuffle" class="me-2"></i>Reorganize
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <select class="form-select" id="layout-select" onchange="changeLayout()">
+                            <option value="force">Force Layout</option>
+                            <option value="circular">Circular Layout</option>
+                            <option value="hierarchical">Hierarchical Layout</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visualization -->
+            <div class="visualization-container">
+                <div id="network-graph"></div>
+                
+                <!-- Legend -->
+                <div class="legend">
+                    <h6>Legend</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="legend-item">
+                                <div class="legend-color genus-color"></div>
+                                <span>Genus (Parent)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color hybrid-color"></div>
+                                <span>Intergeneric Hybrid</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                • Larger nodes = More connections<br>
+                                • Lines connect related genera/hybrids<br>
+                                • Click and drag to explore
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-dark">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Total Genera</h5>
+                            <h2 class="text-primary" id="total-genera">-</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Hybrid Crosses</h5>
+                            <h2 class="text-warning" id="total-hybrids">-</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Connections</h5>
+                            <h2 class="text-success" id="total-connections">-</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+
+        // Global variables
+        let svg, simulation, labelsVisible = true;
+        let nodes = [], links = [];
+        
+        // Load data and create visualization
+        document.addEventListener('DOMContentLoaded', function() {
+            loadIntergenericData();
+        });
+
+        async function loadIntergenericData() {
+            try {
+                const response = await fetch('/api/intergeneric-crosses');
+                const data = await response.json();
+                
+                if (data.success) {
+                    processDataForVisualization(data.crosses);
+                    createNetworkVisualization();
+                    updateStatistics();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function processDataForVisualization(crosses) {
+            const generaSet = new Set();
+            const nodeMap = new Map();
+            
+            // Extract all genera and create nodes
+            crosses.forEach(cross => {
+                // Add hybrid node
+                const hybridId = `hybrid_${cross.id}`;
+                if (!nodeMap.has(hybridId)) {
+                    nodeMap.set(hybridId, {
+                        id: hybridId,
+                        name: cross.cross_name,
+                        type: 'hybrid',
+                        group: 'hybrid',
+                        size: 15,
+                        data: cross
+                    });
+                }
+                
+                // Add genus nodes
+                if (cross.genera_involved) {
+                    cross.genera_involved.forEach(genus => {
+                        generaSet.add(genus);
+                        const genusId = `genus_${genus}`;
+                        if (!nodeMap.has(genusId)) {
+                            nodeMap.set(genusId, {
+                                id: genusId,
+                                name: genus,
+                                type: 'genus',
+                                group: 'genus',
+                                size: 10,
+                                connections: 0
+                            });
+                        }
+                        nodeMap.get(genusId).connections++;
+                        
+                        // Create links between genus and hybrid
+                        links.push({
+                            source: genusId,
+                            target: hybridId,
+                            value: 1
+                        });
+                    });
+                }
+            });
+            
+            nodes = Array.from(nodeMap.values());
+            
+            // Adjust node sizes based on connections
+            nodes.forEach(node => {
+                if (node.type === 'genus') {
+                    node.size = Math.max(8, Math.min(20, 8 + node.connections * 2));
+                }
+            });
+        }
+
+        function createNetworkVisualization() {
+            const container = d3.select('#network-graph');
+            const width = container.node().getBoundingClientRect().width;
+            const height = 600;
+            
+            // Clear previous SVG
+            container.selectAll('*').remove();
+            
+            svg = container.append('svg')
+                .attr('width', width)
+                .attr('height', height);
+            
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => {
+                    svg.selectAll('g').attr('transform', event.transform);
+                });
+            
+            svg.call(zoom);
+            
+            // Create main group
+            const g = svg.append('g');
+            
+            // Create simulation
+            simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(80))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => d.size + 5));
+            
+            // Create links
+            const link = g.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link');
+            
+            // Create nodes
+            const node = g.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('class', 'node')
+                .attr('r', d => d.size)
+                .attr('fill', d => d.type === 'genus' ? '#8b5cf6' : '#f97316')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended))
+                .on('click', nodeClicked)
+                .on('mouseover', nodeMouseover)
+                .on('mouseout', nodeMouseout);
+            
+            // Create labels
+            const labels = g.append('g')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .attr('class', 'node-label')
+                .text(d => d.name)
+                .style('opacity', labelsVisible ? 1 : 0);
+            
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + d.size + 15);
+            });
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        function nodeClicked(event, d) {
+            if (d.type === 'hybrid' && d.data) {
+                // Show hybrid details in modal or side panel
+                showHybridDetails(d.data);
+            }
+        }
+
+        function nodeMouseover(event, d) {
+            // Highlight connected nodes
+            const connectedNodes = new Set();
+            links.forEach(link => {
+                if (link.source.id === d.id || link.target.id === d.id) {
+                    connectedNodes.add(link.source.id);
+                    connectedNodes.add(link.target.id);
+                }
+            });
+            
+            svg.selectAll('.node')
+                .style('opacity', node => connectedNodes.has(node.id) ? 1 : 0.3);
+            
+            svg.selectAll('.link')
+                .style('opacity', link => 
+                    link.source.id === d.id || link.target.id === d.id ? 1 : 0.1);
+        }
+
+        function nodeMouseout(event, d) {
+            svg.selectAll('.node').style('opacity', 1);
+            svg.selectAll('.link').style('opacity', 0.6);
+        }
+
+        function showHybridDetails(hybrid) {
+            alert(`${hybrid.cross_name}\n\nParentage: ${hybrid.parentage}\nPrice: ${hybrid.price}\nAvailability: ${hybrid.availability}\n\n${hybrid.description}`);
+        }
+
+        function resetZoom() {
+            svg.transition().duration(750).call(
+                d3.zoom().transform,
+                d3.zoomIdentity
+            );
+        }
+
+        function toggleLabels() {
+            labelsVisible = !labelsVisible;
+            svg.selectAll('.node-label')
+                .transition()
+                .duration(300)
+                .style('opacity', labelsVisible ? 1 : 0);
+        }
+
+        function reorganizeLayout() {
+            simulation.alpha(1).restart();
+        }
+
+        function changeLayout() {
+            const layout = document.getElementById('layout-select').value;
+            
+            if (layout === 'circular') {
+                const radius = 200;
+                const angleStep = (2 * Math.PI) / nodes.length;
+                
+                nodes.forEach((node, i) => {
+                    const angle = i * angleStep;
+                    node.fx = 300 + radius * Math.cos(angle);
+                    node.fy = 300 + radius * Math.sin(angle);
+                });
+            } else if (layout === 'hierarchical') {
+                const genusNodes = nodes.filter(n => n.type === 'genus');
+                const hybridNodes = nodes.filter(n => n.type === 'hybrid');
+                
+                genusNodes.forEach((node, i) => {
+                    node.fx = 100 + (i * 150);
+                    node.fy = 150;
+                });
+                
+                hybridNodes.forEach((node, i) => {
+                    node.fx = 150 + (i * 120);
+                    node.fy = 450;
+                });
+            } else {
+                // Force layout - remove fixed positions
+                nodes.forEach(node => {
+                    node.fx = null;
+                    node.fy = null;
+                });
+            }
+            
+            simulation.alpha(1).restart();
+        }
+
+        function updateStatistics() {
+            const totalGenera = nodes.filter(n => n.type === 'genus').length;
+            const totalHybrids = nodes.filter(n => n.type === 'hybrid').length;
+            const totalConnections = links.length;
+            
+            document.getElementById('total-genera').textContent = totalGenera;
+            document.getElementById('total-hybrids').textContent = totalHybrids;
+            document.getElementById('total-connections').textContent = totalConnections;
+        }
+    </script>
+</body>
+</html>
