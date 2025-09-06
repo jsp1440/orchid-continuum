@@ -36,6 +36,8 @@ from pattern_analysis_routes import pattern_analysis_bp
 from ai_batch_processor import ai_batch_processor
 from enhanced_data_collection_system import start_enhanced_collection, get_collection_progress, get_source_analytics
 from data_progress_dashboard import data_dashboard_bp
+from breeding_ai import breeding_ai
+import breeding_routes  # Import breeding routes
 import os
 import json
 import logging
