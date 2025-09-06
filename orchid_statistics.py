@@ -215,7 +215,14 @@ class OrchidStatistics:
                     COUNT(*) as count
                 FROM orchid_record 
                 WHERE region IS NOT NULL AND region != ''
-                GROUP BY continent 
+                GROUP BY CASE 
+                        WHEN region LIKE '%Europe%' THEN 'Europe'
+                        WHEN region LIKE '%Asia%' THEN 'Asia'
+                        WHEN region LIKE '%Africa%' THEN 'Africa'
+                        WHEN region LIKE '%America%' THEN 'Americas'
+                        WHEN region LIKE '%Australia%' THEN 'Oceania'
+                        ELSE region
+                    END
                 ORDER BY count DESC
             """)).fetchall()
             
