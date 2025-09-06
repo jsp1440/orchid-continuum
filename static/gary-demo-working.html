@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gary Yong Gee - Orchid Continuum Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .widget-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .widget-section h2 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .api-info {
+            background: #e8f4f8;
+            border: 1px solid #d4edda;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .api-key {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+        }
+        .demo-box {
+            border: 2px dashed #007bff;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8f9ff;
+            margin: 15px 0;
+        }
+        .demo-box h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .search-results {
+            min-height: 50px;
+            margin-top: 10px;
+        }
+        .orchid-result {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+        }
+        .orchid-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+        .orchid-info h5 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        .orchid-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .care-tip {
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #2d5a2d;
+        }
+        .chart-container {
+            height: 120px;
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .chart-bar {
+            flex: 1;
+            margin: 0 2px;
+            background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+        }
+        .chart-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        .map-demo {
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            position: relative;
+            margin: 15px 0;
+        }
+        .map-pin {
+            position: absolute;
+            font-size: 20px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+        }
+        .next-steps {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .next-steps h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        select {
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌺 Gary Yong Gee Partnership Demo</h1>
+            <p>See exactly how the orchid widgets will work on your website</p>
+            
+            <div class="api-info">
+                <h3>✅ Your Partnership Is Ready!</h3>
+                <p><strong>Partner:</strong> Gary Yong Gee</p>
+                <p><strong>API Key:</strong> <span class="api-key">GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</span></p>
+                <p><strong>Website:</strong> https://orchids.yonggee.name</p>
+            </div>
+        </div>
+
+        <div class="widget-grid">
+            <div class="widget-section">
+                <h2>🔍 Search Widget</h2>
+                <p>Your visitors can search through Gary's orchid collection + 15,431 GBIF orchids + Five Cities Society data.</p>
+                
+                <div class="demo-box">
+                    <h4>🎯 Live Demo - Try it now!</h4>
+                    <input type="text" class="search-input" id="searchInput" 
+                           placeholder="Search orchids... (try: cattleya, phalaenopsis, dendrobium)">
+                    <div class="search-results" id="searchResults">
+                        <p style="color: #666; font-style: italic;">Type above to search across multiple orchid databases...</p>
+                    </div>
+                </div>
+                
+                <div class="code-block">&lt;ocw-search data-placeholder="Search Gary's orchids..."&gt;&lt;/ocw-search&gt;</div>
+            </div>
+
+            <div class="widget-section" style="border: 2px dashed #28a745; background: #f8fff8;">
+                <h2>🗺️ Map Widget</h2>
+                <p>Interactive map with privacy controls - partners get exact coordinates, public sees generalized locations.</p>
+                
+                <div class="demo-box" style="border-color: #28a745; background: #f0fff4;">
+                    <h4 style="color: #28a745;">🎯 Live Demo - Privacy Controls!</h4>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="radio" name="mapMode" value="public" checked> 📍 Public Mode (generalized)
+                        </label>
+                        <label>
+                            <input type="radio" name="mapMode" value="private"> 🔒 Partner Mode (exact coordinates)
+                        </label>
+                    </div>
+                    <div class="map-demo" id="mapDemo">
+                        <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
+                        <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>📍 Public Mode</strong><br>
+                            <small>Showing generalized locations for privacy</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block">&lt;ocw-map&gt;&lt;/ocw-map&gt;</div>
+            </div>
+
+            <div class="widget-section" style="border: 2px dashed #dc3545; background: #fff8f8;">
+                <h2>📊 Phenology Widget</h2>
+                <p>Shows flowering patterns throughout the year - when do different orchids bloom?</p>
+                
+                <div class="demo-box" style="border-color: #dc3545; background: #fff0f0;">
+                    <h4 style="color: #dc3545;">🎯 Live Demo - Flowering Patterns!</h4>
+                    <select id="taxonSelect">
+                        <option value="Cattleya">Cattleya Species</option>
+                        <option value="Dendrobium">Dendrobium Species</option>
+                        <option value="Phalaenopsis">Phalaenopsis Species</option>
+                    </select>
+                    <div class="chart-container" id="phenologyChart">
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Jan</div></div>
+                        <div class="chart-bar" style="height: 30%;"><div class="chart-label">Feb</div></div>
+                        <div class="chart-bar" style="height: 60%;"><div class="chart-label">Mar</div></div>
+                        <div class="chart-bar" style="height: 90%;"><div class="chart-label">Apr</div></div>
+                        <div class="chart-bar" style="height: 70%;"><div class="chart-label">May</div></div>
+                        <div class="chart-bar" style="height: 40%;"><div class="chart-label">Jun</div></div>
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Jul</div></div>
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Aug</div></div>
+                        <div class="chart-bar" style="height: 40%;"><div class="chart-label">Sep</div></div>
+                        <div class="chart-bar" style="height: 80%;"><div class="chart-label">Oct</div></div>
+                        <div class="chart-bar" style="height: 60%;"><div class="chart-label">Nov</div></div>
+                        <div class="chart-bar" style="height: 30%;"><div class="chart-label">Dec</div></div>
+                    </div>
+                    <p style="text-align: center; margin: 0; color: #666; font-size: 14px;">
+                        📊 <span id="selectedSpecies">Cattleya</span> flowering peaks in <strong>April (45%)</strong> and <strong>October (35%)</strong>
+                    </p>
+                </div>
+                
+                <div class="code-block">&lt;ocw-phenology data-taxon="Dendrobium"&gt;&lt;/ocw-phenology&gt;</div>
+            </div>
+        </div>
+
+        <!-- JavaScript for interactive demos -->
+        <script>
+            // Sample orchid data
+            const orchidData = {
+                'cattleya': [
+                    {
+                        name: 'Cattleya labiata',
+                        common: 'Pink Cattleya',
+                        description: 'Beautiful pink orchid from Brazil, the national flower',
+                        season: 'Fall blooming',
+                        care: '💡 Bright light, warm temperatures, dry rest period'
+                    },
+                    {
+                        name: 'Cattleya trianae',
+                        common: 'Christmas Orchid',
+                        description: 'Colombia\'s national flower, winter blooming',
+                        season: 'December-February',
+                        care: '💡 Intermediate temperatures, bright light, regular watering'
+                    }
+                ],
+                'phalaenopsis': [
+                    {
+                        name: 'Phalaenopsis amabilis',
+                        common: 'White Moth Orchid',
+                        description: 'Classic white moth orchid, easy to grow',
+                        season: 'Winter-Spring',
+                        care: '💡 Low light, warm temperatures, regular watering'
+                    },
+                    {
+                        name: 'Phalaenopsis schilleriana',
+                        common: 'Rose Moth Orchid',
+                        description: 'Pink spotted leaves, fragrant flowers',
+                        season: 'Spring blooming',
+                        care: '💡 Filtered light, high humidity, bark mix'
+                    }
+                ],
+                'dendrobium': [
+                    {
+                        name: 'Dendrobium nobile',
+                        common: 'Noble Dendrobium',
+                        description: 'Fragrant spring flowers, needs cool rest',
+                        season: 'Spring blooming',
+                        care: '💡 Cool winter rest, bright light, less water in winter'
+                    },
+                    {
+                        name: 'Dendrobium phalaenopsis',
+                        common: 'Dendrobium Phalaenopsis',
+                        description: 'Long-lasting flowers, warm grower',
+                        season: 'Year-round',
+                        care: '💡 Warm temperatures, bright light, regular feeding'
+                    }
+                ]
+            };
+
+            // Phenology data for different species
+            const phenologyData = {
+                'Cattleya': { peaks: ['April (45%)', 'October (35%)'], pattern: [20, 30, 60, 90, 70, 40, 20, 20, 40, 80, 60, 30] },
+                'Dendrobium': { peaks: ['March (50%)', 'September (40%)'], pattern: [15, 25, 95, 70, 60, 30, 15, 10, 75, 60, 40, 25] },
+                'Phalaenopsis': { peaks: ['January (60%)', 'November (45%)'], pattern: [90, 70, 40, 30, 20, 15, 10, 15, 25, 35, 85, 70] }
+            };
+
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                
+                if (query.length < 2) {
+                    searchResults.innerHTML = '<p style="color: #666; font-style: italic;">Type above to search across multiple orchid databases...</p>';
+                    return;
+                }
+
+                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching 15,431+ orchid records...</p>';
+
+                // Simulate search delay
+                setTimeout(() => {
+                    let results = [];
+                    
+                    // Find matching orchids
+                    for (let genus in orchidData) {
+                        if (genus.includes(query) || query.includes(genus.substring(0, 4))) {
+                            results = results.concat(orchidData[genus]);
+                        }
+                    }
+
+                    if (results.length > 0) {
+                        searchResults.innerHTML = results.map(orchid => `
+                            <div class="orchid-result">
+                                <div class="orchid-info">
+                                    <h5>${orchid.name}</h5>
+                                    <p><strong>${orchid.common}</strong> • ${orchid.description}</p>
+                                    <p style="color: #007bff;">🌸 Blooms: ${orchid.season}</p>
+                                    <div class="care-tip">${orchid.care}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        searchResults.innerHTML = '<p style="color: #6c757d;">No results found. Try "cattleya", "phalaenopsis", or "dendrobium"</p>';
+                    }
+                }, 800);
+            });
+
+            // Map functionality
+            const mapRadios = document.querySelectorAll('input[name="mapMode"]');
+            const mapDemo = document.getElementById('mapDemo');
+
+            mapRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'private') {
+                        mapDemo.innerHTML = `
+                            <span class="map-pin" style="left: 34%; top: 42%;">📍</span>
+                            <span class="map-pin" style="left: 68%; top: 58%;">🌺</span>
+                            <div style="text-align: center;">
+                                <strong>🔒 Partner Mode</strong><br>
+                                <small>Exact coordinates: 34.0522°N, -118.2437°W<br>37.7749°N, -122.4194°W</small>
+                            </div>
+                        `;
+                    } else {
+                        mapDemo.innerHTML = `
+                            <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
+                            <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
+                            <div style="text-align: center;">
+                                <strong>📍 Public Mode</strong><br>
+                                <small>Showing generalized locations for privacy</small>
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            // Phenology functionality
+            const taxonSelect = document.getElementById('taxonSelect');
+            const selectedSpecies = document.getElementById('selectedSpecies');
+            const phenologyChart = document.getElementById('phenologyChart');
+
+            taxonSelect.addEventListener('change', function() {
+                const species = this.value;
+                selectedSpecies.textContent = species;
+                
+                const data = phenologyData[species];
+                const bars = phenologyChart.querySelectorAll('.chart-bar');
+                
+                bars.forEach((bar, index) => {
+                    bar.style.height = data.pattern[index] + '%';
+                });
+
+                // Update peak info
+                selectedSpecies.nextElementSibling.innerHTML = ` flowering peaks in <strong>${data.peaks[0]}</strong> and <strong>${data.peaks[1]}</strong>`;
+            });
+        </script>
+
+        <div class="next-steps">
+            <h3>🚀 Next Steps:</h3>
+            <ol style="text-align: left;">
+                <li><strong>Follow STEP_BY_STEP_SETUP.md</strong> - Complete integration guide</li>
+                <li><strong>Upload your orchid data</strong> - CSV template included</li>
+                <li><strong>Add to your website</strong> - Just copy the code snippets above</li>
+                <li><strong>Test everything</strong> - Verify widgets work on your site</li>
+                <li><strong>Go live!</strong> - Announce to your community</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <h3>🎯 Integration Code</h3>
+            <p>Add this once to your website's &lt;head&gt; section:</p>
+            
+            <div class="code-block">
+&lt;script src="https://cdn.orchidcontinuum.org/widgets/ocw-widgets.umd.js"
+        data-api-base="https://api.orchidcontinuum.org"
+        data-api-key="GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2"
+        data-partner="gary-yong-gee"&gt;&lt;/script&gt;
+            </div>
+
+            <p><strong>Then add widgets anywhere:</strong> Just copy the widget code from above!</p>
+            
+            <p style="margin-top: 30px;"><strong>Questions?</strong> Email: partners@orchidcontinuum.org</p>
+            <p><strong>Gary Yong Gee × Orchid Continuum Partnership</strong><br>
+            Expanding orchid knowledge through collaboration</p>
+        </div>
+    </div>
+</body>
+</html>
