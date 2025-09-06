@@ -1,0 +1,169 @@
+You are an expert full-stack engineer. Build a minimal “Orchid Continuum Partner Connect” that includes:
+
+GOALS
+1) API key system (one key per partner; NOT one per image) with scopes + rate limiting + revocation.
+2) Partner ingest endpoints for batch JSON/CSV upsert (read-only elsewhere).
+3) Read-only widget endpoints (search, map, phenology).
+4) Embeddable widgets (UMD) <ocw-search>, <ocw-map>, <ocw-phenology>.
+5) Geoprivacy: exact GPS stored privately; public responses show generalized locations + coordinateUncertaintyInMeters.
+6) Partner Kit generator that makes: pitch.md, faq.md, checklist.md, integration_guide.md, mou_geoprivacy.md, sample_email.md — prefilled for BOTH partners:
+   - Partner A: slug "gary-yong-gee", name "Gary Yong Gee"
+   - Partner B: slug "roger", name "Roger"
+7) Key generator script mints plaintext keys for each partner, stores hashes, injects keys + snippets into docs and a demo HTML page.
+8) Keep REAL production schema/workflows private; use generic demo fields only.
+
+STACK
+- API: FastAPI (Python) OR NestJS (TypeScript) — pick one and stick to it.
+- DB: SQLite for demo (SQL portable to Postgres). Comment where PostGIS/pgvector would slot later.
+- Widgets: vanilla Web Components via Vite → single UMD bundle at /apps/widgets/dist/ocw-widgets.umd.js
+- Map: Leaflet; Phenology: simple canvas or Chart.js (lightweight).
+
+REPO STRUCTURE
+/apps/widgets
+/services/api
+/docs/partners/<slug>         # Partner Kits go here for gary-yong-gee and roger
+/scripts
+/public/demo.html             # loads widgets using a partner key
+
+DATA MODEL (generic, demo-safe)
+partners(id, slug, name, email, api_key_hash, scopes JSON, quota_per_day int, active bool, created_at)
+record(id, partner_id, source_id unique per partner, scientific_name, image_url, credit, license, locality, event_date, created_at, updated_at)
+location(id, record_id, lat, lng, elevation_m, geo_visibility enum('public','partner_private','internal_private'), coordinate_uncertainty_m int nullable)
+phenology_months(record_id, month int)
+curation_event(id, record_id, action, actor, created_at)
+
+GEOPRIVACY REQUIREMENTS
+- Store exact lat/lng.
+- Public widget endpoints MUST generalize coordinates when geo_visibility != 'public':
+  * Snap to a grid (e.g., 25 km) OR hexbin aggregate.
+  * Include coordinateUncertaintyInMeters in response.
+- Partner-scoped endpoints may return exact coords only if key has scope "read:partner_private_geo".
+- Provide unit test: public response never contains exact coords for non-public records.
+- Add helper function generalize_coords(lat,lng,cell_km=25).
+
+ENDPOINTS
+GET  /health
+POST /partner/upload-json     (scope: write:records) body {records:[{source_id,scientific_name,image_url,credit,license,locality,event_date,coords:{lat,lng},geo_visibility,coordinateUncertaintyInMeters}]}
+POST /partner/upload-csv      (scope: write:records) multipart/form-data file=CSV (columns: source_id, scientific_name, image_url, credit, license, locality, event_date, lat, lng, geo_visibility)
+GET  /widgets/search?q=&page= (scope: read:widgets)
+GET  /widgets/map?bbox=...    (scope: read:widgets) &mode=public|partner -> auto by key/scope; public response generalized
+GET  /widgets/phenology?taxon=(scope: read:widgets)
+
+AUTH & RATE LIMIT
+- Authorization: Bearer <API_KEY>. Lookup hash; scopes enforced.
+- Sliding-window rate limit per key (env-configurable). Return 429 + Retry-After on exceed.
+- Admin endpoint or script to revoke/rotate keys.
+
+WIDGETS (UMD)
+- <ocw-search>, <ocw-map>, <ocw-phenology>
+- Attributes: data-api-base, data-api-key, data-partner; default to <script> tag data-* if present.
+- Accessible markup; namespaced CSS; graceful error messages.
+
+SCRIPTS
+/scripts/gen_partner_key.{py|ts}:
+  - prompts for partner name/email/slug OR accepts CLI args
+  - generates plaintext API key; stores Argon2/bcrypt hash; sets scopes:
+      ["write:records","read:widgets","read:analytics","read:partner_private_geo"]
+  - writes /docs/partners/<slug>/
+      - pitch.md
+      - faq.md
+      - checklist.md
+      - mou_geoprivacy.md
+      - integration_guide.md (inject plaintext key + snippets)
+      - sample_email.md (inject key + links)
+  - updates /public/demo.html to use that partner’s key
+
+SEED & DEMO
+- Seed partners: "gary-yong-gee" and "roger" with placeholder emails; generate keys.
+- Seed a few demo records/locations/phenology for each partner.
+- /public/demo.html shows <ocw-search>, <ocw-map>, <ocw-phenology> working with a seeded key.
+
+DOC CONTENT (inject these templates with variables)
+
+[PITCH]
+The Orchid Continuum adds AI search, interactive maps, and bloom timelines to your site via one embed — with full attribution and backlinks on every record. You keep ownership and control; we never write to your database. Choose a low-maintenance sharing path (export URL, shared folder, or CSV/JSON upload), and we handle the rest.
+
+[FAQ]
+Q: Does this touch or change our database?
+A: No. The embed runs in the visitor’s browser (like YouTube/Maps). No writes to your system.
+Q: Can we stop later?
+A: Yes. Revoke the key or remove the export; we’ll stop ingesting and can remove items on request.
+Q: Do we have to share everything?
+A: No. Share only what you choose; you can omit precise GPS or set geoprivacy per record.
+Q: How is location privacy handled?
+A: Exact GPS is kept private. Public maps show generalized locations with uncertainty, following biodiversity best practices.
+Q: What work is required?
+A: Minimal. Pick one: a read-only export URL, a shared folder, or occasional CSV/JSON upload.
+
+[CHECKLIST]
+✅ One API key (we provide)
+✅ Choose a sharing path: Export URL OR Shared Folder OR CSV/JSON upload
+✅ Your preferred credit line + (optional) logo
+✅ A contact email for coordination
+
+[MOU_GEOPRIVACY]
+**Geoprivacy.** Partner may provide precise coordinates to the Orchid Continuum for research purposes. Exact coordinates are stored securely and will not be published without Partner’s written consent. Public outputs show generalized locations (e.g., to the nearest 10–25 km or by grid/hex) and include a coordinate uncertainty value. Partner may designate records as public, partner-private, or internal-private. Partner may revoke access or request removals at any time.
+
+[INTEGRATION_GUIDE_HEADER]
+# Orchid Continuum – Partner Integration Guide ({{PARTNER_NAME}})
+**Your unique API key:** `{{API_KEY}}`
+
+**Add this once in <head>:**
+<script src="{{WIDGET_CDN}}/ocw-widgets.umd.js"
+        data-api-base="{{API_BASE}}"
+        data-api-key="{{API_KEY}}"
+        data-partner="{{PARTNER_SLUG}}"></script>
+
+**Place widgets where you want them:**
+<div class="ocw-search"></div>
+<div class="ocw-map"></div>
+<div class="ocw-phenology" data-taxon="Cattleya labiata"></div>
+
+**Example JSON upload (batch):**
+POST {{API_BASE}}/partner/upload-json
+Authorization: Bearer {{API_KEY}}
+{
+  "records":[
+    {
+      "source_id":"gyg-000123",
+      "scientific_name":"Cattleya labiata",
+      "image_url":"https://example.org/labiata.jpg",
+      "credit":"{{PARTNER_NAME}}",
+      "license":"CC-BY-NC",
+      "locality":"Brazil",
+      "event_date":"2023-10-14",
+      "coords":{"lat":-23.5,"lng":-46.6},
+      "geo_visibility":"partner_private",
+      "coordinateUncertaintyInMeters":25000
+    }
+  ]
+}
+
+[EMAIL]
+Subject: Your one-line AI upgrade — key + guide inside
+
+Hi {{PARTNER_NAME}},
+
+Here’s your **Partner Kit** to add AI search, maps, and bloom timelines to your site. It’s one embed + one key — no changes to your database.
+
+API key: {{API_KEY}}
+Guide: attached in this folder (integration_guide.md)
+Demo: /public/demo.html (shows widgets live with your key)
+
+Pick your sharing option (export URL, shared folder, or CSV/JSON upload). Exact GPS stays private; public maps show generalized locations with uncertainty and attribution.
+
+Warmly,
+Jeffery S. Parham
+Five Cities Orchid Society
+
+CONFIG DEFAULTS
+{{WIDGET_CDN}}="https://cdn.orchidcontinuum.org/widgets"
+{{API_BASE}}="https://api.orchidcontinuum.org"
+
+ACCEPTANCE
+- Single command to migrate DB, seed demo data, build widgets, and start API.
+- gen_partner_key creates keys for "gary-yong-gee" and "roger", writes docs, updates demo.html.
+- demo.html renders working <ocw-search>, <ocw-map>, <ocw-phenology>.
+- /partner/upload-json upserts by source_id scoped to partner.
+- Public map responses are generalized when required; partner responses can include exact coords with proper scope.
+- No proprietary schema or private workflows exposed.
