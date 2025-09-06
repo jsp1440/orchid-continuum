@@ -1,8 +1,12 @@
 # The Orchid Continuum - Digital Platform Project
 
+## Ownership and Copyright
+
+**The Orchid Continuum** is created and owned by **Jeffery S. Parham**, B.A., M.A. Biology CSUF, M.S. Plant Pathology UC Riverside. This comprehensive research-grade digital platform is copyright protected and/or patentable intellectual property. The platform is licensed for use to the Five Cities Orchid Society (FCOS) but remains the exclusive property of Jeffery S. Parham.
+
 ## Overview
 
-The Orchid Continuum is a project of the Five Cities Orchid Society providing enhanced digital tools for an improved online orchid society member experience. This AI-enhanced orchid database and community management system consolidates orchid photos and metadata from multiple sources for integration into the society's main website. It provides automated data ingestion, AI-powered orchid identification, and real-time web widgets for orchid enthusiasts and researchers.
+The Orchid Continuum is a comprehensive research-grade digital platform featuring authoritative taxonomy database integration, AI-powered image analysis, and ecological pattern correlation discovery. This AI-enhanced orchid database and community management system consolidates orchid photos and metadata from multiple sources including GBIF's 15,431+ orchid photographs, institutional databases, and automated web scraping. It provides automated data ingestion, AI-powered orchid identification, and real-time web widgets for orchid enthusiasts and researchers.
 
 ## User Preferences
 
