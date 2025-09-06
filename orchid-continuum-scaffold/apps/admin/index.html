@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Continuum - Curator Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #2d3748;
+            color: white;
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 32px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .logo::before {
+            content: "🌺";
+            margin-right: 8px;
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-bottom: 8px;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #e2e8f0;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            background: #4a5568;
+            color: white;
+        }
+        
+        .nav-icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .review-table th,
+        .review-table td {
+            padding: 16px 24px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .review-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .review-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .confidence-low {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .confidence-medium {
+            background: #feebc8;
+            color: #dd6b20;
+        }
+        
+        .confidence-high {
+            background: #c6f6d5;
+            color: #38a169;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-approve {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background: #38a169;
+        }
+        
+        .btn-flag {
+            background: #ed8936;
+            color: white;
+        }
+        
+        .btn-flag:hover {
+            background: #dd6b20;
+        }
+        
+        .btn-merge {
+            background: #4299e1;
+            color: white;
+        }
+        
+        .btn-merge:hover {
+            background: #3182ce;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: #48bb78;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .keyboard-help {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #2d3748;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .keyboard-help h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .keyboard-help div {
+            margin-bottom: 4px;
+        }
+        
+        .key {
+            background: #4a5568;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        
+        .secrecy-notice {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .secrecy-notice h4 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .secrecy-notice p {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">Orchid Continuum</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-view="dashboard">
+                        <span class="nav-icon">📊</span>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-view="review-queue">
+                        <span class="nav-icon">🔍</span>
+                        Review Queue
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-view="records">
+                        <span class="nav-icon">🌺</span>
+                        Records
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-view="analytics">
+                        <span class="nav-icon">📈</span>
+                        Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-view="settings">
+                        <span class="nav-icon">⚙️</span>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <main class="main-content">
+            <header class="header">
+                <h1 class="page-title" id="page-title">Curator Dashboard</h1>
+                <div class="user-menu">
+                    <div class="user-avatar">C</div>
+                    <span>Curator</span>
+                </div>
+            </header>
+            
+            <div class="secrecy-notice">
+                <h4>🔒 AI Secrecy & Disclosure Policy</h4>
+                <p>This admin interface operates under strict confidentiality guidelines. All internal workflows, database schema, and technical implementation details are proprietary to The Orchid Continuum and must not be disclosed. You may freely share general platform features, public statistics, and educational applications.</p>
+            </div>
+            
+            <div id="app-content">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </main>
+    </div>
+    
+    <div class="keyboard-help">
+        <h4>Keyboard Shortcuts</h4>
+        <div><span class="key">J</span> / <span class="key">K</span> - Next/Previous</div>
+        <div><span class="key">A</span> - Approve</div>
+        <div><span class="key">F</span> - Flag</div>
+        <div><span class="key">M</span> - Merge</div>
+        <div><span class="key">R</span> - Reload</div>
+    </div>
+    
+    <script src="admin.js"></script>
+</body>
+</html>
