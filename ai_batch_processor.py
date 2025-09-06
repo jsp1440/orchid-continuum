@@ -47,22 +47,38 @@ class AIBatchProcessor:
         
         # Get orchids that need AI analysis
         with app.app_context():
-            query = OrchidRecord.query.filter(
-                or_(
-                    OrchidRecord.google_drive_id.isnot(None),
-                    OrchidRecord.image_url.isnot(None),
-                    OrchidRecord.image_filename.isnot(None)
-                )
-            )
-            
-            # Filter for orchids that need updated analysis
-            query = query.filter(OrchidRecord.ai_description.is_(None))
-            
-            if limit:
-                query = query.limit(limit)
+            try:
+                # Count total orchids with images first
+                total_with_images = OrchidRecord.query.filter(
+                    or_(
+                        OrchidRecord.google_drive_id.isnot(None),
+                        OrchidRecord.image_url.isnot(None),
+                        OrchidRecord.image_filename.isnot(None)
+                    )
+                ).count()
+                logger.info(f"Found {total_with_images} orchids with images")
                 
-            orchids_to_process = query.all()
-            self.progress['total_orchids'] = len(orchids_to_process)
+                # Get orchids that need AI analysis
+                query = OrchidRecord.query.filter(
+                    or_(
+                        OrchidRecord.google_drive_id.isnot(None),
+                        OrchidRecord.image_url.isnot(None),
+                        OrchidRecord.image_filename.isnot(None)
+                    )
+                ).filter(OrchidRecord.ai_description.is_(None))
+                
+                if limit:
+                    query = query.limit(limit)
+                    
+                orchids_to_process = query.all()
+                self.progress['total_orchids'] = len(orchids_to_process)
+                
+                logger.info(f"Found {len(orchids_to_process)} orchids needing AI analysis")
+                
+            except Exception as e:
+                logger.error(f"Error querying orchids: {e}")
+                orchids_to_process = []
+                self.progress['total_orchids'] = 0
             
         logger.info(f"🤖 Starting AI batch analysis of {self.progress['total_orchids']} orchids")
         
