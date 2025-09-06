@@ -4989,10 +4989,14 @@ def identify_orchid_from_image():
             from orchid_ai import analyze_orchid_image
             ai_result = analyze_orchid_image(temp_path)
             
-            # Track interaction
-            track_widget_interaction('search', 'camera_search', 
-                                   identified_genus=ai_result.get('genus'),
-                                   confidence=ai_result.get('confidence'))
+            # Track interaction (safely ignore database errors)
+            try:
+                track_widget_interaction('search', 'camera_search', 
+                                       identified_genus=ai_result.get('genus'),
+                                       confidence=ai_result.get('confidence'))
+            except Exception as track_error:
+                logger.warning(f"Widget interaction tracking failed: {track_error}")
+                # Continue without tracking
             
             return jsonify({
                 'success': True,
