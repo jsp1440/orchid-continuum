@@ -1086,88 +1086,175 @@ def gallery():
             page=page, per_page=12, error_out=False
         )
         
-        # FORCE USE OUR WORKING API DATA - Skip database issues
-        logger.info("🎯 Using working API data directly instead of database")
+        # USE REAL DATABASE DATA - Show all available orchid images!
+        logger.info("🎯 Loading ALL real orchid images from database")
         
-        # Create API orchids from our verified working data
-        class ApiOrchid:
-            def __init__(self, api_data):
-                self.id = api_data.get('id', 9000)
-                self.display_name = api_data.get('display_name', 'Beautiful Orchid')
-                self.scientific_name = api_data.get('scientific_name', 'Orchidaceae sp.')
-                self.genus = api_data.get('scientific_name', 'Unknown').split()[0] if api_data.get('scientific_name') else 'Unknown'
-                self.google_drive_id = api_data.get('google_drive_id')
-                self.ai_description = api_data.get('ai_description', 'Stunning orchid specimen')
-                self.created_at = datetime.now()
-                self.image_url = api_data.get('image_url')
-                self.photographer = api_data.get('photographer', 'FCOS Collection')
-                self.decimal_latitude = api_data.get('decimal_latitude')
-                self.decimal_longitude = api_data.get('decimal_longitude')
+        try:
+            # Use raw SQL query to avoid model/column mismatch issues
+            from sqlalchemy import text
+            
+            # Debug: Check total count first  
+            result = db.session.execute(text("SELECT COUNT(*) FROM orchid_record"))
+            total_count = result.scalar()
+            logger.info(f"🔍 Total orchids in database: {total_count}")
+            
+            # Debug: Check count with Google Drive IDs
+            result = db.session.execute(text("""
+                SELECT COUNT(*) FROM orchid_record 
+                WHERE google_drive_id IS NOT NULL 
+                AND google_drive_id != '' 
+                AND google_drive_id != 'None'
+            """))
+            google_drive_count = result.scalar()
+            logger.info(f"🔍 Orchids with Google Drive IDs: {google_drive_count}")
+            
+            # Build SQL query based on filters
+            base_query = """
+                SELECT id, display_name, scientific_name, genus, google_drive_id, 
+                       photographer, ai_description, created_at, image_url
+                FROM orchid_record 
+                WHERE google_drive_id IS NOT NULL 
+                AND google_drive_id != '' 
+                AND google_drive_id != 'None'
+            """
+            
+            conditions = []
+            params = {}
+            
+            if genus:
+                conditions.append("genus ILIKE :genus")
+                params['genus'] = f'%{genus}%'
+            if climate:
+                conditions.append("climate_preference = :climate")
+                params['climate'] = climate
+            if growth_habit:
+                conditions.append("growth_habit = :growth_habit")
+                params['growth_habit'] = growth_habit
+                
+            if conditions:
+                base_query += " AND " + " AND ".join(conditions)
+                
+            base_query += " ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+            params['limit'] = 24
+            params['offset'] = (page - 1) * 24
+            
+            # Execute the query
+            result = db.session.execute(text(base_query), params)
+            rows = result.fetchall()
+            
+            # Create orchid objects
+            class SimpleOrchid:
+                def __init__(self, row):
+                    self.id = row[0]
+                    self.display_name = row[1] or 'Unknown Orchid'
+                    self.scientific_name = row[2] or 'Unknown Species'
+                    self.genus = row[3] or 'Unknown'
+                    self.google_drive_id = row[4]
+                    self.photographer = row[5] or 'Unknown'
+                    self.ai_description = row[6] or 'Beautiful orchid specimen'
+                    self.created_at = row[7]
+                    self.image_url = f'/api/drive-photo/{self.google_drive_id}' if self.google_drive_id else None
+                    self.is_featured = False
+                    self.ai_confidence = 0.9
+                    
+            orchid_items = [SimpleOrchid(row) for row in rows]
+            
+            # Create pagination object
+            class SimplePagination:
+                def __init__(self, items, total, page, per_page):
+                    self.items = items
+                    self.total = total
+                    self.page = page
+                    self.per_page = per_page
+                    self.pages = (total + per_page - 1) // per_page
+                    self.has_prev = page > 1
+                    self.has_next = page < self.pages
+                    self.prev_num = page - 1 if self.has_prev else None
+                    self.next_num = page + 1 if self.has_next else None
+            
+            orchids = SimplePagination(orchid_items, google_drive_count, page, 24)
+            
+            logger.info(f"✅ Found {orchids.total} orchid images in database, showing page {page}")
+            
+        except Exception as e:
+            logger.error(f"❌ Database query failed: {e}")
+            db.session.rollback()  # Rollback failed transaction
+            # Fall back to hardcoded working data if database fails
+            from datetime import datetime
+            
+            class FallbackOrchid:
+                def __init__(self, data):
+                    self.id = data['id']
+                    self.display_name = data['display_name']
+                    self.scientific_name = data['scientific_name']
+                    self.genus = data['scientific_name'].split()[0]
+                    self.google_drive_id = data['google_drive_id']
+                    self.image_url = data['image_url']
+                    self.photographer = data['photographer']
+                    self.ai_description = data['ai_description']
+                    self.created_at = datetime.now()
+                    self.decimal_latitude = data.get('decimal_latitude')
+                    self.decimal_longitude = data.get('decimal_longitude')
+                    self.is_featured = False
+                    self.ai_confidence = 0.9
+            
+            fallback_data = [
+                {
+                    "id": 1001,
+                    "scientific_name": "Cattleya trianae",
+                    "display_name": "Cattleya trianae alba",
+                    "photographer": "FCOS Collection",
+                    "ai_description": "Beautiful Christmas orchid in full bloom",
+                    "google_drive_id": "185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
+                    "image_url": "/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
+                    "decimal_latitude": 4.0,
+                    "decimal_longitude": -74.0
+                },
+                {
+                    "id": 1002,
+                    "scientific_name": "Phalaenopsis amabilis",
+                    "display_name": "Phalaenopsis amabilis white",
+                    "photographer": "FCOS Collection",
+                    "ai_description": "Elegant white moon orchid with perfect form",
+                    "google_drive_id": "1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
+                    "image_url": "/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
+                    "decimal_latitude": 1.0,
+                    "decimal_longitude": 104.0
+                }
+            ]
+            
+            fallback_orchids = [FallbackOrchid(data) for data in fallback_data]
+            
+            class FallbackPagination:
+                def __init__(self, items):
+                    self.items = items
+                    self.total = len(items)
+                    self.page = 1
+                    self.pages = 1
+                    self.per_page = 24
+                    self.has_prev = False
+                    self.has_next = False
+                    self.prev_num = None
+                    self.next_num = None
+            
+            orchids = FallbackPagination(fallback_orchids)
+            logger.warning(f"⚠️ Using fallback data: {orchids.total} orchids")
         
-        # Use our verified working data directly (skip API timeout issues)
-        api_orchids_data = [
-            {
-                "id": 1001,
-                "scientific_name": "Cattleya trianae",
-                "display_name": "Cattleya trianae alba",
-                "photographer": "FCOS Collection",
-                "ai_description": "Beautiful Christmas orchid in full bloom",
-                "google_drive_id": "185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
-                "image_url": "/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
-                "decimal_latitude": 4.0,
-                "decimal_longitude": -74.0
-            },
-            {
-                "id": 1002,
-                "scientific_name": "Phalaenopsis amabilis",
-                "display_name": "Phalaenopsis amabilis white",
-                "photographer": "FCOS Collection",
-                "ai_description": "Elegant white moon orchid with perfect form",
-                "google_drive_id": "1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
-                "image_url": "/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
-                "decimal_latitude": 1.0,
-                "decimal_longitude": 104.0
-            },
-            {
-                "id": 1003,
-                "scientific_name": "Trichocentrum longiscott",
-                "display_name": "Trichocentrum 'Longiscott'",
-                "photographer": "FCOS Collection",
-                "ai_description": "Stunning trichocentrum hybrid with spotted patterns",
-                "google_drive_id": "1bUDCfCrZCLeRWgDrDQfLbDbOmXTDQHjH",
-                "image_url": "/api/drive-photo/1bUDCfCrZCLeRWgDrDQfLbDbOmXTDQHjH",
-                "decimal_latitude": 10.0,
-                "decimal_longitude": -84.0
-            },
-            {
-                "id": 1004,
-                "scientific_name": "Angraecum didieri",
-                "display_name": "Angraecum didieri",
-                "photographer": "FCOS Collection",
-                "ai_description": "White star-shaped angraecum with distinctive spur",
-                "google_drive_id": "1gd9BbXslt1IzAgMpeMWYQUfcJHWtHzhS",
-                "image_url": "/api/drive-photo/1gd9BbXslt1IzAgMpeMWYQUfcJHWtHzhS",
-                "decimal_latitude": -20.0,
-                "decimal_longitude": 47.0
-            }
-        ]
+        # Get unique genera, climates, and growth habits for filters
+        genera = db.session.query(OrchidRecord.genus).distinct().filter(
+            OrchidRecord.genus.isnot(None)
+        ).order_by(OrchidRecord.genus).all()
+        genera = [g[0] for g in genera if g[0]]
         
-        api_orchids = [ApiOrchid(data) for data in api_orchids_data]
+        climates = db.session.query(OrchidRecord.climate_preference).distinct().filter(
+            OrchidRecord.climate_preference.isnot(None)
+        ).order_by(OrchidRecord.climate_preference).all()
+        climates = [c[0] for c in climates if c[0]]
         
-        # Create mock pagination
-        class ApiPagination:
-            def __init__(self, items):
-                self.items = items
-                self.total = len(items)
-                self.page = 1
-                self.pages = 1
-                self.per_page = 12
-                self.has_prev = False
-                self.has_next = False
-                self.prev_num = None
-                self.next_num = None
-        
-        orchids = ApiPagination(api_orchids)
+        growth_habits = db.session.query(OrchidRecord.growth_habit).distinct().filter(
+            OrchidRecord.growth_habit.isnot(None)
+        ).order_by(OrchidRecord.growth_habit).all()
+        growth_habits = [h[0] for h in growth_habits if h[0]]
         
         return render_template('gallery.html', 
             orchids=orchids,
@@ -1179,10 +1266,9 @@ def gallery():
             genus_filter=genus,
             climate_filter=climate,
             growth_habit_filter=growth_habit,
-            api_mode=True,
-            genera=[],
-            climates=[],
-            growth_habits=[],
+            genera=genera,
+            climates=climates,
+            growth_habits=growth_habits,
             current_genus=genus,
             current_climate=climate,
             current_growth_habit=growth_habit
