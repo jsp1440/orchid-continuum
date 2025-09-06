@@ -363,6 +363,70 @@ def test_svo_intergeneric_scraper():
             'message': 'Intergeneric scraper test failed'
         })
 
+@app.route('/intergeneric-crosses')
+def intergeneric_crosses():
+    """Intergeneric orchid crosses exploration page"""
+    return render_template('intergeneric_crosses.html')
+
+@app.route('/api/intergeneric-crosses')
+def api_intergeneric_crosses():
+    """API endpoint for intergeneric crosses data"""
+    try:
+        # Query intergeneric crosses from database
+        intergeneric_records = OrchidRecord.query.filter(
+            OrchidRecord.genus == 'Intergeneric',
+            OrchidRecord.species == 'hybrid',
+            OrchidRecord.data_source == 'Sunset Valley Orchids'
+        ).all()
+        
+        crosses = []
+        for record in intergeneric_records:
+            # Extract genera from cultural notes
+            genera_involved = []
+            if record.cultural_notes:
+                genera_match = re.search(r'Genera: ([^|]+)', record.cultural_notes)
+                if genera_match:
+                    genera_involved = [g.strip() for g in genera_match.group(1).split(',')]
+            
+            # Extract price and availability
+            price = None
+            availability = None
+            if record.cultural_notes:
+                price_match = re.search(r'Price: ([^|]+)', record.cultural_notes)
+                if price_match:
+                    price = price_match.group(1).strip()
+                
+                avail_match = re.search(r'Availability: ([^|]+)', record.cultural_notes)
+                if avail_match:
+                    availability = avail_match.group(1).strip()
+            
+            cross_data = {
+                'id': record.id,
+                'cross_name': record.display_name,
+                'genera_involved': genera_involved,
+                'parentage': record.parentage_formula,
+                'description': record.ai_description,
+                'parent_images': [{'url': record.image_url, 'alt_text': 'Parent image', 'title': record.display_name}] if record.image_url else [],
+                'price': price,
+                'availability': availability,
+                'extracted_at': record.created_at.isoformat() if record.created_at else None
+            }
+            crosses.append(cross_data)
+        
+        return jsonify({
+            'success': True,
+            'crosses': crosses,
+            'total': len(crosses)
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error fetching intergeneric crosses: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'crosses': []
+        })
+
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
 def gary_search():
