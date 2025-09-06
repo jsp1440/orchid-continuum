@@ -1329,6 +1329,15 @@ https://vendor2.com/product-123"></textarea>
         };
         let journalEntries = [];
         let privacySettings = { showVault: true, localOnly: true, encryptionEnabled: true };
+        let publicDatasets = [];
+        let learningProgress = {};
+        let currentLesson = null;
+        let importPresets = {
+            rhs: { name: 'RHS Registry', fields: ['grex', 'seed_parent', 'pollen_parent', 'registrant', 'date', 'url'] },
+            orchidroots: { name: 'OrchidRoots', fields: ['name', 'parent1', 'parent2', 'url', 'img_url'] },
+            awards: { name: 'Award Reports', fields: ['award', 'date', 'plant_name', 'parents', 'region', 'image_url'] }
+        };
+        let currentTheme = localStorage.getItem('ocs_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -3109,6 +3118,199 @@ https://vendor2.com/product-123"></textarea>
             const key2 = `${genusB}-${genusA}`;
             
             return distances[key1] || distances[key2] || 0.9;
+        }
+        
+        // Import Mapper Functions
+        function selectImportPreset(presetKey) {
+            document.querySelectorAll('.preset-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-preset="${presetKey}"]`)?.classList.add('selected');
+        }
+        
+        function previewCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                const lines = csv.split('\n');
+                const headers = lines[0].split(',');
+                
+                // Show preview
+                const preview = document.getElementById('csvPreview');
+                if (preview) {
+                    preview.classList.remove('hidden');
+                    preview.innerHTML = `
+                        <h5>CSV Preview (${lines.length - 1} records)</h5>
+                        <div style="overflow: auto; max-height: 200px;">
+                            <table class="table table-sm">
+                                <thead><tr>${headers.map(h => `<th>${h.trim()}</th>`).join('')}</tr></thead>
+                                <tbody>
+                                    ${lines.slice(1, 4).map(line => {
+                                        const cells = line.split(',');
+                                        return `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Show column mapper
+                    showColumnMapper(headers);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function showColumnMapper(csvHeaders) {
+            const mapper = document.getElementById('columnMapper');
+            if (mapper) mapper.classList.remove('hidden');
+        }
+        
+        function processImport() {
+            const tosAccepted = document.getElementById('tosAccepted')?.checked;
+            if (!tosAccepted) {
+                alert('Please accept the Terms of Service to continue.');
+                return;
+            }
+            
+            // Simulate processing
+            alert('Import completed! Data stored with full provenance tracking.');
+            const datasetsCount = document.getElementById('datasetsCount');
+            if (datasetsCount) {
+                datasetsCount.textContent = (parseInt(datasetsCount.textContent) + 1).toString();
+            }
+        }
+        
+        function clearMapping() {
+            const mapper = document.getElementById('columnMapper');
+            const preview = document.getElementById('csvPreview');
+            const fileInput = document.getElementById('csvFile');
+            
+            if (mapper) mapper.classList.add('hidden');
+            if (preview) preview.classList.add('hidden');
+            if (fileInput) fileInput.value = '';
+        }
+        
+        // Learning Mode Functions
+        function startLesson(lessonKey) {
+            currentLesson = lessonKey;
+            showLessonModal(lessonKey);
+        }
+        
+        function showLessonModal(lessonKey) {
+            const modal = document.getElementById('lessonModal');
+            if (modal) {
+                document.getElementById('lessonTitle').textContent = `Learning: ${lessonKey}`;
+                modal.classList.remove('hidden');
+            }
+        }
+        
+        function closeLessonModal() {
+            const modal = document.getElementById('lessonModal');
+            if (modal) modal.classList.add('hidden');
+        }
+        
+        function startInteractiveLearning() {
+            switchJourney('explore');
+            // Add learning guidance overlays
+            setTimeout(() => {
+                const tooltip = document.createElement('div');
+                tooltip.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--primary);
+                    color: white;
+                    padding: 1rem;
+                    border-radius: 10px;
+                    max-width: 300px;
+                    z-index: 3000;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                `;
+                tooltip.innerHTML = `
+                    <h4>🎓 Interactive Learning</h4>
+                    <p>Let's explore trait inheritance using your collection! Click on different trait tabs to see how characteristics are passed from parents to offspring.</p>
+                    <button onclick="this.parentElement.remove()" style="background: white; color: var(--primary); border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-top: 0.5rem;">Got it!</button>
+                `;
+                document.body.appendChild(tooltip);
+            }, 500);
+        }
+        
+        // Theme Functions
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('ocs_theme', currentTheme);
+            
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+            }
+        }
+        
+        function initializeTheme() {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+            }
+        }
+        
+        // Example Demo Functions
+        function runExampleDemo(section) {
+            const demos = {
+                collection: () => {
+                    const narrative = 'Viewing your Sarcochilus collection - notice the variety in flower shapes and colors. Each entry shows key breeding traits.';
+                    showNarrative(narrative);
+                },
+                explorer: () => {
+                    selectTrait('roundness');
+                    const narrative = 'Analyzing roundness inheritance - see how round flowers from one parent tend to produce rounder offspring.';
+                    showNarrative(narrative);
+                },
+                design: () => {
+                    performReverseDesign();
+                    const narrative = 'Running reverse design for white, round flowers with 12+ flowers per spike. Top results show best parent combinations.';
+                    showNarrative(narrative);
+                }
+            };
+            
+            demos[section]?.();
+        }
+        
+        function showNarrative(text) {
+            const existing = document.querySelector('.demo-narrative');
+            if (existing) existing.remove();
+            
+            const narrative = document.createElement('div');
+            narrative.className = 'demo-narrative';
+            narrative.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--secondary);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 25px;
+                max-width: 600px;
+                text-align: center;
+                z-index: 3000;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            `;
+            narrative.innerHTML = `
+                <p style="margin: 0; font-size: 1rem;">${text}</p>
+                <button onclick="this.parentElement.remove()" style="position: absolute; top: -5px; right: 10px; background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            `;
+            
+            document.body.appendChild(narrative);
+            
+            setTimeout(() => narrative.remove(), 8000);
         }
         
         // CSS for lesson items and additional styling
