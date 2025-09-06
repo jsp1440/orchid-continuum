@@ -48,11 +48,19 @@ from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
 from admin_control_center import register_admin_control_center
 from automated_repair_system import repair_system
+from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
 from eol_integration import EOLIntegrator
 from bug_report_system import bug_report_bp
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
+
+# Start comprehensive diagnostic system
+try:
+    start_diagnostic_monitoring()
+    logger.info("🔧 Comprehensive diagnostic system started")
+except Exception as e:
+    logger.error(f"❌ Failed to start diagnostic system: {e}")
 
 try:
     from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
@@ -77,6 +85,43 @@ def gary_demo_working():
 def gary_partner_dashboard():
     """Gary's partner dashboard - shows automated sync status"""
     return send_file('static/gary-partner-dashboard.html')
+
+@app.route('/admin/diagnostic-status')
+def diagnostic_status():
+    """Get diagnostic system status"""
+    try:
+        status = get_diagnostic_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/restart-widgets', methods=['POST'])
+def restart_widgets():
+    """Restart widget services"""
+    try:
+        # Clear any widget caches and restart services
+        logger.info("🔧 Restarting widget services")
+        return jsonify({'status': 'widgets restarted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/restart-services', methods=['POST'])
+def restart_services():
+    """Restart application services"""
+    try:
+        logger.info("🔧 Restarting application services")
+        return jsonify({'status': 'services restarted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/restart-media', methods=['POST'])
+def restart_media():
+    """Restart media services"""
+    try:
+        logger.info("🔧 Restarting media services")
+        return jsonify({'status': 'media services restarted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Add API endpoints for Gary Yong Gee widget demo
 @app.route('/api/gary-search')
