@@ -458,6 +458,281 @@ ORCHID_CARE_DATA = {
             'Temperature sensitivity: Baker notes emphasize cool conditions, AOS allows slightly warmer',
             'Often confused with Miltoniopsis which needs even cooler conditions'
         ]
+    },
+    'Brassia': {
+        'common_name': 'Spider Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '2000-3000 foot-candles, eastern exposure ideal',
+            'value': 75
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Intermediate to warm temperatures',
+            'value': 75
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Moderate humidity with good air circulation',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'Allow to dry between waterings',
+            'details': 'Water when pseudobulbs start to wrinkle slightly',
+            'value': 60
+        },
+        'air_flow': {
+            'requirement': 'Good air movement',
+            'details': 'Prevents fungal issues, especially around pseudobulbs',
+            'value': 75
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength, reduce in winter',
+            'value': 50
+        },
+        'potting_media': 'Medium bark mix with good drainage',
+        'repotting': 'Every 2-3 years when media breaks down',
+        'blooming_season': 'Fall to winter typically',
+        'rest_period': 'Reduce watering after pseudobulbs mature',
+        'special_notes': [
+            'Long, spider-like flower petals',
+            'Pseudobulbs should not be completely dry',
+            'Flowers can last 6-8 weeks',
+            'Often fragrant in evening'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Oncidium Alliance Society Guidelines'
+        ],
+        'source_notes': [
+            'Watering: Baker emphasizes seasonal variation, AOS suggests consistent moderate moisture',
+            'Related to Oncidium alliance - similar care requirements'
+        ]
+    },
+    'Odontoglossum': {
+        'common_name': 'Mountain Orchid',
+        'care_level': 'Advanced',
+        'light': {
+            'requirement': 'Bright, filtered light',
+            'details': '1500-2500 foot-candles, no direct sun',
+            'value': 60
+        },
+        'temperature': {
+            'day': '60-70°F (15-21°C)',
+            'night': '50-60°F (10-15°C)',
+            'details': 'Cool temperatures essential year-round',
+            'value': 50
+        },
+        'humidity': {
+            'range': '70-80%',
+            'details': 'High humidity mimicking cloud forest conditions',
+            'value': 80
+        },
+        'watering': {
+            'frequency': 'Keep consistently moist',
+            'details': 'Never allow to dry completely, use pure water',
+            'value': 85
+        },
+        'air_flow': {
+            'requirement': 'Constant gentle air movement',
+            'details': 'Critical in high humidity environment',
+            'value': 90
+        },
+        'fertilizer': {
+            'schedule': 'Weekly at very low concentration',
+            'details': '20-20-20 at 1/8 strength year-round',
+            'value': 30
+        },
+        'potting_media': 'Fine bark mix with sphagnum moss',
+        'repotting': 'Annually, very sensitive to old media',
+        'blooming_season': 'Fall to early spring',
+        'rest_period': 'No distinct rest period',
+        'special_notes': [
+            'Very sensitive to temperature fluctuations',
+            'Requires cool greenhouse conditions',
+            'Pure water essential - no hard water',
+            'Often confused with Oncidium hybrids',
+            'Many species now reclassified'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'Odontoglossum Society International',
+            'Cool Growing Orchid Specialists'
+        ],
+        'source_notes': [
+            'Temperature critical: Baker notes 65°F maximum day temperature',
+            'Water quality: Distilled or RO water strongly recommended'
+        ]
+    },
+    'Oncidium': {
+        'common_name': 'Dancing Lady Orchid',
+        'care_level': 'Beginner to Intermediate',
+        'light': {
+            'requirement': 'Bright light',
+            'details': '2500-3500 foot-candles, some direct morning sun',
+            'value': 80
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Intermediate to warm temperatures',
+            'value': 75
+        },
+        'humidity': {
+            'range': '40-70%',
+            'details': 'Adaptable to various humidity levels',
+            'value': 55
+        },
+        'watering': {
+            'frequency': 'Allow to dry between waterings',
+            'details': 'Water when media is nearly dry',
+            'value': 55
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents bacterial soft rot',
+            'value': 70
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength, balanced nutrition',
+            'value': 60
+        },
+        'potting_media': 'Medium bark mix, well-draining',
+        'repotting': 'Every 2 years or when overcrowded',
+        'blooming_season': 'Fall through spring, species dependent',
+        'rest_period': 'Brief dry period after flowering',
+        'special_notes': [
+            'Large sprays of small flowers',
+            'Very diverse genus with varying requirements',
+            'Some species prefer mounted culture',
+            'Generally forgiving and adaptable',
+            'Excellent beginner orchids'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Oncidium Alliance Society'
+        ],
+        'source_notes': [
+            'Light requirements: Most Oncidiums prefer higher light than other orchids',
+            'Species variation: Requirements vary significantly between thick vs thin-leaved types'
+        ]
+    },
+    'Masdevallia': {
+        'common_name': 'Kite Orchid',
+        'care_level': 'Advanced',
+        'light': {
+            'requirement': 'Low to medium light',
+            'details': '800-1500 foot-candles, bright shade only',
+            'value': 40
+        },
+        'temperature': {
+            'day': '55-75°F (13-24°C)',
+            'night': '45-65°F (7-18°C)',
+            'details': 'Cool to intermediate, avoid heat',
+            'value': 55
+        },
+        'humidity': {
+            'range': '70-90%',
+            'details': 'Very high humidity essential',
+            'value': 85
+        },
+        'watering': {
+            'frequency': 'Keep constantly moist',
+            'details': 'Never allow to dry, use pure water',
+            'value': 90
+        },
+        'air_flow': {
+            'requirement': 'Gentle, constant air movement',
+            'details': 'Prevent stagnant air in high humidity',
+            'value': 85
+        },
+        'fertilizer': {
+            'schedule': 'Weekly at very low concentration',
+            'details': '20-20-20 at 1/8 strength, minimal feeding',
+            'value': 25
+        },
+        'potting_media': 'Fine moss or moss/bark mix',
+        'repotting': 'Annually, very sensitive to old media',
+        'blooming_season': 'Variable, often year-round',
+        'rest_period': 'No distinct rest period',
+        'special_notes': [
+            'No pseudobulbs - keep roots constantly moist',
+            'Very sensitive to temperature spikes',
+            'Requires terrarium-like conditions',
+            'Many species are miniatures',
+            'Triangular sepals form "kite" shape'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'Masdevallia Society International',
+            'Pleurothallid Alliance Society'
+        ],
+        'source_notes': [
+            'Critical: Never allow to dry out - no water storage organs',
+            'Temperature: Many species prefer night temperatures below 60°F'
+        ]
+    },
+    'Bulbophyllum': {
+        'common_name': 'Bulbophyllum',
+        'care_level': 'Intermediate to Advanced',
+        'light': {
+            'requirement': 'Medium to bright light',
+            'details': '1500-2500 foot-candles, species variable',
+            'value': 65
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '60-75°F (15-24°C)',
+            'details': 'Warm to hot, species dependent',
+            'value': 80
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity with excellent drainage',
+            'value': 75
+        },
+        'watering': {
+            'frequency': 'Keep evenly moist',
+            'details': 'Never completely dry, good drainage essential',
+            'value': 75
+        },
+        'air_flow': {
+            'requirement': 'Excellent air movement',
+            'details': 'Critical - prevents rot in high humidity',
+            'value': 90
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength, reduce in winter',
+            'value': 55
+        },
+        'potting_media': 'Mounted or very chunky, fast-draining mix',
+        'repotting': 'Rarely - prefer mounted or basket culture',
+        'blooming_season': 'Variable by species, often sequential',
+        'rest_period': 'Species dependent, some need dry rest',
+        'special_notes': [
+            'Largest orchid genus (2000+ species)',
+            'Most prefer mounted culture',
+            'Many have unusual pollination strategies',
+            'Flowers often small but numerous',
+            'Some species have strong odors',
+            'Extremely diverse care requirements'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'Bulbophyllum Society International',
+            'Species Orchid Society Guidelines'
+        ],
+        'source_notes': [
+            'Mounting preferred: Most species dislike pot culture',
+            'Species variation: Requirements vary dramatically - research specific species'
+        ]
     }
 }
 
