@@ -33,8 +33,8 @@ class OrchidScheduler:
         logger.info("Starting orchid record scheduler - updates every 90 seconds")
         self.is_running = True
         
-        # Schedule tasks
-        schedule.every(90).seconds.do(self.update_orchid_records)
+        # Schedule tasks - FASTER for Gary production scraping
+        schedule.every(30).seconds.do(self.update_orchid_records)  # 3x faster updates
         schedule.every().hour.do(self.update_orchid_metadata)
         schedule.every(6).hours.do(self.run_maintenance_tasks)
         schedule.every().day.at("03:00").do(self.full_database_refresh)
@@ -79,15 +79,15 @@ class OrchidScheduler:
     def run_scrapers(self):
         """Run orchid scrapers to get new data"""
         try:
-            # Run Gary Yong Gee scraper
-            logger.info("Running Gary Yong Gee scraper...")
-            response = requests.get('http://localhost:5000/test_gary_scraper', timeout=300)
+            # Run Gary Yong Gee scraper - PRODUCTION MODE
+            logger.info("Running Gary Yong Gee PRODUCTION scraper...")
+            response = requests.get('http://localhost:5000/scrape?source=gary', timeout=600)
             if response.status_code == 200:
-                logger.info("Gary scraper completed successfully")
+                logger.info("Gary PRODUCTION scraper completed successfully")
             
-            # Run international scrapers with small batch
-            logger.info("Running international scrapers...")
-            response = requests.get('http://localhost:5000/test_international_scrapers', timeout=300)
+            # Run international scrapers - PRODUCTION MODE
+            logger.info("Running international PRODUCTION scrapers...")
+            response = requests.get('http://localhost:5000/run-international-collection', timeout=600)
             if response.status_code == 200:
                 logger.info("International scrapers completed")
                 
