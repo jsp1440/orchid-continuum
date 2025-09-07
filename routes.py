@@ -1198,6 +1198,10 @@ def api_analyze_phenotype():
 def index():
     """Homepage with enhanced orchid of the day and advanced features"""
     try:
+        # AUTOMATIC FEATURED ORCHID PROTECTION - PREVENTS BAD ORCHIDS FROM SHOWING
+        from data_integrity_safeguards import auto_prevent_bad_featured_selection
+        auto_prevent_bad_featured_selection()
+        
         # Get enhanced orchid of the day
         from enhanced_orchid_of_day import ValidatedOrchidOfDay
         enhanced_system = ValidatedOrchidOfDay()

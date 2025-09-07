@@ -160,3 +160,102 @@ def validate_before_save(mapper, connection, target):
         # For now, we'll log and auto-fix
         if not validate_orchid_record_integrity(target):
             logger.error(f"CRITICAL: Unable to auto-fix record {target.display_name}")
+
+def validate_featured_orchids():
+    """
+    Validate that featured orchids have proper genus and species data
+    """
+    try:
+        from sqlalchemy import or_
+        
+        # Find featured orchids without proper taxonomy
+        featured_problems = OrchidRecord.query.filter(
+            OrchidRecord.is_featured == True,
+            or_(
+                OrchidRecord.genus.is_(None),
+                OrchidRecord.genus == '',
+                OrchidRecord.species.is_(None),
+                OrchidRecord.species == ''
+            )
+        ).all()
+        
+        if featured_problems:
+            logger.warning(f"🚨 Found {len(featured_problems)} featured orchids with missing genus/species data")
+            for orchid in featured_problems:
+                logger.warning(f"   - Featured orchid {orchid.id}: {orchid.display_name} missing genus={orchid.genus}, species={orchid.species}")
+                # AUTOMATICALLY REMOVE FROM FEATURED STATUS
+                orchid.is_featured = False
+                orchid.validation_status = 'auto_unfeatured'
+                logger.info(f"🔧 Auto-removed orchid {orchid.id} from featured status due to missing taxonomy")
+            
+            db.session.commit()
+            return False
+        
+        logger.info("✅ All featured orchids have proper genus/species data")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error validating featured orchids: {e}")
+        return False
+
+
+def auto_prevent_bad_featured_selection():
+    """
+    Automatically prevent bad orchids from being featured
+    RUNS EVERY TIME THE HOMEPAGE LOADS
+    """
+    try:
+        from sqlalchemy import or_
+        
+        # Find and remove any featured orchids with validation problems
+        bad_featured = OrchidRecord.query.filter(
+            OrchidRecord.is_featured == True,
+            or_(
+                OrchidRecord.validation_status.in_(['incorrect_id', 'wrong_genus', 'needs_identification']),
+                OrchidRecord.genus.is_(None),
+                OrchidRecord.genus == ''
+            )
+        ).all()
+        
+        removed_count = 0
+        for orchid in bad_featured:
+            orchid.is_featured = False
+            orchid.cultural_notes = f"Auto-removed from featured status: {orchid.validation_status or 'missing genus'}"
+            removed_count += 1
+            logger.info(f"🔧 Auto-removed bad featured orchid: {orchid.display_name} (ID: {orchid.id})")
+        
+        if removed_count > 0:
+            db.session.commit()
+            logger.info(f"✅ Auto-removed {removed_count} problematic orchids from featured status")
+        
+        # Ensure we have enough good featured orchids
+        good_featured_count = OrchidRecord.query.filter(
+            OrchidRecord.is_featured == True,
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.genus.isnot(None),
+            OrchidRecord.genus != ''
+        ).count()
+        
+        if good_featured_count < 5:
+            # Add more good orchids to featured
+            candidates = OrchidRecord.query.filter(
+                OrchidRecord.is_featured == False,
+                OrchidRecord.validation_status == 'validated',
+                OrchidRecord.google_drive_id.isnot(None),
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.genus != ''
+            ).limit(10 - good_featured_count).all()
+            
+            for candidate in candidates:
+                candidate.is_featured = True
+                logger.info(f"✅ Auto-added good orchid to featured: {candidate.display_name} (ID: {candidate.id})")
+            
+            if candidates:
+                db.session.commit()
+                logger.info(f"✅ Auto-added {len(candidates)} good orchids to featured status")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Error in auto-prevention system: {e}")
+        return False
