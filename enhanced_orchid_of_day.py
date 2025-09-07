@@ -211,7 +211,7 @@ class ValidatedOrchidOfDay:
             # Growth habit-based haikus - TERRESTRIAL orchids
             {
                 'condition': lambda o: (o.growth_habit and 'terrestrial' in o.growth_habit.lower()) or 
-                                     (o.genus and o.genus.lower() in ['cypripedium', 'orchis', 'spiranthes', 'platanthera']),
+                                     (o.genus and o.genus.lower() in ['cypripedium', 'orchis', 'spiranthes', 'platanthera', 'cymbidium']),
                 'haiku': "Deep in forest floor\nEarth's treasures bloom in shadow\nGrounded beauty speaks"
             },
             {
