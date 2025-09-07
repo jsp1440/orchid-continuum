@@ -175,8 +175,8 @@ def orchid_explorer_widget():
       <h2>🔍 Explore Orchid Ecosystem Relationships</h2>
       <div style="display: flex; align-items: center; flex-wrap: wrap;">
         <label style="display: block; margin-right: 16px;">
-          <strong>Enter GBIF Taxon Key or Species Name:</strong><br>
-          <input id="taxonKey" class="search-input" placeholder="e.g., 2877955 or Orchis mascula" />
+          <strong>Enter Orchid Genus or Species Name:</strong><br>
+          <input id="taxonKey" class="search-input" placeholder="e.g., Cattleya, Orchis mascula, Dendrobium" />
         </label>
         <button id="load" class="load-btn">🔍 Explore Species</button>
       </div>
@@ -186,9 +186,10 @@ def orchid_explorer_widget():
       </div>
       <div style="margin-top: 12px; font-size: 14px; color: #6c757d;">
         💡 <strong>Try these examples:</strong> 
-        <a href="#" onclick="loadExample('1101138636')">Monadenia (Disa)</a> • 
-        <a href="#" onclick="loadExample('3779844141')">Oberonia titania</a> • 
-        <a href="#" onclick="loadExample('3779174991')">Diuris aurea</a>
+        <a href="#" onclick="searchByName('Cattleya')">Cattleya</a> • 
+        <a href="#" onclick="searchByName('Orchis mascula')">Orchis mascula</a> • 
+        <a href="#" onclick="searchByName('Dendrobium')">Dendrobium</a> •
+        <a href="#" onclick="searchByName('Phalaenopsis')">Phalaenopsis</a>
       </div>
     </div>
 
@@ -486,25 +487,94 @@ def orchid_explorer_widget():
       }
     }
 
+    // Search by species/genus name
+    async function searchByName(speciesName) {
+      try {
+        document.getElementById('taxonKey').value = speciesName;
+        
+        // First try to search our database for matching species
+        const response = await fetch(`/api/continuum/search?q=${encodeURIComponent(speciesName)}`);
+        const data = await response.json();
+        
+        if (data.results && data.results.length > 0) {
+          // Use the first match
+          const match = data.results[0];
+          if (match.taxonKey) {
+            loadSpecies(match.taxonKey);
+            return;
+          }
+        }
+        
+        // If no matches in our database, try using the name directly as a GBIF search
+        // This is a fallback that may work for some common species
+        loadSpeciesByName(speciesName);
+        
+      } catch (error) {
+        console.error('Search error:', error);
+        alert(`Search failed: ${error.message}`);
+      }
+    }
+    
+    // Enhanced search that handles both taxon keys and species names
+    async function searchSpecies() {
+      const input = document.getElementById('taxonKey').value.trim();
+      if (!input) {
+        alert('Please enter an orchid genus or species name');
+        return;
+      }
+      
+      // Check if input looks like a number (GBIF taxon key)
+      if (/^\d+$/.test(input)) {
+        loadSpecies(input);
+      } else {
+        // Treat as species name
+        searchByName(input);
+      }
+    }
+    
+    // Fallback function for direct name searches  
+    async function loadSpeciesByName(speciesName) {
+      try {
+        // Show loading state
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('speciesInfo').style.display = 'block';
+        document.getElementById('sciName').textContent = `Searching for "${speciesName}"...`;
+        document.getElementById('rankInfo').textContent = 'Please wait...';
+        
+        // For now, show a helpful message about the limitation
+        setTimeout(() => {
+          document.getElementById('sciName').textContent = speciesName;
+          document.getElementById('rankInfo').textContent = 'Species lookup by name';
+          
+          // Show limited content explaining the limitation
+          document.getElementById('mainContent').style.display = 'grid';
+          document.getElementById('pollinators').innerHTML = 
+            '<div class="no-data">🔍 Direct name search requires GBIF taxon keys for ecosystem data. Try browsing our <a href="/gallery">Gallery</a> for detailed orchid information!</div>';
+          document.getElementById('myco').innerHTML = 
+            '<div class="no-data">🔬 Mycorrhizal data requires specific taxon identifiers.</div>';
+          document.getElementById('mimicry').innerHTML = 
+            '<div class="no-data">🎭 For detailed ecosystem interactions, please use the main <a href="/search">Search</a> tool.</div>';
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Name search error:', error);
+        alert(`Species search failed: ${error.message}`);
+      }
+    }
+
     function loadExample(taxonKey) {
       document.getElementById('taxonKey').value = taxonKey;
       loadSpecies(taxonKey);
     }
 
     document.getElementById('load').addEventListener('click', () => {
-      const k = document.getElementById('taxonKey').value.trim();
-      if (k) {
-        loadSpecies(k);
-      } else {
-        alert('Please enter a taxon key or species name');
-      }
+      searchSpecies();
     });
 
     // Allow Enter key to trigger search
     document.getElementById('taxonKey').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        const k = e.target.value.trim();
-        if (k) loadSpecies(k);
+        searchSpecies();
       }
     });
 
