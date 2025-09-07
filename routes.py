@@ -142,6 +142,34 @@ def gary_upload_page():
     """Simple photo upload page specifically for Gary Yong Gee"""
     return render_template('gary_simple_upload.html')
 
+@app.route('/gary/mou')
+def gary_mou_page():
+    """Memorandum of Understanding for Gary Yong Gee partnership"""
+    return render_template('gary_mou.html')
+
+@app.route('/api/mou-signature', methods=['POST'])
+def mou_signature():
+    """Record MOU signature"""
+    try:
+        data = request.get_json()
+        logger.info(f"📝 MOU Signature: {data['signer']} signed at {data['timestamp']}")
+        return jsonify({'status': 'success', 'message': 'Signature recorded'})
+    except Exception as e:
+        logger.error(f"❌ MOU signature error: {e}")
+        return jsonify({'error': 'Signature recording failed'}), 500
+
+@app.route('/api/mou-complete', methods=['POST'])
+def mou_complete():
+    """Handle MOU completion"""
+    try:
+        data = request.get_json()
+        logger.info(f"🎉 MOU COMPLETED: {data['document']} at {data['completion_time']}")
+        # Here you could send emails, save to database, etc.
+        return jsonify({'status': 'success', 'message': 'MOU completion recorded'})
+    except Exception as e:
+        logger.error(f"❌ MOU completion error: {e}")
+        return jsonify({'error': 'Completion recording failed'}), 500
+
 @app.route('/api/gary-upload', methods=['POST'])
 def gary_upload_api():
     """API endpoint for Gary's photo uploads"""
