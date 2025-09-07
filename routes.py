@@ -163,7 +163,7 @@ def orchid_coordinates_all():
                     'name': orchid.display_name or orchid.scientific_name or f"Orchid {orchid.id}",
                     'genus': orchid.genus or (orchid.scientific_name.split(' ')[0] if orchid.scientific_name else 'Unknown'),
                     'species': orchid.species,
-                    'location': orchid.locality or orchid.location_notes or 'Unknown location',
+                    'location': orchid.locality or 'Unknown location',
                     'image': orchid.image_url if orchid.image_url else None,
                     'source': orchid.source or 'Database'
                 })
@@ -5974,6 +5974,10 @@ def proxy_image():
     image_url = request.args.get('url')
     if not image_url:
         return abort(400, "Missing URL parameter")
+    
+    # Skip proxy for internal API calls - redirect to direct endpoint
+    if image_url.startswith('/api/drive-photo/'):
+        return redirect(image_url)
     
     # Security: Only allow known orchid image domains
     allowed_domains = [
