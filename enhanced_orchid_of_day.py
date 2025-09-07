@@ -70,19 +70,21 @@ class ValidatedOrchidOfDay:
         try:
             from orchid_name_utils import orchid_name_utils
             
-            # OVERRIDE: Force Gary's Cattleya (ID: 34) as featured orchid to match utils.py
-            gary_orchid = OrchidRecord.query.filter_by(id=34).first()
-            if gary_orchid:
-                logger.info(f"Enhanced system selected Gary's orchid: {gary_orchid.display_name} (ID: {gary_orchid.id})")
-                return gary_orchid
+            # USER REQUIREMENT: Only select genus and species orchids, never hybrids
                 
             # CRITICAL: Use SAME date-based seeding as utils.py for consistency (prevents mismatch!)
             today = date.today()
             seed = int(today.strftime("%Y%m%d"))
             random.seed(seed)
             
-            # CRITICAL: Use SAME criteria as utils.py to prevent mismatch!
+            # CRITICAL: GENUS + SPECIES ONLY - NO HYBRIDS (same as utils.py)
             rich_orchids = OrchidRecord.query.filter(
+                # CRITICAL: Exclude all hybrids
+                OrchidRecord.is_hybrid != True,
+                ~OrchidRecord.display_name.ilike('%hybrid%'),
+                ~OrchidRecord.display_name.ilike('%x %'),  # Exclude intergeneric crosses
+                ~OrchidRecord.scientific_name.ilike('%x %'),
+                OrchidRecord.display_name.notlike('%"%'), # Exclude cultivar names with quotes
                 # PRIORITY: Reliable images (Google Drive OR working external URLs) - SAME as utils.py
                 or_(
                     OrchidRecord.google_drive_id.isnot(None),
@@ -685,6 +687,10 @@ class ValidatedOrchidOfDay:
             return ""
             
         habitat_lower = habitat.lower()
+        
+        # Handle hybrids - don't use habitat for geography
+        if 'hybrid' in habitat_lower or 'garden bred' in habitat_lower:
+            return ""
         
         if 'brazil' in habitat_lower:
             return "a stunning native of Brazil's diverse ecosystems, where it thrives in the complex relationships between forest and sky."
