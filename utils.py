@@ -31,7 +31,7 @@ def get_orchid_of_the_day():
         seed = int(today.strftime("%Y%m%d"))
         random.seed(seed)
         
-        # Get orchids with STRICT quality criteria - GENUS + SPECIES ONLY (NO HYBRIDS)
+        # Get EPIPHYTIC orchids only - GENUS + SPECIES ONLY (NO HYBRIDS)
         orchids = OrchidRecord.query.filter(
             # CRITICAL: Exclude all hybrids
             OrchidRecord.is_hybrid != True,
@@ -39,6 +39,13 @@ def get_orchid_of_the_day():
             ~OrchidRecord.display_name.ilike('%x %'),  # Exclude intergeneric crosses
             ~OrchidRecord.scientific_name.ilike('%x %'),
             OrchidRecord.display_name.notlike('%"%'), # Exclude cultivar names with quotes
+            # PRIORITY: Epiphytic orchids only
+            or_(
+                OrchidRecord.growth_habit == 'epiphytic',
+                OrchidRecord.growth_habit == 'Epiphytic',
+                OrchidRecord.ai_description.ilike('%epiphytic%'),
+                OrchidRecord.ai_description.ilike('%epiphyte%')
+            ),
             # PRIORITY: Reliable images (Google Drive OR working external URLs)
             or_(
                 OrchidRecord.google_drive_id.isnot(None),
