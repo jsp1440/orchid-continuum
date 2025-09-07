@@ -24,7 +24,13 @@ def generate_filename(original_filename):
 def get_orchid_of_the_day():
     """Get the orchid of the day based on date and available orchids with real images - FIXED to prevent mismatches"""
     try:
-        # Use current date as seed for consistent daily selection
+        # OVERRIDE: Force Gary's Cattleya (ID: 34) as orchid of the day
+        gary_orchid = OrchidRecord.query.filter_by(id=34).first()
+        if gary_orchid:
+            logger.info(f"Selected Gary's orchid of the day: {gary_orchid.display_name} (ID: {gary_orchid.id})")
+            return gary_orchid
+            
+        # Fallback to random selection if Gary's orchid not available
         today = date.today()
         seed = int(today.strftime("%Y%m%d"))
         random.seed(seed)
