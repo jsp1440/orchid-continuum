@@ -137,6 +137,99 @@ def gary_partnership_demo():
     """Comprehensive partnership demo and proposal for Gary Yong Gee"""
     return render_template('gary_partnership_demo.html')
 
+@app.route('/gary/upload')
+def gary_upload_page():
+    """Simple photo upload page specifically for Gary Yong Gee"""
+    return render_template('gary_simple_upload.html')
+
+@app.route('/api/gary-upload', methods=['POST'])
+def gary_upload_api():
+    """API endpoint for Gary's photo uploads"""
+    try:
+        files = request.files
+        form_data = request.form
+        
+        logger.info(f"🌺 Gary photo upload: {len(files)} files received")
+        
+        # Save files and metadata
+        upload_data = {
+            'species': form_data.get('species', ''),
+            'location': form_data.get('location', ''),
+            'conditions': form_data.get('conditions', ''),
+            'notes': form_data.get('notes', ''),
+            'files': []
+        }
+        
+        # Process uploaded files
+        for key, file in files.items():
+            if file and file.filename:
+                # Generate unique filename
+                timestamp = int(time.time() * 1000)
+                filename = f"gary_{timestamp}_{secure_filename(file.filename)}"
+                filepath = os.path.join('static/uploads', filename)
+                
+                # Save file
+                file.save(filepath)
+                upload_data['files'].append({
+                    'original_name': file.filename,
+                    'saved_as': filename,
+                    'path': filepath
+                })
+                
+                logger.info(f"✅ Saved Gary photo: {filename}")
+        
+        # Log the upload for admin review
+        logger.info(f"📊 Gary Upload Summary: {json.dumps(upload_data, indent=2)}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Successfully received {len(upload_data["files"])} photos',
+            'files_received': len(upload_data['files'])
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Gary upload error: {e}")
+        return jsonify({'status': 'error', 'message': 'Upload failed'}), 500
+
+@app.route('/api/gary-bulk-upload', methods=['POST'])
+def gary_bulk_upload_api():
+    """Bulk upload API endpoint with authentication for Gary"""
+    try:
+        # Check for API key
+        api_key = request.headers.get('X-API-Key') or request.form.get('api_key')
+        if api_key != 'gary_orchid_continuum_2025':  # Simple API key for Gary
+            return jsonify({'error': 'Invalid API key'}), 401
+        
+        files = request.files
+        metadata = json.loads(request.form.get('metadata', '{}'))
+        
+        logger.info(f"🔑 Gary bulk upload: {len(files)} files with API key")
+        
+        results = []
+        for key, file in files.items():
+            if file and file.filename:
+                timestamp = int(time.time() * 1000)
+                filename = f"gary_bulk_{timestamp}_{secure_filename(file.filename)}"
+                filepath = os.path.join('static/uploads', filename)
+                
+                file.save(filepath)
+                results.append({
+                    'original': file.filename,
+                    'saved': filename,
+                    'status': 'success'
+                })
+        
+        return jsonify({
+            'status': 'success',
+            'uploaded': len(results),
+            'files': results,
+            'api_key_used': True
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Gary bulk upload error: {e}")
+        return jsonify({'error': 'Bulk upload failed'}), 500
+
 # Rotating gallery routes for demo
 @app.route('/gallery/regional-rotating')
 def regional_rotating_gallery():
