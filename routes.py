@@ -62,6 +62,15 @@ from bug_report_system import bug_report_bp
 # Initialize logger first
 logger = logging.getLogger(__name__)
 
+# CRITICAL: Import real-time integrity monitoring
+try:
+    from realtime_integrity_guardian import trigger_user_integrity_check, get_integrity_status
+    logger.info("🛡️ Integrity guardian imported successfully")
+except Exception as e:
+    logger.error(f"🚨 CRITICAL: Failed to import integrity guardian: {e}")
+    trigger_user_integrity_check = lambda x: True  # Fallback function
+    get_integrity_status = lambda: {"status": "unavailable"}
+
 # Start comprehensive diagnostic system
 try:
     start_diagnostic_monitoring()
@@ -83,6 +92,26 @@ try:
     logger.info("✅ Widget integration modules loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠️ Widget integration modules not available: {e}")
+
+# CRITICAL: Trigger integrity check on EVERY user visit
+@app.before_request
+def trigger_integrity_on_user_visit():
+    """MISSION CRITICAL: Run integrity check on every user activity"""
+    try:
+        # Get user IP for tracking
+        user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        
+        # Skip checks for static files and API calls to avoid performance issues
+        if (request.endpoint and 
+            not request.endpoint.startswith('static') and 
+            not request.path.startswith('/api/drive-photo') and
+            not request.path.startswith('/static')):
+            
+            # Trigger integrity validation
+            trigger_user_integrity_check(user_ip)
+            
+    except Exception as e:
+        logger.error(f"🚨 CRITICAL: User-triggered integrity check failed: {e}")
 
 # Add Gary Yong Gee Partnership Demo route
 @app.route('/gary-demo')
