@@ -212,7 +212,58 @@ class ValidatedOrchidOfDay:
         return ' '.join(story_elements)[:250] + ('...' if len(' '.join(story_elements)) > 250 else '')
     
     def _generate_haiku(self, orchid):
-        """Generate nature-centered haiku inspired by the orchid"""
+        """Generate unique orchid-specific haiku with monthly tracking to prevent repeats"""
+        import hashlib
+        from app import db
+        
+        # Check for month-specific content to avoid repeats
+        current_month = date.today().strftime('%Y-%m')
+        
+        # SPECIAL: Gary's Cattleya gets premium custom haikus
+        if orchid.id == 34:  # Gary's Cattleya
+            gary_haikus = [
+                "Cattleya crown bright\nGary's garden treasure blooms\nQueen of orchids sings",
+                "Purple royal robes\nFragrant gift from Gary's care\nHybrid beauty glows", 
+                "Master's gentle hands\nCattleya responds with grace\nLove grows into bloom",
+                "Orchid collector\nGary's eye for perfection\nArt meets nature here"
+            ]
+            
+            # Check which Gary haikus haven't been used this month
+            used_hashes = set()
+            from sqlalchemy import text
+            try:
+                result = db.session.execute(text("""
+                    SELECT content_hash FROM orchid_content_tracking 
+                    WHERE orchid_id = :orch_id AND content_type = 'haiku' 
+                    AND created_month = :month
+                """), {'orch_id': orchid.id, 'month': current_month})
+                used_hashes = {row[0] for row in result}
+            except:
+                pass  # Table might not exist yet
+            
+            # Find unused Gary haiku
+            for haiku in gary_haikus:
+                content_hash = hashlib.md5(haiku.encode()).hexdigest()
+                if content_hash not in used_hashes:
+                    # Save this haiku to prevent reuse this month
+                    try:
+                        db.session.execute(text("""
+                            INSERT INTO orchid_content_tracking 
+                            (orchid_id, content_type, content_hash, content_text, created_month) 
+                            VALUES (:orch_id, 'haiku', :hash, :text, :month)
+                        """), {
+                            'orch_id': orchid.id, 'hash': content_hash, 
+                            'text': haiku, 'month': current_month
+                        })
+                        db.session.commit()
+                    except:
+                        pass  # Don't fail if tracking fails
+                    return haiku
+            
+            # If all Gary haikus used, create date-specific one
+            day_num = date.today().day
+            return f"Day {day_num} brings light\nGary's Cattleya glowing\nPartnership in bloom"
+        
         haiku_templates = [
             # Color-based haikus
             {
@@ -432,7 +483,59 @@ class ValidatedOrchidOfDay:
             }
     
     def _generate_poem(self, orchid):
-        """Generate a short poem inspired by the orchid"""
+        """Generate unique orchid-specific poem with monthly tracking to prevent repeats"""
+        import hashlib
+        from app import db
+        
+        current_month = date.today().strftime('%Y-%m')
+        
+        # SPECIAL: Gary's Cattleya gets custom partnership poems
+        if orchid.id == 34:  # Gary's Cattleya
+            gary_poems = [
+                "In Gary's collection stands a queen,\nCattleya hybrid, regal, serene,\nPurple petals catch the light,\nA partnership blooming bright,\nExpertise and beauty seen.",
+                
+                "From master's garden to our page,\nThis Cattleya takes center stage,\nGary's eye for perfect form,\nKeeps orchid traditions warm,\nWisdom passed from age to age.",
+                
+                "Royal purple, fragrant crown,\nGary's treasure, world-renowned,\nIn the orchid continuum's light,\nPartnership feels just right,\nWhere expertise and beauty are found.",
+                
+                "Queen of orchids, hybrid grace,\nGary's photo shows her face,\nCattleya's regal splendor,\nMakes hearts tender,\nBeauty blooms in this shared space."
+            ]
+            
+            # Check for unused poems this month
+            used_hashes = set()
+            try:
+                from sqlalchemy import text
+                result = db.session.execute(text("""
+                    SELECT content_hash FROM orchid_content_tracking 
+                    WHERE orchid_id = :orch_id AND content_type = 'poem' 
+                    AND created_month = :month
+                """), {'orch_id': orchid.id, 'month': current_month})
+                used_hashes = {row[0] for row in result}
+            except:
+                pass
+            
+            # Find unused Gary poem
+            for poem in gary_poems:
+                content_hash = hashlib.md5(poem.encode()).hexdigest()
+                if content_hash not in used_hashes:
+                    # Save to tracking
+                    try:
+                        db.session.execute(text("""
+                            INSERT INTO orchid_content_tracking 
+                            (orchid_id, content_type, content_hash, content_text, created_month) 
+                            VALUES (:orch_id, 'poem', :hash, :text, :month)
+                        """), {
+                            'orch_id': orchid.id, 'hash': content_hash, 
+                            'text': poem, 'month': current_month
+                        })
+                        db.session.commit()
+                    except:
+                        pass
+                    return poem
+                    
+            # Fallback if all used
+            return f"On day {date.today().day}, Gary's Cattleya shines,\nA partnership of hearts and minds,\nWhere orchid wisdom intertwines."
+        
         poem_templates = [
             # Color-based poems
             {
@@ -475,6 +578,16 @@ class ValidatedOrchidOfDay:
     def _generate_orchid_quote(self, orchid):
         """Generate inspiring quotes related to orchids and nature"""
         # Genus-specific quotes
+        # SPECIAL: Gary's Cattleya gets partnership quotes
+        if orchid.id == 34:  # Gary's Cattleya
+            gary_quotes = [
+                '"Gary Yong Gee\'s Cattleya teaches us that true orchid mastery comes from both knowledge and love." - The Orchid Continuum Partnership',
+                '"In every bloom of Gary\'s collection, we see decades of dedication to the orchid world." - Partnership Wisdom',
+                '"The beauty of this Cattleya reflects not just nature\'s artistry, but a master grower\'s patient care." - Orchid Expertise',
+                '"Gary\'s orchids remind us that the finest flowers grow from the deepest knowledge." - Botanical Partnerships'
+            ]
+            return random.choice(gary_quotes)
+            
         genus_quotes = {
             'Cattleya': '"Like the Cattleya in Victorian conservatories, true beauty requires patience, care, and the right conditions to flourish." - Botanical Wisdom',
             'Phalaenopsis': '"The moth orchid teaches us that grace can emerge from the most unexpected places, floating like dreams made real." - Garden Philosophy',
