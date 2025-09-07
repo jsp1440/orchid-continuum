@@ -199,7 +199,19 @@ class ValidatedOrchidOfDay:
                 'condition': lambda o: 'yellow' in (o.ai_description or '').lower(),
                 'haiku': "Golden morning light\nSunshine captured in petals\nWarmth within the shade"
             },
-            # Habitat-based haikus
+            # Growth habit-based haikus - TERRESTRIAL orchids
+            {
+                'condition': lambda o: (o.growth_habit and 'terrestrial' in o.growth_habit.lower()) or 
+                                     (o.genus and o.genus.lower() in ['cypripedium', 'orchis', 'spiranthes', 'platanthera']),
+                'haiku': "Deep in forest floor\nEarth's treasures bloom in shadow\nGrounded beauty speaks"
+            },
+            {
+                'condition': lambda o: (o.growth_habit and 'terrestrial' in o.growth_habit.lower()) or 
+                                     (o.ai_description and any(word in (o.ai_description or '').lower() 
+                                                            for word in ['ground', 'soil', 'woodland', 'meadow'])),
+                'haiku': "From woodland soil\nGentle blooms rise with the dawn\nNature's quiet gift"
+            },
+            # Epiphytic orchids - trees and canopy
             {
                 'condition': lambda o: any(word in (o.native_habitat or '').lower() 
                                          for word in ['forest', 'tree', 'epiphytic']),
