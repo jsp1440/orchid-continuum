@@ -171,7 +171,7 @@ def orchid_coordinates_all():
                     'species': orchid.species,
                     'location': orchid.locality or 'Unknown location',
                     'image': orchid.image_url if orchid.image_url else None,
-                    'source': orchid.source or 'Database'
+                    'source': getattr(orchid, 'ingestion_source', 'Database') or 'Database'
                 })
         
         logger.info(f"🌍 Loaded {len(coordinates)} orchid coordinates for 3D globe")
