@@ -24,19 +24,21 @@ def generate_filename(original_filename):
 def get_orchid_of_the_day():
     """Get the orchid of the day based on date and available orchids with real images - FIXED to prevent mismatches"""
     try:
-        # OVERRIDE: Force Gary's Cattleya (ID: 34) as orchid of the day
-        gary_orchid = OrchidRecord.query.filter_by(id=34).first()
-        if gary_orchid:
-            logger.info(f"Selected Gary's orchid of the day: {gary_orchid.display_name} (ID: {gary_orchid.id})")
-            return gary_orchid
+        # USER REQUIREMENT: Only select genus and species orchids, never hybrids
             
         # Fallback to random selection if Gary's orchid not available
         today = date.today()
         seed = int(today.strftime("%Y%m%d"))
         random.seed(seed)
         
-        # Get orchids with STRICT quality criteria (same as enhanced system)
+        # Get orchids with STRICT quality criteria - GENUS + SPECIES ONLY (NO HYBRIDS)
         orchids = OrchidRecord.query.filter(
+            # CRITICAL: Exclude all hybrids
+            OrchidRecord.is_hybrid != True,
+            ~OrchidRecord.display_name.ilike('%hybrid%'),
+            ~OrchidRecord.display_name.ilike('%x %'),  # Exclude intergeneric crosses
+            ~OrchidRecord.scientific_name.ilike('%x %'),
+            OrchidRecord.display_name.notlike('%"%'), # Exclude cultivar names with quotes
             # PRIORITY: Reliable images (Google Drive OR working external URLs)
             or_(
                 OrchidRecord.google_drive_id.isnot(None),
