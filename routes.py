@@ -1766,6 +1766,214 @@ def enhanced_gallery_ecosystem():
         flash('Error loading enhanced gallery', 'error')
         return redirect(url_for('gallery'))
 
+# THEMED GALLERIES - Geographic and Characteristic-based collections
+
+@app.route('/gallery/thailand')
+def thailand_gallery():
+    """Thailand Orchids Gallery - Showcasing orchids from Thailand"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+    
+    try:
+        # Query orchids from Thailand
+        query = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.country.ilike('%thailand%'),
+                OrchidRecord.region.ilike('%thailand%'),
+                OrchidRecord.native_habitat.ilike('%thailand%'),
+                OrchidRecord.ai_description.ilike('%thailand%')
+            ),
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        orchids = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        thailand_info = {
+            'name': 'Thailand',
+            'description': 'Thailand is home to over 1,000 orchid species across diverse ecosystems from lowland rainforests to mountain peaks. The country\'s tropical climate and varied elevations create perfect conditions for both epiphytic and terrestrial orchids.',
+            'climate': 'Tropical monsoon climate with distinct wet and dry seasons',
+            'regions': ['Northern Mountains (Doi Phukha)', 'Central Plains', 'Southern Peninsula'],
+            'common_genera': ['Dendrobium', 'Bulbophyllum', 'Vanda', 'Aerides']
+        }
+        
+        return render_template('themed_galleries/thailand_gallery.html', 
+                             orchids=orchids, 
+                             country_info=thailand_info,
+                             title="Orchids of Thailand")
+        
+    except Exception as e:
+        logger.error(f"Error loading Thailand gallery: {e}")
+        flash('Unable to load Thailand orchid gallery', 'error')
+        return redirect(url_for('gallery'))
+
+@app.route('/gallery/madagascar')
+def madagascar_gallery():
+    """Madagascar Orchids Gallery - Island endemic orchids"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+    
+    try:
+        # Query orchids from Madagascar
+        query = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.country.ilike('%madagascar%'),
+                OrchidRecord.region.ilike('%madagascar%'),
+                OrchidRecord.native_habitat.ilike('%madagascar%'),
+                OrchidRecord.ai_description.ilike('%madagascar%')
+            ),
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        orchids = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        madagascar_info = {
+            'name': 'Madagascar',
+            'description': 'Madagascar, the fourth largest island in the world, is home to around 1,000 orchid species with over 85% being endemic. This biological treasure trove evolved in isolation, creating unique species found nowhere else on Earth.',
+            'climate': 'Diverse climates from tropical coastal to highland temperate',
+            'regions': ['Eastern Rainforests', 'Central Highlands', 'Western Dry Forests'],
+            'common_genera': ['Angraecum', 'Bulbophyllum', 'Cynorkis', 'Jumellea']
+        }
+        
+        return render_template('themed_galleries/madagascar_gallery.html', 
+                             orchids=orchids, 
+                             country_info=madagascar_info,
+                             title="Orchids of Madagascar")
+        
+    except Exception as e:
+        logger.error(f"Error loading Madagascar gallery: {e}")
+        flash('Unable to load Madagascar orchid gallery', 'error')
+        return redirect(url_for('gallery'))
+
+@app.route('/gallery/fragrant')
+def fragrant_gallery():
+    """Fragrant Orchids Gallery - Scented orchid species"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+    
+    try:
+        # Query fragrant orchids
+        query = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.is_fragrant == True,
+                OrchidRecord.ai_description.ilike('%fragrant%'),
+                OrchidRecord.ai_description.ilike('%scented%'),
+                OrchidRecord.ai_description.ilike('%perfume%'),
+                OrchidRecord.ai_description.ilike('%aroma%')
+            ),
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        orchids = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        fragrance_info = {
+            'name': 'Fragrant Orchids',
+            'description': 'Many orchids have evolved delightful fragrances to attract specific pollinators. From the vanilla scent of some Cattleyas to the complex perfumes of Angraecums, these orchids engage multiple senses.',
+            'fragrance_types': ['Citrus', 'Vanilla', 'Spicy', 'Floral', 'Musky'],
+            'peak_times': ['Morning', 'Evening', 'Night'],
+            'common_fragrant_genera': ['Cattleya', 'Brassavola', 'Angraecum', 'Rhynchostylis']
+        }
+        
+        return render_template('themed_galleries/fragrant_gallery.html', 
+                             orchids=orchids, 
+                             fragrance_info=fragrance_info,
+                             title="Fragrant Orchids")
+        
+    except Exception as e:
+        logger.error(f"Error loading fragrant orchids gallery: {e}")
+        flash('Unable to load fragrant orchids gallery', 'error')
+        return redirect(url_for('gallery'))
+
+@app.route('/gallery/night-blooming')
+def night_blooming_gallery():
+    """Night-Blooming Orchids Gallery - Nocturnal flowering orchids"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+    
+    try:
+        # Query night-blooming orchids
+        query = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.ai_description.ilike('%night%bloom%'),
+                OrchidRecord.ai_description.ilike('%evening%bloom%'),
+                OrchidRecord.ai_description.ilike('%nocturnal%'),
+                OrchidRecord.ai_description.ilike('%evening%flower%'),
+                OrchidRecord.ai_description.ilike('%night%flower%')
+            ),
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        orchids = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        night_info = {
+            'name': 'Night-Blooming Orchids',
+            'description': 'Some orchids have adapted to bloom at night, often releasing intense fragrances to attract nocturnal pollinators like moths and bats. These mysterious beauties reveal their secrets under moonlight.',
+            'pollinators': ['Moths', 'Bats', 'Night-flying insects'],
+            'characteristics': ['Strong fragrance', 'Light-colored flowers', 'Waxy petals'],
+            'common_night_genera': ['Brassavola', 'Angraecum', 'Aerangis', 'Stanhopea']
+        }
+        
+        return render_template('themed_galleries/night_blooming_gallery.html', 
+                             orchids=orchids, 
+                             night_info=night_info,
+                             title="Night-Blooming Orchids")
+        
+    except Exception as e:
+        logger.error(f"Error loading night-blooming orchids gallery: {e}")
+        flash('Unable to load night-blooming orchids gallery', 'error')
+        return redirect(url_for('gallery'))
+
+@app.route('/gallery/members')
+def members_gallery():
+    """Members Collection Gallery - Orchids from society members"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
+    
+    try:
+        # Query member-submitted orchids (based on data source or photographer)
+        query = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.ingestion_source.ilike('%member%'),
+                OrchidRecord.ai_description.ilike('%member submission%'),
+                OrchidRecord.photographer.ilike('%member%'),
+                OrchidRecord.image_source.ilike('%member%')
+            ),
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        orchids = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        members_info = {
+            'name': 'Members Collection',
+            'description': 'Showcase of beautiful orchids from our society members\' personal collections. These photos represent the passion and dedication of orchid enthusiasts who share their growing successes with our community.',
+            'features': ['Personal collections', 'Growing achievements', 'Cultural success stories'],
+            'photo_types': ['Home greenhouse', 'Garden displays', 'Show plants', 'Rare specimens']
+        }
+        
+        return render_template('themed_galleries/members_gallery.html', 
+                             orchids=orchids, 
+                             members_info=members_info,
+                             title="Members Collection")
+        
+    except Exception as e:
+        logger.error(f"Error loading members gallery: {e}")
+        flash('Unable to load members gallery', 'error')
+        return redirect(url_for('gallery'))
+
 @app.route('/gallery')
 def gallery():
     """Clean working gallery showing ALL 1,607 real orchid images"""
