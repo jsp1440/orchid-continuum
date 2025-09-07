@@ -2851,12 +2851,32 @@ def api_orchid_of_day():
     """API endpoint for orchid of the day widget"""
     orchid = get_orchid_of_the_day()
     if orchid:
+        # Fix image URL - never return GBIF occurrence URLs as images
+        image_url = orchid.image_url
+        
+        # Check if the image_url is a broken GBIF occurrence URL
+        if image_url and ('gbif.org/occurrence/' in image_url or 'occurrence/' in image_url):
+            # Use Google Drive ID if available
+            if orchid.google_drive_id:
+                image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+            else:
+                # Fallback to placeholder
+                image_url = "/static/images/orchid_placeholder.svg"
+                logger.warning(f"Fixed GBIF occurrence URL for orchid {orchid.id}: {orchid.image_url}")
+        
+        # Ensure image_url is valid
+        if not image_url:
+            if orchid.google_drive_id:
+                image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+            else:
+                image_url = "/static/images/orchid_placeholder.svg"
+        
         return jsonify({
             'id': orchid.id,
             'name': orchid.display_name,
             'scientific_name': orchid.scientific_name,
             'description': orchid.ai_description,
-            'image_url': orchid.image_url,
+            'image_url': image_url,
             'cultural_notes': orchid.cultural_notes
         })
     return jsonify({'error': 'No orchid found'}), 404
