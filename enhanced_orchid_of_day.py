@@ -114,6 +114,13 @@ class ValidatedOrchidOfDay:
                 OrchidRecord.species != '',
                 # CRITICAL: Exclude generic/placeholder species names
                 OrchidRecord.species != 'species',
+                # CRITICAL: Exclude varieties/forms/cultivars - PURE genus + species only  
+                ~OrchidRecord.species.ilike('%alba%'),
+                ~OrchidRecord.species.ilike('%var.%'),
+                ~OrchidRecord.species.ilike('%f.%'),
+                ~OrchidRecord.species.ilike('%form%'),
+                ~OrchidRecord.display_name.ilike('%alba%'),
+                ~OrchidRecord.display_name.ilike('%var %'),
                 OrchidRecord.species != 'sp.',
                 OrchidRecord.species != 'sp',
                 OrchidRecord.species != 'spp.',
