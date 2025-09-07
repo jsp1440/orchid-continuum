@@ -202,6 +202,9 @@
         <div class="control-hint"><strong>🔍 Wheel:</strong> Zoom in/out</div>
         <div class="control-hint"><strong>💫 Points:</strong> Click orchid lights for info</div>
         <div class="control-hint"><strong>🌍 Globe:</strong> Auto-rotates in space</div>
+        <div id="astronomicalStatus" class="control-hint" style="color: #00d4aa; font-weight: bold;">
+            <strong>⏰ Time:</strong> Loading...
+        </div>
     </div>
     
     <!-- Enhanced Controls with Genus Filtering -->
@@ -221,6 +224,9 @@
         <button class="space-btn" onclick="toggleSatelliteView()" id="satelliteToggle">
             🛰️ Real Satellite
         </button>
+        <button class="space-btn" onclick="toggleRealTime()" id="realTimeToggle">
+            🕐 Real-Time Mode
+        </button>
         <button class="space-btn" onclick="goHome()" style="background: #ff6b6b; font-weight: bold;">
             ← Back to Home
         </button>
@@ -228,6 +234,9 @@
     
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Realistic Astronomical Calculations Engine -->
+    <script src="/static/astronomical_calculations.js"></script>
     
     <script>
         // Global variables
@@ -238,6 +247,8 @@
         let sun, moon, sunLight;
         let earthMaterial, realtimeMaterial;
         let isRealSatellite = false;
+        let astronomicalEngine; // Real-time celestial mechanics engine
+        let planets = {}; // Planetary objects
         
         // Initialize the 3D Earth globe
         async function init3DEarth() {
@@ -265,10 +276,13 @@
                 // Create starfield background
                 createStarField();
                 
+                // Initialize realistic astronomical engine
+                astronomicalEngine = new AstronomicalEngine();
+                
                 // Create Earth globe
                 await createEarthGlobe();
                 
-                // Add solar system elements
+                // Add solar system elements with realistic positions
                 createSolarSystem();
                 
                 // Add basic mouse controls
@@ -541,9 +555,56 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // Rotate Earth
-            if (isRotating && earth) {
-                earth.rotation.y += 0.005;
+            // Update astronomical calculations with realistic celestial mechanics
+            if (astronomicalEngine) {
+                const astroState = astronomicalEngine.getAstronomicalState();
+                
+                // Apply realistic Earth rotation (24 hours per rotation in real-time)
+                if (isRotating && earth) {
+                    earth.rotation.y = astroState.earthRotation;
+                }
+                
+                // Update sun position and lighting based on real solar calculations
+                if (sun && sunLight) {
+                    sun.position.set(
+                        astroState.sunPosition.x,
+                        astroState.sunPosition.y,
+                        astroState.sunPosition.z
+                    );
+                    sunLight.position.copy(sun.position);
+                }
+                
+                // Update moon position and phase based on real lunar orbit
+                if (moon) {
+                    moon.position.set(
+                        astroState.moonData.position.x,
+                        astroState.moonData.position.y,
+                        astroState.moonData.position.z
+                    );
+                    
+                    // Update moon brightness based on actual lunar phase
+                    if (moon.material) {
+                        const moonBrightness = 0.3 + (astroState.moonData.phase * 0.7);
+                        moon.material.opacity = moonBrightness;
+                    }
+                }
+                
+                // Update planetary positions with real orbital mechanics
+                const planetaryPos = astroState.planetaryPositions;
+                Object.keys(planetaryPos).forEach(planetName => {
+                    if (planets[planetName]) {
+                        const pos = planetaryPos[planetName];
+                        planets[planetName].position.set(pos.x, pos.y, pos.z);
+                    }
+                });
+                
+                // Update astronomical status display
+                updateAstronomicalStatus(astroState);
+            } else {
+                // Fallback: Simple rotation when astronomical engine not ready
+                if (isRotating && earth) {
+                    earth.rotation.y += 0.005;
+                }
             }
             
             // Enhanced twinkling effect - more visible and eye-catching
@@ -568,25 +629,6 @@
             // Slowly rotate stars
             if (stars) {
                 stars.rotation.y += 0.0005;
-            }
-            
-            // Animate solar system elements
-            if (sun && moon) {
-                const time = Date.now() * 0.0001;
-                
-                // Slowly orbit moon around Earth
-                moon.position.x = Math.cos(time * 2) * 3;
-                moon.position.z = Math.sin(time * 2) * 3;
-                moon.position.y = Math.sin(time * 1.5) * 0.5 + 1;
-                
-                // Very slowly move sun position (simulate day/night cycle)
-                sun.position.x = Math.cos(time * 0.1) * 8;
-                sun.position.y = Math.sin(time * 0.1) * 3 + 2;
-                
-                // Update sun light direction
-                if (sunLight) {
-                    sunLight.position.copy(sun.position);
-                }
             }
             
             renderer.render(scene, camera);
@@ -614,6 +656,64 @@
         
         function goHome() {
             window.location.href = '/';
+        }
+        
+        // Toggle between real-time and accelerated celestial mechanics
+        function toggleRealTime() {
+            if (astronomicalEngine) {
+                const isRealTime = astronomicalEngine.toggleRealTime();
+                const button = document.getElementById('realTimeToggle');
+                
+                if (isRealTime) {
+                    button.textContent = '⚡ Accelerated Mode';
+                    button.style.background = '#ff6b6b';
+                    console.log('⏰ Switched to REAL-TIME celestial mechanics');
+                    showRealTimeInfo();
+                } else {
+                    button.textContent = '🕐 Real-Time Mode';
+                    button.style.background = '#00d4aa';
+                    console.log('⚡ Switched to ACCELERATED celestial mechanics (1000x speed)');
+                }
+            }
+        }
+        
+        // Show information about real-time vs accelerated mode
+        function showRealTimeInfo() {
+            const infoHTML = `
+                <div style="background: rgba(0,0,0,0.8); color: white; position: fixed; top: 20px; left: 20px; z-index: 3000; padding: 15px; border-radius: 8px; max-width: 350px; font-size: 12px;">
+                    <h4 style="color: #00d4aa; margin: 0 0 10px 0;">⏰ Real-Time Celestial Mechanics</h4>
+                    <p style="margin: 5px 0;"><strong>Earth Rotation:</strong> 24 hours per complete rotation</p>
+                    <p style="margin: 5px 0;"><strong>Moon Orbit:</strong> 27.3 days per lunar month</p>
+                    <p style="margin: 5px 0;"><strong>Planetary Motion:</strong> Accurate orbital speeds</p>
+                    <p style="margin: 5px 0;"><strong>Sun Position:</strong> Real solar coordinates</p>
+                    <p style="margin: 5px 0;"><strong>Time:</strong> Current astronomical time</p>
+                    <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.8;">Switch to Accelerated Mode (1000x) to see faster motion for demo purposes</p>
+                    <button onclick="closeRealTimeInfo()" style="background: #666; border: none; color: white; padding: 4px 8px; border-radius: 3px; margin-top: 8px; cursor: pointer;">✖️ Close</button>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', infoHTML);
+            
+            // Auto-close after 12 seconds
+            setTimeout(closeRealTimeInfo, 12000);
+        }
+        
+        // Close real-time info panel
+        function closeRealTimeInfo() {
+            const info = document.querySelector('div[style*="position: fixed"][style*="left: 20px"]');
+            if (info) info.remove();
+        }
+        
+        // Update astronomical status display
+        function updateAstronomicalStatus(astroState) {
+            const statusElement = document.getElementById('astronomicalStatus');
+            if (statusElement) {
+                const status = astronomicalEngine.getStatusText();
+                statusElement.innerHTML = `
+                    <strong>⏰ ${status.mode}:</strong> ${status.time}<br>
+                    <strong>🌍 ${status.rotation}</strong> | <strong>🌙 ${status.moonPhase}</strong>
+                `;
+            }
         }
         
         // Add click detection for orchid points
@@ -739,7 +839,7 @@
                 opacity: 0.9
             });
             sun = new THREE.Mesh(sunGeometry, sunMaterial);
-            sun.position.set(8, 2, 3); // Position sun in distance
+            sun.position.set(15, 2, 3); // Initial position - updated by astronomical engine
             scene.add(sun);
             
             // Add sun glow effect
@@ -753,15 +853,39 @@
             sunGlow.position.copy(sun.position);
             scene.add(sunGlow);
             
-            // Create the Moon
+            // Create the Moon with realistic phase material
             const moonGeometry = new THREE.SphereGeometry(0.08, 12, 12);
-            const moonMaterial = new THREE.MeshPhongMaterial({
+            const moonMaterial = new THREE.MeshBasicMaterial({
                 color: 0xcccccc,
-                shininess: 0.1
+                transparent: true,
+                opacity: 0.8
             });
             moon = new THREE.Mesh(moonGeometry, moonMaterial);
-            moon.position.set(-3, 1, 2); // Position moon near Earth
+            moon.position.set(4, 0, 0); // Initial position - updated by astronomical engine
             scene.add(moon);
+            
+            // Create realistic planets with accurate colors and sizes
+            const planetConfigs = {
+                mercury: { color: 0x8c7853, size: 0.04, opacity: 0.9 },
+                venus: { color: 0xffc649, size: 0.06, opacity: 0.9 },
+                mars: { color: 0xcd5c5c, size: 0.05, opacity: 0.9 },
+                jupiter: { color: 0xd8ca9d, size: 0.15, opacity: 0.8 }
+            };
+            
+            Object.entries(planetConfigs).forEach(([name, config]) => {
+                const planetGeometry = new THREE.SphereGeometry(config.size, 12, 12);
+                const planetMaterial = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: config.opacity
+                });
+                
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                planet.position.set(0, 0, 0); // Initial position - updated by astronomical engine
+                scene.add(planet);
+                
+                planets[name] = planet;
+            });
             
             // Enhanced directional light from sun
             const sunDirection = new THREE.Vector3().subVectors(earth.position, sun.position).normalize();
