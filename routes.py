@@ -4775,31 +4775,62 @@ def download_backup(filename):
 
 @app.route('/api/recent-orchids')
 def api_recent_orchids():
-    """API endpoint for recent orchids - WORKING GOOGLE DRIVE PHOTOS ONLY"""
-    # Return only verified working Google Drive images
-    working_orchids = [
-        {
-            "id": 1001,
-            "scientific_name": "Cattleya trianae",
-            "display_name": "Cattleya trianae alba",
-            "google_drive_id": "185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
-            "photographer": "FCOS Collection",
-            "ai_description": "Beautiful Christmas orchid in full bloom",
-            "decimal_latitude": 4.0,
-            "decimal_longitude": -74.0,
-            "image_url": f"/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I"
-        },
-        {
-            "id": 1002,
-            "scientific_name": "Phalaenopsis amabilis",
-            "display_name": "Phalaenopsis amabilis white",
-            "google_drive_id": "1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
-            "photographer": "FCOS Collection",
-            "ai_description": "Elegant white moon orchid with perfect form",
-            "decimal_latitude": 1.0,
-            "decimal_longitude": 104.0,
-            "image_url": f"/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY"
-        },
+    """API endpoint for recent orchids - FIXED TO USE CORRECT DATABASE DATA"""
+    try:
+        # Get orchids with Google Drive photos from the database with CORRECT names
+        recent_orchids = OrchidRecord.query.filter(
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.google_drive_id != ''
+        ).order_by(OrchidRecord.id.asc()).limit(8).all()
+        
+        result = []
+        for orchid in recent_orchids:
+            result.append({
+                "id": orchid.id,
+                "scientific_name": orchid.scientific_name or orchid.display_name,
+                "display_name": orchid.display_name,
+                "genus": orchid.genus,
+                "species": orchid.species,
+                "google_drive_id": orchid.google_drive_id,
+                "photographer": orchid.photographer or "FCOS Collection",
+                "ai_description": orchid.ai_description or f"Beautiful {orchid.genus or 'orchid'} specimen",
+                "decimal_latitude": orchid.decimal_latitude,
+                "decimal_longitude": orchid.decimal_longitude,
+                "image_url": f"/api/drive-photo/{orchid.google_drive_id}"
+            })
+            
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in api_recent_orchids: {e}")
+        # Fallback to database records with correct names
+        fallback_orchids = [
+            {
+                "id": 372,
+                "scientific_name": "Cattleya \"Pink\"",
+                "display_name": "Cattleya \"Pink\"",
+                "genus": "Cattleya",
+                "species": None,
+                "google_drive_id": "185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I",
+                "photographer": "FCOS Collection",
+                "ai_description": "Beautiful pink Cattleya orchid",
+                "decimal_latitude": None,
+                "decimal_longitude": None,
+                "image_url": f"/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I"
+            },
+            {
+                "id": 1391,
+                "scientific_name": "Epidendrum longipetalum",
+                "display_name": "Epidendrum longipetalum",
+                "genus": "Epidendrum",
+                "species": "longipetalum",
+                "google_drive_id": "1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY",
+                "photographer": "FCOS Collection",
+                "ai_description": "Elegant Epidendrum with long petals",
+                "decimal_latitude": None,
+                "decimal_longitude": None,
+                "image_url": f"/api/drive-photo/1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY"
+            },
         {
             "id": 1003,
             "scientific_name": "Trichocentrum longiscott",
