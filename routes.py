@@ -1561,6 +1561,96 @@ def upload():
     
     return render_template('upload.html')
 
+@app.route('/enhanced-gallery-ecosystem')
+def enhanced_gallery_ecosystem():
+    """Enhanced gallery with integrated ecosystem data and distribution maps"""
+    try:
+        # Get filter parameters
+        genus_filter = request.args.get('genus', '')
+        climate_filter = request.args.get('climate', '')
+        growth_habit_filter = request.args.get('growth_habit', '')
+        pollinator_filter = request.args.get('pollinator', '')
+        region_filter = request.args.get('region', '')
+        page = int(request.args.get('page', 1))
+        per_page = 12  # Smaller batches for rich content
+        
+        # Build query
+        query = OrchidRecord.query.filter(
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        # Apply filters
+        if genus_filter:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus_filter}%'))
+        if climate_filter:
+            query = query.filter(OrchidRecord.climate_preference.ilike(f'%{climate_filter}%'))
+        if growth_habit_filter:
+            query = query.filter(OrchidRecord.growth_habit.ilike(f'%{growth_habit_filter}%'))
+        if pollinator_filter:
+            query = query.filter(OrchidRecord.pollinator_types.any(pollinator_filter))
+        if region_filter:
+            query = query.filter(OrchidRecord.region.ilike(f'%{region_filter}%'))
+        
+        # Get paginated results
+        orchids_paginated = query.order_by(OrchidRecord.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        orchids = orchids_paginated.items
+        
+        # Get filter options
+        all_orchids = OrchidRecord.query.filter(OrchidRecord.validation_status != 'rejected').all()
+        genera = sorted(list(set([o.genus for o in all_orchids if o.genus])))
+        
+        # Prepare statistics
+        unique_regions = set([o.region for o in orchids if o.region])
+        unique_genera = set([o.genus for o in orchids if o.genus])
+        climate_zones = set([o.climate_preference for o in orchids if o.climate_preference])
+        
+        # Prepare orchid data for map (JSON-safe)
+        orchids_json = []
+        for orchid in orchids:
+            if orchid.decimal_latitude and orchid.decimal_longitude:
+                # Fix image URL for JSON output
+                image_url = orchid.image_url
+                if image_url and 'gbif.org/occurrence/' in image_url:
+                    if orchid.google_drive_id:
+                        image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+                    else:
+                        image_url = "/static/images/orchid_placeholder.svg"
+                
+                orchids_json.append({
+                    'id': orchid.id,
+                    'name': orchid.scientific_name or orchid.display_name,
+                    'latitude': float(orchid.decimal_latitude),
+                    'longitude': float(orchid.decimal_longitude),
+                    'region': orchid.region,
+                    'pollinators': ', '.join(orchid.pollinator_types) if orchid.pollinator_types else None,
+                    'climate': orchid.climate_preference,
+                    'image_url': image_url
+                })
+        
+        import json
+        orchids_json_str = json.dumps(orchids_json)
+        
+        return render_template('enhanced_gallery_ecosystem.html',
+                             orchids=orchids,
+                             orchids_json=orchids_json_str,
+                             genera=genera,
+                             unique_regions=unique_regions,
+                             unique_genera=unique_genera,
+                             climate_zones=climate_zones,
+                             current_genus=genus_filter,
+                             current_climate=climate_filter,
+                             current_growth_habit=growth_habit_filter,
+                             page=page,
+                             total_pages=orchids_paginated.pages)
+        
+    except Exception as e:
+        logger.error(f"Enhanced gallery error: {e}")
+        flash('Error loading enhanced gallery', 'error')
+        return redirect(url_for('gallery'))
+
 @app.route('/gallery')
 def gallery():
     """Clean working gallery showing ALL 1,607 real orchid images"""
@@ -2880,6 +2970,85 @@ def api_orchid_of_day():
             'cultural_notes': orchid.cultural_notes
         })
     return jsonify({'error': 'No orchid found'}), 404
+
+@app.route('/api/orchid/<int:orchid_id>/ecosystem')
+def api_orchid_ecosystem(orchid_id):
+    """API endpoint for individual orchid ecosystem data"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        
+        ecosystem_data = {
+            'id': orchid.id,
+            'scientific_name': orchid.scientific_name,
+            'pollinators': orchid.pollinator_types or [],
+            'mycorrhizal_fungi': orchid.mycorrhizal_fungi or [],
+            'native_habitat': orchid.native_habitat,
+            'companion_plants': orchid.companion_plants,
+            'temperature_range': orchid.temperature_range,
+            'humidity_preference': orchid.humidity_preference,
+            'light_requirements': orchid.light_requirements,
+            'flowering_time': orchid.flowering_time,
+            'climate_preference': orchid.climate_preference,
+            'growth_habit': orchid.growth_habit,
+            'environmental_zones': orchid.environmental_zones,
+            'botanical_features': orchid.botanical_features
+        }
+        
+        return jsonify(ecosystem_data)
+        
+    except Exception as e:
+        logger.error(f"Ecosystem data error: {e}")
+        return jsonify({'error': 'Failed to load ecosystem data'}), 500
+
+@app.route('/api/orchid/<int:orchid_id>/cultural')
+def api_orchid_cultural(orchid_id):
+    """API endpoint for individual orchid cultural/care data"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        
+        cultural_data = {
+            'id': orchid.id,
+            'scientific_name': orchid.scientific_name,
+            'water_requirements': orchid.water_requirements,
+            'light_requirements': orchid.light_requirements,
+            'temperature_range': orchid.temperature_range,
+            'humidity_preference': orchid.humidity_preference,
+            'fertilizer_needs': orchid.fertilizer_needs,
+            'potting_media': orchid.potting_media,
+            'repotting': orchid.repotting,
+            'climate_preference': orchid.climate_preference,
+            'growth_habit': orchid.growth_habit,
+            'flowering_time': orchid.flowering_time,
+            'cultural_notes': orchid.cultural_notes,
+            'ai_description': orchid.ai_description
+        }
+        
+        return jsonify(cultural_data)
+        
+    except Exception as e:
+        logger.error(f"Cultural data error: {e}")
+        return jsonify({'error': 'Failed to load cultural data'}), 500
+
+@app.route('/api/orchid/<int:orchid_id>/coordinates')
+def api_orchid_coordinates(orchid_id):
+    """API endpoint for individual orchid coordinates"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        
+        coordinate_data = {
+            'id': orchid.id,
+            'latitude': float(orchid.decimal_latitude) if orchid.decimal_latitude else None,
+            'longitude': float(orchid.decimal_longitude) if orchid.decimal_longitude else None,
+            'region': orchid.region,
+            'country': orchid.country,
+            'native_habitat': orchid.native_habitat
+        }
+        
+        return jsonify(coordinate_data)
+        
+    except Exception as e:
+        logger.error(f"Coordinates error: {e}")
+        return jsonify({'error': 'Failed to load coordinate data'}), 500
 
 @app.route('/api/featured-orchids')
 def api_featured_orchids():
