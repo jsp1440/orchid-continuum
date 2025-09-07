@@ -693,14 +693,14 @@ class ValidatedOrchidOfDay:
         elif 'colombia' in habitat_lower:
             return "from the biodiverse landscapes of Colombia, where the Andes meet the Amazon in a celebration of life."
         
-        return f"native to {habitat}, where nature has crafted this living jewel through millennia of adaptation."
+        return f"native to {habitat}."
     
     def _extract_story_insights(self, ai_description):
         """Extract interesting insights from AI description"""
         insights = []
         
         if 'fragrant' in ai_description.lower():
-            insights.append("This orchid delights not just the eyes but also the nose with its enchanting fragrance.")
+            insights.append("This orchid is noted for its fragrance.")
         
         if 'epiphytic' in ai_description.lower():
             insights.append("As an epiphyte, it has mastered the art of living in the trees, drawing sustenance from air and rain.")
