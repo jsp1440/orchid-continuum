@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Earth from Space - Orchid Points of Light</title>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000010;
+            color: white;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #space-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* SPACE HUD - MINIMAL AND CLEAN */
+        .space-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            color: white;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 250px;
+        }
+        
+        .earth-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d4aa;
+            margin-bottom: 5px;
+        }
+        
+        .earth-subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+        
+        .orchid-info {
+            background: rgba(0, 212, 170, 0.2);
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            text-align: center;
+        }
+        
+        /* SIMPLE CONTROLS */
+        .space-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .space-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .space-btn:hover {
+            background: rgba(0, 212, 170, 0.7);
+            border-color: #00d4aa;
+            transform: translateY(-2px);
+        }
+        
+        /* LOADING SCREEN */
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #001a33 0%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+        }
+        
+        .earth-loading {
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(0, 212, 170, 0.3);
+            border-top: 3px solid #00d4aa;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .loading-detail {
+            font-size: 14px;
+            opacity: 0.7;
+            text-align: center;
+        }
+        
+        /* INFO PANEL */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            max-width: 200px;
+        }
+        
+        .control-hint {
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .space-hud, .info-panel {
+                max-width: 180px;
+                padding: 10px;
+                font-size: 12px;
+            }
+            
+            .space-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 90%;
+            }
+            
+            .space-btn {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="earth-loading"></div>
+        <div class="loading-text">🌍 Rendering Earth from Space</div>
+        <div class="loading-detail">Initializing 3D globe and orchid constellation...</div>
+    </div>
+    
+    <!-- 3D Space Container -->
+    <div id="space-container"></div>
+    
+    <!-- Space HUD -->
+    <div class="space-hud">
+        <div class="earth-title">🌍 Planet Earth</div>
+        <div class="earth-subtitle">Spinning in the cosmos</div>
+        <div class="orchid-info">
+            <div id="orchidCount">Loading orchids...</div>
+            <div style="font-size: 11px; margin-top: 3px; opacity: 0.8;">Bright points are orchid locations</div>
+        </div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <div class="control-hint"><strong>🖱️ Mouse:</strong> Drag to rotate view</div>
+        <div class="control-hint"><strong>🔍 Wheel:</strong> Zoom in/out</div>
+        <div class="control-hint"><strong>💫 Points:</strong> Click orchid lights for info</div>
+        <div class="control-hint"><strong>🌍 Globe:</strong> Auto-rotates in space</div>
+    </div>
+    
+    <!-- Simple Controls -->
+    <div class="space-controls">
+        <button class="space-btn" onclick="resetView()">
+            🌍 Center Earth
+        </button>
+        <button class="space-btn" onclick="toggleRotation()">
+            ⏸️ Pause Rotation
+        </button>
+        <button class="space-btn" onclick="focusOnOrchids()">
+            ✨ Focus Orchids
+        </button>
+        <button class="space-btn" onclick="goHome()">
+            🏠 Home
+        </button>
+    </div>
+    
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // Global variables
+        let scene, camera, renderer, earth, stars;
+        let orchidPoints = [];
+        let isRotating = true;
+        let controls;
+        
+        // Initialize the 3D Earth globe
+        async function init3DEarth() {
+            try {
+                console.log('🌍 Initializing 3D Earth globe...');
+                
+                // Create scene
+                scene = new THREE.Scene();
+                
+                // Create camera (positioned like viewing from space station)
+                camera = new THREE.PerspectiveCamera(
+                    75, 
+                    window.innerWidth / window.innerHeight, 
+                    0.1, 
+                    1000
+                );
+                camera.position.set(0, 0, 3);
+                
+                // Create renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setClearColor(0x000010);
+                document.getElementById('space-container').appendChild(renderer.domElement);
+                
+                // Create starfield background
+                createStarField();
+                
+                // Create Earth globe
+                await createEarthGlobe();
+                
+                // Add basic mouse controls
+                addMouseControls();
+                
+                // Load orchid data
+                await loadOrchidConstellation();
+                
+                // Start the animation loop
+                animate();
+                
+                // Hide loading screen
+                document.getElementById('loadingScreen').style.display = 'none';
+                
+                console.log('🌍 3D Earth globe loaded successfully');
+                
+            } catch (error) {
+                console.error('Error initializing 3D Earth:', error);
+                showError('Failed to render Earth from space: ' + error.message);
+            }
+        }
+        
+        // Create beautiful starfield
+        function createStarField() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const starVertices = [];
+            for (let i = 0; i < 1000; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const y = (Math.random() - 0.5) * 200;
+                const z = (Math.random() - 0.5) * 200;
+                starVertices.push(x, y, z);
+            }
+            
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+            stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+        }
+        
+        // Create realistic Earth globe
+        async function createEarthGlobe() {
+            const geometry = new THREE.SphereGeometry(1, 64, 64);
+            
+            // Load Earth texture
+            const textureLoader = new THREE.TextureLoader();
+            const earthTexture = textureLoader.load(
+                'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+                () => console.log('🗺️ Earth texture loaded'),
+                undefined,
+                () => {
+                    console.log('⚠️ Using fallback Earth color');
+                    // Fallback to solid blue-green Earth color
+                    earthMaterial.color.setHex(0x1e4d72);
+                }
+            );
+            
+            const earthMaterial = new THREE.MeshPhongMaterial({
+                map: earthTexture,
+                shininess: 0.1
+            });
+            
+            earth = new THREE.Mesh(geometry, earthMaterial);
+            scene.add(earth);
+            
+            // Add ambient light (sunlight)
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+            
+            // Add directional light (sun)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 3, 5);
+            scene.add(directionalLight);
+        }
+        
+        // Add simple mouse controls
+        function addMouseControls() {
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition.x = e.clientX;
+                previousMousePosition.y = e.clientY;
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaMove = {
+                        x: e.clientX - previousMousePosition.x,
+                        y: e.clientY - previousMousePosition.y
+                    };
+                    
+                    // Rotate camera around Earth
+                    const spherical = new THREE.Spherical();
+                    spherical.setFromVector3(camera.position);
+                    spherical.theta -= deltaMove.x * 0.01;
+                    spherical.phi += deltaMove.y * 0.01;
+                    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                    
+                    camera.position.setFromSpherical(spherical);
+                    camera.lookAt(0, 0, 0);
+                    
+                    previousMousePosition.x = e.clientX;
+                    previousMousePosition.y = e.clientY;
+                }
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            // Zoom with mouse wheel
+            renderer.domElement.addEventListener('wheel', (e) => {
+                const zoomSpeed = 0.1;
+                const distance = camera.position.length();
+                
+                if (e.deltaY > 0 && distance < 10) {
+                    camera.position.multiplyScalar(1 + zoomSpeed);
+                } else if (e.deltaY < 0 && distance > 1.5) {
+                    camera.position.multiplyScalar(1 - zoomSpeed);
+                }
+                
+                e.preventDefault();
+            });
+        }
+        
+        // Load orchid locations as points of light
+        async function loadOrchidConstellation() {
+            try {
+                console.log('✨ Loading orchid constellation...');
+                
+                const response = await fetch('/mapping/api/coordinates');
+                const data = await response.json();
+                
+                if (data.coordinates && data.coordinates.length > 0) {
+                    let pointCount = 0;
+                    
+                    data.coordinates.forEach(orchid => {
+                        if (orchid.lat && orchid.lng) {
+                            createOrchidPoint(orchid.lat, orchid.lng, orchid);
+                            pointCount++;
+                        }
+                    });
+                    
+                    console.log(`✨ Created ${pointCount} orchid points of light`);
+                    document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
+                    
+                } else {
+                    // Create sample constellation
+                    createSampleConstellation();
+                }
+                
+            } catch (error) {
+                console.error('Error loading orchids:', error);
+                createSampleConstellation();
+            }
+        }
+        
+        // Create individual orchid point of light on globe surface
+        function createOrchidPoint(lat, lng, orchidData) {
+            // Convert lat/lng to 3D coordinates on sphere surface
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            
+            const x = -(1.02 * Math.sin(phi) * Math.cos(theta)); // Slightly above surface
+            const y = 1.02 * Math.cos(phi);
+            const z = 1.02 * Math.sin(phi) * Math.sin(theta);
+            
+            // Create bright point of light
+            const pointGeometry = new THREE.SphereGeometry(0.008, 8, 8);
+            const pointMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffaa,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const orchidPoint = new THREE.Mesh(pointGeometry, pointMaterial);
+            orchidPoint.position.set(x, y, z);
+            
+            // Store orchid data for click events
+            orchidPoint.userData = orchidData;
+            
+            // Add glow effect
+            const glowGeometry = new THREE.SphereGeometry(0.015, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffaa,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.copy(orchidPoint.position);
+            
+            scene.add(orchidPoint);
+            scene.add(glow);
+            orchidPoints.push({ point: orchidPoint, glow: glow });
+        }
+        
+        // Create sample constellation if no real data
+        function createSampleConstellation() {
+            const sampleLocations = [
+                { lat: 10.5, lng: -84.7, name: "Costa Rica Cloud Forest" },
+                { lat: -3.4, lng: -60.0, name: "Amazon Rainforest" },
+                { lat: -22.9, lng: -43.2, name: "Brazilian Atlantic Forest" },
+                { lat: 7.9, lng: 80.8, name: "Sri Lankan Highlands" },
+                { lat: -6.2, lng: 106.8, name: "Indonesian Archipelago" },
+                { lat: 14.6, lng: 121.0, name: "Philippine Islands" },
+                { lat: -25.3, lng: 133.8, name: "Australian Outback" },
+                { lat: -18.8, lng: 46.9, name: "Madagascar Forests" }
+            ];
+            
+            sampleLocations.forEach(location => {
+                createOrchidPoint(location.lat, location.lng, { name: location.name });
+            });
+            
+            document.getElementById('orchidCount').textContent = `${sampleLocations.length} Orchid Points of Light`;
+            console.log(`✨ Created ${sampleLocations.length} sample orchid points`);
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate Earth
+            if (isRotating && earth) {
+                earth.rotation.y += 0.005;
+            }
+            
+            // Animate orchid points (twinkling effect)
+            orchidPoints.forEach((pointSet, index) => {
+                const time = Date.now() * 0.001;
+                const twinkle = Math.sin(time * 2 + index) * 0.3 + 0.7;
+                pointSet.point.material.opacity = twinkle;
+                pointSet.glow.material.opacity = twinkle * 0.3;
+            });
+            
+            // Slowly rotate stars
+            if (stars) {
+                stars.rotation.y += 0.0005;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Control functions
+        function resetView() {
+            camera.position.set(0, 0, 3);
+            camera.lookAt(0, 0, 0);
+        }
+        
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const button = event.target;
+            button.textContent = isRotating ? '⏸️ Pause Rotation' : '▶️ Resume Rotation';
+        }
+        
+        function focusOnOrchids() {
+            if (orchidPoints.length > 0) {
+                // Zoom in slightly to better see the orchid points
+                camera.position.set(0, 0, 2.5);
+                camera.lookAt(0, 0, 0);
+            }
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        function showError(message) {
+            document.getElementById('loadingScreen').innerHTML = `
+                <div style="text-align: center;">
+                    <h3 style="color: #ff6b6b;">🚫 Space Connection Failed</h3>
+                    <p>${message}</p>
+                    <button onclick="window.location.reload()" style="padding: 10px 20px; background: #00d4aa; border: none; border-radius: 5px; color: white; cursor: pointer; margin-top: 10px;">
+                        🔄 Retry Connection
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize);
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            init3DEarth();
+        });
+    </script>
+</body>
+</html>

@@ -105,6 +105,11 @@ def global_satellite_map():
     """Clean satellite view of Earth with orchid points of light"""
     return render_template('global_satellite_map.html')
 
+@app.route('/space-earth-globe')
+def space_earth_globe():
+    """True 3D spinning Earth globe viewed from space with orchid constellation"""
+    return render_template('space_earth_globe.html')
+
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():
     """Get diagnostic system status"""
