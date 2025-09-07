@@ -129,7 +129,19 @@ The system uses a dual-model approach:
 - Logging system for monitoring and debugging
 - Modular scraper architecture for adding new data sources
 
-### Recent Major Updates (August 2025)
+### Recent Major Updates (September 2025)
+
+#### CRITICAL DATA INTEGRITY CRISIS RESOLVED (September 7, 2025)
+- **🚨 ZERO TOLERANCE DATA DISCONNECTION**: Resolved critical database corruption where genus/species data was becoming disconnected from orchid images
+- **Root cause identified**: Import processes failing to parse genus/species from display_name into separate database fields
+- **28 critical records repaired**: All records with images now have proper genus data (was 28 missing, now 0 missing)
+- **1,078 species records repaired**: Fixed missing species data across multiple import sources
+- **Comprehensive safeguards implemented**: Created `data_integrity_safeguards.py` with automatic validation and repair functions
+- **Database hooks installed**: SQLAlchemy event listeners prevent future genus/species disconnection before any save operation
+- **Import source analysis**: Identified problematic sources (andys_catalog, species_database, hybrid_registry) causing 100% genus data loss
+- **Auto-repair functionality**: System now automatically extracts genus/species from display names when missing
+- **Validation rules enforced**: MANDATORY rule - if orchid has image, it MUST have genus data
+- **Future prevention**: Database-level constraints prevent the data corruption that required database rebuilds
 
 #### Critical Infrastructure Repair & Photo Failsafe System (August 26, 2025)
 - **🆘 ZERO TOLERANCE PHOTO FAILURES**: Implemented comprehensive multi-layer failsafe system ensuring photos ALWAYS display
