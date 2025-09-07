@@ -347,6 +347,117 @@ ORCHID_CARE_DATA = {
             'Temperature preferences vary by species: cool vs. warm growing types',
             'Media preferences: European growers often use more moss, Americans prefer bark mixes'
         ]
+    },
+    'Vanda': {
+        'common_name': 'Vanda Orchid',
+        'care_level': 'Advanced',
+        'light': {
+            'requirement': 'Very high light',
+            'details': '3000-5000+ foot-candles, direct morning sun beneficial',
+            'value': 95
+        },
+        'temperature': {
+            'day': '75-90°F (24-32°C)',
+            'night': '65-75°F (18-24°C)',
+            'details': 'Warm to hot temperatures year-round',
+            'value': 85
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity essential, with excellent air movement',
+            'value': 75
+        },
+        'watering': {
+            'frequency': 'Daily in warm weather',
+            'details': 'Roots must dry quickly - morning watering preferred',
+            'value': 85
+        },
+        'air_flow': {
+            'requirement': 'Constant strong air movement',
+            'details': 'Critical for root health and preventing rot',
+            'value': 95
+        },
+        'fertilizer': {
+            'schedule': 'Weekly during growing season',
+            'details': '20-20-20 at 1/2 strength, reduce in winter',
+            'value': 70
+        },
+        'potting_media': 'Basket culture preferred - chunky bark or mounted',
+        'repotting': 'Rarely needed - grown in baskets or mounted',
+        'blooming_season': 'Multiple times per year when mature',
+        'rest_period': 'No distinct rest - reduce watering in winter',
+        'special_notes': [
+            'Aerial roots need air circulation',
+            'Best grown in hanging baskets or mounted',
+            'Very sensitive to overwatering',
+            'Needs greenhouse conditions in most climates',
+            'Some species are fragrant'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets', 
+            'Vanda Society International',
+            'Southeast Asian Orchid Growers'
+        ],
+        'source_notes': [
+            'Light requirements: Baker sheets suggest 4000-6000 fc, AOS suggests 3000-4000 fc',
+            'Watering frequency varies by climate: daily in tropics, every 2-3 days in temperate zones'
+        ]
+    },
+    'Miltonia': {
+        'common_name': 'Pansy Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Medium light',
+            'details': '1500-2500 foot-candles, bright shade',
+            'value': 65
+        },
+        'temperature': {
+            'day': '65-75°F (18-24°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': 'Cool to intermediate temperatures',
+            'value': 65
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity with good air circulation',
+            'value': 70
+        },
+        'watering': {
+            'frequency': 'Keep evenly moist',
+            'details': 'Never allow to dry completely',
+            'value': 75
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents fungal issues in high humidity',
+            'value': 75
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength year-round',
+            'value': 60
+        },
+        'potting_media': 'Fine bark mix with sphagnum moss',
+        'repotting': 'Annual or when pseudobulbs crowd',
+        'blooming_season': 'Fall to winter typically',
+        'rest_period': 'Brief rest after blooming',
+        'special_notes': [
+            'Cool conditions essential for blooming',
+            'Flowers resemble pansies - very showy',
+            'Sensitive to temperature fluctuations',
+            'Prefers consistently moist conditions',
+            'Often confused with Miltoniopsis'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Brazilian Orchid Society Guidelines'
+        ],
+        'source_notes': [
+            'Temperature sensitivity: Baker notes emphasize cool conditions, AOS allows slightly warmer',
+            'Often confused with Miltoniopsis which needs even cooler conditions'
+        ]
     }
 }
 
