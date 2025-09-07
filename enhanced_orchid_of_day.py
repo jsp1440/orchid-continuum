@@ -219,50 +219,7 @@ class ValidatedOrchidOfDay:
         # Check for month-specific content to avoid repeats
         current_month = date.today().strftime('%Y-%m')
         
-        # SPECIAL: Gary's Cattleya gets premium custom haikus
-        if orchid.id == 34:  # Gary's Cattleya
-            gary_haikus = [
-                "Cattleya crown bright\nGary's garden treasure blooms\nQueen of orchids sings",
-                "Purple royal robes\nFragrant gift from Gary's care\nHybrid beauty glows", 
-                "Master's gentle hands\nCattleya responds with grace\nLove grows into bloom",
-                "Orchid collector\nGary's eye for perfection\nArt meets nature here"
-            ]
-            
-            # Check which Gary haikus haven't been used this month
-            used_hashes = set()
-            from sqlalchemy import text
-            try:
-                result = db.session.execute(text("""
-                    SELECT content_hash FROM orchid_content_tracking 
-                    WHERE orchid_id = :orch_id AND content_type = 'haiku' 
-                    AND created_month = :month
-                """), {'orch_id': orchid.id, 'month': current_month})
-                used_hashes = {row[0] for row in result}
-            except:
-                pass  # Table might not exist yet
-            
-            # Find unused Gary haiku
-            for haiku in gary_haikus:
-                content_hash = hashlib.md5(haiku.encode()).hexdigest()
-                if content_hash not in used_hashes:
-                    # Save this haiku to prevent reuse this month
-                    try:
-                        db.session.execute(text("""
-                            INSERT INTO orchid_content_tracking 
-                            (orchid_id, content_type, content_hash, content_text, created_month) 
-                            VALUES (:orch_id, 'haiku', :hash, :text, :month)
-                        """), {
-                            'orch_id': orchid.id, 'hash': content_hash, 
-                            'text': haiku, 'month': current_month
-                        })
-                        db.session.commit()
-                    except:
-                        pass  # Don't fail if tracking fails
-                    return haiku
-            
-            # If all Gary haikus used, create date-specific one
-            day_num = date.today().day
-            return f"Day {day_num} brings light\nGary's Cattleya glowing\nPartnership in bloom"
+        # Remove all special Gary treatment - treat all orchids equally
         
         haiku_templates = [
             # Color-based haikus
@@ -406,49 +363,7 @@ class ValidatedOrchidOfDay:
         current_month = date.today().strftime('%Y-%m')
         facts = []
         
-        # SPECIAL: Gary's orchid gets partnership-focused facts
-        if orchid.id == 34:  # Gary's Cattleya
-            gary_facts = [
-                "Laeliacattleya hybrids like this combine the best traits of both Cattleya and Laelia genera - spectacular size with vibrant colors.",
-                "Intergeneric hybrids represent decades of careful breeding expertise by collectors like Gary Yong Gee.",
-                "The 'Lc.' notation indicates a registered cross between Cattleya and Laelia, first achieved in Victorian times.",
-                "Expert photographers like Gary capture the subtle color gradations that make each hybrid unique.",
-                "These hybrids often inherit extended blooming seasons from both parent genera."
-            ]
-            
-            # Check for unused facts this month
-            used_hashes = set()
-            try:
-                from sqlalchemy import text
-                result = db.session.execute(text("""
-                    SELECT content_hash FROM orchid_content_tracking 
-                    WHERE orchid_id = :orch_id AND content_type = 'fun_fact' 
-                    AND created_month = :month
-                """), {'orch_id': orchid.id, 'month': current_month})
-                used_hashes = {row[0] for row in result}
-            except:
-                pass
-            
-            # Find unused Gary fact
-            for fact in gary_facts:
-                content_hash = hashlib.md5(fact.encode()).hexdigest()
-                if content_hash not in used_hashes:
-                    try:
-                        db.session.execute(text("""
-                            INSERT INTO orchid_content_tracking 
-                            (orchid_id, content_type, content_hash, content_text, created_month) 
-                            VALUES (:orch_id, 'fun_fact', :hash, :text, :month)
-                        """), {
-                            'orch_id': orchid.id, 'hash': content_hash, 
-                            'text': fact, 'month': current_month
-                        })
-                        db.session.commit()
-                    except:
-                        pass
-                    return [fact]
-                    
-            # Fallback if all Gary facts used
-            return [f"Day {date.today().day} features this expertly cultivated hybrid from a master grower's collection."]
+        # Remove special Gary treatment - treat all orchids equally
         
         # Genus-specific facts with tracking
         genus_facts = {
