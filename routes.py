@@ -71,8 +71,8 @@ except Exception as e:
     trigger_user_integrity_check = lambda x: True  # Fallback function
     get_integrity_status = lambda: {"status": "unavailable"}
 
-# Start comprehensive diagnostic system
-try:
+# DISABLED: Start comprehensive diagnostic system - was overloading server
+# try:
     start_diagnostic_monitoring()
     logger.info("🔧 Comprehensive diagnostic system started")
 except Exception as e:
