@@ -232,6 +232,7 @@
         let orchidPoints = [];
         let isRotating = true;
         let controls;
+        let sun, moon, sunLight;
         
         // Initialize the 3D Earth globe
         async function init3DEarth() {
@@ -261,6 +262,9 @@
                 
                 // Create Earth globe
                 await createEarthGlobe();
+                
+                // Add solar system elements
+                createSolarSystem();
                 
                 // Add basic mouse controls
                 addMouseControls();
@@ -556,6 +560,25 @@
                 stars.rotation.y += 0.0005;
             }
             
+            // Animate solar system elements
+            if (sun && moon) {
+                const time = Date.now() * 0.0001;
+                
+                // Slowly orbit moon around Earth
+                moon.position.x = Math.cos(time * 2) * 3;
+                moon.position.z = Math.sin(time * 2) * 3;
+                moon.position.y = Math.sin(time * 1.5) * 0.5 + 1;
+                
+                // Very slowly move sun position (simulate day/night cycle)
+                sun.position.x = Math.cos(time * 0.1) * 8;
+                sun.position.y = Math.sin(time * 0.1) * 3 + 2;
+                
+                // Update sun light direction
+                if (sunLight) {
+                    sunLight.position.copy(sun.position);
+                }
+            }
+            
             renderer.render(scene, camera);
         }
         
@@ -665,6 +688,50 @@
             }
             
             console.log(`🔍 Filtered to ${visibleCount} orchids${selectedGenus ? ` of genus ${selectedGenus}` : ''}`);
+        }
+        
+        // Create solar system elements
+        function createSolarSystem() {
+            // Create the Sun (distant but visible)
+            const sunGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const sunMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffdd44,
+                transparent: true,
+                opacity: 0.9
+            });
+            sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            sun.position.set(8, 2, 3); // Position sun in distance
+            scene.add(sun);
+            
+            // Add sun glow effect
+            const sunGlowGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const sunGlowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.3
+            });
+            const sunGlow = new THREE.Mesh(sunGlowGeometry, sunGlowMaterial);
+            sunGlow.position.copy(sun.position);
+            scene.add(sunGlow);
+            
+            // Create the Moon
+            const moonGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+            const moonMaterial = new THREE.MeshPhongMaterial({
+                color: 0xcccccc,
+                shininess: 0.1
+            });
+            moon = new THREE.Mesh(moonGeometry, moonMaterial);
+            moon.position.set(-3, 1, 2); // Position moon near Earth
+            scene.add(moon);
+            
+            // Enhanced directional light from sun
+            const sunDirection = new THREE.Vector3().subVectors(earth.position, sun.position).normalize();
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.position.copy(sun.position);
+            sunLight.target = earth;
+            scene.add(sunLight);
+            
+            console.log('☀️ Solar system created with sun and moon');
         }
         
         function showError(message) {
