@@ -75,7 +75,7 @@ class ValidatedOrchidOfDay:
             seed = int(today.strftime("%Y%m%d"))
             random.seed(seed)
             
-            # Strict filtering: Get orchids with complete metadata and real images
+            # CRITICAL FILTERING: Get orchids with complete metadata and real images
             rich_orchids = OrchidRecord.query.filter(
                 # PRIORITY: Google Drive images only (most reliable)
                 OrchidRecord.google_drive_id.isnot(None),
@@ -84,9 +84,18 @@ class ValidatedOrchidOfDay:
                 OrchidRecord.species.isnot(None),
                 OrchidRecord.genus != '',
                 OrchidRecord.species != '',
+                # CRITICAL: Exclude generic/placeholder species names
+                OrchidRecord.species != 'species',
+                OrchidRecord.species != 'sp.',
+                OrchidRecord.species != 'sp',
+                OrchidRecord.species != 'spp.',
+                OrchidRecord.species != 'unknown',
+                OrchidRecord.species != 'Unknown',
                 # No single letter abbreviations
                 ~OrchidRecord.genus.like('%.'),
                 ~OrchidRecord.species.like('%.'),
+                # Species must be at least 3 characters (real species names)
+                db.func.length(OrchidRecord.species) >= 3,
                 # Has country/region of origin
                 or_(
                     OrchidRecord.region.isnot(None),
