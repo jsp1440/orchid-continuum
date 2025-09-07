@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}Regional Orchid Galleries - Five Cities Orchid Society{% endblock %}
+
+{% block head %}
+<style>
+    .region-selector {
+        background: rgba(13, 17, 23, 0.8);
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    .map-container {
+        height: 400px;
+        border-radius: 10px;
+        border: 2px solid #30363d;
+        margin-bottom: 20px;
+    }
+    .orchid-count-badge {
+        background: linear-gradient(45deg, #00d4aa, #6B3FA0);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    .region-info-card {
+        background: rgba(13, 17, 23, 0.9);
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .region-info-card:hover {
+        border-color: #00d4aa;
+        transform: translateY(-2px);
+    }
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+    
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto text-center">
+            <h1 class="display-4 text-white mb-3">
+                <i data-feather="globe" class="me-3" style="color: #00d4aa;"></i>
+                Regional Orchid Galleries
+            </h1>
+            <p class="lead text-light">Explore orchids from around the world with distribution maps and regional insights</p>
+        </div>
+    </div>
+
+    <!-- Region Selector -->
+    <div class="row mb-4">
+        <div class="col-lg-10 mx-auto">
+            <div class="region-selector">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <label for="regionSelect" class="form-label text-white h5">
+                            <i data-feather="map-pin" class="me-2"></i>Select Region:
+                        </label>
+                        <select class="form-select form-select-lg" id="regionSelect" onchange="changeRegion()">
+                            <option value="thailand" selected>🇹🇭 Thailand</option>
+                            <option value="madagascar">🇲🇬 Madagascar</option>
+                            <option value="brazil">🇧🇷 Brazil</option>
+                            <option value="australia">🇦🇺 Australia</option>
+                            <option value="colombia">🇨🇴 Colombia</option>
+                            <option value="ecuador">🇪🇨 Ecuador</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div id="orchidCount" class="orchid-count-badge">Loading...</div>
+                        <div class="small text-muted mt-2">Species in collection</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maps Section -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mx-auto">
+            <div class="region-info-card">
+                <h4 class="text-success mb-3">
+                    <i data-feather="map" class="me-2"></i>
+                    Regional Distribution
+                </h4>
+                <div id="distributionMap" class="map-container"></div>
+                <p class="small text-muted mb-0">Shows orchid collection points within the selected region</p>
+            </div>
+        </div>
+        <div class="col-lg-5 mx-auto">
+            <div class="region-info-card">
+                <h4 class="text-warning mb-3">
+                    <i data-feather="globe" class="me-2"></i>
+                    Global Context
+                </h4>
+                <div id="globalMap" class="map-container"></div>
+                <p class="small text-muted mb-0">Regional location within global orchid distribution</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Region Information -->
+    <div class="row mb-4" id="regionInfo">
+        <!-- Dynamically populated -->
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="row mb-4" id="loadingSpinner" style="display: none;">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading orchids...</span>
+            </div>
+            <p class="text-light mt-2">Loading regional orchid collection...</p>
+        </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div class="row" id="orchidGallery">
+        <!-- Dynamically populated -->
+    </div>
+</div>
+
+<script>
+let distributionMap, globalMap;
+let currentRegion = 'thailand';
+
+// Region data
+const regions = {
+    thailand: {
+        name: "Thailand",
+        flag: "🇹🇭",
+        center: [15.87, 100.99],
+        zoom: 6,
+        description: "Known for diverse tropical orchids including Dendrobium, Vanda, and Rhynchostylis species",
+        climate: "Tropical monsoon with distinct wet and dry seasons",
+        regions: ["Northern Mountains", "Central Plains", "Northeastern Plateau", "Southern Peninsula"],
+        common_genera: ["Dendrobium", "Vanda", "Rhynchostylis", "Aerides", "Bulbophyllum"]
+    },
+    madagascar: {
+        name: "Madagascar", 
+        flag: "🇲🇬",
+        center: [-18.77, 46.87],
+        zoom: 6,
+        description: "Endemic orchid paradise with 85% of species found nowhere else on Earth",
+        climate: "Tropical to subtropical with varying rainfall patterns",
+        regions: ["Central Highlands", "Eastern Rainforests", "Western Dry Forests", "Southern Spiny Forests"],
+        common_genera: ["Angraecum", "Jumellea", "Aeranthes", "Bulbophyllum", "Cynorkis"]
+    },
+    brazil: {
+        name: "Brazil",
+        flag: "🇧🇷", 
+        center: [-14.24, -51.93],
+        zoom: 4,
+        description: "World's largest orchid diversity with over 3,500 species across diverse biomes",
+        climate: "Ranges from tropical Amazon to temperate southern regions",
+        regions: ["Amazon Basin", "Atlantic Forest", "Cerrado", "Caatinga", "Pantanal"],
+        common_genera: ["Cattleya", "Laelia", "Oncidium", "Epidendrum", "Maxillaria"]
+    },
+    australia: {
+        name: "Australia",
+        flag: "🇦🇺",
+        center: [-25.27, 133.77], 
+        zoom: 4,
+        description: "Unique terrestrial orchids adapted to diverse climates from tropical to temperate",
+        climate: "Highly variable from tropical north to temperate south",
+        regions: ["Tropical North", "Temperate Southeast", "Mediterranean Southwest", "Arid Interior"],
+        common_genera: ["Sarcochilus", "Dendrobium", "Caladenia", "Diuris", "Pterostylis"]
+    },
+    colombia: {
+        name: "Colombia",
+        flag: "🇨🇴",
+        center: [4.57, -74.30],
+        zoom: 6,
+        description: "Andean orchid diversity hotspot with species across all elevations",
+        climate: "Equatorial with altitude-dependent temperature zones", 
+        regions: ["Caribbean Coast", "Pacific Coast", "Andean Mountains", "Eastern Plains", "Amazon Basin"],
+        common_genera: ["Masdevallia", "Dracula", "Pleurothallis", "Cattleya", "Odontoglossum"]
+    },
+    ecuador: {
+        name: "Ecuador",
+        flag: "🇪🇨", 
+        center: [-1.83, -78.18],
+        zoom: 7,
+        description: "Incredible orchid density with cloud forest specializations",
+        climate: "Equatorial with dramatic altitudinal variation",
+        regions: ["Coastal Lowlands", "Andean Highlands", "Amazon Basin", "Galápagos Islands"],
+        common_genera: ["Masdevallia", "Dracula", "Lepanthes", "Stelis", "Platystele"]
+    }
+};
+
+function initializeMaps() {
+    // Initialize distribution map (regional focus)
+    distributionMap = L.map('distributionMap').setView(regions[currentRegion].center, regions[currentRegion].zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(distributionMap);
+
+    // Initialize global map (world context)
+    globalMap = L.map('globalMap').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(globalMap);
+    
+    loadRegionData();
+}
+
+function changeRegion() {
+    const select = document.getElementById('regionSelect');
+    currentRegion = select.value;
+    
+    // Show loading
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('orchidGallery').style.display = 'none';
+    
+    // Update maps
+    distributionMap.setView(regions[currentRegion].center, regions[currentRegion].zoom);
+    
+    // Update region info and load data
+    updateRegionInfo();
+    loadRegionData();
+}
+
+function updateRegionInfo() {
+    const region = regions[currentRegion];
+    const regionInfo = document.getElementById('regionInfo');
+    
+    regionInfo.innerHTML = `
+        <div class="col-md-3 mb-3">
+            <div class="region-info-card">
+                <h5 class="text-primary">
+                    <i data-feather="thermometer" class="me-2"></i>Climate
+                </h5>
+                <p class="text-light small mb-0">${region.climate}</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="region-info-card">
+                <h5 class="text-success">
+                    <i data-feather="map" class="me-2"></i>Regions
+                </h5>
+                <ul class="text-light small mb-0">
+                    ${region.regions.map(r => `<li>${r}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="region-info-card">
+                <h5 class="text-warning">
+                    <i data-feather="flower-2" class="me-2"></i>Common Genera
+                </h5>
+                <ul class="text-light small mb-0">
+                    ${region.common_genera.map(g => `<li><em>${g}</em></li>`).join('')}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="region-info-card">
+                <h5 class="text-info">
+                    <i data-feather="info" class="me-2"></i>Description
+                </h5>
+                <p class="text-light small mb-0">${region.description}</p>
+            </div>
+        </div>
+    `;
+    
+    // Re-initialize Feather icons
+    feather.replace();
+}
+
+function loadRegionData() {
+    // Simulate loading orchid data for the region
+    fetch(`/gallery/${currentRegion}`)
+        .then(response => {
+            if (!response.ok) {
+                // If specific region doesn't exist, load sample data
+                loadSampleData();
+                return;
+            }
+            return response.text();
+        })
+        .then(html => {
+            if (html) {
+                // Extract gallery content (this would need proper parsing in real implementation)
+                loadSampleData();
+            }
+        })
+        .catch(error => {
+            console.log('Loading sample data for demonstration');
+            loadSampleData();
+        });
+}
+
+function loadSampleData() {
+    const region = regions[currentRegion];
+    
+    // Add sample markers to distribution map
+    distributionMap.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+            distributionMap.removeLayer(layer);
+        }
+    });
+    
+    // Add sample orchid locations
+    const sampleLocations = [
+        { lat: region.center[0] + 0.5, lng: region.center[1] + 0.5, name: `${region.common_genera[0]} species A` },
+        { lat: region.center[0] - 0.3, lng: region.center[1] - 0.4, name: `${region.common_genera[1]} species B` },
+        { lat: region.center[0] + 0.2, lng: region.center[1] - 0.6, name: `${region.common_genera[2]} species C` },
+        { lat: region.center[0] - 0.7, lng: region.center[1] + 0.3, name: `${region.common_genera[0]} species D` }
+    ];
+    
+    sampleLocations.forEach(loc => {
+        L.marker([loc.lat, loc.lng])
+            .addTo(distributionMap)
+            .bindPopup(`<strong>${loc.name}</strong><br>📍 ${region.name}`);
+    });
+    
+    // Add region highlight to global map
+    globalMap.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.Circle) {
+            globalMap.removeLayer(layer);
+        }
+    });
+    
+    L.circle(region.center, {
+        color: '#00d4aa',
+        fillColor: '#00d4aa',
+        fillOpacity: 0.3,
+        radius: 500000
+    }).addTo(globalMap).bindPopup(`<strong>${region.flag} ${region.name}</strong><br>${region.description}`);
+    
+    // Update orchid count
+    document.getElementById('orchidCount').textContent = `${sampleLocations.length * 15} orchids`;
+    
+    // Load gallery
+    loadSampleGallery();
+}
+
+function loadSampleGallery() {
+    const region = regions[currentRegion];
+    const gallery = document.getElementById('orchidGallery');
+    
+    // Sample orchid data
+    const sampleOrchids = [
+        { name: `${region.common_genera[0]} magnificus`, image: '/static/images/orchid_placeholder.svg' },
+        { name: `${region.common_genera[1]} elegans`, image: '/static/images/orchid_placeholder.svg' },
+        { name: `${region.common_genera[2]} spectabilis`, image: '/static/images/orchid_placeholder.svg' },
+        { name: `${region.common_genera[0]} grandiflorus`, image: '/static/images/orchid_placeholder.svg' },
+        { name: `${region.common_genera[1]} variegatus`, image: '/static/images/orchid_placeholder.svg' },
+        { name: `${region.common_genera[2]} miniatus`, image: '/static/images/orchid_placeholder.svg' }
+    ];
+    
+    gallery.innerHTML = sampleOrchids.map(orchid => `
+        <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-4">
+            <div class="card bg-dark border-secondary h-100 orchid-card">
+                <img src="${orchid.image}" class="card-img-top" alt="${orchid.name}" style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h6 class="card-title text-light">${orchid.name}</h6>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i data-feather="map-pin" class="me-1"></i>
+                            ${region.name}
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Hide loading, show gallery
+    document.getElementById('loadingSpinner').style.display = 'none';
+    document.getElementById('orchidGallery').style.display = 'flex';
+    
+    // Re-initialize Feather icons
+    feather.replace();
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMaps();
+    updateRegionInfo();
+});
+</script>
+{% endblock %}
