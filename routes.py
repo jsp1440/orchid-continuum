@@ -4799,6 +4799,20 @@ def api_recent_orchids():
                 "image_url": f"/api/drive-photo/{orchid.google_drive_id}"
             })
             
+        # SAFEGUARD: Log any potential photo-name mismatches to prevent future issues
+        for orchid in result:
+            if orchid.get('google_drive_id') in ['185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I', '1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY']:
+                expected_names = {
+                    '185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I': 'Cattleya "Pink"',
+                    '1142ajwZe7_LbGt-BPy-HqVkLpNczcfZY': 'Epidendrum longipetalum'
+                }
+                expected = expected_names.get(orchid['google_drive_id'])
+                actual = orchid['display_name']
+                if expected != actual:
+                    logger.error(f"🚨 PHOTO-NAME MISMATCH DETECTED: Photo {orchid['google_drive_id']} shows '{actual}' but should be '{expected}'")
+                else:
+                    logger.info(f"✅ Photo {orchid['google_drive_id']} correctly shows '{actual}'")
+        
         return jsonify(result)
         
     except Exception as e:
