@@ -100,6 +100,11 @@ def gary_partner_dashboard():
     """Gary's partner dashboard - shows automated sync status"""
     return send_file('static/gary-partner-dashboard.html')
 
+@app.route('/global-satellite-map')
+def global_satellite_map():
+    """Clean satellite view of Earth with orchid points of light"""
+    return render_template('global_satellite_map.html')
+
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():
     """Get diagnostic system status"""
