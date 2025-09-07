@@ -58,6 +58,7 @@ from admin_control_center import register_admin_control_center
 # DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
 from eol_integration import EOLIntegrator
 from bug_report_system import bug_report_bp
+from gary_photo_demo import gary_demo as gary_demo_bp
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
@@ -6672,6 +6673,7 @@ app.register_blueprint(bulk_analyzer, url_prefix='/bulk-analyzer')
 
 # Educational Games Integration
 from educational_games_integration import educational_games
+app.register_blueprint(gary_demo_bp)  # Gary's photo demo integration
 app.register_blueprint(educational_games, url_prefix='/educational-games')
 
 @app.route('/satellite-world-map')
