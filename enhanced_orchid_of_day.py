@@ -399,39 +399,166 @@ class ValidatedOrchidOfDay:
         return hybrid_info
     
     def _generate_fun_facts(self, orchid):
-        """Generate interesting and surprising facts"""
+        """Generate unique interesting facts with monthly tracking to prevent repeats"""
+        import hashlib
+        from app import db
+        
+        current_month = date.today().strftime('%Y-%m')
         facts = []
         
-        # Genus-specific facts
+        # SPECIAL: Gary's orchid gets partnership-focused facts
+        if orchid.id == 34:  # Gary's Cattleya
+            gary_facts = [
+                "Laeliacattleya hybrids like this combine the best traits of both Cattleya and Laelia genera - spectacular size with vibrant colors.",
+                "Intergeneric hybrids represent decades of careful breeding expertise by collectors like Gary Yong Gee.",
+                "The 'Lc.' notation indicates a registered cross between Cattleya and Laelia, first achieved in Victorian times.",
+                "Expert photographers like Gary capture the subtle color gradations that make each hybrid unique.",
+                "These hybrids often inherit extended blooming seasons from both parent genera."
+            ]
+            
+            # Check for unused facts this month
+            used_hashes = set()
+            try:
+                from sqlalchemy import text
+                result = db.session.execute(text("""
+                    SELECT content_hash FROM orchid_content_tracking 
+                    WHERE orchid_id = :orch_id AND content_type = 'fun_fact' 
+                    AND created_month = :month
+                """), {'orch_id': orchid.id, 'month': current_month})
+                used_hashes = {row[0] for row in result}
+            except:
+                pass
+            
+            # Find unused Gary fact
+            for fact in gary_facts:
+                content_hash = hashlib.md5(fact.encode()).hexdigest()
+                if content_hash not in used_hashes:
+                    try:
+                        db.session.execute(text("""
+                            INSERT INTO orchid_content_tracking 
+                            (orchid_id, content_type, content_hash, content_text, created_month) 
+                            VALUES (:orch_id, 'fun_fact', :hash, :text, :month)
+                        """), {
+                            'orch_id': orchid.id, 'hash': content_hash, 
+                            'text': fact, 'month': current_month
+                        })
+                        db.session.commit()
+                    except:
+                        pass
+                    return [fact]
+                    
+            # Fallback if all Gary facts used
+            return [f"Day {date.today().day} features this expertly cultivated hybrid from a master grower's collection."]
+        
+        # Genus-specific facts with tracking
         genus_facts = {
-            'Cattleya': "Cattleya orchids were so prized in Victorian times that single plants sold for the equivalent of thousands of dollars today!",
-            'Vanilla': "This orchid genus gives us vanilla flavoring - the only orchid with significant commercial food value.",
-            'Ophrys': "These orchids are masters of deception, mimicking female insects so perfectly that males attempt to mate with the flowers.",
-            'Bulbophyllum': "Some species in this genus smell like rotting meat to attract flies - nature's creative pollination strategy!"
+            'Cattleya': [
+                "Cattleya orchids were so prized in Victorian times that single plants sold for the equivalent of thousands of dollars today!",
+                "The first Cattleya bloomed in England in 1818 after William Cattley received mystery plants from Brazil.",
+                "Cattleyas are called the 'Queen of Orchids' for their regal size and spectacular colors."
+            ],
+            'Laeliacattleya': [
+                "Laeliacattleya hybrids were first created in the 1850s by crossing Cattleya with Laelia species.",
+                "These intergeneric crosses often bloom twice a year, inheriting the best traits of both parents.",
+                "The 'Lc.' abbreviation was officially registered with the Royal Horticultural Society in 1887."
+            ],
+            'Vanilla': [
+                "This orchid genus gives us vanilla flavoring - the only orchid with significant commercial food value.",
+                "Vanilla beans must be hand-pollinated outside their native Mexico where natural pollinators exist."
+            ],
+            'Phalaenopsis': [
+                "The name means 'moth-like' because Carl Blume thought the flowers resembled tropical moths in flight.",
+                "Some Phalaenopsis can bloom continuously for 8 months with proper care."
+            ]
         }
         
-        if orchid.genus in genus_facts:
-            facts.append(genus_facts[orchid.genus])
+        if orchid.genus and orchid.genus in genus_facts:
+            available_facts = genus_facts[orchid.genus]
+            
+            # Check which facts haven't been used this month
+            unused_facts = []
+            for fact in available_facts:
+                content_hash = hashlib.md5(fact.encode()).hexdigest()
+                try:
+                    from sqlalchemy import text
+                    result = db.session.execute(text("""
+                        SELECT COUNT(*) FROM orchid_content_tracking 
+                        WHERE content_hash = :hash AND content_type = 'fun_fact' 
+                        AND created_month = :month
+                    """), {'hash': content_hash, 'month': current_month})
+                    count = result.scalar()
+                    if count == 0:
+                        unused_facts.append(fact)
+                except:
+                    unused_facts.append(fact)
+            
+            if unused_facts:
+                selected_fact = random.choice(unused_facts)
+                facts.append(selected_fact)
+                
+                # Track usage
+                try:
+                    content_hash = hashlib.md5(selected_fact.encode()).hexdigest()
+                    db.session.execute(text("""
+                        INSERT INTO orchid_content_tracking 
+                        (orchid_id, content_type, content_hash, content_text, created_month) 
+                        VALUES (:orch_id, 'fun_fact', :hash, :text, :month)
+                    """), {
+                        'orch_id': orchid.id, 'hash': content_hash, 
+                        'text': selected_fact, 'month': current_month
+                    })
+                    db.session.commit()
+                except:
+                    pass
         
-        # Size-based facts
-        if orchid.ai_description:
-            desc_lower = orchid.ai_description.lower()
-            if any(word in desc_lower for word in ['small', 'tiny', 'miniature']):
-                facts.append("Despite their delicate size, miniature orchids often have the most complex and intricate flower structures.")
-            elif any(word in desc_lower for word in ['large', 'big', 'massive']):
-                facts.append("Large orchids like this can live for decades, with some specimens in cultivation for over 100 years.")
-        
-        # Add a general orchid fact if no specific ones apply
+        # General orchid facts with tracking (only if no genus-specific facts)
         if not facts:
             general_facts = [
                 "Orchids are found on every continent except Antarctica, showcasing nature's incredible adaptability.",
                 "There are more orchid species than bird and mammal species combined - over 30,000 known varieties!",
                 "Some orchid seeds are so tiny that over 3 million could fit in a teaspoon.",
-                "Orchids can live for decades, with some wild specimens estimated to be over 100 years old."
+                "The smallest orchid flowers are just 2mm across, while the largest can exceed 15 inches.",
+                "Vanilla comes from an orchid - making it the only commercially important orchid food product.",
+                "Many orchids can detect and respond to the footsteps of their specific pollinators."
             ]
-            facts.append(random.choice(general_facts))
+            
+            # Check for unused general facts this month
+            unused_general = []
+            for fact in general_facts:
+                content_hash = hashlib.md5(fact.encode()).hexdigest()
+                try:
+                    from sqlalchemy import text
+                    result = db.session.execute(text("""
+                        SELECT COUNT(*) FROM orchid_content_tracking 
+                        WHERE content_hash = :hash AND content_type = 'fun_fact' 
+                        AND created_month = :month
+                    """), {'hash': content_hash, 'month': current_month})
+                    count = result.scalar()
+                    if count == 0:
+                        unused_general.append(fact)
+                except:
+                    unused_general.append(fact)
+            
+            if unused_general:
+                selected_fact = random.choice(unused_general)
+                facts.append(selected_fact)
+                
+                # Track usage
+                try:
+                    content_hash = hashlib.md5(selected_fact.encode()).hexdigest()
+                    db.session.execute(text("""
+                        INSERT INTO orchid_content_tracking 
+                        (orchid_id, content_type, content_hash, content_text, created_month) 
+                        VALUES (:orch_id, 'fun_fact', :hash, :text, :month)
+                    """), {
+                        'orch_id': orchid.id, 'hash': content_hash, 
+                        'text': selected_fact, 'month': current_month
+                    })
+                    db.session.commit()
+                except:
+                    pass
         
-        return facts[:2]  # Return up to 2 facts
+        return facts[:1]  # Return 1 unique fact
     
     def _get_seasonal_context(self, orchid):
         """Get seasonal blooming context"""
