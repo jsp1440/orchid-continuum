@@ -2440,24 +2440,48 @@ def admin_baker_extrapolation():
 @app.route('/admin')
 def admin():
     """Admin interface for batch operations"""
-    # Get recent uploads
-    recent_uploads = UserUpload.query.order_by(UserUpload.created_at.desc()).limit(10).all()
-    
-    # Get scraping logs
-    recent_scrapes = ScrapingLog.query.order_by(ScrapingLog.created_at.desc()).limit(10).all()
-    
-    # Get statistics
-    stats = {
-        'total_orchids': OrchidRecord.query.count(),
-        'pending_uploads': UserUpload.query.filter_by(processing_status='pending').count(),
-        'validated_orchids': OrchidRecord.query.filter_by(validation_status='validated').count(),
-        'featured_orchids': OrchidRecord.query.filter_by(is_featured=True).count()
-    }
-    
-    return render_template('admin.html',
-                         recent_uploads=recent_uploads,
-                         recent_scrapes=recent_scrapes,
-                         stats=stats)
+    try:
+        # Get recent uploads with error handling
+        recent_uploads = []
+        try:
+            recent_uploads = UserUpload.query.order_by(UserUpload.created_at.desc()).limit(10).all()
+        except Exception as e:
+            logger.warning(f"Could not load recent uploads: {e}")
+        
+        # Get scraping logs with error handling
+        recent_scrapes = []
+        try:
+            recent_scrapes = ScrapingLog.query.order_by(ScrapingLog.created_at.desc()).limit(10).all()
+        except Exception as e:
+            logger.warning(f"Could not load scraping logs: {e}")
+        
+        # Get statistics with error handling
+        stats = {
+            'total_orchids': 0,
+            'pending_uploads': 0,
+            'validated_orchids': 0,
+            'featured_orchids': 0
+        }
+        
+        try:
+            stats['total_orchids'] = OrchidRecord.query.count()
+            stats['validated_orchids'] = OrchidRecord.query.filter_by(validation_status='validated').count()
+            stats['featured_orchids'] = OrchidRecord.query.filter_by(is_featured=True).count()
+        except Exception as e:
+            logger.warning(f"Could not load statistics: {e}")
+        
+        try:
+            stats['pending_uploads'] = UserUpload.query.filter_by(processing_status='pending').count()
+        except Exception as e:
+            logger.warning(f"Could not load upload stats: {e}")
+        
+        return render_template('admin.html',
+                             recent_uploads=recent_uploads,
+                             recent_scrapes=recent_scrapes,
+                             stats=stats)
+    except Exception as e:
+        logger.error(f"Admin page error: {e}")
+        return render_template('error.html', error="Admin dashboard temporarily unavailable", details=str(e)), 500
 
 @app.route('/api/scrape/<source>')
 def trigger_scrape(source):
@@ -6146,28 +6170,44 @@ def compare_page():
         species = request.args.get('species', '')
         
         orchids = []
+        
+        # Get specific orchids with error handling
         if orchid1_id:
-            orchid1 = OrchidRecord.query.get(orchid1_id)
-            if orchid1:
-                orchids.append(orchid1)
+            try:
+                orchid1 = OrchidRecord.query.get(orchid1_id)
+                if orchid1:
+                    orchids.append(orchid1)
+            except Exception as e:
+                logger.warning(f"Could not load orchid1 {orchid1_id}: {e}")
         
         if orchid2_id:
-            orchid2 = OrchidRecord.query.get(orchid2_id)
-            if orchid2:
-                orchids.append(orchid2)
+            try:
+                orchid2 = OrchidRecord.query.get(orchid2_id)
+                if orchid2:
+                    orchids.append(orchid2)
+            except Exception as e:
+                logger.warning(f"Could not load orchid2 {orchid2_id}: {e}")
         
         # Get orchids by species if specified
         if species and not orchids:
-            orchids = OrchidRecord.query.filter(
-                OrchidRecord.scientific_name.ilike(f'%{species}%')
-            ).limit(10).all()
+            try:
+                orchids = OrchidRecord.query.filter(
+                    OrchidRecord.scientific_name.ilike(f'%{species}%')
+                ).limit(10).all()
+            except Exception as e:
+                logger.warning(f"Could not search by species {species}: {e}")
         
         # Get some sample orchids if none specified
         if not orchids:
-            sample_orchids = OrchidRecord.query.filter(
-                OrchidRecord.google_drive_id.isnot(None)
-            ).limit(10).all()
-            orchids = sample_orchids[:2] if len(sample_orchids) >= 2 else sample_orchids
+            try:
+                sample_orchids = OrchidRecord.query.filter(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.genus.isnot(None)
+                ).limit(10).all()
+                orchids = sample_orchids[:2] if len(sample_orchids) >= 2 else sample_orchids
+            except Exception as e:
+                logger.warning(f"Could not load sample orchids: {e}")
+                orchids = []
         
         # Build data structure expected by template
         if orchids:
