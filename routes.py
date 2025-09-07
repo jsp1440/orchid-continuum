@@ -54,8 +54,8 @@ import chris_howard_reimport
 from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
 from admin_control_center import register_admin_control_center
-from automated_repair_system import repair_system
-from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
+# DISABLED: from automated_repair_system import repair_system
+# DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
 from eol_integration import EOLIntegrator
 from bug_report_system import bug_report_bp
 
@@ -86,13 +86,14 @@ except Exception as e:
 # except Exception as e:
 #     logger.error(f"❌ Failed to start enhanced collection: {e}")
 
-try:
-    from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
-    from mobile_widget_optimizer import mobile_optimizer
-    from user_collection_hub import collection_hub
-    logger.info("✅ Widget integration modules loaded successfully")
-except ImportError as e:
-    logger.warning(f"⚠️ Widget integration modules not available: {e}")
+# DISABLED: Additional monitoring systems - keep only vigilant monitor (30-second)
+# try:
+#     from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
+#     from mobile_widget_optimizer import mobile_optimizer
+#     from user_collection_hub import collection_hub
+#     logger.info("✅ Widget integration modules loaded successfully")
+# except ImportError as e:
+#     logger.warning(f"⚠️ Widget integration modules not available: {e}")
 
 # DISABLED: Integrity check on every request - was causing worker crashes
 # @app.before_request
