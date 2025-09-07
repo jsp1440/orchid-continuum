@@ -84,7 +84,7 @@ class GaryBotanicalScraper:
                     self.save_to_database(complete_species_data)
                     logger.info(f"✅ CAPTURED: {complete_species_data['scientific_name']} with {complete_species_data['image_count']} images")
                 
-                time.sleep(3)  # Respectful delay
+                time.sleep(0.5)  # Faster scraping for production
             
             logger.info(f"🏆 DEEP SCRAPE COMPLETE: {len(captured_orchids)} species captured with full botanical data")
             return captured_orchids
@@ -265,7 +265,7 @@ class GaryBotanicalScraper:
                 except:
                     continue
                     
-                time.sleep(1)  # Be respectful
+                time.sleep(0.2)  # Minimal delay for production
         
         # Strategy 4: Sitemap and robots.txt exploration
         if not species_urls:
