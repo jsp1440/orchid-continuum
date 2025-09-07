@@ -152,6 +152,37 @@ def orchid_coordinates_all():
             'coordinates': []
         }), 500
 
+@app.route('/api/orchid-genera')
+def orchid_genera():
+    """Get all unique orchid genera for the filtering dropdown"""
+    try:
+        # Get all unique genera from database, excluding None/empty values
+        genera_result = db.session.query(OrchidRecord.genus).filter(
+            and_(
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.genus != '',
+                OrchidRecord.genus != 'Unknown'
+            )
+        ).distinct().all()
+        
+        # Extract genus names and sort them
+        genera = sorted([g[0] for g in genera_result if g[0]])
+        
+        logger.info(f"🔍 Found {len(genera)} unique orchid genera")
+        return jsonify({
+            'success': True,
+            'genera': genera,
+            'total_count': len(genera)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading orchid genera: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'genera': []
+        }), 500
+
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():
     """Get diagnostic system status"""

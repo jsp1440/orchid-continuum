@@ -218,8 +218,8 @@
         <button class="space-btn" onclick="focusOnOrchids()">
             ✨ Focus Orchids
         </button>
-        <button class="space-btn" onclick="goHome()">
-            🏠 Home
+        <button class="space-btn" onclick="goHome()" style="background: #ff6b6b; font-weight: bold;">
+            ← Back to Home
         </button>
     </div>
     
@@ -289,27 +289,30 @@
             }
         }
         
-        // Create beautiful starfield
+        // Create beautiful starfield (fixed to be round points, not blocks)
         function createStarField() {
             const starGeometry = new THREE.BufferGeometry();
             const starMaterial = new THREE.PointsMaterial({
                 color: 0xffffff,
-                size: 1,
+                size: 0.5, // Smaller size for better points
                 transparent: true,
-                opacity: 0.8
+                opacity: 0.9,
+                sizeAttenuation: false // Keep consistent size regardless of distance
             });
             
             const starVertices = [];
-            for (let i = 0; i < 1000; i++) {
-                const x = (Math.random() - 0.5) * 200;
-                const y = (Math.random() - 0.5) * 200;
-                const z = (Math.random() - 0.5) * 200;
+            for (let i = 0; i < 2000; i++) { // More stars for richer field
+                const x = (Math.random() - 0.5) * 300;
+                const y = (Math.random() - 0.5) * 300;
+                const z = (Math.random() - 0.5) * 300;
                 starVertices.push(x, y, z);
             }
             
             starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
             stars = new THREE.Points(starGeometry, starMaterial);
             scene.add(stars);
+            
+            console.log('⭐ Created beautiful round starfield');
         }
         
         // Create realistic Earth globe
@@ -384,14 +387,15 @@
                 isDragging = false;
             });
             
-            // Zoom with mouse wheel
+            // Enhanced zoom with mouse wheel - can zoom out to see sun/moon
             renderer.domElement.addEventListener('wheel', (e) => {
-                const zoomSpeed = 0.1;
+                const zoomSpeed = 0.15;
                 const distance = camera.position.length();
                 
-                if (e.deltaY > 0 && distance < 10) {
+                // Much wider zoom range to see solar system
+                if (e.deltaY > 0 && distance < 50) {
                     camera.position.multiplyScalar(1 + zoomSpeed);
-                } else if (e.deltaY < 0 && distance > 1.5) {
+                } else if (e.deltaY < 0 && distance > 1.2) {
                     camera.position.multiplyScalar(1 - zoomSpeed);
                 }
                 
@@ -429,18 +433,11 @@
                     console.log(`✨ Created ${pointCount} orchid points of light across Earth`);
                     document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
                     
-                    // Add genus count info and populate filter dropdown
+                    // Add genus count info and populate filter dropdown with real data
+                    await populateGenusDropdown();
+                    
                     const genera = [...new Set(orchidPoints.map(p => p.data.genus).filter(g => g))].sort();
                     console.log(`🌺 Representing ${genera.length} different orchid genera`);
-                    
-                    // Populate genus filter dropdown
-                    const genusSelect = document.getElementById('genusFilter');
-                    genera.forEach(genus => {
-                        const option = document.createElement('option');
-                        option.value = genus;
-                        option.textContent = genus;
-                        genusSelect.appendChild(option);
-                    });
                     
                 } else {
                     console.log('⚠️ No coordinate data available, creating sample constellation');
@@ -688,6 +685,35 @@
             }
             
             console.log(`🔍 Filtered to ${visibleCount} orchids${selectedGenus ? ` of genus ${selectedGenus}` : ''}`);
+        }
+        
+        // Populate genus dropdown with real orchid genera from database
+        async function populateGenusDropdown() {
+            try {
+                const response = await fetch('/api/orchid-genera');
+                const data = await response.json();
+                
+                if (data.success && data.genera) {
+                    const genusSelect = document.getElementById('genusFilter');
+                    
+                    // Clear existing options except "All Genera"
+                    while (genusSelect.children.length > 1) {
+                        genusSelect.removeChild(genusSelect.lastChild);
+                    }
+                    
+                    // Add real genera from database
+                    data.genera.forEach(genus => {
+                        const option = document.createElement('option');
+                        option.value = genus;
+                        option.textContent = genus;
+                        genusSelect.appendChild(option);
+                    });
+                    
+                    console.log(`🔍 Loaded ${data.genera.length} real orchid genera into dropdown`);
+                }
+            } catch (error) {
+                console.error('Error loading genera:', error);
+            }
         }
         
         // Create solar system elements
