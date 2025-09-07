@@ -77,7 +77,7 @@ class ValidatedOrchidOfDay:
             seed = int(today.strftime("%Y%m%d"))
             random.seed(seed)
             
-            # CRITICAL: GENUS + SPECIES ONLY - NO HYBRIDS (same as utils.py)
+            # CRITICAL: EPIPHYTIC GENUS + SPECIES ONLY - NO HYBRIDS (same as utils.py)
             rich_orchids = OrchidRecord.query.filter(
                 # CRITICAL: Exclude all hybrids
                 OrchidRecord.is_hybrid != True,
@@ -85,6 +85,13 @@ class ValidatedOrchidOfDay:
                 ~OrchidRecord.display_name.ilike('%x %'),  # Exclude intergeneric crosses
                 ~OrchidRecord.scientific_name.ilike('%x %'),
                 OrchidRecord.display_name.notlike('%"%'), # Exclude cultivar names with quotes
+                # PRIORITY: Epiphytic orchids only
+                or_(
+                    OrchidRecord.growth_habit == 'epiphytic',
+                    OrchidRecord.growth_habit == 'Epiphytic',
+                    OrchidRecord.ai_description.ilike('%epiphytic%'),
+                    OrchidRecord.ai_description.ilike('%epiphyte%')
+                ),
                 # PRIORITY: Reliable images (Google Drive OR working external URLs) - SAME as utils.py
                 or_(
                     OrchidRecord.google_drive_id.isnot(None),
@@ -709,10 +716,10 @@ class ValidatedOrchidOfDay:
             insights.append("This orchid is noted for its fragrance.")
         
         if 'epiphytic' in ai_description.lower():
-            insights.append("As an epiphyte, it has mastered the art of living in the trees, drawing sustenance from air and rain.")
+            insights.append("Epiphytic orchid that grows on trees.")
         
         if any(color in ai_description.lower() for color in ['purple', 'violet', 'magenta']):
-            insights.append("Its royal purple tones speak of aristocracy in the plant kingdom.")
+            insights.append("Purple-colored flowers.")
         
         return insights
     
