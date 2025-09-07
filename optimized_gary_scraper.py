@@ -77,7 +77,7 @@ class OptimizedGaryScraper:
                                 'data_preview': response.text[:200]
                             })
                 
-                time.sleep(1)
+                time.sleep(0.2)  # Faster production scraping
                 
             except Exception as e:
                 logger.debug(f"   Failed {pattern}: {e}")
@@ -98,7 +98,7 @@ class OptimizedGaryScraper:
             for genus in priority_genera:
                 logger.info(f"🔍 Searching for {genus} species")
                 self.search_genus_systematically(genus)
-                time.sleep(2)
+                time.sleep(0.5)  # Faster production scraping
             
             logger.info(f"✅ Gary collection complete: {self.collected_count} orchids collected")
             return self.collected_count
@@ -281,7 +281,7 @@ class OptimizedGaryScraper:
                         logger.debug(f"Species pattern test failed: {e}")
                         continue
                         
-                    time.sleep(0.5)
+                    time.sleep(0.1)  # Minimal delay
                     
         except Exception as e:
             logger.debug(f"Known species pattern search failed: {e}")
