@@ -39,6 +39,7 @@ from data_progress_dashboard import data_dashboard_bp
 from breeding_ai import breeding_ai
 import breeding_routes  # Import breeding routes
 from lab_routes import lab_bp  # Import OrchidStein Lab routes
+from data_integrity_safeguards import validate_orchid_record_integrity, enforce_data_integrity_before_save  # Critical data protection
 import os
 import json
 import logging
