@@ -149,6 +149,12 @@ def orchid_explorer_widget():
     <div class="header-content">
       <div class="logo">🌺 Orchid Interaction Explorer</div>
       <div style="color: #6c757d;">Five Cities Orchid Society - Ecosystem Relationships Database</div>
+      <div style="margin-top: 8px;">
+        <a href="/static/docs/orchid_interaction_explorer_guide.md" target="_blank" 
+           style="color: #6B3FA0; text-decoration: none; font-size: 14px;">
+          📖 User Guide & FAQ
+        </a>
+      </div>
     </div>
   </header>
 
