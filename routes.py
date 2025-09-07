@@ -6401,7 +6401,7 @@ def climate_data_widget():
                 'scientific_name': orchid.scientific_name,
                 'image_url': f'/api/drive-photo/{orchid.google_drive_id}' if orchid.google_drive_id else '/static/images/orchid_placeholder.svg',
                 'temperature_range': orchid.temperature_range or 'Not specified',
-                'humidity_range': orchid.humidity_range or 'Not specified'
+                'humidity_range': orchid.humidity_indicators or 'Not specified'
             } for orchid in orchids]
         
         return jsonify({
