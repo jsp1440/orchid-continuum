@@ -70,6 +70,12 @@ class ValidatedOrchidOfDay:
         try:
             from orchid_name_utils import orchid_name_utils
             
+            # OVERRIDE: Force Gary's Cattleya (ID: 34) as featured orchid to match utils.py
+            gary_orchid = OrchidRecord.query.filter_by(id=34).first()
+            if gary_orchid:
+                logger.info(f"Enhanced system selected Gary's orchid: {gary_orchid.display_name} (ID: {gary_orchid.id})")
+                return gary_orchid
+                
             # CRITICAL: Use SAME date-based seeding as utils.py for consistency (prevents mismatch!)
             today = date.today()
             seed = int(today.strftime("%Y%m%d"))
