@@ -132,6 +132,11 @@ def gary_partner_dashboard():
     """Gary's partner dashboard - shows automated sync status"""
     return send_file('static/gary-partner-dashboard.html')
 
+@app.route('/partnership-demo/gary-yong-gee')
+def gary_partnership_demo():
+    """Comprehensive partnership demo and proposal for Gary Yong Gee"""
+    return render_template('gary_partnership_demo.html')
+
 @app.route('/global-satellite-map')
 def global_satellite_map():
     """Clean satellite view of Earth with orchid points of light"""
