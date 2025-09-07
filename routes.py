@@ -137,6 +137,22 @@ def gary_partnership_demo():
     """Comprehensive partnership demo and proposal for Gary Yong Gee"""
     return render_template('gary_partnership_demo.html')
 
+# Rotating gallery routes for demo
+@app.route('/gallery/regional-rotating')
+def regional_rotating_gallery():
+    """Rotating regional collections for demo"""
+    return redirect(url_for('thailand_gallery'))
+
+@app.route('/gallery/traits-rotating')
+def traits_rotating_gallery():
+    """Rotating trait-based collections for demo"""
+    return redirect(url_for('fragrant_gallery'))
+
+@app.route('/gallery/community-rotating')
+def community_rotating_gallery():
+    """Rotating community features for demo"""
+    return redirect(url_for('gallery'))
+
 @app.route('/global-satellite-map')
 def global_satellite_map():
     """Clean satellite view of Earth with orchid points of light"""
