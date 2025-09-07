@@ -3780,6 +3780,54 @@ def standalone_gallery_widget():
                          widget_data=widget_data, 
                          standalone=True)
 
+@app.route('/widgets/gallery')
+def plural_gallery_widget():
+    """Gallery Widget - plural route for consistency"""
+    try:
+        # Simple version without widget_system dependency
+        limit = request.args.get('limit', 6, type=int)
+        genus = request.args.get('genus', None)
+        
+        # Get orchids directly from database
+        query = OrchidRecord.query.filter(
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.validation_status != 'rejected'
+        )
+        
+        if genus:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+        
+        orchids = query.limit(limit).all()
+        
+        # Convert to template format
+        orchids_data = []
+        for orchid in orchids:
+            orchids_data.append({
+                'id': orchid.id,
+                'display_name': orchid.display_name or f"{orchid.genus} {orchid.species}",
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'ai_description': orchid.ai_description,
+                'image_url': f"/api/drive-photo/{orchid.google_drive_id}" if orchid.google_drive_id else None
+            })
+        
+        widget_data = {
+            'orchids': orchids_data,
+            'total_count': len(orchids_data)
+        }
+        
+        return render_template('widgets/gallery_widget.html', 
+                             widget_data=widget_data, 
+                             standalone=True)
+                             
+    except Exception as e:
+        logger.error(f"Gallery widget error: {e}")
+        # Emergency fallback
+        return render_template('widgets/gallery_widget.html', 
+                             widget_data={'orchids': [], 'total_count': 0}, 
+                             standalone=True)
+
 @app.route('/widget/discovery')  
 def standalone_discovery_widget():
     """Standalone Discovery Widget for embedding"""
