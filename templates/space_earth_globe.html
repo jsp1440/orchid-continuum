@@ -204,8 +204,11 @@
         <div class="control-hint"><strong>🌍 Globe:</strong> Auto-rotates in space</div>
     </div>
     
-    <!-- Simple Controls -->
+    <!-- Enhanced Controls with Genus Filtering -->
     <div class="space-controls">
+        <select id="genusFilter" class="space-btn" onchange="filterByGenus()" style="max-width: 120px;">
+            <option value="">All Genera</option>
+        </select>
         <button class="space-btn" onclick="resetView()">
             🌍 Center Earth
         </button>
@@ -261,6 +264,9 @@
                 
                 // Add basic mouse controls
                 addMouseControls();
+                
+                // Add click detection for orchid points
+                addClickDetection();
                 
                 // Load orchid data
                 await loadOrchidConstellation();
@@ -389,13 +395,22 @@
             });
         }
         
-        // Load orchid locations as points of light
+        // Load ALL orchid locations as points of light
         async function loadOrchidConstellation() {
             try {
-                console.log('✨ Loading orchid constellation...');
+                console.log('✨ Loading complete orchid constellation...');
                 
-                const response = await fetch('/mapping/api/coordinates');
-                const data = await response.json();
+                // Load ALL orchid records with coordinates - not just recent ones
+                const response = await fetch('/api/orchid-coordinates-all');
+                let data;
+                
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    console.log('🔄 Fallback to mapping API...');
+                    const fallbackResponse = await fetch('/mapping/api/coordinates');
+                    data = await fallbackResponse.json();
+                }
                 
                 if (data.coordinates && data.coordinates.length > 0) {
                     let pointCount = 0;
@@ -407,11 +422,24 @@
                         }
                     });
                     
-                    console.log(`✨ Created ${pointCount} orchid points of light`);
+                    console.log(`✨ Created ${pointCount} orchid points of light across Earth`);
                     document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
                     
+                    // Add genus count info and populate filter dropdown
+                    const genera = [...new Set(orchidPoints.map(p => p.data.genus).filter(g => g))].sort();
+                    console.log(`🌺 Representing ${genera.length} different orchid genera`);
+                    
+                    // Populate genus filter dropdown
+                    const genusSelect = document.getElementById('genusFilter');
+                    genera.forEach(genus => {
+                        const option = document.createElement('option');
+                        option.value = genus;
+                        option.textContent = genus;
+                        genusSelect.appendChild(option);
+                    });
+                    
                 } else {
-                    // Create sample constellation
+                    console.log('⚠️ No coordinate data available, creating sample constellation');
                     createSampleConstellation();
                 }
                 
@@ -431,33 +459,47 @@
             const y = 1.02 * Math.cos(phi);
             const z = 1.02 * Math.sin(phi) * Math.sin(theta);
             
-            // Create bright point of light
-            const pointGeometry = new THREE.SphereGeometry(0.008, 8, 8);
+            // Create bright twinkling point of light
+            const pointGeometry = new THREE.SphereGeometry(0.012, 8, 8);
             const pointMaterial = new THREE.MeshBasicMaterial({
                 color: 0x00ffaa,
                 transparent: true,
-                opacity: 0.9
+                opacity: 1.0
             });
             
             const orchidPoint = new THREE.Mesh(pointGeometry, pointMaterial);
             orchidPoint.position.set(x, y, z);
             
-            // Store orchid data for click events
-            orchidPoint.userData = orchidData;
+            // CRITICAL FIX: Add orchid point to Earth so it rotates with the planet
+            earth.add(orchidPoint);
             
-            // Add glow effect
-            const glowGeometry = new THREE.SphereGeometry(0.015, 8, 8);
+            // Store orchid data for click events and genus info
+            orchidPoint.userData = {
+                ...orchidData,
+                originalPosition: { x, y, z },
+                genus: orchidData.genus || (orchidData.name ? orchidData.name.split(' ')[0] : 'Unknown')
+            };
+            
+            // Add enhanced glow effect
+            const glowGeometry = new THREE.SphereGeometry(0.025, 8, 8);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: 0x00ffaa,
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.4
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
             glow.position.copy(orchidPoint.position);
             
-            scene.add(orchidPoint);
-            scene.add(glow);
-            orchidPoints.push({ point: orchidPoint, glow: glow });
+            // Add glow to Earth as well so it stays in place
+            earth.add(glow);
+            
+            // Store both point and glow for animation
+            orchidPoints.push({ 
+                point: orchidPoint, 
+                glow: glow, 
+                data: orchidData,
+                twinklePhase: Math.random() * Math.PI * 2 // Random twinkling phase
+            });
         }
         
         // Create sample constellation if no real data
@@ -490,12 +532,23 @@
                 earth.rotation.y += 0.005;
             }
             
-            // Animate orchid points (twinkling effect)
+            // Enhanced twinkling effect - more visible and eye-catching
             orchidPoints.forEach((pointSet, index) => {
                 const time = Date.now() * 0.001;
-                const twinkle = Math.sin(time * 2 + index) * 0.3 + 0.7;
-                pointSet.point.material.opacity = twinkle;
-                pointSet.glow.material.opacity = twinkle * 0.3;
+                
+                // More dramatic twinkling with different speeds
+                const fastTwinkle = Math.sin(time * 4 + pointSet.twinklePhase) * 0.4 + 0.6;
+                const slowPulse = Math.sin(time * 1.5 + index) * 0.3 + 0.7;
+                const combined = (fastTwinkle + slowPulse) / 2;
+                
+                pointSet.point.material.opacity = Math.max(0.3, combined);
+                pointSet.glow.material.opacity = Math.max(0.1, combined * 0.5);
+                
+                // Occasional bright flash to catch attention
+                if (Math.random() < 0.002) { // 0.2% chance per frame
+                    pointSet.point.material.opacity = 1.0;
+                    pointSet.glow.material.opacity = 0.8;
+                }
             });
             
             // Slowly rotate stars
@@ -528,6 +581,90 @@
         
         function goHome() {
             window.location.href = '/';
+        }
+        
+        // Add click detection for orchid points
+        function addClickDetection() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            renderer.domElement.addEventListener('click', (event) => {
+                // Calculate mouse position in normalized device coordinates
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                // Update the picking ray with the camera and mouse position
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Check for intersections with orchid points
+                const orchidMeshes = orchidPoints.map(p => p.point);
+                const intersects = raycaster.intersectObjects(orchidMeshes);
+                
+                if (intersects.length > 0) {
+                    const clickedPoint = intersects[0].object;
+                    const orchidData = clickedPoint.userData;
+                    
+                    console.log('🌺 Clicked orchid:', orchidData);
+                    showOrchidDetails(orchidData);
+                }
+            });
+        }
+        
+        // Show orchid details and integrate with gallery
+        function showOrchidDetails(orchidData) {
+            const detailsHTML = `
+                <div style="background: rgba(0,0,0,0.9); color: white; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3000; padding: 20px; border-radius: 10px; max-width: 400px; text-align: center;">
+                    <h3 style="color: #00d4aa; margin-bottom: 15px;">🌺 ${orchidData.name}</h3>
+                    ${orchidData.image ? `<img src="${orchidData.image}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">` : ''}
+                    <p><strong>Genus:</strong> ${orchidData.genus}</p>
+                    <p><strong>Location:</strong> ${orchidData.location}</p>
+                    <p><strong>Coordinates:</strong> ${orchidData.lat?.toFixed(4)}, ${orchidData.lng?.toFixed(4)}</p>
+                    <div style="margin-top: 15px;">
+                        ${orchidData.id ? `<button onclick="viewInGallery(${orchidData.id})" style="background: #00d4aa; border: none; color: white; padding: 8px 16px; border-radius: 5px; margin: 5px; cursor: pointer;">📷 View in Gallery</button>` : ''}
+                        <button onclick="closeDetails()" style="background: #666; border: none; color: white; padding: 8px 16px; border-radius: 5px; margin: 5px; cursor: pointer;">✖️ Close</button>
+                    </div>
+                </div>
+                <div id="overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2999;" onclick="closeDetails()"></div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', detailsHTML);
+        }
+        
+        // Close orchid details popup
+        function closeDetails() {
+            const overlays = document.querySelectorAll('#overlay');
+            overlays.forEach(overlay => overlay.remove());
+            
+            const details = document.querySelectorAll('div[style*="position: fixed"][style*="z-index: 3000"]');
+            details.forEach(detail => detail.remove());
+        }
+        
+        // Navigate to gallery for specific orchid
+        function viewInGallery(orchidId) {
+            window.open(`/orchid/${orchidId}`, '_blank');
+        }
+        
+        // Filter orchid points by genus
+        function filterByGenus() {
+            const selectedGenus = document.getElementById('genusFilter').value;
+            
+            orchidPoints.forEach(pointSet => {
+                const isVisible = !selectedGenus || pointSet.data.genus === selectedGenus;
+                pointSet.point.visible = isVisible;
+                pointSet.glow.visible = isVisible;
+            });
+            
+            // Update counter
+            const visibleCount = orchidPoints.filter(p => p.point.visible).length;
+            const totalCount = orchidPoints.length;
+            
+            if (selectedGenus) {
+                document.getElementById('orchidCount').textContent = `${visibleCount} ${selectedGenus} Points (${totalCount} total)`;
+            } else {
+                document.getElementById('orchidCount').textContent = `${totalCount} Orchid Points of Light`;
+            }
+            
+            console.log(`🔍 Filtered to ${visibleCount} orchids${selectedGenus ? ` of genus ${selectedGenus}` : ''}`);
         }
         
         function showError(message) {

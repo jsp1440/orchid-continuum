@@ -110,6 +110,48 @@ def space_earth_globe():
     """True 3D spinning Earth globe viewed from space with orchid constellation"""
     return render_template('space_earth_globe.html')
 
+@app.route('/api/orchid-coordinates-all')
+def orchid_coordinates_all():
+    """Get ALL orchid coordinates for the 3D globe - thousands of points"""
+    try:
+        # Get all orchids with coordinates from database
+        orchids = OrchidRecord.query.filter(
+            and_(
+                OrchidRecord.decimal_latitude.isnot(None),
+                OrchidRecord.decimal_longitude.isnot(None)
+            )
+        ).all()
+        
+        coordinates = []
+        for orchid in orchids:
+            if orchid.decimal_latitude and orchid.decimal_longitude:
+                coordinates.append({
+                    'id': orchid.id,
+                    'lat': float(orchid.decimal_latitude),
+                    'lng': float(orchid.decimal_longitude),
+                    'name': orchid.display_name or orchid.scientific_name or f"Orchid {orchid.id}",
+                    'genus': orchid.genus or (orchid.scientific_name.split(' ')[0] if orchid.scientific_name else 'Unknown'),
+                    'species': orchid.species,
+                    'location': orchid.locality or orchid.location_notes or 'Unknown location',
+                    'image': orchid.image_url if orchid.image_url else None,
+                    'source': orchid.source or 'Database'
+                })
+        
+        logger.info(f"🌍 Loaded {len(coordinates)} orchid coordinates for 3D globe")
+        return jsonify({
+            'success': True,
+            'coordinates': coordinates,
+            'total_count': len(coordinates)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading all orchid coordinates: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'coordinates': []
+        }), 500
+
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():
     """Get diagnostic system status"""
