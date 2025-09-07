@@ -34,9 +34,12 @@ app.config['UPLOAD_FOLDER'] = 'temp'
 db.init_app(app)
 
 with app.app_context():
-    # Import models to ensure tables are created
-    import models
-    import parentage_models  # Import additional models
+    # Import models to ensure tables are created - lazy import to avoid circular import
+    try:
+        import models
+        import parentage_models  # Import additional models
+    except ImportError as e:
+        logging.warning(f"Model import issue (will retry): {e}")
     
     # Initialize database
     try:

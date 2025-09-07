@@ -71,19 +71,20 @@ except Exception as e:
     trigger_user_integrity_check = lambda x: True  # Fallback function
     get_integrity_status = lambda: {"status": "unavailable"}
 
-# DISABLED: Start comprehensive diagnostic system - was overloading server
+# DISABLED: All background monitoring systems to prevent server crashes
+# These were causing worker timeouts and SIGKILL errors
 # try:
-    start_diagnostic_monitoring()
-    logger.info("🔧 Comprehensive diagnostic system started")
-except Exception as e:
-    logger.error(f"❌ Failed to start diagnostic system: {e}")
+#     start_diagnostic_monitoring()
+#     logger.info("🔧 Comprehensive diagnostic system started")
+# except Exception as e:
+#     logger.error(f"❌ Failed to start diagnostic system: {e}")
 
-# Start enhanced data collection system
-try:
-    start_enhanced_collection()
-    logger.info("🌐 Enhanced data collection system started")
-except Exception as e:
-    logger.error(f"❌ Failed to start enhanced collection: {e}")
+# DISABLED: Enhanced data collection system - was overloading server
+# try:
+#     start_enhanced_collection()
+#     logger.info("🌐 Enhanced data collection system started")
+# except Exception as e:
+#     logger.error(f"❌ Failed to start enhanced collection: {e}")
 
 try:
     from widget_integration_hub import widget_hub, track_widget_interaction, get_enhanced_widget_data
@@ -93,25 +94,25 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Widget integration modules not available: {e}")
 
-# CRITICAL: Trigger integrity check on EVERY user visit
-@app.before_request
-def trigger_integrity_on_user_visit():
-    """MISSION CRITICAL: Run integrity check on every user activity"""
-    try:
-        # Get user IP for tracking
-        user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-        
-        # Skip checks for static files and API calls to avoid performance issues
-        if (request.endpoint and 
-            not request.endpoint.startswith('static') and 
-            not request.path.startswith('/api/drive-photo') and
-            not request.path.startswith('/static')):
-            
-            # Trigger integrity validation
-            trigger_user_integrity_check(user_ip)
-            
-    except Exception as e:
-        logger.error(f"🚨 CRITICAL: User-triggered integrity check failed: {e}")
+# DISABLED: Integrity check on every request - was causing worker crashes
+# @app.before_request
+# def trigger_integrity_on_user_visit():
+#     """MISSION CRITICAL: Run integrity check on every user activity"""
+#     try:
+#         # Get user IP for tracking
+#         user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+#         
+#         # Skip checks for static files and API calls to avoid performance issues
+#         if (request.endpoint and 
+#             not request.endpoint.startswith('static') and 
+#             not request.path.startswith('/api/drive-photo') and
+#             not request.path.startswith('/static')):
+#             
+#             # Trigger integrity validation
+#             trigger_user_integrity_check(user_ip)
+#             
+#     except Exception as e:
+#         logger.error(f"🚨 CRITICAL: User-triggered integrity check failed: {e}")
 
 # Add Gary Yong Gee Partnership Demo route
 @app.route('/gary-demo')
