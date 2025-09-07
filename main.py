@@ -11,7 +11,7 @@ THE ORCHID CONTINUUM - COMPLETE SYSTEM RESTORED
 
 import os
 import logging
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, render_template_string, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
