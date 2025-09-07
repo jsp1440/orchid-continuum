@@ -147,13 +147,25 @@ def orchid_explorer_widget():
 <body>
   <header>
     <div class="header-content">
-      <div class="logo">🌺 Orchid Interaction Explorer</div>
-      <div style="color: #6c757d;">Five Cities Orchid Society - Ecosystem Relationships Database</div>
-      <div style="margin-top: 8px;">
-        <a href="/static/docs/orchid_interaction_explorer_guide.md" target="_blank" 
-           style="color: #6B3FA0; text-decoration: none; font-size: 14px;">
-          📖 User Guide & FAQ
-        </a>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div>
+          <div class="logo">🌺 Orchid Interaction Explorer</div>
+          <div style="color: #6c757d;">Five Cities Orchid Society - Ecosystem Relationships Database</div>
+          <div style="margin-top: 8px;">
+            <a href="/static/docs/orchid_interaction_explorer_guide.md" target="_blank" 
+               style="color: #6B3FA0; text-decoration: none; font-size: 14px;">
+              📖 User Guide & FAQ
+            </a>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <a href="/" style="background: #6B3FA0; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            🏠 Home
+          </a>
+          <a href="/gallery" style="background: #28a745; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            🖼️ Gallery
+          </a>
+        </div>
       </div>
     </div>
   </header>
