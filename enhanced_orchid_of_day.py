@@ -66,19 +66,32 @@ class ValidatedOrchidOfDay:
             return None
     
     def _select_featured_orchid(self):
-        """Select orchid with rich metadata and proper taxonomic names for featuring"""
+        """Select orchid with rich metadata and proper taxonomic names for featuring - SYNCHRONIZED with utils.py"""
         try:
             from orchid_name_utils import orchid_name_utils
             
-            # Use date-based seeding for consistency
+            # CRITICAL: Use SAME date-based seeding as utils.py for consistency (prevents mismatch!)
             today = date.today()
             seed = int(today.strftime("%Y%m%d"))
             random.seed(seed)
             
-            # CRITICAL FILTERING: Get orchids with complete metadata and real images
+            # CRITICAL: Use SAME criteria as utils.py to prevent mismatch!
             rich_orchids = OrchidRecord.query.filter(
-                # PRIORITY: Google Drive images only (most reliable)
-                OrchidRecord.google_drive_id.isnot(None),
+                # PRIORITY: Reliable images (Google Drive OR working external URLs) - SAME as utils.py
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    and_(
+                        OrchidRecord.image_url.isnot(None),
+                        OrchidRecord.image_url != '/static/images/orchid_placeholder.svg',
+                        OrchidRecord.image_url.notlike('%placeholder%'),
+                        OrchidRecord.image_url != ''
+                    ),
+                    and_(
+                        OrchidRecord.image_source.isnot(None),
+                        OrchidRecord.image_source != '',
+                        OrchidRecord.image_source.like('%drive.google.com%')
+                    )
+                ),
                 # Has BOTH genus AND species information (fully spelled out)
                 OrchidRecord.genus.isnot(None),
                 OrchidRecord.species.isnot(None),

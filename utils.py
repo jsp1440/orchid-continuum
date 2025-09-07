@@ -22,7 +22,7 @@ def generate_filename(original_filename):
     return f"orchid_{timestamp}_{unique_id}{file_ext}"
 
 def get_orchid_of_the_day():
-    """Get the orchid of the day based on date and available orchids with real images"""
+    """Get the orchid of the day based on date and available orchids with real images - FIXED to prevent mismatches"""
     try:
         # Use current date as seed for consistent daily selection
         today = date.today()
