@@ -38,6 +38,7 @@ class OrchidScheduler:
         schedule.every().hour.do(self.update_orchid_metadata)
         schedule.every(6).hours.do(self.run_maintenance_tasks)
         schedule.every().day.at("03:00").do(self.full_database_refresh)
+        schedule.every().day.at("04:30").do(self.run_mislabeling_detection)  # Daily data quality check
         
         # Start scheduler in background thread
         scheduler_thread = threading.Thread(target=self.run_scheduler, daemon=True)
@@ -113,7 +114,7 @@ class OrchidScheduler:
         try:
             # Find orchids without coordinates that have location info
             orchids_to_update = OrchidRecord.query.filter(
-                OrchidRecord.latitude.is_(None),
+                OrchidRecord.decimal_latitude.is_(None),
                 OrchidRecord.country.isnot(None)
             ).limit(50).all()  # Process 50 at a time
             
@@ -123,11 +124,11 @@ class OrchidScheduler:
                 coords = self.get_country_coordinates(orchid.country)
                 if coords:
                     # Add some randomization to avoid exact overlap
-                    orchid.latitude = coords[0] + random.uniform(-2, 2)
-                    orchid.longitude = coords[1] + random.uniform(-2, 2)
+                    orchid.decimal_latitude = coords[0] + random.uniform(-2, 2)
+                    orchid.decimal_longitude = coords[1] + random.uniform(-2, 2)
                     
-                    # Update continent info
-                    orchid.continent = self.get_continent_from_country(orchid.country)
+                    # Update region info based on country
+                    orchid.region = self.get_continent_from_country(orchid.country)
                     updated_count += 1
             
             if updated_count > 0:
@@ -248,6 +249,196 @@ class OrchidScheduler:
                 
             except Exception as e:
                 logger.error(f"❌ Error during daily refresh: {e}")
+                
+    def run_mislabeling_detection(self):
+        """Daily mislabeling detection and auto-correction"""
+        logger.info("🔍 Running daily mislabeling detection scan")
+        
+        with app.app_context():
+            try:
+                # Check for the infamous "T" abbreviation pattern that caused the massive issue
+                trichocentrum_mislabels = self.detect_trichocentrum_mislabeling()
+                
+                # Check for other systematic mislabeling patterns
+                abbreviation_issues = self.detect_abbreviation_mislabeling()
+                
+                # Check for genus/species field disconnections
+                disconnected_data = self.detect_disconnected_taxonomy()
+                
+                # Auto-correct obvious cases
+                auto_corrections = self.auto_correct_obvious_mislabeling()
+                
+                # Flag questionable cases for community review
+                flagged_cases = self.flag_questionable_cases()
+                
+                logger.info(f"✅ Mislabeling scan completed:")
+                logger.info(f"   - Trichocentrum issues detected: {trichocentrum_mislabels}")
+                logger.info(f"   - Abbreviation issues detected: {abbreviation_issues}")
+                logger.info(f"   - Disconnected taxonomy: {disconnected_data}")
+                logger.info(f"   - Auto-corrections made: {auto_corrections}")
+                logger.info(f"   - Cases flagged for review: {flagged_cases}")
+                
+            except Exception as e:
+                logger.error(f"❌ Error during mislabeling detection: {e}")
+                
+    def detect_trichocentrum_mislabeling(self):
+        """Detect the infamous 'T [abbreviation]' pattern mislabeled as Trichocentrum"""
+        try:
+            # Find Trichocentrum records that look like abbreviations
+            suspicious_records = OrchidRecord.query.filter(
+                OrchidRecord.genus == 'Trichocentrum',
+                OrchidRecord.display_name.like('T %'),
+                OrchidRecord.identification_status != 'unidentified'
+            ).all()
+            
+            detected_count = len(suspicious_records)
+            
+            if detected_count > 0:
+                logger.warning(f"🚨 CRITICAL: {detected_count} potential Trichocentrum mislabeling detected!")
+                # Auto-move to unidentified for expert review
+                for record in suspicious_records:
+                    record.identification_status = 'unidentified'
+                    logger.info(f"🔧 Flagged suspicious Trichocentrum: {record.display_name} (ID: {record.id})")
+                
+                db.session.commit()
+                
+            return detected_count
+            
+        except Exception as e:
+            logger.error(f"Error detecting Trichocentrum mislabeling: {e}")
+            return 0
+            
+    def detect_abbreviation_mislabeling(self):
+        """Detect other abbreviation patterns that might indicate systematic mislabeling"""
+        try:
+            # Look for patterns like single letters, common abbreviations in wrong places
+            suspicious_patterns = [
+                "% C %",  # Cattleya abbreviation in wrong place
+                "% Den %",  # Dendrobium abbreviation in wrong place  
+                "% Bulb %",  # Bulbophyllum abbreviation in wrong place
+                "% Masd %",  # Masdevallia abbreviation in wrong place
+                "% Angcm %",  # Angraecum abbreviation in wrong place
+                "% Ctsm %",  # Catasetum abbreviation in wrong place
+            ]
+            
+            total_detected = 0
+            for pattern in suspicious_patterns:
+                records = OrchidRecord.query.filter(
+                    OrchidRecord.display_name.like(pattern),
+                    OrchidRecord.identification_status != 'unidentified'
+                ).all()
+                
+                if records:
+                    total_detected += len(records)
+                    logger.warning(f"🚨 Detected {len(records)} records with suspicious pattern: {pattern}")
+                    
+            return total_detected
+            
+        except Exception as e:
+            logger.error(f"Error detecting abbreviation mislabeling: {e}")
+            return 0
+            
+    def detect_disconnected_taxonomy(self):
+        """Detect cases where genus/species data is disconnected from display names"""
+        try:
+            # Find records where genus doesn't match what's in display_name
+            disconnected_records = OrchidRecord.query.filter(
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.display_name.isnot(None),
+                ~OrchidRecord.display_name.like(f"%{OrchidRecord.genus}%")
+            ).limit(100).all()  # Limit to avoid huge queries
+            
+            detected_count = len(disconnected_records)
+            
+            if detected_count > 10:  # If many disconnected, it's suspicious
+                logger.warning(f"🚨 MASSIVE TAXONOMY DISCONNECTION: {detected_count} records detected!")
+                
+            return detected_count
+            
+        except Exception as e:
+            logger.error(f"Error detecting disconnected taxonomy: {e}")
+            return 0
+            
+    def auto_correct_obvious_mislabeling(self):
+        """Auto-correct obvious mislabeling cases"""
+        try:
+            corrections_made = 0
+            
+            # Fix obvious Trichocentrum "T [abbreviation]" patterns
+            trichocentrum_abbreviations = {
+                'T C ': 'Cattleya',
+                'T Den ': 'Dendrobium', 
+                'T Bulb ': 'Bulbophyllum',
+                'T Masd ': 'Masdevallia',
+                'T Angcm ': 'Angraecum',
+                'T Ctsm ': 'Catasetum',
+                'T L ': 'Laelia',
+                'T Epi ': 'Epidendrum'
+            }
+            
+            for abbreviation, correct_genus in trichocentrum_abbreviations.items():
+                records = OrchidRecord.query.filter(
+                    OrchidRecord.genus == 'Trichocentrum',
+                    OrchidRecord.display_name.like(f'{abbreviation}%')
+                ).all()
+                
+                for record in records:
+                    record.genus = correct_genus
+                    record.suggested_genus = correct_genus
+                    record.identification_status = 'verified'
+                    corrections_made += 1
+                    logger.info(f"🔧 AUTO-CORRECTED: {record.display_name} → genus: {correct_genus}")
+            
+            if corrections_made > 0:
+                db.session.commit()
+                logger.info(f"✅ Auto-corrected {corrections_made} obvious mislabeling cases")
+                
+            return corrections_made
+            
+        except Exception as e:
+            logger.error(f"Error auto-correcting mislabeling: {e}")
+            db.session.rollback()
+            return 0
+            
+    def flag_questionable_cases(self):
+        """Flag questionable cases for community review"""
+        try:
+            flagged_count = 0
+            
+            # Flag records with very generic species names
+            generic_species = ['species', 'sp.', 'sp', 'spp.', 'unknown', 'Unknown']
+            generic_records = OrchidRecord.query.filter(
+                OrchidRecord.species.in_(generic_species),
+                OrchidRecord.identification_status == 'verified'
+            ).all()
+            
+            for record in generic_records:
+                record.identification_status = 'needs_review'
+                flagged_count += 1
+                
+            # Flag records where display_name and genus/species don't match at all
+            mismatched_records = OrchidRecord.query.filter(
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.species.isnot(None),
+                OrchidRecord.display_name.isnot(None),
+                ~OrchidRecord.display_name.contains(OrchidRecord.genus),
+                OrchidRecord.identification_status == 'verified'
+            ).limit(50).all()  # Limit to avoid massive changes
+            
+            for record in mismatched_records:
+                record.identification_status = 'needs_review'
+                flagged_count += 1
+                
+            if flagged_count > 0:
+                db.session.commit()
+                logger.info(f"🏁 Flagged {flagged_count} questionable cases for expert review")
+                
+            return flagged_count
+            
+        except Exception as e:
+            logger.error(f"Error flagging questionable cases: {e}")
+            db.session.rollback()
+            return 0
                 
     def get_country_coordinates(self, country):
         """Get approximate coordinates for a country"""
