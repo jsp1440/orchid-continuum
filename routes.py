@@ -1113,6 +1113,104 @@ def intergeneric_crosses():
     """Intergeneric orchid crosses exploration page"""
     return render_template('intergeneric_crosses.html')
 
+# ========== ORCHID JUDGING SYSTEM ROUTES ==========
+
+@app.route('/judging')
+def judging_home():
+    """Orchid judging system home page"""
+    try:
+        # Get available organizations
+        organizations = get_available_organizations()
+        
+        # Get recent analyses for the current user (if any)
+        recent_analyses = []
+        if current_user and hasattr(current_user, 'id'):
+            recent_analyses = JudgingAnalysis.query.filter_by(
+                user_id=current_user.id
+            ).order_by(JudgingAnalysis.created_at.desc()).limit(5).all()
+        
+        return render_template('judging/home.html', 
+                             organizations=organizations,
+                             recent_analyses=recent_analyses)
+    except Exception as e:
+        logger.error(f"❌ Judging home error: {e}")
+        flash('Error loading judging system. Please try again.', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/judging/analyze/<int:orchid_id>')
+def judging_analyze_orchid(orchid_id):
+    """Analyze a specific orchid for judging"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        organization = request.args.get('org', 'AOS')  # Default to AOS
+        
+        # Perform judging analysis
+        analysis_result = analyze_orchid_by_organization(orchid_id, organization)
+        
+        # Save analysis to database
+        if current_user and hasattr(current_user, 'id'):
+            judging_analysis = JudgingAnalysis(
+                orchid_id=orchid_id,
+                user_id=current_user.id,
+                organization=organization,
+                total_score=analysis_result.get('total_score', 0),
+                category_scores=json.dumps(analysis_result.get('category_scores', {})),
+                analysis_details=json.dumps(analysis_result),
+                created_at=datetime.utcnow()
+            )
+            db.session.add(judging_analysis)
+            db.session.commit()
+        
+        return render_template('judging/analysis_result.html',
+                             orchid=orchid,
+                             organization=organization,
+                             analysis=analysis_result)
+        
+    except Exception as e:
+        logger.error(f"❌ Judging analysis error: {e}")
+        flash('Error analyzing orchid. Please try again.', 'error')
+        return redirect(url_for('judging_home'))
+
+@app.route('/judging/enhanced-analyze/<int:orchid_id>')
+def judging_enhanced_analyze(orchid_id):
+    """Enhanced analysis with genetic factors"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        organization = request.args.get('org', 'AOS')
+        
+        # Use enhanced judging with genetics
+        analysis_result = analyze_orchid_with_genetics(orchid_id, organization)
+        
+        return render_template('judging/enhanced_analysis_result.html',
+                             orchid=orchid,
+                             organization=organization,
+                             analysis=analysis_result)
+        
+    except Exception as e:
+        logger.error(f"❌ Enhanced judging analysis error: {e}")
+        flash('Error performing enhanced analysis. Please try again.', 'error')
+        return redirect(url_for('judging_home'))
+
+@app.route('/api/judging/quick-score/<int:orchid_id>')
+def api_quick_judging_score(orchid_id):
+    """Quick API endpoint for judging score"""
+    try:
+        organization = request.args.get('org', 'AOS')
+        analysis_result = analyze_orchid_by_organization(orchid_id, organization)
+        
+        return jsonify({
+            'success': True,
+            'orchid_id': orchid_id,
+            'organization': organization,
+            'total_score': analysis_result.get('total_score', 0),
+            'award_eligible': analysis_result.get('award_eligible', False),
+            'potential_awards': analysis_result.get('potential_awards', [])
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Quick judging API error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/intergeneric-crosses')
 def api_intergeneric_crosses():
     """API endpoint for intergeneric crosses data"""
