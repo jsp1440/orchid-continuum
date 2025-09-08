@@ -71,6 +71,21 @@ class UnifiedClimateCommandCenter:
         self.climate_system = climate_research
         self.global_system = global_analysis
         
+        # Connect to AI and data management systems
+        try:
+            from ai_research_assistant import ai_assistant
+            self.ai_assistant = ai_assistant
+        except ImportError:
+            self.ai_assistant = None
+            logger.warning("AI Research Assistant not available")
+            
+        try:
+            from research_data_manager import data_manager
+            self.data_manager = data_manager
+        except ImportError:
+            self.data_manager = None
+            logger.warning("Research Data Manager not available")
+        
         # Command center data directory
         self.command_center_dir = 'unified_command_center'
         self.analysis_cache_dir = os.path.join(self.command_center_dir, 'analysis_cache')
@@ -556,6 +571,11 @@ def sweet_spot_finder():
 def scaling_predictor():
     """Scaling impact predictor"""
     return render_template('command_center/scaling_predictor.html')
+
+@command_center_bp.route('/research-lab')
+def research_lab():
+    """AI-powered research lab interface"""
+    return render_template('command_center/research_lab.html')
 
 # API Routes
 @command_center_bp.route('/api/dashboard-data')
