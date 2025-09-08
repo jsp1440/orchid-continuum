@@ -314,6 +314,30 @@ class MycorrhizalResearchSystem:
         
         return analysis
 
+    def _add_submission_to_project(self, project_id: str, submission_id: str):
+        """Add submission ID to project's submission list"""
+        if not project_id:
+            return
+        
+        try:
+            project_file = os.path.join(self.research_projects_dir, f"{project_id}.json")
+            if os.path.exists(project_file):
+                with open(project_file, 'r') as f:
+                    project = json.load(f)
+                
+                if 'submissions' not in project:
+                    project['submissions'] = []
+                
+                project['submissions'].append(submission_id)
+                project['last_updated'] = datetime.now().isoformat()
+                
+                with open(project_file, 'w') as f:
+                    json.dump(project, f, indent=2)
+                
+                logger.info(f"🍄 Added submission {submission_id} to project {project_id}")
+        except Exception as e:
+            logger.error(f"Error adding submission to project: {str(e)}")
+
     def _generate_research_recommendations(self, observation: Dict) -> List[str]:
         """Generate research recommendations"""
         recommendations = []
