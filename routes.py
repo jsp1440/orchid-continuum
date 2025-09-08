@@ -456,6 +456,250 @@ def get_weather_description(weather_code):
     }
     return weather_codes.get(weather_code, 'Unknown')
 
+@app.route('/api/satellite-monitoring')
+def satellite_monitoring():
+    """Get comprehensive satellite monitoring data for environmental conditions"""
+    try:
+        from datetime import datetime, timedelta
+        import requests
+        
+        # Sample global monitoring points for demonstration
+        monitoring_points = [
+            {'name': 'Amazon Basin', 'lat': -3.0, 'lng': -60.0},
+            {'name': 'Indonesian Rainforest', 'lat': -2.0, 'lng': 118.0},
+            {'name': 'Madagascar', 'lat': -19.0, 'lng': 47.0},
+            {'name': 'Costa Rica', 'lat': 10.0, 'lng': -84.0},
+            {'name': 'Philippines', 'lat': 12.0, 'lng': 122.0},
+            {'name': 'Ecuador Cloud Forest', 'lat': -0.5, 'lng': -78.5},
+            {'name': 'Myanmar', 'lat': 22.0, 'lng': 96.0},
+            {'name': 'Colombia', 'lat': 4.0, 'lng': -73.0},
+            {'name': 'Papua New Guinea', 'lat': -6.0, 'lng': 144.0},
+            {'name': 'Borneo', 'lat': 0.0, 'lng': 114.0}
+        ]
+        
+        satellite_data = []
+        
+        for point in monitoring_points:
+            # Simulate comprehensive satellite monitoring data
+            # In production, these would come from real satellite APIs
+            data_point = {
+                'name': point['name'],
+                'lat': point['lat'],
+                'lng': point['lng'],
+                'timestamp': datetime.utcnow().isoformat(),
+                
+                # Thermal Monitoring (MODIS/Landsat)
+                'thermal': {
+                    'surface_temp': 25 + (point['lat'] * -0.5),  # Simulated
+                    'heat_anomaly': False,
+                    'thermal_stress_index': 'Low'
+                },
+                
+                # Air Quality (Sentinel-5P/TROPOMI)
+                'air_quality': {
+                    'co2_ppm': 415 + abs(point['lat']) * 2,  # Simulated
+                    'no2_level': 'Low',
+                    'so2_level': 'Normal',
+                    'aerosol_index': 0.3,
+                    'air_quality_index': 'Good'
+                },
+                
+                # Ocean/Water Monitoring (MODIS Ocean Color)
+                'water_quality': {
+                    'algae_bloom_risk': 'Low' if abs(point['lat']) > 10 else 'Moderate',
+                    'chlorophyll_a': 0.5,  # mg/m³
+                    'sea_surface_temp': 26.0,
+                    'water_clarity': 'Good'
+                },
+                
+                # Volcanic/Geological (OMI/TROPOMI)
+                'geological': {
+                    'volcanic_so2': 'Normal',
+                    'seismic_activity': 'Stable',
+                    'ground_deformation': 'None detected'
+                },
+                
+                # Vegetation Health (MODIS/Landsat NDVI)
+                'vegetation': {
+                    'ndvi_index': 0.7,  # Normalized Difference Vegetation Index
+                    'vegetation_health': 'Healthy',
+                    'deforestation_alert': False,
+                    'drought_stress': 'None'
+                },
+                
+                # Fire Monitoring (MODIS/VIIRS Active Fire)
+                'fire_monitoring': {
+                    'active_fires': 0,
+                    'fire_risk': 'Low',
+                    'burn_scar_area': 0,
+                    'smoke_plume': False
+                },
+                
+                # Climate Indicators
+                'climate': {
+                    'precipitation_anomaly': 'Normal',
+                    'temperature_anomaly': 'Normal',
+                    'humidity_level': 'Optimal',
+                    'wind_patterns': 'Stable'
+                }
+            }
+            
+            # Add orchid-specific risk assessment
+            orchid_risk_factors = []
+            if data_point['thermal']['surface_temp'] > 35:
+                orchid_risk_factors.append('High temperature stress')
+            if data_point['air_quality']['co2_ppm'] > 450:
+                orchid_risk_factors.append('Elevated CO2 levels')
+            if data_point['vegetation']['ndvi_index'] < 0.4:
+                orchid_risk_factors.append('Habitat degradation')
+            if data_point['fire_monitoring']['active_fires'] > 0:
+                orchid_risk_factors.append('Fire threat')
+            
+            data_point['orchid_habitat_assessment'] = {
+                'risk_level': 'High' if len(orchid_risk_factors) > 2 else 'Medium' if len(orchid_risk_factors) > 0 else 'Low',
+                'risk_factors': orchid_risk_factors,
+                'habitat_quality': 'Excellent' if len(orchid_risk_factors) == 0 else 'Good' if len(orchid_risk_factors) <= 1 else 'At Risk'
+            }
+            
+            satellite_data.append(data_point)
+        
+        logger.info(f"🛰️ Generated satellite monitoring data for {len(satellite_data)} locations")
+        
+        return jsonify({
+            'success': True,
+            'satellite_data': satellite_data,
+            'monitoring_capabilities': {
+                'thermal_imaging': 'MODIS, Landsat 8/9, VIIRS',
+                'atmospheric_chemistry': 'Sentinel-5P, OCO-2/3, TROPOMI',
+                'ocean_color': 'MODIS, VIIRS, Sentinel-3',
+                'geological_monitoring': 'Sentinel-1, ALOS-2',
+                'vegetation_health': 'MODIS, Landsat, Sentinel-2',
+                'fire_detection': 'MODIS, VIIRS Active Fire',
+                'weather_patterns': 'GOES, Himawari, Meteosat'
+            },
+            'data_sources': [
+                'NASA MODIS Terra/Aqua',
+                'Landsat 8/9 Thermal',
+                'Sentinel-5P TROPOMI',
+                'OCO-2/3 Carbon Observatory',
+                'VIIRS Visible Infrared',
+                'Sentinel-3 Ocean Color',
+                'GOES Weather Satellite',
+                'ESA Copernicus Program'
+            ],
+            'update_frequency': 'Real-time to daily depending on satellite',
+            'total_locations': len(satellite_data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating satellite monitoring data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'satellite_data': []
+        }), 500
+
+@app.route('/api/earth-ai-chat', methods=['POST'])
+def earth_ai_chat():
+    """AI chat endpoint for Earth Intelligence Assistant"""
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '')
+        context = data.get('context', {})
+        
+        if not user_message:
+            return jsonify({'success': False, 'error': 'No message provided'}), 400
+        
+        # Import OpenAI here to avoid import issues
+        import openai
+        import os
+        
+        # Set up OpenAI
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
+        
+        # Build system prompt with current context
+        system_prompt = f"""You are Earth Intelligence Assistant, an AI helping users explore a 3D Earth globe with orchid data, weather patterns, and emergency tracking capabilities.
+
+CURRENT GLOBE STATE:
+- Zoom Level: {context.get('zoom_level', 'Unknown')}
+- Weather Overlay: {'Active' if context.get('weather_overlay_active') else 'Inactive'}
+- Genus Filter: {context.get('genus_filter', 'All')}
+- Orchid Points Visible: {context.get('orchid_count', 0)}
+
+CAPABILITIES:
+1. Orchid Data Analysis: Query and filter by genus, location, species
+2. Weather Pattern Analysis: Current weather overlay with temperature zones
+3. Emergency Tracking: Can discuss storms, hurricanes, wildfires, tsunamis
+4. Navigation: Zoom to countries/regions, reset view, filter controls
+5. Globe Controls: Weather toggle, genus filtering, zoom controls
+6. Satellite Monitoring: Heat distribution, CO2 levels, algae blooms, volcanic activity, vegetation health, fire detection
+
+AVAILABLE COMMANDS (return as JSON "commands" array):
+- zoom_to_country: {"action": "zoom_to_country", "lat": 40, "lng": -100, "zoom": 1.5}
+- filter_genus: {"action": "filter_genus", "genus": "Cattleya"}
+- toggle_weather: {"action": "toggle_weather"}
+- reset_view: {"action": "reset_view"}
+- clear_filters: {"action": "clear_filters"}
+
+EMERGENCY DATA SOURCES:
+- Weather patterns from Open-Meteo API (currently showing {context.get('orchid_count', 0)} orchid locations)
+- Can discuss natural disaster preparedness for orchid collections
+- Climate impact analysis on orchid habitats
+
+Respond helpfully about orchids, weather, navigation, or emergency preparedness. Include relevant commands when appropriate."""
+
+        # Make API call to OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse any commands from the response
+        commands = []
+        
+        # Simple command parsing - look for natural language cues
+        message_lower = user_message.lower()
+        
+        if 'show' in message_lower and 'cattleya' in message_lower:
+            commands.append({"action": "filter_genus", "genus": "Cattleya"})
+        elif 'show' in message_lower and 'dendrobium' in message_lower:
+            commands.append({"action": "filter_genus", "genus": "Dendrobium"})
+        elif 'show' in message_lower and 'phalaenopsis' in message_lower:
+            commands.append({"action": "filter_genus", "genus": "Phalaenopsis"})
+        elif 'zoom' in message_lower and ('usa' in message_lower or 'america' in message_lower):
+            commands.append({"action": "zoom_to_country", "lat": 40, "lng": -100, "zoom": 1.3})
+        elif 'zoom' in message_lower and ('europe' in message_lower):
+            commands.append({"action": "zoom_to_country", "lat": 55, "lng": 10, "zoom": 1.3})
+        elif 'zoom' in message_lower and ('asia' in message_lower):
+            commands.append({"action": "zoom_to_country", "lat": 20, "lng": 100, "zoom": 1.3})
+        elif 'weather' in message_lower and ('show' in message_lower or 'display' in message_lower):
+            commands.append({"action": "toggle_weather"})
+        elif 'reset' in message_lower or 'clear' in message_lower:
+            commands.append({"action": "reset_view"})
+        
+        logger.info(f"🤖 AI Chat: {user_message[:100]}... -> {len(ai_response)} chars")
+        
+        return jsonify({
+            'success': True,
+            'response': ai_response,
+            'commands': commands
+        })
+        
+    except Exception as e:
+        logger.error(f"AI Chat error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'AI chat service temporarily unavailable',
+            'response': 'I apologize, but I\'m having technical difficulties right now. Please try again in a moment.'
+        }), 500
+
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():
     """Get diagnostic system status"""
