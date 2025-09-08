@@ -1476,6 +1476,14 @@ app.register_blueprint(ai_research_bp)
 from research_data_manager import research_data_bp
 app.register_blueprint(research_data_bp)
 
+# Register Literature Search System
+from literature_search_system import literature_bp
+app.register_blueprint(literature_bp)
+
+# Register Historical Climate System
+from historical_climate_system import historical_climate_bp
+app.register_blueprint(historical_climate_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
