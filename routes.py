@@ -1488,6 +1488,10 @@ app.register_blueprint(historical_climate_bp)
 from mycorrhizal_network_monitor import mycorrhizal_bp
 app.register_blueprint(mycorrhizal_bp)
 
+# Register AI Research Director (Autonomous Climate Commander)
+from ai_research_director import research_director_bp
+app.register_blueprint(research_director_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
