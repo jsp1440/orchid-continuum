@@ -53,6 +53,7 @@ import issue_reports
 import chris_howard_reimport
 from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
+from ai_system_monitor import start_ai_monitoring, get_monitoring_status, get_ai_monitor
 from admin_control_center import register_admin_control_center
 # DISABLED: from automated_repair_system import repair_system
 # DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
@@ -7026,6 +7027,13 @@ try:
     logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
 except Exception as e:
     logger.error(f"Failed to auto-start vigilant monitor: {e}")
+
+# Auto-start AI system monitoring
+try:
+    ai_monitor = start_ai_monitoring(interval_seconds=90)  # Check every 90 seconds
+    logger.info("🤖 AI SYSTEM MONITOR: Auto-started intelligent functionality validation")
+except Exception as e:
+    logger.error(f"Failed to auto-start AI monitor: {e}")
 
 # Register comprehensive system monitoring and admin control center
 try:
