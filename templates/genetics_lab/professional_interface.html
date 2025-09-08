@@ -296,6 +296,9 @@
             <button class="professional-tab" onclick="showTab('breeding')">
                 <i data-feather="shuffle"></i> Breeding Predictions
             </button>
+            <button class="professional-tab" onclick="showTab('consultant')">
+                <i data-feather="message-circle"></i> AI Breeding Consultant
+            </button>
             <button class="professional-tab" onclick="showTab('judging')">
                 <i data-feather="award"></i> Show Quality Evaluation
             </button>
@@ -477,6 +480,134 @@
                             <p class="text-muted small mb-2">• MADS-box genes control floral diversity patterns</p>
                             <p class="text-muted small mb-2">• Chromosome analysis helps predict vigor</p>
                             <p class="text-muted small">• This system attempts to identify these patterns in photos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Breeding Consultant Tab -->
+        <div id="consultant-tab" class="tab-content" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="professional-card p-4">
+                        <h3 class="text-light mb-3">
+                            <i data-feather="message-circle" class="me-2"></i>AI Breeding Consultant
+                        </h3>
+                        
+                        <div class="breeding-recommendation mb-4">
+                            <h5 style="color: #00d4aa;">💬 Talk to Your Breeding AI Assistant</h5>
+                            <p class="text-light mb-3">
+                                Have natural conversations about your breeding programs. Share your expertise, get breeding advice, 
+                                upload photos with context, and discuss multi-generational breeding strategies.
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6 style="color: #ffd93d;">🎯 Quick Start Examples:</h6>
+                                    <div class="scenario-prompts">
+                                        <button class="scenario-btn" onclick="usePrompt('current-cross')">
+                                            "I have this Miltoniopsis with these traits..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('enhance-traits')">
+                                            "I want to enhance flower size and fragrance..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('multi-generation')">
+                                            "I'm 3 generations into this breeding line..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('problem-solving')">
+                                            "I'm getting weak offspring, what am I missing?"
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 style="color: #00d4aa;">🔬 What I Can Help With:</h6>
+                                    <ul class="text-muted small">
+                                        <li>Analyze your breeding photos and describe what I see</li>
+                                        <li>Suggest crosses based on your specific goals</li>
+                                        <li>Discuss inheritance patterns and trait probability</li>
+                                        <li>Help plan multi-generation breeding strategies</li>
+                                        <li>Reference genetics literature for your situation</li>
+                                        <li>Learn from your breeding experience and outcomes</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Controls -->
+                        <div class="voice-controls mb-4">
+                            <button id="voiceToggle" class="professional-button me-2" onclick="toggleVoice()">
+                                <i data-feather="mic" class="me-1"></i>Start Voice Mode
+                            </button>
+                            <button id="photoUploadBtn" class="professional-button me-2" onclick="document.getElementById('consultantPhotoInput').click()">
+                                <i data-feather="camera" class="me-1"></i>Add Photos
+                            </button>
+                            <button class="professional-button" onclick="clearConversation()">
+                                <i data-feather="refresh-ccw" class="me-1"></i>New Conversation
+                            </button>
+                            <input type="file" id="consultantPhotoInput" multiple accept="image/*" style="display: none;" onchange="handleConsultantPhotos(this.files)">
+                        </div>
+
+                        <!-- Chat Interface -->
+                        <div class="chat-container">
+                            <div id="chatMessages" class="chat-messages">
+                                <div class="ai-message">
+                                    <div class="message-avatar">🧬</div>
+                                    <div class="message-content">
+                                        <strong>AI Breeding Consultant:</strong> Hello! I'm here to help with your orchid breeding decisions. 
+                                        You can type or use voice to tell me about your breeding goals, upload photos of your plants, 
+                                        or ask questions about genetics and breeding strategies. What are you working on today?
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="chat-input-container">
+                                <div class="input-group">
+                                    <input type="text" id="chatInput" class="form-control" 
+                                           placeholder="Tell me about your breeding project, upload photos, or ask breeding questions..." 
+                                           onkeypress="handleChatKeypress(event)">
+                                    <button class="btn btn-primary" onclick="sendMessage()">
+                                        <i data-feather="send"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="professional-card p-4">
+                        <h4 class="text-light mb-3">
+                            <i data-feather="brain" class="me-2"></i>Conversation Context
+                        </h4>
+                        
+                        <!-- Current Photos in Conversation -->
+                        <div id="conversationPhotos" class="mb-4">
+                            <h6 style="color: #00d4aa;">📸 Photos in Discussion</h6>
+                            <div id="chatPhotoThumbnails" class="photo-thumbnails">
+                                <p class="text-muted small">No photos uploaded yet</p>
+                            </div>
+                        </div>
+
+                        <!-- Breeding Program Tracker -->
+                        <div class="analysis-result">
+                            <h6 style="color: #00d4aa;">🌱 Your Breeding Program</h6>
+                            <div id="breedingProgramSummary">
+                                <p class="text-muted small">Share details about your breeding goals and I'll help track your progress.</p>
+                            </div>
+                        </div>
+
+                        <!-- Knowledge Learning -->
+                        <div class="mt-4">
+                            <h5 class="text-light mb-3">🎓 Learning From You</h5>
+                            <div class="analysis-result">
+                                <h6 style="color: #ffd93d;">💡 Share Your Expertise</h6>
+                                <p class="text-muted small mb-2">• Tell me about successful crosses you've made</p>
+                                <p class="text-muted small mb-2">• Share what traits you've learned to look for</p>
+                                <p class="text-muted small mb-2">• Describe breeding techniques that work for you</p>
+                                <p class="text-muted small mb-2">• Explain outcomes that surprised you</p>
+                                <p class="text-muted small">Your insights help improve recommendations for all breeders</p>
+                            </div>
                         </div>
                     </div>
                 </div>
