@@ -1484,6 +1484,10 @@ app.register_blueprint(literature_bp)
 from historical_climate_system import historical_climate_bp
 app.register_blueprint(historical_climate_bp)
 
+# Register Mycorrhizal Network Monitor
+from mycorrhizal_network_monitor import mycorrhizal_bp
+app.register_blueprint(mycorrhizal_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
