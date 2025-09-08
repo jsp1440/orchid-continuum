@@ -661,6 +661,27 @@
                 🔬 Ecosystem Analysis Mode
             </button>
             
+            <!-- Celestial Object Controls -->
+            <div class="panel-section">
+                <div class="section-title">🌌 Celestial Objects</div>
+                
+                <button class="space-btn" onclick="toggleCelestialObjects('planets')" id="planetsBtn">
+                    🪐 Planets (7 objects)
+                </button>
+                
+                <button class="space-btn" onclick="toggleCelestialObjects('satellites')" id="satellitesBtn">
+                    🛰️ Satellites (7 objects)
+                </button>
+                
+                <button class="space-btn" onclick="toggleCelestialObjects('asteroids')" id="asteroidsBtn">
+                    ☄️ Asteroids & Comets (4 objects)
+                </button>
+                
+                <div class="control-hint" id="celestialStatus">
+                    Showing: Sun, Moon, Earth • <span id="celestialCount">18 total objects</span>
+                </div>
+            </div>
+            
             <div id="ecosystemStats" style="font-size: 11px; color: #ccc; margin-top: 5px; padding: 8px; background: rgba(0, 212, 170, 0.1); border-radius: 5px;">
                 <div>🌺 <span id="filteredCount">Loading...</span> species shown</div>
                 <div>🌡️ Climate zones: <span id="climateCount">-</span></div>
@@ -815,6 +836,11 @@
         let isRealSatellite = false;
         let astronomicalEngine; // Real-time celestial mechanics engine
         let planets = {}; // Planetary objects
+        let celestialVisibility = {
+            planets: true,
+            satellites: true,
+            asteroids: true
+        };
         let showWeatherOverlay = false;
         let currentGenusFilter = 'all';
         let allOrchidData = [];
@@ -1237,6 +1263,81 @@
                     }
                 });
                 
+                // Update satellite orbits around Earth
+                if (planets.satellites) {
+                    const time = Date.now() * 0.001; // Current time in seconds
+                    Object.keys(planets.satellites).forEach(satName => {
+                        const satellite = planets.satellites[satName];
+                        const config = satellite.userData.config;
+                        
+                        // Different orbital speeds for different satellites
+                        let orbitSpeed = 0.5; // Base speed
+                        if (satName.includes('iss')) orbitSpeed = 1.2; // ISS orbits fast
+                        else if (satName.includes('gps')) orbitSpeed = 0.3; // GPS slower
+                        else if (satName.includes('starlink')) orbitSpeed = 0.8; // Starlink medium
+                        else if (satName.includes('jwst')) orbitSpeed = 0.1; // JWST very far out
+                        
+                        const angle = time * orbitSpeed + (satName.length * 0.5); // Spread them out
+                        satellite.position.set(
+                            config.altitude * Math.cos(angle),
+                            config.altitude * Math.sin(angle) * 0.1, // Slight inclination
+                            config.altitude * Math.sin(angle)
+                        );
+                    });
+                }
+                
+                // Update asteroid and comet orbits around the sun
+                if (planets.asteroids) {
+                    const time = Date.now() * 0.0005; // Slower time for distant objects
+                    Object.keys(planets.asteroids).forEach(astName => {
+                        const asteroid = planets.asteroids[astName];
+                        const config = asteroid.userData.config;
+                        
+                        // Very slow orbital speeds for realistic asteroid belt
+                        let orbitSpeed = 0.1;
+                        if (astName === 'ceres') orbitSpeed = 0.15;
+                        else if (astName === 'vesta') orbitSpeed = 0.12;
+                        else if (astName === 'halley') orbitSpeed = 0.03; // Very slow for Halley
+                        else if (astName === 'neowise') orbitSpeed = 0.05;
+                        
+                        const angle = time * orbitSpeed + (astName.length * 0.3);
+                        asteroid.position.set(
+                            config.distance * Math.cos(angle),
+                            config.distance * Math.sin(angle) * 0.2, // Some orbital inclination
+                            config.distance * Math.sin(angle)
+                        );
+                        
+                        // Update comet tail position and orientation
+                        if (asteroid.tail) {
+                            const tail = asteroid.tail;
+                            // Tail always points away from sun (0,0,0)
+                            const tailDirection = asteroid.position.clone().normalize();
+                            tail.position.copy(asteroid.position);
+                            tail.position.add(tailDirection.multiplyScalar(2));
+                            tail.lookAt(asteroid.position.clone().add(tailDirection.multiplyScalar(5)));
+                        }
+                    });
+                }
+                
+                // Update planetary orbital mechanics
+                const now = Date.now() * 0.0001; // Very slow for outer planets
+                Object.keys(planets).forEach(planetName => {
+                    if (planetName !== 'satellites' && planetName !== 'asteroids' && planets[planetName].userData) {
+                        const planet = planets[planetName];
+                        const config = planet.userData.config;
+                        
+                        // Realistic orbital periods (much slower for outer planets)
+                        let orbitSpeed = 0.5 / Math.sqrt(config.distance); // Kepler's laws approximation
+                        const angle = now * orbitSpeed + (planetName.length * 0.1);
+                        
+                        planet.position.set(
+                            config.distance * Math.cos(angle),
+                            config.distance * Math.sin(angle) * 0.05, // Very slight inclination
+                            config.distance * Math.sin(angle)
+                        );
+                    }
+                });
+                
                 // Update astronomical status display
                 updateAstronomicalStatus(astroState);
             } else {
@@ -1505,12 +1606,35 @@
             
             // Create realistic planets with accurate colors and sizes
             const planetConfigs = {
-                mercury: { color: 0x8c7853, size: 0.04, opacity: 0.9 },
-                venus: { color: 0xffc649, size: 0.06, opacity: 0.9 },
-                mars: { color: 0xcd5c5c, size: 0.05, opacity: 0.9 },
-                jupiter: { color: 0xd8ca9d, size: 0.15, opacity: 0.8 }
+                mercury: { color: 0x8c7853, size: 0.04, opacity: 0.9, distance: 8 },
+                venus: { color: 0xffc649, size: 0.06, opacity: 0.9, distance: 12 },
+                mars: { color: 0xcd5c5c, size: 0.05, opacity: 0.9, distance: 18 },
+                jupiter: { color: 0xd8ca9d, size: 0.15, opacity: 0.8, distance: 35 },
+                saturn: { color: 0xfad5a5, size: 0.12, opacity: 0.8, distance: 50 },
+                uranus: { color: 0x4fd0e3, size: 0.08, opacity: 0.8, distance: 65 },
+                neptune: { color: 0x4b70dd, size: 0.08, opacity: 0.8, distance: 80 }
             };
             
+            // Artificial satellites and space stations
+            const satelliteConfigs = {
+                iss: { color: 0xffffff, size: 0.02, name: "International Space Station", altitude: 1.08 },
+                hubble: { color: 0x00ffff, size: 0.015, name: "Hubble Space Telescope", altitude: 1.12 },
+                jwst: { color: 0xffd700, size: 0.018, name: "James Webb Space Telescope", altitude: 25 },
+                starlink1: { color: 0xff6b6b, size: 0.008, name: "Starlink Satellite", altitude: 1.06 },
+                starlink2: { color: 0xff6b6b, size: 0.008, name: "Starlink Satellite", altitude: 1.07 },
+                gps1: { color: 0x00ff88, size: 0.01, name: "GPS Satellite", altitude: 4.2 },
+                gps2: { color: 0x00ff88, size: 0.01, name: "GPS Satellite", altitude: 4.3 }
+            };
+            
+            // Asteroids and comets (notable ones)
+            const asteroidConfigs = {
+                ceres: { color: 0x888888, size: 0.03, name: "Ceres (Dwarf Planet)", distance: 25 },
+                vesta: { color: 0xaaaaaa, size: 0.02, name: "Vesta (Asteroid)", distance: 22 },
+                halley: { color: 0xffeeaa, size: 0.025, name: "Halley's Comet", distance: 45 },
+                neowise: { color: 0xaaffff, size: 0.02, name: "NEOWISE Comet", distance: 38 }
+            };
+            
+            // Create planets
             Object.entries(planetConfigs).forEach(([name, config]) => {
                 const planetGeometry = new THREE.SphereGeometry(config.size, 12, 12);
                 const planetMaterial = new THREE.MeshBasicMaterial({
@@ -1520,10 +1644,89 @@
                 });
                 
                 const planet = new THREE.Mesh(planetGeometry, planetMaterial);
-                planet.position.set(0, 0, 0); // Initial position - updated by astronomical engine
+                planet.position.set(config.distance, 0, 0); // Initial orbital position
+                planet.userData = { type: 'planet', name: name, config: config };
                 scene.add(planet);
                 
                 planets[name] = planet;
+                
+                // Add orbital trail for outer planets
+                if (config.distance > 20) {
+                    const orbitGeometry = new THREE.RingGeometry(config.distance - 0.1, config.distance + 0.1, 64);
+                    const orbitMaterial = new THREE.MeshBasicMaterial({
+                        color: config.color,
+                        transparent: true,
+                        opacity: 0.1,
+                        side: THREE.DoubleSide
+                    });
+                    const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+                    orbit.rotation.x = Math.PI / 2;
+                    scene.add(orbit);
+                }
+            });
+            
+            // Create artificial satellites
+            planets.satellites = {};
+            Object.entries(satelliteConfigs).forEach(([name, config]) => {
+                const satGeometry = new THREE.SphereGeometry(config.size, 8, 8);
+                const satMaterial = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const satellite = new THREE.Mesh(satGeometry, satMaterial);
+                satellite.position.set(config.altitude, 0, 0);
+                satellite.userData = { type: 'satellite', name: config.name, config: config };
+                scene.add(satellite);
+                
+                planets.satellites[name] = satellite;
+                
+                // Add satellite trail
+                const trailGeometry = new THREE.RingGeometry(config.altitude - 0.01, config.altitude + 0.01, 32);
+                const trailMaterial = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.3,
+                    side: THREE.DoubleSide
+                });
+                const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+                trail.rotation.x = Math.PI / 2;
+                scene.add(trail);
+            });
+            
+            // Create asteroids and comets
+            planets.asteroids = {};
+            Object.entries(asteroidConfigs).forEach(([name, config]) => {
+                const astGeometry = new THREE.SphereGeometry(config.size, 8, 8);
+                const astMaterial = new THREE.MeshBasicMaterial({
+                    color: config.color,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                
+                const asteroid = new THREE.Mesh(astGeometry, astMaterial);
+                asteroid.position.set(config.distance, 0, 0);
+                asteroid.userData = { type: 'asteroid', name: config.name, config: config };
+                scene.add(asteroid);
+                
+                planets.asteroids[name] = asteroid;
+                
+                // Add comet tail for comets
+                if (name.includes('comet') || name === 'halley' || name === 'neowise') {
+                    const tailGeometry = new THREE.ConeGeometry(0.5, 3, 8);
+                    const tailMaterial = new THREE.MeshBasicMaterial({
+                        color: 0xaaffff,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+                    tail.position.copy(asteroid.position);
+                    tail.position.x += 2; // Tail points away from sun
+                    tail.rotation.z = Math.PI / 2;
+                    scene.add(tail);
+                    asteroid.tail = tail;
+                }
             });
             
             // Enhanced directional light from sun
@@ -1534,6 +1737,83 @@
             scene.add(sunLight);
             
             console.log('☀️ Solar system created with sun and moon');
+        }
+        
+        // Toggle visibility of celestial objects
+        function toggleCelestialObjects(category) {
+            celestialVisibility[category] = !celestialVisibility[category];
+            const visible = celestialVisibility[category];
+            
+            if (category === 'planets') {
+                // Toggle all planets except Earth, Sun, Moon
+                Object.keys(planets).forEach(planetName => {
+                    if (planetName !== 'satellites' && planetName !== 'asteroids') {
+                        planets[planetName].visible = visible;
+                    }
+                });
+                
+                const btn = document.getElementById('planetsBtn');
+                btn.style.backgroundColor = visible ? '#00d4aa' : '#666';
+                btn.innerHTML = visible ? '🪐 Planets ON (7 objects)' : '🪐 Planets OFF (7 objects)';
+            }
+            else if (category === 'satellites') {
+                // Toggle artificial satellites
+                if (planets.satellites) {
+                    Object.keys(planets.satellites).forEach(satName => {
+                        planets.satellites[satName].visible = visible;
+                    });
+                }
+                
+                const btn = document.getElementById('satellitesBtn');
+                btn.style.backgroundColor = visible ? '#00d4aa' : '#666';
+                btn.innerHTML = visible ? '🛰️ Satellites ON (7 objects)' : '🛰️ Satellites OFF (7 objects)';
+            }
+            else if (category === 'asteroids') {
+                // Toggle asteroids and comets
+                if (planets.asteroids) {
+                    Object.keys(planets.asteroids).forEach(astName => {
+                        planets.asteroids[astName].visible = visible;
+                        // Also toggle comet tails
+                        if (planets.asteroids[astName].tail) {
+                            planets.asteroids[astName].tail.visible = visible;
+                        }
+                    });
+                }
+                
+                const btn = document.getElementById('asteroidsBtn');
+                btn.style.backgroundColor = visible ? '#00d4aa' : '#666';
+                btn.innerHTML = visible ? '☄️ Asteroids ON (4 objects)' : '☄️ Asteroids OFF (4 objects)';
+            }
+            
+            updateCelestialStatus();
+        }
+        
+        // Update celestial status display
+        function updateCelestialStatus() {
+            const showing = [];
+            let totalObjects = 3; // Sun, Moon, Earth
+            
+            if (celestialVisibility.planets) {
+                showing.push('Planets');
+                totalObjects += 7;
+            }
+            if (celestialVisibility.satellites) {
+                showing.push('Satellites');
+                totalObjects += 7;
+            }
+            if (celestialVisibility.asteroids) {
+                showing.push('Asteroids');
+                totalObjects += 4;
+            }
+            
+            const statusText = showing.length > 0 
+                ? `Showing: Sun, Moon, Earth, ${showing.join(', ')}`
+                : 'Showing: Sun, Moon, Earth only';
+            
+            const statusElement = document.getElementById('celestialStatus');
+            if (statusElement) {
+                statusElement.innerHTML = `${statusText} • <span id="celestialCount">${totalObjects} total objects</span>`;
+            }
         }
         
         // Weather overlay functionality
