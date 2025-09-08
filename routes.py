@@ -1468,6 +1468,14 @@ app.register_blueprint(global_analysis_bp)
 from unified_climate_command_center import command_center_bp
 app.register_blueprint(command_center_bp)
 
+# Register AI Research Assistant
+from ai_research_assistant import ai_research_bp
+app.register_blueprint(ai_research_bp)
+
+# Register Research Data Manager
+from research_data_manager import research_data_bp
+app.register_blueprint(research_data_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
