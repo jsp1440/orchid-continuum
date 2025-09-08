@@ -1449,6 +1449,9 @@ app.register_blueprint(geo_mapping_bp)
 # Register enhanced mapping analytics routes
 app.register_blueprint(enhanced_mapping_bp)
 
+# Register Citizen Science Platform
+app.register_blueprint(citizen_science_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
