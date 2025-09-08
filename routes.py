@@ -26,7 +26,10 @@ from orchid_atlas import atlas_bp
 from darwin_core_exporter import DarwinCoreExporter
 from weather_habitat_routes import register_weather_habitat_routes
 from scraping_dashboard import scraping_dashboard
-# DISABLED FOR DEMO: from vigilant_monitor import vigilant_monitor
+try:
+    from vigilant_monitor import vigilant_monitor
+except ImportError:
+    vigilant_monitor = None
 from gbif_routes import gbif_bp
 from ai_orchid_routes import ai_orchid_bp
 from geographic_mapping_routes import geo_mapping_bp
@@ -53,9 +56,17 @@ import issue_reports
 import chris_howard_reimport
 from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
-# DISABLED FOR DEMO: from ai_system_monitor import start_ai_monitoring, get_monitoring_status, get_ai_monitor
+try:
+    from ai_system_monitor import start_ai_monitoring, get_monitoring_status, get_ai_monitor
+except ImportError:
+    start_ai_monitoring = None
+    get_monitoring_status = None
+    get_ai_monitor = None
 from admin_control_center import register_admin_control_center
-# DISABLED: from automated_repair_system import repair_system
+try:
+    from automated_repair_system import repair_system
+except ImportError:
+    repair_system = None
 # DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
 from eol_integration import EOLIntegrator
 from bug_report_system import bug_report_bp
@@ -5525,7 +5536,10 @@ def manual_trigger_scraper():
 def start_vigilant_monitoring():
     """Start vigilant 30-second monitoring"""
     try:
-        success = vigilant_monitor.start_vigilant_monitoring()
+        if vigilant_monitor:
+            success = vigilant_monitor.start_vigilant_monitoring()
+        else:
+            success = False
         if success:
             return jsonify({'success': True, 'message': 'Vigilant monitoring started'})
         else:
@@ -5538,7 +5552,10 @@ def start_vigilant_monitoring():
 def stop_vigilant_monitoring():
     """Stop vigilant monitoring"""
     try:
-        vigilant_monitor.stop_monitoring()
+        if vigilant_monitor:
+            vigilant_monitor.stop_monitoring()
+        else:
+            raise Exception('Vigilant monitor not available')
         return jsonify({'success': True, 'message': 'Vigilant monitoring stopped'})
     except Exception as e:
         logger.error(f"Stop monitoring error: {e}")
@@ -5548,7 +5565,10 @@ def stop_vigilant_monitoring():
 def vigilant_monitor_stats():
     """Get vigilant monitoring statistics"""
     try:
-        stats = vigilant_monitor.get_monitor_stats()
+        if vigilant_monitor:
+            stats = vigilant_monitor.get_monitor_stats()
+        else:
+            stats = {'error': 'Monitor not available'}
         return jsonify(stats)
     except Exception as e:
         logger.error(f"Monitor stats error: {e}")
@@ -5558,8 +5578,12 @@ def vigilant_monitor_stats():
 def force_database_backup():
     """Force immediate database backup"""
     try:
-        result = vigilant_monitor.force_backup()
-        backup_url = vigilant_monitor.get_backup_download_url()
+        if vigilant_monitor:
+            result = vigilant_monitor.force_backup()
+            backup_url = vigilant_monitor.get_backup_download_url()
+        else:
+            result = {'error': 'Monitor not available'}
+            backup_url = None
         
         return jsonify({
             'success': True, 
@@ -7014,14 +7038,16 @@ def database_stats_api():
 
 # Auto-start vigilant monitoring
 try:
-    vigilant_monitor.start_vigilant_monitoring()
+    if vigilant_monitor:
+        vigilant_monitor.start_vigilant_monitoring()
     logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
 except Exception as e:
     logger.error(f"Failed to auto-start vigilant monitor: {e}")
 
 # Auto-start AI system monitoring
 try:
-    ai_monitor = start_ai_monitoring(interval_seconds=90)  # Check every 90 seconds
+    if start_ai_monitoring:
+        ai_monitor = start_ai_monitoring(interval_seconds=90)  # Check every 90 seconds
     logger.info("🤖 AI SYSTEM MONITOR: Auto-started intelligent functionality validation")
 except Exception as e:
     logger.error(f"Failed to auto-start AI monitor: {e}")
@@ -7035,7 +7061,8 @@ except Exception as e:
 
 # Start automated repair system
 try:
-    repair_system.start_repair_system()
+    if repair_system:
+        repair_system.start_repair_system()
     logger.info("🔧 Automated Repair System started successfully")
 except Exception as e:
     logger.error(f"Failed to start repair system: {e}")
