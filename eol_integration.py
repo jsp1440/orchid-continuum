@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
 Encyclopedia of Life (EOL) Integration Module
-Integrates with EOL's open API to enhance orchid records with taxonomic and trait data
+Integrates with EOL's open API and TraitBank to enhance orchid records with taxonomic and trait data
+Enhanced for citizen science wild population analysis and conservation genetics
 """
 
+import os
 import requests
 import json
 import logging
@@ -24,11 +26,40 @@ class EOLIntegrator:
     
     def __init__(self):
         self.base_url = "https://eol.org/api"
+        self.structured_api_base = "https://eol.org/service"
+        self.api_key = os.environ.get('EOL_API_KEY')  # Power user JWT token
         self.rate_limit_delay = 2  # Seconds between requests (30/minute = 2 seconds)
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Five Cities Orchid Society Continuum Platform'
+            'User-Agent': 'Five Cities Orchid Society Continuum Platform (Conservation Research)',
+            'Accept': 'application/json'
         })
+        
+        # Add JWT token if available
+        if self.api_key:
+            self.session.headers.update({
+                'Authorization': f'JWT {self.api_key}'
+            })
+        
+        # TraitBank categories for conservation genetics
+        self.conservation_trait_categories = {
+            'population_genetics': [
+                'genetic diversity', 'effective population size', 'gene flow',
+                'population structure', 'inbreeding coefficient', 'heterozygosity'
+            ],
+            'morphological_variation': [
+                'flower size variation', 'color polymorphism', 'plant height variation',
+                'flowering time variation', 'fruit set variation', 'pollinator specificity'
+            ],
+            'environmental_adaptation': [
+                'elevation tolerance', 'soil pH tolerance', 'moisture requirements',
+                'temperature tolerance', 'drought resistance', 'shade tolerance'
+            ],
+            'conservation_status': [
+                'population trend', 'threats', 'habitat quality', 'fragmentation level',
+                'protection status', 'cultivation status', 'recovery potential'
+            ]
+        }
         
     def search_eol_species(self, scientific_name: str) -> Optional[Dict]:
         """
