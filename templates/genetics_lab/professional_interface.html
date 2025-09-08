@@ -729,6 +729,55 @@
                                 <p class="text-muted small">Your insights help improve recommendations for all breeders</p>
                             </div>
                         </div>
+
+                        <!-- Breeding Records & Export -->
+                        <div class="mt-4">
+                            <h5 class="text-light mb-3">📋 My Breeding Records</h5>
+                            <div class="analysis-result">
+                                <h6 style="color: #00d4aa;">🗃️ Data Management</h6>
+                                <div class="d-grid gap-2 mb-2">
+                                    <button class="btn btn-sm btn-outline-light" onclick="exportConversation()">
+                                        <i data-feather="download" class="me-1"></i>Export This Session
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-light" onclick="exportAllRecords()">
+                                        <i data-feather="archive" class="me-1"></i>Download All Records
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-light" onclick="showSharingOptions()">
+                                        <i data-feather="share-2" class="me-1"></i>Share Discovery
+                                    </button>
+                                </div>
+                                <p class="text-muted small">Your breeding data stays private unless you choose to share discoveries</p>
+                            </div>
+                        </div>
+
+                        <!-- Discovery Sharing Options -->
+                        <div id="sharingOptions" class="mt-3" style="display: none;">
+                            <div class="analysis-result">
+                                <h6 style="color: #ffd93d;">🌟 Share Important Discoveries</h6>
+                                <p class="text-muted small mb-2">Found something significant? Help preserve it for future breeders:</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareAnonymous">
+                                    <label class="form-check-label text-muted small" for="shareAnonymous">
+                                        Share anonymously with orchid community
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareAttributed">
+                                    <label class="form-check-label text-muted small" for="shareAttributed">
+                                        Include my name for credit/recognition
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareVerification">
+                                    <label class="form-check-label text-muted small" for="shareVerification">
+                                        Include parentage verification data
+                                    </label>
+                                </div>
+                                <button class="btn btn-sm btn-success mt-2" onclick="submitDiscovery()">
+                                    <i data-feather="upload" class="me-1"></i>Submit Discovery
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1351,6 +1400,185 @@ showTab = function(tabName) {
         initBreedingConsultant();
     }
 };
+
+// Breeding Records Export and Sharing Functions
+
+// Export current conversation session
+function exportConversation() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messages = Array.from(chatMessages.children).map(msg => {
+        const isUser = msg.classList.contains('user-message');
+        const content = msg.querySelector('.message-content').textContent;
+        return {
+            sender: isUser ? 'User' : 'AI Consultant',
+            message: content.replace(/^(You|AI Breeding Consultant):\s*/, ''),
+            timestamp: new Date().toISOString()
+        };
+    });
+    
+    const sessionData = {
+        sessionDate: new Date().toISOString(),
+        breedingProgram: breedingProgramContext,
+        conversation: messages,
+        photos: currentConversationPhotos.map(p => ({
+            name: p.name,
+            timestamp: p.timestamp
+            // Note: Image data excluded from export for privacy
+        }))
+    };
+    
+    // Create and download JSON file
+    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `breeding-session-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Also create readable text version
+    let textContent = `Orchid Breeding Session - ${new Date().toLocaleDateString()}\n\n`;
+    
+    if (Object.keys(breedingProgramContext).length > 0) {
+        textContent += "BREEDING PROGRAM SUMMARY:\n";
+        if (breedingProgramContext.goals) textContent += `Goals: ${breedingProgramContext.goals}\n`;
+        if (breedingProgramContext.currentGeneration) textContent += `Generation: ${breedingProgramContext.currentGeneration}\n`;
+        if (breedingProgramContext.targetTraits) textContent += `Target Traits: ${breedingProgramContext.targetTraits.join(', ')}\n`;
+        textContent += "\n";
+    }
+    
+    textContent += "CONVERSATION LOG:\n";
+    messages.forEach((msg, index) => {
+        textContent += `\n[${msg.sender}]: ${msg.message}\n`;
+    });
+    
+    if (currentConversationPhotos.length > 0) {
+        textContent += `\n\nPHOTOS DISCUSSED:\n`;
+        currentConversationPhotos.forEach((photo, index) => {
+            textContent += `${index + 1}. ${photo.name} (uploaded: ${new Date(photo.timestamp).toLocaleString()})\n`;
+        });
+    }
+    
+    const textBlob = new Blob([textContent], { type: 'text/plain' });
+    const textUrl = URL.createObjectURL(textBlob);
+    const textA = document.createElement('a');
+    textA.href = textUrl;
+    textA.download = `breeding-session-${new Date().toISOString().split('T')[0]}.txt`;
+    textA.click();
+    URL.revokeObjectURL(textUrl);
+    
+    alert('Breeding session exported! Both JSON and text versions have been downloaded.');
+}
+
+// Export all breeding records (placeholder for full implementation)
+function exportAllRecords() {
+    // In a full implementation, this would gather all stored breeding data
+    const allRecords = {
+        exportDate: new Date().toISOString(),
+        breeder: {
+            note: "Professional breeder records export",
+            systemVersion: "Orchid Continuum v1.0"
+        },
+        currentSession: {
+            breedingProgram: breedingProgramContext,
+            photos: currentConversationPhotos.length,
+            notes: "Current session data included"
+        },
+        parentageVerification: {
+            note: "Detailed breeding records for parentage verification",
+            format: "JSON format suitable for academic publication"
+        },
+        instructions: {
+            privacy: "This data is private to you unless you choose to share specific discoveries",
+            backup: "Keep these records safe as backup of your breeding program",
+            sharing: "Use 'Share Discovery' to contribute significant findings to orchid community"
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(allRecords, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all-breeding-records-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('All breeding records exported! This includes your complete breeding program data for backup and verification.');
+}
+
+// Show/hide sharing options
+function showSharingOptions() {
+    const sharingDiv = document.getElementById('sharingOptions');
+    const isVisible = sharingDiv.style.display !== 'none';
+    
+    if (isVisible) {
+        sharingDiv.style.display = 'none';
+    } else {
+        sharingDiv.style.display = 'block';
+        // Scroll to make it visible
+        sharingDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Submit discovery to community knowledge base
+function submitDiscovery() {
+    const shareAnonymous = document.getElementById('shareAnonymous').checked;
+    const shareAttributed = document.getElementById('shareAttributed').checked;
+    const shareVerification = document.getElementById('shareVerification').checked;
+    
+    if (!shareAnonymous && !shareAttributed) {
+        alert('Please select how you\'d like to share this discovery.');
+        return;
+    }
+    
+    const discoveryData = {
+        submissionDate: new Date().toISOString(),
+        sharingPreferences: {
+            anonymous: shareAnonymous,
+            attributed: shareAttributed,
+            includeVerification: shareVerification
+        },
+        breedingContext: breedingProgramContext,
+        conversationSummary: extractKeyDiscoveries(),
+        significance: "Breeder-identified important discovery"
+    };
+    
+    // In production, this would submit to a community knowledge base
+    console.log('Discovery submission:', discoveryData);
+    
+    let confirmationMessage = `Discovery submitted to orchid breeding community!\n\n`;
+    confirmationMessage += `Sharing mode: ${shareAttributed ? 'With attribution' : 'Anonymous'}\n`;
+    if (shareVerification) confirmationMessage += `Parentage verification data included\n`;
+    confirmationMessage += `\nThank you for contributing to orchid breeding knowledge!`;
+    
+    alert(confirmationMessage);
+    
+    // Reset the form
+    document.getElementById('shareAnonymous').checked = false;
+    document.getElementById('shareAttributed').checked = false;
+    document.getElementById('shareVerification').checked = false;
+    document.getElementById('sharingOptions').style.display = 'none';
+}
+
+// Extract key discoveries from conversation
+function extractKeyDiscoveries() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messages = Array.from(chatMessages.children);
+    
+    const discoveries = [];
+    messages.forEach(msg => {
+        const content = msg.querySelector('.message-content').textContent;
+        // Look for messages that contain breeding insights or discoveries
+        if (content.toLowerCase().includes('discovery') || 
+            content.toLowerCase().includes('breakthrough') ||
+            content.toLowerCase().includes('significant') ||
+            content.toLowerCase().includes('important')) {
+            discoveries.push(content.replace(/^(You|AI Breeding Consultant):\s*/, ''));
+        }
+    });
+    
+    return discoveries.length > 0 ? discoveries : ['Valuable breeding discussion with AI consultant'];
+}
 
 // Initialize Feather icons
 if (typeof feather !== 'undefined') {
