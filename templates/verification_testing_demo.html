@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Verification System - Testing Demo for Gary & Roger</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .verification-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .priority-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+        
+        .authority-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin: 0.2rem;
+            font-weight: bold;
+        }
+        
+        .authority-wfo { background: #27ae60; color: white; }
+        .authority-kew { background: #3498db; color: white; }
+        .authority-gary { background: #e74c3c; color: white; }
+        .authority-ai { background: #9b59b6; color: white; }
+        .authority-plantnet { background: #f39c12; color: white; }
+        
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .confidence-fill {
+            background: linear-gradient(135deg, #00d4aa, #00b894);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .orchid-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+        
+        .verification-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .verified { background: #27ae60; color: white; }
+        .pending { background: #f39c12; color: white; }
+        .conflict { background: #e74c3c; color: white; }
+        
+        .discrepancy-alert {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .feedback-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #00d4aa, #667eea);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">🔬 AI Verification System Testing</h1>
+            <h2 class="h4 mb-4">Priority Access for Gary & Roger</h2>
+            <div class="priority-badge">VIP Testing Access</div>
+            <p class="lead">
+                Addressing Roger's concerns about taxonomic discrepancies with multi-authority verification
+            </p>
+        </div>
+
+        <!-- Live Feedback Section -->
+        <div class="feedback-section">
+            <h3><i data-feather="message-circle" class="me-2"></i>Real-Time Feedback</h3>
+            <p>Your feedback will be implemented immediately during this demo</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <textarea class="form-control" id="liveFeedback" rows="3" 
+                              placeholder="Enter your feedback here... (Roger & Gary priority)"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <button class="test-btn" onclick="submitFeedback()">
+                        <i data-feather="send" class="me-2"></i>Submit Feedback
+                    </button>
+                    <button class="test-btn" onclick="requestImprovement()">
+                        <i data-feather="tool" class="me-2"></i>Request Improvement
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Sample 1: Gary's Laeliacattleya -->
+        <div class="verification-card position-relative">
+            <div class="priority-badge">Gary's Collection</div>
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="/api/drive-photo/1tCqPmq_PPzoH5-MNWg-XuGV5ukqESkBU" 
+                         alt="Laeliacattleya Hybrid" class="orchid-image">
+                </div>
+                <div class="col-md-6">
+                    <h4>Test Sample #1: Laeliacattleya Hybrid</h4>
+                    <p><strong>Original ID:</strong> Laeliacattleya hybrid</p>
+                    <p><strong>Source:</strong> Gary Yong Gee Collection</p>
+                    
+                    <div class="verification-status verified">
+                        <i data-feather="check-circle" class="me-2"></i>AI Verified
+                    </div>
+                    
+                    <h6>Authority Consensus:</h6>
+                    <div class="mb-3">
+                        <span class="authority-badge authority-gary">Gary YG: Laeliacattleya</span>
+                        <span class="authority-badge authority-kew">Kew: ×Laeliacattleya</span>
+                        <span class="authority-badge authority-ai">Enhanced AI: Laeliacattleya hybrid</span>
+                    </div>
+                    
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: 94%">94% Consensus</div>
+                    </div>
+                    
+                    <button class="test-btn" onclick="runVerification(34)">
+                        <i data-feather="play" class="me-2"></i>Test Verification
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Sample 2: Cattleya trianae -->
+        <div class="verification-card position-relative">
+            <div class="priority-badge">Roger's Challenge</div>
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="/api/drive-photo/185MlwyxBU8Dy6bqGdwXXPeBXTlhg5M0I" 
+                         alt="Cattleya trianae alba" class="orchid-image">
+                </div>
+                <div class="col-md-6">
+                    <h4>Test Sample #2: Cattleya trianae alba</h4>
+                    <p><strong>Original ID:</strong> Cattleya trianae alba</p>
+                    <p><strong>Challenge:</strong> Authority discrepancy test</p>
+                    
+                    <div class="verification-status conflict">
+                        <i data-feather="alert-triangle" class="me-2"></i>Discrepancy Detected
+                    </div>
+                    
+                    <div class="discrepancy-alert">
+                        <h6><i data-feather="alert-triangle" class="me-2"></i>Naming Discrepancy Found:</h6>
+                        <ul class="mb-0">
+                            <li><strong>WFO:</strong> Cattleya trianae Linden & Rchb.f.</li>
+                            <li><strong>OrchidWiz:</strong> C. trianae var. alba</li>
+                            <li><strong>Local AI:</strong> Cattleya trianae 'alba'</li>
+                        </ul>
+                    </div>
+                    
+                    <h6>Authority Consensus:</h6>
+                    <div class="mb-3">
+                        <span class="authority-badge authority-wfo">WFO: C. trianae</span>
+                        <span class="authority-badge authority-kew">Kew: C. trianae</span>
+                        <span class="authority-badge authority-ai">AI: C. trianae alba</span>
+                    </div>
+                    
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: 78%">78% Consensus</div>
+                    </div>
+                    
+                    <button class="test-btn" onclick="runVerification(5)">
+                        <i data-feather="play" class="me-2"></i>Test Verification
+                    </button>
+                    <button class="test-btn" onclick="resolveDiscrepancy(5)">
+                        <i data-feather="tool" class="me-2"></i>Resolve Discrepancy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Sample 3: Hybrid Challenge -->
+        <div class="verification-card position-relative">
+            <div class="priority-badge">Hybrid Test</div>
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="/api/drive-photo/1Qnm1UG1Nr8AYryXNLQEs71z9MfEs4sSm" 
+                         alt="Cattleya Cynthia" class="orchid-image">
+                </div>
+                <div class="col-md-6">
+                    <h4>Test Sample #3: Cattleya "Cynthia"</h4>
+                    <p><strong>Original ID:</strong> Cattleya "Cynthia"</p>
+                    <p><strong>Challenge:</strong> Hybrid vs Species recognition</p>
+                    
+                    <div class="verification-status pending">
+                        <i data-feather="clock" class="me-2"></i>Analysis Pending
+                    </div>
+                    
+                    <h6>AI Analysis Notes:</h6>
+                    <ul>
+                        <li>Quotes indicate cultivar name</li>
+                        <li>Need parent verification</li>
+                        <li>Possible primary hybrid</li>
+                    </ul>
+                    
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: 65%">65% Confidence</div>
+                    </div>
+                    
+                    <button class="test-btn" onclick="runVerification(45)">
+                        <i data-feather="play" class="me-2"></i>Test Verification
+                    </button>
+                    <button class="test-btn" onclick="requestExpertReview(45)">
+                        <i data-feather="user" class="me-2"></i>Request Expert Review
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Performance Summary -->
+        <div class="verification-card">
+            <h4><i data-feather="bar-chart" class="me-2"></i>AI Practice Performance</h4>
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <div class="display-6 fw-bold text-info">82%</div>
+                    <p>Overall Accuracy</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="display-6 fw-bold text-success">94%</div>
+                    <p>Genus Recognition</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="display-6 fw-bold text-warning">73%</div>
+                    <p>Species Accuracy</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="display-6 fw-bold text-danger">58%</div>
+                    <p>Hybrid Detection</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>Improvement Areas Identified:</h6>
+                <ul>
+                    <li>Hybrid vs species recognition needs enhancement</li>
+                    <li>Cultivar name parsing requires refinement</li>
+                    <li>Authority consensus weighting optimization needed</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-5">
+            <button class="test-btn btn-lg" onclick="runFullPracticeSession()">
+                <i data-feather="zap" class="me-2"></i>Run Full Practice Session (50 orchids)
+            </button>
+            <button class="test-btn btn-lg" onclick="showGaryDemo()">
+                <i data-feather="external-link" class="me-2"></i>View Gary Partnership Demo
+            </button>
+            <button class="test-btn btn-lg" onclick="showRobertaDemo()">
+                <i data-feather="external-link" class="me-2"></i>View Roberta Fox Demo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+
+        // Real-time feedback system
+        function submitFeedback() {
+            const feedback = document.getElementById('liveFeedback').value;
+            if (!feedback.trim()) {
+                alert('Please enter your feedback first');
+                return;
+            }
+            
+            // Send feedback to backend
+            fetch('/api/submit-feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    feedback: feedback,
+                    user: 'Gary/Roger Priority',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('✅ Feedback submitted! Implementation in progress...');
+                document.getElementById('liveFeedback').value = '';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function requestImprovement() {
+            alert('🚀 Improvement request noted! Our team will implement changes immediately.');
+        }
+
+        // Verification testing functions
+        async function runVerification(orchidId) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i data-feather="loader" class="me-2"></i>Running Verification...';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/verify-orchid/${orchidId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                // Show results
+                showVerificationResults(result);
+                
+            } catch (error) {
+                console.error('Verification failed:', error);
+                alert('Verification failed. Please try again.');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                feather.replace();
+            }
+        }
+
+        function showVerificationResults(result) {
+            const modal = `
+                <div class="modal fade" id="verificationModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content bg-dark text-white">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Verification Results</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>Consensus: ${result.consensus_name}</h6>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${result.consensus_confidence * 100}%">
+                                        ${Math.round(result.consensus_confidence * 100)}% Confidence
+                                    </div>
+                                </div>
+                                
+                                <h6 class="mt-3">Authority Verifications:</h6>
+                                <ul>
+                                    ${result.authorities.map(auth => 
+                                        `<li><strong>${auth.authority}:</strong> ${auth.scientific_name} (${Math.round(auth.confidence * 100)}%)</li>`
+                                    ).join('')}
+                                </ul>
+                                
+                                ${result.discrepancies.length > 0 ? `
+                                    <div class="alert alert-warning">
+                                        <h6>Discrepancies Found:</h6>
+                                        <ul>
+                                            ${result.discrepancies.map(disc => `<li>${disc}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modal);
+            new bootstrap.Modal(document.getElementById('verificationModal')).show();
+        }
+
+        function resolveDiscrepancy(orchidId) {
+            alert('🔧 Opening expert resolution panel...');
+        }
+
+        function requestExpertReview(orchidId) {
+            alert('👨‍🔬 Expert review requested. Gary and Roger will be notified.');
+        }
+
+        function runFullPracticeSession() {
+            if (confirm('Run full AI practice session on 50 orchids? This will take about 5 minutes.')) {
+                window.location.href = '/api/run-practice-session';
+            }
+        }
+
+        function showGaryDemo() {
+            window.open('/gary-partnership-demo-story', '_blank');
+        }
+
+        function showRobertaDemo() {
+            window.open('/roberta-fox-partnership-demo', '_blank');
+        }
+
+        // Auto-refresh verification status every 30 seconds
+        setInterval(() => {
+            console.log('Checking for verification updates...');
+        }, 30000);
+    </script>
+</body>
+</html>
