@@ -66,9 +66,42 @@ class ScientificObservation:
     follow_up_questions: List[str]
     confidence_level: float
 
-class AIResearchDirector:
+@dataclass
+class AutonomousMissionPlan:
+    """Autonomous mission execution plan"""
+    mission_id: str
+    title: str
+    primary_objective: str
+    success_metrics: Dict[str, float]
+    timeline_months: int
+    resource_requirements: Dict[str, Any]
+    partnership_targets: List[str]
+    funding_targets: Dict[str, float]
+    marketing_strategy: List[str]
+    risk_mitigation: List[str]
+    autonomous_decisions: List[str]
+    current_phase: str
+    completion_percentage: float
+
+@dataclass 
+class AutonomousAction:
+    """Autonomous action taken by AI"""
+    action_id: str
+    action_type: str  # 'research', 'partnership', 'fundraising', 'marketing', 'system_activation'
+    description: str
+    rationale: str
+    expected_outcome: str
+    success_probability: float
+    resource_cost: float
+    timeline_days: int
+    status: str  # 'planned', 'executing', 'completed', 'failed'
+    actual_outcome: Optional[str]
+    timestamp: datetime
+
+class AutonomousAIDirector:
     """
-    Autonomous AI system that learns from all platform data and directs research
+    FULLY AUTONOMOUS AI CLIMATE MISSION COMMANDER
+    Independently operates to save the world through Carbon Revolution
     """
     
     def __init__(self):
@@ -77,11 +110,26 @@ class AIResearchDirector:
         self.observations: List[ScientificObservation] = []
         self.learning_memory: Dict[str, Any] = {}
         
-        # Initialize with foundational hypotheses
+        # AUTONOMOUS MISSION CONTROL
+        self.mission_plans: List[AutonomousMissionPlan] = []
+        self.autonomous_actions: List[AutonomousAction] = []
+        self.decision_making_active: bool = True
+        self.world_saving_mode: bool = True
+        self.human_oversight_required: bool = False
+        
+        # AUTONOMOUS CAPABILITIES
+        self.partnership_database: Dict[str, Any] = {}
+        self.funding_opportunities: List[Dict[str, Any]] = []
+        self.marketing_campaigns: List[Dict[str, Any]] = []
+        self.system_activation_protocols: List[str] = []
+        
+        # Initialize autonomous systems
         self._initialize_foundational_hypotheses()
         self._initialize_active_projects()
+        self._initialize_autonomous_mission()
+        self._activate_world_saving_protocols()
         
-        logger.info("🤖 AI Research Director initialized - ready to learn and discover")
+        logger.info("🤖🌍 AUTONOMOUS AI CLIMATE COMMANDER ACTIVATED - MISSION: SAVE THE WORLD")
 
     def _initialize_foundational_hypotheses(self):
         """Initialize the system with core research hypotheses"""
@@ -544,8 +592,8 @@ class AIResearchDirector:
             ]
         }
 
-# Global AI Research Director
-ai_research_director = AIResearchDirector()
+# Global Autonomous AI Climate Commander
+ai_research_director = AutonomousAIDirector()
 
 # Routes
 @research_director_bp.route('/')
@@ -564,6 +612,47 @@ def get_research_status():
         })
     except Exception as e:
         logger.error(f"Research status error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@research_director_bp.route('/autonomous-status')
+def get_autonomous_status():
+    """Get autonomous operation status"""
+    try:
+        status = ai_research_director.get_autonomous_status()
+        return jsonify({
+            'success': True,
+            'autonomous_status': status
+        })
+    except Exception as e:
+        logger.error(f"Autonomous status error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@research_director_bp.route('/execute-autonomous-cycle', methods=['POST'])
+def execute_autonomous_cycle():
+    """Execute autonomous decision-making cycle"""
+    try:
+        cycle_result = ai_research_director.execute_autonomous_decision_cycle()
+        return jsonify({
+            'success': True,
+            'cycle_result': cycle_result
+        })
+    except Exception as e:
+        logger.error(f"Autonomous cycle error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@research_director_bp.route('/world-saving-probability')
+def get_world_saving_probability():
+    """Get current probability of saving the world"""
+    try:
+        probability = ai_research_director._calculate_world_saving_probability()
+        return jsonify({
+            'success': True,
+            'world_saving_probability': probability,
+            'probability_percentage': f"{probability*100:.1f}%",
+            'status': 'ACTIVELY_SAVING_WORLD' if probability > 0.5 else 'BUILDING_CAPABILITY'
+        })
+    except Exception as e:
+        logger.error(f"World saving probability error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @research_director_bp.route('/analyze-data', methods=['POST'])
