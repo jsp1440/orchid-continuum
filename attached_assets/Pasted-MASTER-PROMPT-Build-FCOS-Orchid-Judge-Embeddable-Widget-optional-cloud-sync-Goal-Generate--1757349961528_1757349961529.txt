@@ -1,0 +1,245 @@
+MASTER PROMPT — Build “FCOS Orchid Judge” Embeddable Widget (+ optional cloud sync)
+
+Goal: Generate a production-ready, mobile-first web widget that reproduces the UI/flows from the screenshots:
+    •    Home (Profile/ID, Start New Entry, View My Last 10, How to Use, FAQ, About, Disclaimer)
+    •    Profile (name, email, AI provider toggle OpenAI/custom webhook, language, tutorial toggle, Drive/cloud exports toggle, connectivity tests)
+    •    Capture Photos (blooming plant + ID tag, from camera or library, continue to tag analysis or analyze without tag)
+    •    My Entries (list + summary, open certificate)
+    •    How to Use (step-by-step cards)
+    •    FAQ (accordion questions)
+    •    About (FCOS mission + educational disclaimer)
+    •    Certificate (metrics panel, export buttons: PNG image, CSV score report, TXT narrative, TXT hybrid report; email/share; Save Entry)
+
+Critical constraints
+    •    Educational tool only; show disclaimer on Home and About.
+    •    Embeddable: Single UMD bundle that can be inserted via <script> + <div id="fcos-orchid-judge"></div>.
+    •    Offline-first with localStorage (or IndexedDB) and optional cloud sync to Google Apps Script (or any POST endpoint) using two env vars:
+    •    EXPO_PUBLIC_FCOS_SHEETS_WEBAPP_URL (string)
+    •    EXPO_PUBLIC_FCOS_SHEETS_SECRET (string)
+If these are not present, show “Cloud sync disabled — add EXPO_PUBLIC_FCOS_SHEETS_WEBAPP_URL and EXPO_PUBLIC_FCOS_SHEETS_SECRET to enable” exactly like the screenshot.
+
+Tech stack
+    •    Frontend only build (no server required to run).
+    •    Vite + TypeScript + VanillaJS component system (no heavy framework) + TailwindCSS for fast theming.
+    •    Bundle as UMD and ESM.
+    •    Accessibility: keyboard focus order, prefers-color-scheme, scalable fonts, large text toggle, light/dark theme switcher.
+    •    Use Tesseract.js for on-device OCR of the tag image (genus/species/grex/clone; user may edit).
+    •    Simple image analysis in browser: estimate flower count and a rough symmetry score using canvas + edge detection (sobel) and horizontal mirror difference (0–100%). Allow manual override.
+    •    Measurements: allow entry of natural spread (cm); show quick tip to include a reference card/ruler in photo (not required).
+    •    Export:
+    •    Certificate PNG: render certificate view → html2canvas → PNG download.
+    •    CSV Score Report: generate with all fields.
+    •    TXT Narrative: templated narrative (“Plant shows… symmetry X%, spike count Y, natural spread Zcm…”).
+    •    TXT Hybrid Report: include parentage block if available (see “Registry lookup” below).
+    •    Share: Web Share API if available; else fallback to download and/or mailto: prefill.
+    •    Storage:
+    •    Entries saved locally as fcos_orchid_judge_entries (IndexedDB preferred; fallback to localStorage).
+    •    “View My Last 10” slices most recent 10.
+    •    Registry lookup (pluggable):
+    •    Provide an adapter interface: RegistryAdapter.lookup({genus, speciesOrGrex}).
+    •    Ship a local demo adapter (static JSON map) and a fetch adapter that can call a proxy endpoint if configured (for RHS/AOS later). If not configured, the UI says “Registry lookup optional; skipped.”
+
+/public
+  index.html            # demo host page
+/src
+  main.ts               # bootstraps widget
+  widget.ts             # creates <FCOSOrchidJudge /> into target node
+  ui/                   # reusable UI pieces (cards, buttons, inputs, accordions)
+  views/
+    HomeView.ts
+    ProfileView.ts
+    CaptureView.ts
+    EntriesView.ts
+    CertificateView.ts
+    HowToView.ts
+    FAQView.ts
+    AboutView.ts
+  core/
+    storage.ts          # IndexedDB wrapper + fallback
+    ocr.ts              # Tesseract.js helpers
+    imageAnalysis.ts    # symmetry, spike/flower count estimate (editable)
+    scoring.ts          # scoring rubric weights
+    registry.ts         # adapter interface + demo adapter
+    exports/
+      exportCSV.ts
+      exportTXT.ts
+      exportPNG.ts
+    cloud.ts            # POST to SHEETS_WEBAPP_URL with SECRET when enabled
+    i18n.ts             # English + stub for Japanese
+  styles/tailwind.css
+  types.ts
+  env.d.ts
+/build
+  fcos-orchid-judge.umd.js   # UMD
+  fcos-orchid-judge.esm.js   # ESM
+
+Embedding instructions (auto-generate README.md)
+
+<div id="fcos-orchid-judge"></div>
+<script src="https://yourcdn/fcos-orchid-judge.umd.js"></script>
+<script>
+  FCOSOrchidJudge.mount('#fcos-orchid-judge', {
+    theme: 'dark',                 // 'light' | 'dark'
+    largeText: false,              // accessibility
+    cloud: {
+      webappUrl: window.EXPO_PUBLIC_FCOS_SHEETS_WEBAPP_URL,
+      secret: window.EXPO_PUBLIC_FCOS_SHEETS_SECRET
+    },
+    aiProvider: {                  // defaults; user can change in Profile
+      mode: 'openai',              // 'openai' | 'webhook'
+      webhookUrl: null
+    },
+    language: 'en'                 // 'en' | 'ja'
+  });
+</script>
+
+Scoring rubric (educational; editable in code & UI)
+Weight categories (total 100). Show sliders/inputs per category inside “Educational scoring”:
+    •    Form / Symmetry / Balance — 35
+    •    Color & Saturation — 15
+    •    Size / Substance — 15
+    •    Floriferousness & Arrangement — 15
+    •    Condition & Grooming — 10
+    •    Distinctiveness / Impression — 10
+
+Compute weighted score and show band tags:
+    •    < 70 = “no award (practice)”
+    •    70–79 = “Commended (educational)”
+    •    80–89 = “Distinction (educational)”
+    •    90+   = “Excellence (educational)”
+(Bands are educational only; include disclaimer.)
+
+Certificate view requirements
+    •    Top metric panel (Spike Count, Symmetry %, Natural Spread cm).
+    •    Export buttons: Export Certificate Image (PNG), Export Score Report (CSV), Export Narrative (TXT), Export Hybrid Report (TXT).
+    •    Email field (optional) → uses Web Share or mailto: with files attached when platform supports; else instructs to download and email.
+    •    Footer: “Five Cities Orchid Society — Learn · Grow · Share — Generated on {date}”.
+    •    “Save Entry” writes to storage and (if cloud enabled) posts JSON to webappUrl with Authorization: Bearer ${secret}.
+
+Cloud payload (POST)
+
+{
+  "version": 1,
+  "profile": {"name":"", "email":"", "language":"en", "aiProvider":"openai|webhook"},
+  "entry": {
+    "id": "uuid",
+    "timestamp": "ISO-8601",
+    "photos": { "plant": "data:image/jpeg;base64,...", "tag": "data:image/jpeg;base64,..." },
+    "ocr": { "genus":"", "speciesOrGrex":"", "clone":"", "isHybrid": true },
+    "registry": { "parentage": "string|null", "awards": [] },
+    "analysis": { "flowerCount": 0, "spikeCount": 0, "symmetryPct": 85, "naturalSpreadCm": 12.5 },
+    "scoring": {
+      "weights": { "form":35, "color":15, "size":15, "floriferousness":15, "condition":10, "distinctiveness":10 },
+      "raw":     { "form":0,"color":0,"size":0,"floriferousness":0,"condition":0,"distinctiveness":0 },
+      "weightedTotal": 74,
+      "band": "Commended (educational)"
+    },
+    "certificate": { "png": "data:image/png;base64,..." }
+  },
+  "device": { "ua": navigator.userAgent }
+}
+
+
+UI details to match screenshots
+    •    Header title: “FCOS Orchid Judge” (large).
+    •    Home buttons (cards):
+    •    Profile / ID (green)
+    •    Start New Entry (purple)
+    •    View My Last 10
+    •    How to Use
+    •    FAQ
+    •    About
+    •    Small toggles at top: Light / Dark, Aa Normal/Large.
+    •    “My Entries” shows most recent entry with: title (e.g., “Phragmipedium La Vingtaine”), score /100, system (“AOS” dummy), date, status pill pending, attachments count icon.
+    •    “Profile” includes buttons: Test OpenAI connection, Run diagnostics, Save.
+    •    If cloud env missing, show amber text: Cloud sync disabled — add EXPO_PUBLIC_FCOS_SHEETS_WEBAPP_URL and EXPO_PUBLIC_FCOS_SHEETS_SECRET to enable.
+    •    “How to Use” cards (each with Start button):
+    1.    Capture photos
+    2.    Read the tag (OCR extracts genus/species/grex/clone; toggle Hybrid)
+    3.    Registry lookup (optional RHS/AOS)
+    4.    Image analysis (flower counts & symmetry; allow manual edit anytime)
+    5.    Educational scoring (see weighted result and bands)
+    6.    Export & cloud (CSV/TXT/PNG; auto-upload to Drive if enabled)
+    7.    History & certificates
+    8.    Tips & privacy (data stays on device unless cloud sync enabled)
+
+OCR behavior
+    •    Use Tesseract.js, English language.
+    •    Post-process: normalize capitalization; split genus/species/grex by common separators; detect clone text between quotes; checkbox Hybrid toggles grex vs species labels.
+    •    Editable text fields after OCR.
+
+Image analysis (simple but real)
+    •    Use canvas to convert to grayscale, apply Sobel operator for edges.
+    •    Compute symmetry: flip horizontally, compare difference of edge maps within central bounding box of bloom → symmetryPct = 100 - (diff/area)*100 (clamped 0–100).
+    •    Estimate flower count: run blob detection on edge map; allow user to correct.
+    •    Spike count: user input with +/- steppers; default 1.
+    •    Natural spread input with cm suffix; quick helper link to “How to measure”.
+
+FAQ contents (seed with these items)
+    •    How is Form / Symmetry / Balance scored?
+    •    How is Color & Saturation scored?
+    •    How is Size / Substance scored?
+    •    How is Floriferousness & Arrangement scored?
+    •    How is Condition & Grooming scored?
+    •    How is Distinctiveness / Impression scored?
+    •    Is this official judging?
+    •    Do my photos upload automatically?
+    •    What is Hybrid Analysis?
+    •    How do I export?
+    •    Multi-year tracking?
+(Fill each with short, clear educational copy.)
+
+About page
+    •    “Educational Tool (Beta)” heading.
+    •    FCOS mission paragraph.
+    •    Features list (mobile-first, AI-powered analysis, multiple judging systems, entry history).
+    •    Prominent Important Disclaimer box (copy from screenshots; reiterate not affiliated/approved by AOS/AOC/NZ/RHS; practice only).
+
+Diagnostics
+    •    “Test OpenAI connection” pings either OpenAI (if key set in window.OPENAI_API_KEY or via webhook mode) or webhook URL; report pass/fail.
+    •    “Run diagnostics” prints:
+    •    Storage available?
+    •    Camera access?
+    •    Cloud env set?
+    •    Approx free space (if available)
+    •    Browser features used (Web Share API, File System Access, etc.)
+
+Build outputs
+    •    dist/fcos-orchid-judge.umd.js (window.FCOSOrchidJudge with .mount(selector, options) and .unmount()).
+    •    dist/fcos-orchid-judge.esm.js.
+    •    A /demo page that mounts the widget and demonstrates light/dark + large text.
+
+Quality bar / Acceptance tests
+    •    Works on iOS Safari and Android Chrome (mobile-first).
+    •    No external network calls unless user triggers registry lookup or cloud sync.
+    •    If OCR fails, user can still proceed (manual fields).
+    •    All exports download correctly; certificate PNG matches on-screen view.
+    •    With no cloud env set → visible amber warning; with env set → POST succeeds and shows “Uploaded ✓”.
+
+Licensing & notices
+    •    Include a MIT license and a NOTICE in About that this is an educational tool only not affiliated with AOS/AOC/NZ/RHS.
+
+Deliverables
+    1.    Complete source code with comments.
+    2.    README with:
+    •    Embed snippet
+    •    Environment variable setup (how to host a Google Apps Script web app as SHEETS_WEBAPP_URL and verify secret)
+    •    Local dev commands (npm i, npm run dev, npm run build)
+    3.    Example Apps Script snippet in README for a simple Google Sheet logger:
+
+// Code.gs
+const SECRET = PropertiesService.getScriptProperties().getProperty('FCOS_SECRET');
+function doPost(e) {
+  const auth = e.parameter.secret || (e.postData && JSON.parse(e.postData.contents).secret) || '';
+  if (auth !== SECRET) return ContentService.createTextOutput('Unauthorized').setMimeType(ContentService.MimeType.TEXT);
+  const body = JSON.parse(e.postData.contents);
+  const sheet = SpreadsheetApp.openById('<SHEET_ID>').getSheetByName('Entries');
+  sheet.appendRow([new Date(), body.profile?.name, body.entry?.id, body.entry?.scoring?.weightedTotal]);
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}
+
+Build this now. When finished, show:
+    •    the embed code,
+    •    the list of generated files,
+    •    where to change weights/text (scoring.ts, i18n.ts),
+    •    and quick steps to enable Google Sheets sync.
