@@ -7523,6 +7523,17 @@ def enhanced_satellite_world_map():
         return render_template('mapping/enhanced_satellite_map.html', 
                              orchid_count="230+")
 
+# Demo Landing Pages for Different Audiences
+@app.route('/demo/roberta-fox')
+def demo_roberta_fox():
+    """Partnership demonstration page for Roberta Fox"""
+    return render_template('demo_roberta_fox.html')
+
+@app.route('/demo/board-directors')
+def demo_board_directors():
+    """Board Directors funding/integration demonstration page"""
+    return render_template('demo_board_directors.html')
+
 @app.route('/enhanced-science-lab')
 def enhanced_science_lab():
     """Enhanced scientific method learning platform"""
