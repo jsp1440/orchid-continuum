@@ -8335,3 +8335,6 @@ def investigate_trichocentrum():
 def add_unidentified_navigation():
     """Add link to unidentified orchids section in navigation"""
     return jsonify({'success': True, 'message': 'Navigation updated to include Help Us ID section'})
+
+# Register genetics laboratory
+register_genetics_laboratory(app)

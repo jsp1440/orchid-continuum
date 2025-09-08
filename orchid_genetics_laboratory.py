@@ -659,6 +659,11 @@ def laboratory_home():
     """Main Orchid Genetics Laboratory interface"""
     return render_template('genetics_lab/laboratory_home.html')
 
+@genetics_lab.route('/professional')
+def professional_interface():
+    """Professional breeding interface for commercial growers like Fred Clark"""
+    return render_template('genetics_lab/professional_interface.html')
+
 @genetics_lab.route('/api/analyze-collection', methods=['POST'])
 def analyze_breeding_collection():
     """API endpoint to analyze breeding collection photos"""
@@ -701,4 +706,4 @@ def get_f226_methodology():
 def register_genetics_laboratory(app):
     """Register the Orchid Genetics Laboratory"""
     app.register_blueprint(genetics_lab)
-    current_app.logger.info("🧬 Orchid Genetics Laboratory registered successfully")
+    print("🧬 Orchid Genetics Laboratory registered successfully")
