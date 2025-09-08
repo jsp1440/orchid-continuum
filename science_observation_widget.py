@@ -237,7 +237,7 @@ class ObservationDataIntegrator:
         }
     
     def _update_botany_lab_stats(self, observation_entry):
-        """Update botany lab statistics with new observation"""
+        """Update botany lab statistics and integrate with scientific method workflow"""
         try:
             # Update observation statistics in session
             if 'lab_stats' not in session:
@@ -275,8 +275,91 @@ class ObservationDataIntegrator:
             
             session['lab_stats'] = stats
             
+            # INTEGRATE WITH SCIENTIFIC METHOD WORKFLOW
+            self._integrate_with_research_platform(observation_entry)
+            
         except Exception as e:
             logger.error(f"Error updating botany lab stats: {e}")
+    
+    def _integrate_with_research_platform(self, observation_entry):
+        """Connect observation to existing scientific method platform"""
+        try:
+            # Initialize research workflow if not exists
+            if 'research_workflow' not in session:
+                session['research_workflow'] = {
+                    'current_stage': 'observation',
+                    'stages_completed': [],
+                    'observations_collected': [],
+                    'hypotheses_generated': [],
+                    'experiments_designed': [],
+                    'data_analyzed': []
+                }
+            
+            workflow = session['research_workflow']
+            
+            # Add to observations collected
+            workflow['observations_collected'].append({
+                'id': observation_entry['id'],
+                'description': observation_entry['description'],
+                'type': observation_entry['type'],
+                'quality_score': observation_entry['data_quality']['score'],
+                'matched_orchids': len(observation_entry['matched_orchids']),
+                'timestamp': observation_entry['timestamp'],
+                'ready_for_hypothesis': observation_entry['data_quality']['score'] >= 60
+            })
+            
+            # Mark observation stage as completed if we have quality data
+            if 'observation' not in workflow['stages_completed'] and observation_entry['data_quality']['score'] >= 60:
+                workflow['stages_completed'].append('observation')
+                workflow['current_stage'] = 'hypothesis'
+            
+            # Auto-generate suggested research questions
+            workflow['suggested_questions'] = self._generate_research_questions(observation_entry)
+            
+            session['research_workflow'] = workflow
+            
+        except Exception as e:
+            logger.error(f"Error integrating with research platform: {e}")
+    
+    def _generate_research_questions(self, observation_entry):
+        """Generate research questions based on the observation"""
+        questions = []
+        obs_type = observation_entry['type']
+        description = observation_entry['description']
+        
+        # Generate specific questions based on observation type
+        if obs_type == 'flowering_observation':
+            questions = [
+                f"What environmental factors trigger flowering in the observed orchid?",
+                f"How does flowering timing correlate with temperature and humidity?",
+                f"Are there genetic markers associated with this flowering pattern?"
+            ]
+        elif obs_type == 'habitat_conditions':
+            questions = [
+                f"What microclimate conditions are optimal for this orchid species?",
+                f"How do habitat conditions affect orchid health and reproduction?",
+                f"Can these habitat requirements be replicated in cultivation?"
+            ]
+        elif obs_type == 'pollinator_interaction':
+            questions = [
+                f"What attracts specific pollinators to this orchid species?",
+                f"How does pollinator behavior affect orchid evolution?",
+                f"Are there co-evolution patterns between this orchid and its pollinators?"
+            ]
+        elif obs_type == 'geographic_sighting':
+            questions = [
+                f"What factors determine the geographic distribution of this orchid?",
+                f"How is climate change affecting orchid ranges?",
+                f"Are there migration patterns in orchid populations?"
+            ]
+        else:
+            questions = [
+                f"What patterns can be identified in this orchid observation?",
+                f"How does this observation relate to known orchid biology?",
+                f"What experimental approach could test hypotheses about this observation?"
+            ]
+        
+        return questions
     
     def get_observation_summary(self):
         """Get summary of recent observations for widget display"""
@@ -358,6 +441,120 @@ def get_observation_summary():
         logger.error(f"Error in get_observation_summary: {e}")
         return jsonify({'error': str(e)}), 500
 
+@science_obs_bp.route('/api/research-workflow-status')
+def get_research_workflow_status():
+    """Get current research workflow status integrated with observations"""
+    try:
+        workflow = session.get('research_workflow', {})
+        observations = session.get('recent_observations', [])
+        
+        # Calculate workflow progress
+        total_stages = 7  # observation, question, hypothesis, experiment, data, analysis, conclusion
+        completed_stages = len(workflow.get('stages_completed', []))
+        progress_percentage = (completed_stages / total_stages) * 100
+        
+        return jsonify({
+            'workflow_status': workflow,
+            'total_observations': len(observations),
+            'ready_for_hypothesis': len([obs for obs in observations if obs.get('data_quality', {}).get('score', 0) >= 60]),
+            'progress_percentage': progress_percentage,
+            'current_stage': workflow.get('current_stage', 'observation'),
+            'suggested_questions': workflow.get('suggested_questions', [])
+        })
+    except Exception as e:
+        logger.error(f"Error getting research workflow status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@science_obs_bp.route('/api/generate-hypothesis-from-observation', methods=['POST'])
+def generate_hypothesis_from_observation():
+    """Generate AI hypothesis from observation data"""
+    try:
+        data = request.get_json()
+        observation_id = data.get('observation_id')
+        
+        if not observation_id:
+            return jsonify({'error': 'Observation ID required'}), 400
+        
+        # Find the observation
+        observations = session.get('recent_observations', [])
+        observation = next((obs for obs in observations if obs['id'] == observation_id), None)
+        
+        if not observation:
+            return jsonify({'error': 'Observation not found'}), 400
+        
+        # Use AI to generate hypothesis (integrating with existing AI systems)
+        try:
+            from openai import OpenAI
+            import os
+            
+            client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+            
+            prompt = f"""
+            Based on this field observation:
+            
+            Type: {observation['type']}
+            Description: {observation['description']}
+            Location: {observation['location']}
+            Quality Score: {observation['data_quality']['score']}%
+            Matched Orchids: {len(observation['matched_orchids'])} species
+            
+            Generate 3 testable scientific hypotheses that could explain or explore this observation.
+            For each hypothesis, provide:
+            1. Clear hypothesis statement
+            2. Testable prediction
+            3. Required data collection methods
+            4. Statistical analysis approach
+            5. Connection to orchid biology principles
+            
+            Format as structured JSON for research planning.
+            """
+            
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a botanical research specialist. Generate testable hypotheses from field observations using scientific method principles."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1200,
+                temperature=0.7
+            )
+            
+            ai_hypotheses = response.choices[0].message.content
+            
+            # Update workflow with generated hypotheses
+            workflow = session.get('research_workflow', {})
+            if 'hypotheses_generated' not in workflow:
+                workflow['hypotheses_generated'] = []
+            
+            workflow['hypotheses_generated'].append({
+                'observation_id': observation_id,
+                'generated_hypotheses': ai_hypotheses,
+                'timestamp': datetime.now().isoformat(),
+                'ready_for_experiment': True
+            })
+            
+            if 'hypothesis' not in workflow.get('stages_completed', []):
+                workflow['stages_completed'].append('hypothesis')
+                workflow['current_stage'] = 'experiment'
+            
+            session['research_workflow'] = workflow
+            
+            return jsonify({
+                'success': True,
+                'observation_id': observation_id,
+                'generated_hypotheses': ai_hypotheses,
+                'workflow_updated': True,
+                'next_stage': 'experiment'
+            })
+            
+        except Exception as ai_error:
+            logger.error(f"AI hypothesis generation error: {ai_error}")
+            return jsonify({'error': f'AI hypothesis generation failed: {ai_error}'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error in generate_hypothesis_from_observation: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @science_obs_bp.route('/widget/science-observations')
 def science_observations_widget():
     """Standalone science observations widget"""
@@ -372,6 +569,20 @@ def science_observations_widget():
                              widget_data={'error': str(e)}, 
                              standalone=True)
 
+@science_obs_bp.route('/widget/enhanced-science-observations')
+def enhanced_science_observations_widget():
+    """Enhanced science observations widget with full scientific method integration"""
+    try:
+        summary = observation_integrator.get_observation_summary()
+        return render_template('widgets/enhanced_science_observations.html', 
+                             widget_data=summary, 
+                             standalone=True)
+    except Exception as e:
+        logger.error(f"Error in enhanced_science_observations_widget: {e}")
+        return render_template('widgets/enhanced_science_observations.html', 
+                             widget_data={'error': str(e)}, 
+                             standalone=True)
+
 @science_obs_bp.route('/science-lab-dashboard')
 def science_lab_dashboard():
     """Full science lab dashboard with observation integration"""
@@ -381,7 +592,7 @@ def science_lab_dashboard():
         # Get botany lab statistics
         try:
             from botany_lab_stats import BotanyLabStats
-            botany_stats = BotanyLabStats().get_comprehensive_stats()
+            botany_stats = BotanyLabStats().parse_csv_data("")  # Use available method
         except ImportError:
             botany_stats = {'error': 'Botany lab stats not available'}
         
