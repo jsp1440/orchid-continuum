@@ -228,15 +228,106 @@
         </div>
         
         <div class="workflow-sections">
-            <!-- Observation Collection -->
+            <!-- User Profile Setup -->
             <div class="workflow-section">
                 <h4 class="section-title">
-                    <i data-feather="eye" style="width: 20px; height: 20px; margin-right: 8px;"></i>
-                    1. Field Observation Collection
+                    <i data-feather="user" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    1. Researcher Profile & Credentials
                 </h4>
                 
                 <div class="observation-form">
-                    <form id="observationForm">
+                    <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="name" placeholder="Full Name *" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="affiliation" placeholder="Institution/Organization">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="credentials" placeholder="Degrees/Credentials">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control mb-2" name="email" placeholder="Email Address">
+                            </div>
+                        </div>
+                        
+                        <textarea class="form-control mb-2" name="research_interests" placeholder="Research interests and areas of expertise..." rows="2"></textarea>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i data-feather="save" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Save Profile
+                        </button>
+                    </form>
+                    
+                    <div id="profileMessage" style="display: none; margin-top: 10px;"></div>
+                    <div id="currentProfile" style="display: none; margin-top: 15px; padding: 10px; background: rgba(40, 167, 69, 0.2); border-radius: 6px;">
+                        <strong>Current Profile:</strong> <span id="profileDisplay"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Search Integration -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="search" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    2. Search Orchid Database
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="searchForm">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="genus" placeholder="Genus">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="species" placeholder="Species">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="location" placeholder="Location">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="has_image" id="hasImage">
+                                    <label class="form-check-label" for="hasImage">
+                                        Only show records with images
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select mb-2" name="limit">
+                                    <option value="25">25 results</option>
+                                    <option value="50" selected>50 results</option>
+                                    <option value="100">100 results</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-info w-100">
+                            <i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Search Database (5,963 records)
+                        </button>
+                    </form>
+                    
+                    <div id="searchResults" style="display: none; margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- Observation Collection with File Upload -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="camera" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    3. Field Observation Collection & File Upload
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="observationForm" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-6">
                                 <select class="form-select mb-2" name="type" required>
@@ -266,9 +357,16 @@
                         
                         <textarea class="form-control mb-2" name="description" placeholder="Detailed description of observation..." rows="3" required></textarea>
                         
+                        <!-- File Upload Section -->
+                        <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                            <label class="form-label"><i data-feather="upload" style="width: 16px; height: 16px; margin-right: 4px;"></i>Upload Files (Images, Data, Documents)</label>
+                            <input type="file" class="form-control" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.csv,.xlsx,.docx">
+                            <small class="text-muted">Supported: Images (JPG, PNG), PDFs, Text files, Excel, Word (Max 16MB each)</small>
+                        </div>
+                        
                         <button type="submit" class="btn btn-warning w-100">
                             <i data-feather="plus-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
-                            Submit Observation
+                            Submit Observation with Files
                         </button>
                     </form>
                     
@@ -294,15 +392,42 @@
                 </div>
             </div>
             
-            <!-- Current Observations -->
+            <!-- Current Observations with Export Options -->
             <div class="workflow-section">
                 <h4 class="section-title">
                     <i data-feather="database" style="width: 20px; height: 20px; margin-right: 8px;"></i>
-                    Your Observations
+                    4. Your Observations & Export Options
                 </h4>
                 
                 <div class="observations-list" id="observationsList">
                     <p style="text-align: center; opacity: 0.7;">No observations recorded yet.</p>
+                </div>
+                
+                <!-- Export Options -->
+                <div id="exportOptions" style="display: none; margin-top: 15px; padding: 15px; background: rgba(255, 193, 7, 0.2); border-radius: 6px;">
+                    <h6><i data-feather="download" style="width: 16px; height: 16px; margin-right: 8px;"></i>Export Data</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select mb-2" id="exportFormat">
+                                <option value="text">Text Report (.txt)</option>
+                                <option value="csv">CSV Spreadsheet (.csv)</option>
+                                <option value="json">JSON Data (.json)</option>
+                                <option value="word">Word Document (.docx) *</option>
+                                <option value="pdf">PDF Report (.pdf) *</option>
+                                <option value="jpeg">Image Export (.jpg) *</option>
+                            </select>
+                            <small class="text-muted">* Requires additional setup</small>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select mb-2" id="exportObservation">
+                                <option value="">Select observation to export</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-100" onclick="exportObservationData()">
+                        <i data-feather="download" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Export Selected Observation
+                    </button>
                 </div>
             </div>
         </div>
@@ -340,9 +465,11 @@
         {% endif %}
         
         let workflowStatus = {};
+        let selectedOrchids = [];
         
-        // Load workflow status on page load
+        // Load data on page load
         loadWorkflowStatus();
+        loadUserProfile();
         
         async function loadWorkflowStatus() {
             try {
@@ -463,24 +590,88 @@
         
         function selectObservation(observationId) {
             console.log('Selected observation:', observationId);
-            // Could expand observation details here
+            
+            // Update export options
+            const exportSelect = document.getElementById('exportObservation');
+            if (exportSelect) {
+                // Add to export dropdown if not already there
+                const option = document.createElement('option');
+                option.value = observationId;
+                option.textContent = `Observation ${observationId}`;
+                exportSelect.appendChild(option);
+                exportSelect.value = observationId;
+                
+                // Show export options
+                document.getElementById('exportOptions').style.display = 'block';
+            }
         }
         
-        // Form submission
-        document.getElementById('observationForm').addEventListener('submit', async function(e) {
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/get-user-profile');
+                const result = await response.json();
+                
+                if (result.success && result.profile && result.profile.name) {
+                    const profileDiv = document.getElementById('currentProfile');
+                    const profileDisplay = document.getElementById('profileDisplay');
+                    
+                    profileDisplay.textContent = `${result.profile.name}${result.profile.affiliation ? ' (' + result.profile.affiliation + ')' : ''}`;
+                    profileDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        }
+        
+        async function exportObservationData() {
+            const observationId = document.getElementById('exportObservation').value;
+            const format = document.getElementById('exportFormat').value;
+            
+            if (!observationId) {
+                alert('Please select an observation to export');
+                return;
+            }
+            
+            if (!format) {
+                alert('Please select an export format');
+                return;
+            }
+            
+            try {
+                // Create download link
+                const downloadUrl = `/api/export-observation/${observationId}/${format}`;
+                
+                // Create hidden download link and click it
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `observation_${observationId}.${format}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log(`Exporting observation ${observationId} as ${format}`);
+                
+            } catch (error) {
+                console.error('Error exporting observation:', error);
+                alert('Error exporting observation. Please try again.');
+            }
+        }
+        
+        // Profile form submission
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const messageDiv = document.getElementById('submitMessage');
+            const messageDiv = document.getElementById('profileMessage');
             const formData = new FormData(this);
-            const observationData = Object.fromEntries(formData);
+            const profileData = Object.fromEntries(formData);
             
             try {
                 messageDiv.style.display = 'none';
                 
-                const response = await fetch('/api/submit-observation', {
+                const response = await fetch('/api/save-user-profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(observationData)
+                    body: JSON.stringify(profileData)
                 });
                 
                 const result = await response.json();
@@ -489,8 +680,171 @@
                     messageDiv.className = 'alert alert-success';
                     messageDiv.innerHTML = `
                         <i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Profile saved successfully!
+                    `;
+                    
+                    // Show current profile
+                    loadUserProfile();
+                } else {
+                    throw new Error(result.error || 'Failed to save profile');
+                }
+            } catch (error) {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                    Error: ${error.message}
+                `;
+            }
+            
+            messageDiv.style.display = 'block';
+            feather.replace();
+        });
+        
+        // Database search form submission
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const searchData = Object.fromEntries(formData);
+            
+            // Convert checkbox
+            searchData.has_image = formData.get('has_image') === 'on';
+            searchData.limit = parseInt(searchData.limit);
+            
+            try {
+                const response = await fetch('/api/search-orchid-database', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(searchData)
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('searchResults');
+                
+                if (result.success && result.results.length > 0) {
+                    let resultsHtml = `
+                        <h6><i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Found ${result.total_found} orchids</h6>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                    `;
+                    
+                    result.results.forEach(orchid => {
+                        resultsHtml += `
+                            <div class="observation-item" onclick="selectOrchidRecord('${orchid.id}', '${orchid.scientific_name}')" style="cursor: pointer;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>${orchid.scientific_name}</strong>
+                                    ${orchid.has_image ? '<span class="badge bg-success">📷 Image</span>' : ''}
+                                </div>
+                                <div style="font-size: 0.9rem; margin-top: 5px;">
+                                    ${orchid.location || 'Location not specified'}
+                                </div>
+                                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 3px;">
+                                    ${orchid.description ? orchid.description.substring(0, 150) + '...' : 'No description available'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsHtml += '</div>';
+                    resultsDiv.innerHTML = resultsHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <i data-feather="info" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            No orchids found matching your search criteria.
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Error searching database:', error);
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Error searching database: ${error.message}
+                    </div>
+                `;
+                document.getElementById('searchResults').style.display = 'block';
+                feather.replace();
+            }
+        });
+        
+        function selectOrchidRecord(orchidId, scientificName) {
+            selectedOrchids.push({id: orchidId, name: scientificName});
+            console.log('Selected orchid:', scientificName);
+            
+            // Add visual feedback
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                <i data-feather="check" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                Selected: ${scientificName}
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+            
+            feather.replace();
+        }
+        
+        // Observation form submission with file upload
+        document.getElementById('observationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('submitMessage');
+            const formData = new FormData(this);
+            
+            // Handle file uploads
+            const hasFiles = formData.getAll('files').some(file => file.size > 0);
+            
+            try {
+                messageDiv.style.display = 'none';
+                
+                let response;
+                
+                if (hasFiles) {
+                    // Use multipart form data for file uploads
+                    response = await fetch('/api/upload-observation-files', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Use JSON for text-only observations
+                    const observationData = Object.fromEntries(formData);
+                    response = await fetch('/api/submit-observation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(observationData)
+                    });
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'alert alert-success';
+                    let successMessage = `
+                        <i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
                         Observation submitted! Matched ${result.matched_records} orchid records.
                     `;
+                    
+                    if (result.files_uploaded > 0) {
+                        successMessage += `<br><small>📎 ${result.files_uploaded} files uploaded successfully</small>`;
+                    }
+                    
+                    if (result.export_available) {
+                        successMessage += `<br><small>📊 Data ready for export</small>`;
+                    }
+                    
+                    messageDiv.innerHTML = successMessage;
                     this.reset();
                     
                     // Reload workflow status
