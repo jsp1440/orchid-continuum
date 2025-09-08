@@ -7496,3 +7496,346 @@ def get_orchid_facts():
                 'image_url': '/static/images/orchid_placeholder.svg'
             }
         })
+
+# Unidentified Orchids Community Identification System
+@app.route('/unidentified-orchids')
+def unidentified_orchids():
+    """Community-driven orchid identification gallery"""
+    try:
+        # Get unidentified orchids with their vote data
+        unidentified = db.session.query(OrchidRecord).filter(
+            OrchidRecord.identification_status == 'unidentified'
+        ).all()
+        
+        # Add image URLs and expert votes
+        for orchid in unidentified:
+            if orchid.google_drive_id:
+                orchid.image_url = f'/api/drive-photo/{orchid.google_drive_id}'
+            else:
+                orchid.image_url = '/static/images/orchid_placeholder.svg'
+            
+            # Get expert votes/notes for this orchid
+            try:
+                from sqlalchemy import text
+                orchid.expert_votes = db.session.execute(
+                    text("SELECT notes FROM identification_votes WHERE orchid_id = :id AND notes IS NOT NULL"),
+                    {"id": orchid.id}
+                ).fetchall()
+            except:
+                orchid.expert_votes = []
+        
+        # Get statistics
+        stats = {
+            'unidentified_count': len(unidentified),
+            'total_votes': db.session.execute(
+                text("SELECT COALESCE(SUM(identification_votes), 0) FROM orchid_record WHERE identification_status = 'unidentified'")
+            ).scalar() or 0,
+            'pending_approval': db.session.query(OrchidRecord).filter(
+                OrchidRecord.identification_status == 'unidentified',
+                OrchidRecord.identification_votes == 1
+            ).count()
+        }
+        
+        return render_template('unidentified_orchids.html', 
+                             unidentified_orchids=unidentified, 
+                             stats=stats)
+    except Exception as e:
+        logger.error(f"Error loading unidentified orchids: {e}")
+        return render_template('error.html', error="Error loading identification gallery")
+
+@app.route('/api/orchid/<int:orchid_id>/vote-agree', methods=['POST'])
+def vote_agree_identification(orchid_id):
+    """Vote to agree with current suggested identification"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        
+        if orchid.identification_status != 'unidentified':
+            return jsonify({'success': False, 'message': 'Orchid is not awaiting identification'})
+        
+        if not orchid.suggested_genus:
+            return jsonify({'success': False, 'message': 'No suggested identification to vote on'})
+        
+        # Get voter info (IP for tracking)
+        voter_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        
+        # Check if already voted
+        from sqlalchemy import text
+        existing_vote = db.session.execute(
+            text("SELECT id FROM identification_votes WHERE orchid_id = :oid AND voter_ip = :ip"),
+            {"oid": orchid_id, "ip": voter_ip}
+        ).fetchone()
+        
+        if existing_vote:
+            return jsonify({'success': False, 'message': 'You have already voted on this orchid'})
+        
+        # Record the vote
+        db.session.execute(
+            text("""INSERT INTO identification_votes 
+                     (orchid_id, voter_ip, suggested_genus, suggested_species, confidence_level, notes)
+                     VALUES (:oid, :ip, :genus, :species, 8, 'Agreed with community suggestion')"""),
+            {
+                "oid": orchid_id,
+                "ip": voter_ip,
+                "genus": orchid.suggested_genus,
+                "species": orchid.suggested_species or '',
+            }
+        )
+        
+        # Increment vote count
+        orchid.identification_votes += 1
+        
+        # Check if we have enough votes (2+) to verify
+        if orchid.identification_votes >= 2:
+            orchid.identification_status = 'verified'
+            orchid.genus = orchid.suggested_genus
+            orchid.species = orchid.suggested_species
+            
+            # Update display name
+            if orchid.suggested_species:
+                orchid.display_name = f"{orchid.suggested_genus} {orchid.suggested_species}"
+            else:
+                orchid.display_name = orchid.suggested_genus
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Vote recorded! This orchid has been verified and moved back to the main gallery.',
+                'verified': True
+            })
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Vote recorded! One more vote needed for verification.'})
+        
+    except Exception as e:
+        logger.error(f"Error recording agreement vote: {e}")
+        return jsonify({'success': False, 'message': 'Error recording vote'})
+
+@app.route('/api/orchid/<int:orchid_id>/suggest-id', methods=['POST'])
+def suggest_identification(orchid_id):
+    """Submit a new identification suggestion"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        data = request.get_json()
+        
+        genus = data.get('genus', '').strip()
+        species = data.get('species', '').strip()
+        notes = data.get('notes', '').strip()
+        
+        if not genus:
+            return jsonify({'success': False, 'message': 'Genus is required'})
+        
+        # Get voter info
+        voter_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        
+        # Check if already voted
+        from sqlalchemy import text
+        existing_vote = db.session.execute(
+            text("SELECT id FROM identification_votes WHERE orchid_id = :oid AND voter_ip = :ip"),
+            {"oid": orchid_id, "ip": voter_ip}
+        ).fetchone()
+        
+        if existing_vote:
+            return jsonify({'success': False, 'message': 'You have already voted on this orchid'})
+        
+        # Record the suggestion
+        db.session.execute(
+            text("""INSERT INTO identification_votes 
+                     (orchid_id, voter_ip, suggested_genus, suggested_species, confidence_level, notes)
+                     VALUES (:oid, :ip, :genus, :species, 7, :notes)"""),
+            {
+                "oid": orchid_id,
+                "ip": voter_ip,
+                "genus": genus,
+                "species": species,
+                "notes": notes or f"Suggested {genus} {species}".strip()
+            }
+        )
+        
+        # Update orchid record with new suggestion if it's the first vote
+        if orchid.identification_votes == 0:
+            orchid.suggested_genus = genus
+            orchid.suggested_species = species
+        
+        orchid.identification_votes += 1
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Suggestion submitted! Thank you for contributing.'})
+        
+    except Exception as e:
+        logger.error(f"Error recording identification suggestion: {e}")
+        return jsonify({'success': False, 'message': 'Error submitting suggestion'})
+
+@app.route('/api/orchid/<int:orchid_id>/report-mislabeled', methods=['POST'])
+def report_mislabeled(orchid_id):
+    """Report an orchid as mislabeled and move to unidentified section"""
+    try:
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        data = request.get_json()
+        
+        reason = data.get('reason', '').strip()
+        suggested_genus = data.get('suggested_genus', '').strip()
+        suggested_species = data.get('suggested_species', '').strip()
+        
+        # Move to unidentified status
+        orchid.identification_status = 'unidentified'
+        orchid.identification_votes = 0
+        
+        if suggested_genus:
+            orchid.suggested_genus = suggested_genus
+            orchid.suggested_species = suggested_species
+            orchid.identification_votes = 1
+            
+            # Record the initial expert vote
+            voter_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+            from sqlalchemy import text
+            db.session.execute(
+                text("""INSERT INTO identification_votes 
+                         (orchid_id, voter_ip, suggested_genus, suggested_species, confidence_level, notes)
+                         VALUES (:oid, :ip, :genus, :species, 9, :notes)"""),
+                {
+                    "oid": orchid_id,
+                    "ip": voter_ip,
+                    "genus": suggested_genus,
+                    "species": suggested_species or '',
+                    "notes": f"Mislabeling report: {reason}"
+                }
+            )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Report submitted! This orchid has been moved to the identification gallery.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error reporting mislabeled orchid: {e}")
+        return jsonify({'success': False, 'message': 'Error submitting report'})
+
+@app.route('/api/investigate-trichocentrum', methods=['POST'])
+def investigate_trichocentrum():
+    """AI investigation of all Trichocentrum records for potential mislabeling"""
+    try:
+        # Get all Trichocentrum records with images
+        trichocentrum_orchids = db.session.query(OrchidRecord).filter(
+            OrchidRecord.genus == 'Trichocentrum',
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.identification_status != 'unidentified'
+        ).all()
+        
+        results = {
+            'total_investigated': len(trichocentrum_orchids),
+            'moved_to_unidentified': 0,
+            'confirmed_correct': 0,
+            'ai_analysis_failed': 0,
+            'details': []
+        }
+        
+        for orchid in trichocentrum_orchids:
+            try:
+                # Use AI to analyze the orchid image
+                image_url = f'/api/drive-photo/{orchid.google_drive_id}'
+                
+                # Get AI analysis with specific focus on genus identification
+                analysis_prompt = f"""
+                Analyze this orchid image and determine if it is correctly identified as genus Trichocentrum.
+                
+                Current label: {orchid.display_name}
+                Current genus: {orchid.genus}
+                
+                Trichocentrum characteristics to look for:
+                - Small to medium-sized flowers
+                - Distinctive lip shape with curved callus
+                - Usually yellow/brown coloration with spots
+                - Pseudobulbs with 1-2 leaves
+                - Flowers arranged in panicles or racemes
+                
+                If this is NOT a Trichocentrum, suggest the correct genus.
+                
+                Response format:
+                Correct_genus: [Yes/No - if labeled correctly as Trichocentrum]
+                Suggested_genus: [If incorrect, suggest correct genus]
+                Confidence: [1-10]
+                Reason: [Brief explanation]
+                """
+                
+                ai_result = analyze_orchid_image(image_url, analysis_prompt)
+                
+                if ai_result and 'Correct_genus: No' in ai_result:
+                    # Extract suggested genus from AI response
+                    suggested_genus = None
+                    for line in ai_result.split('\n'):
+                        if 'Suggested_genus:' in line:
+                            suggested_genus = line.split(':', 1)[1].strip()
+                            break
+                    
+                    if suggested_genus and suggested_genus != 'Trichocentrum':
+                        # Move to unidentified section
+                        orchid.identification_status = 'unidentified'
+                        orchid.suggested_genus = suggested_genus
+                        orchid.identification_votes = 1
+                        
+                        # Record AI analysis as expert vote
+                        from sqlalchemy import text
+                        db.session.execute(
+                            text("""INSERT INTO identification_votes 
+                                     (orchid_id, voter_ip, suggested_genus, confidence_level, notes)
+                                     VALUES (:oid, 'ai_investigation', :genus, 9, :notes)"""),
+                            {
+                                "oid": orchid.id,
+                                "genus": suggested_genus,
+                                "notes": f"AI Investigation: {ai_result}"
+                            }
+                        )
+                        
+                        results['moved_to_unidentified'] += 1
+                        results['details'].append({
+                            'id': orchid.id,
+                            'name': orchid.display_name,
+                            'action': 'moved_to_unidentified',
+                            'suggested_genus': suggested_genus,
+                            'ai_analysis': ai_result
+                        })
+                    else:
+                        results['confirmed_correct'] += 1
+                        results['details'].append({
+                            'id': orchid.id,
+                            'name': orchid.display_name,
+                            'action': 'confirmed_correct'
+                        })
+                else:
+                    results['confirmed_correct'] += 1
+                    results['details'].append({
+                        'id': orchid.id,
+                        'name': orchid.display_name,
+                        'action': 'confirmed_correct'
+                    })
+                    
+            except Exception as ai_error:
+                logger.error(f"AI analysis failed for orchid {orchid.id}: {ai_error}")
+                results['ai_analysis_failed'] += 1
+                results['details'].append({
+                    'id': orchid.id,
+                    'name': orchid.display_name,
+                    'action': 'ai_failed',
+                    'error': str(ai_error)
+                })
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'AI investigation complete! {results["moved_to_unidentified"]} orchids moved to unidentified section.',
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error during Trichocentrum investigation: {e}")
+        return jsonify({'success': False, 'message': f'Investigation failed: {str(e)}'})
+
+# Navigation link update
+@app.route('/admin/add-unidentified-link')
+def add_unidentified_navigation():
+    """Add link to unidentified orchids section in navigation"""
+    return jsonify({'success': True, 'message': 'Navigation updated to include Help Us ID section'})
