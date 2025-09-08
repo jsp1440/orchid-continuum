@@ -64,8 +64,11 @@ def clean_gallery():
         conn = psycopg2.connect(os.environ.get("DATABASE_URL"))
         cursor = conn.cursor()
         
-        # Build WHERE clause
-        where_conditions = ["google_drive_id IS NOT NULL AND google_drive_id != '' AND google_drive_id != 'None'"]
+        # Build WHERE clause - EXCLUDE REPORTED/UNIDENTIFIED ORCHIDS
+        where_conditions = [
+            "google_drive_id IS NOT NULL AND google_drive_id != '' AND google_drive_id != 'None'",
+            "COALESCE(identification_status, 'identified') != 'unidentified'"
+        ]
         params = []
         
         if genus:
