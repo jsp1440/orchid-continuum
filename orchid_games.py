@@ -16,6 +16,16 @@ def games_home():
     """Games homepage with all available games"""
     return render_template('games/index.html')
 
+@games_bp.route('/puzzle')
+def puzzle_game():
+    """Orchid puzzle game"""
+    return render_template('games/puzzle_game.html')
+
+@games_bp.route('/quiz')
+def quiz_game():
+    """Orchid quiz game"""  
+    return render_template('games/quiz_game.html')
+
 # Widget endpoints for embedding games in other pages
 @games_bp.route('/widget/quiz')
 def quiz_widget():
