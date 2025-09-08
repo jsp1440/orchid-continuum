@@ -73,6 +73,7 @@ from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
 from orchid_genetics_laboratory import register_genetics_laboratory
 from citizen_science_platform import citizen_science_bp
+from philosophy_quiz_service import philosophy_quiz_service
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
@@ -5191,6 +5192,76 @@ def standalone_climate_widget():
     return render_template('widgets/climate_widget.html', 
                          widget_data=widget_data, 
                          standalone=True)
+
+# ============================================================================
+# PHILOSOPHY QUIZ SYSTEM - Enhanced 16-philosophy quiz with Google Sheets
+# ============================================================================
+
+@app.route('/philosophy-quiz')
+def philosophy_quiz():
+    """Enhanced Philosophy Quiz - Discover Your Orchid Growing Philosophy"""
+    return render_template('widgets/enhanced_philosophy_quiz.html')
+
+@app.route('/api/philosophy-quiz-data')
+def get_philosophy_quiz_data():
+    """API endpoint to fetch quiz data from Google Sheets"""
+    try:
+        quiz_data = philosophy_quiz_service.get_complete_quiz_data()
+        return jsonify({
+            'success': True,
+            'data': quiz_data
+        })
+    except Exception as e:
+        logger.error(f"Failed to fetch philosophy quiz data: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load quiz data',
+            'fallback': True
+        }), 500
+
+@app.route('/api/philosophy-quiz-submit', methods=['POST'])
+def submit_philosophy_quiz():
+    """Process quiz submission and return results"""
+    try:
+        answers = request.json.get('answers', {})
+        
+        # Get scoring key from Google Sheets
+        scoring_key = philosophy_quiz_service.get_scoring_key()
+        
+        # Score the answers
+        scores = {}
+        for question_num, answer in answers.items():
+            philosophy = scoring_key.get(str(question_num), {}).get(answer.upper())
+            if philosophy:
+                scores[philosophy] = scores.get(philosophy, 0) + 1
+        
+        # Find top scoring philosophies
+        max_score = max(scores.values()) if scores else 0
+        top_philosophies = [k for k, v in scores.items() if v == max_score]
+        
+        # Get philosophy details
+        philosophies_data = philosophy_quiz_service.get_philosophies_data()
+        philosophy_map = {p.get('key', ''): p for p in philosophies_data}
+        
+        result_philosophies = []
+        for phil_key in top_philosophies:
+            if phil_key in philosophy_map:
+                result_philosophies.append(philosophy_map[phil_key])
+        
+        return jsonify({
+            'success': True,
+            'scores': scores,
+            'top_philosophies': top_philosophies,
+            'philosophy_details': result_philosophies,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to process quiz submission: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to process quiz results'
+        }), 500
 
 # Register care wheel generator system
 try:
