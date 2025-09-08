@@ -46,7 +46,7 @@ import logging
 import requests
 import re
 from datetime import datetime, timedelta
-from sqlalchemy import or_, func, and_
+from sqlalchemy import or_, func, and_, cast, String
 from io import BytesIO
 from googleapiclient.http import MediaIoBaseDownload
 import issue_reports
