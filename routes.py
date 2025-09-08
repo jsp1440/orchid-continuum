@@ -1452,6 +1452,14 @@ app.register_blueprint(enhanced_mapping_bp)
 # Register Citizen Science Platform
 app.register_blueprint(citizen_science_bp)
 
+# Register Mycorrhizal Research Platform
+from mycorrhizal_research_system import mycorrhizal_bp
+app.register_blueprint(mycorrhizal_bp)
+
+# Register Climate Research Platform
+from climate_research_system import climate_research_bp
+app.register_blueprint(climate_research_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
