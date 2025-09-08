@@ -522,6 +522,501 @@ class CitizenSciencePlatform:
                 'Integration with existing databases'
             ]
         }
+    
+    def _load_all_projects(self) -> List[Dict]:
+        """Load all projects from storage"""
+        try:
+            projects_dir = 'citizen_science_projects'
+            if not os.path.exists(projects_dir):
+                return []
+            
+            projects = []
+            for filename in os.listdir(projects_dir):
+                if filename.endswith('.json'):
+                    filepath = os.path.join(projects_dir, filename)
+                    with open(filepath, 'r') as f:
+                        project = json.load(f)
+                        projects.append(project)
+            
+            return sorted(projects, key=lambda x: x.get('created_date', ''), reverse=True)
+        except Exception as e:
+            logger.error(f"Error loading projects: {str(e)}")
+            return []
+    
+    def _load_project(self, project_id: str) -> Optional[Dict]:
+        """Load specific project from storage"""
+        try:
+            projects_dir = 'citizen_science_projects'
+            filepath = os.path.join(projects_dir, f"{project_id}.json")
+            
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            logger.error(f"Error loading project {project_id}: {str(e)}")
+            return None
+    
+    def _get_project_submissions(self, project_id: str) -> List[Dict]:
+        """Get all submissions for a project"""
+        try:
+            submissions_dir = 'citizen_science_submissions'
+            if not os.path.exists(submissions_dir):
+                return []
+            
+            project_submissions = []
+            for filename in os.listdir(submissions_dir):
+                if filename.endswith('.json'):
+                    filepath = os.path.join(submissions_dir, filename)
+                    with open(filepath, 'r') as f:
+                        submission = json.load(f)
+                        if submission.get('project_id') == project_id:
+                            project_submissions.append(submission)
+            
+            return project_submissions
+        except Exception as e:
+            logger.error(f"Error loading project submissions: {str(e)}")
+            return []
+    
+    def _summarize_ai_analysis(self, processed_photos: List[Dict]) -> Dict[str, Any]:
+        """Summarize AI analysis results across all photos"""
+        if not processed_photos:
+            return {}
+        
+        summary = {
+            'total_photos': len(processed_photos),
+            'species_identified': set(),
+            'average_quality_score': 0,
+            'trait_variations': {},
+            'conservation_flags': []
+        }
+        
+        total_quality = 0
+        for photo in processed_photos:
+            ai_analysis = photo.get('ai_analysis', {})
+            
+            # Collect species
+            species = ai_analysis.get('species_name')
+            if species:
+                summary['species_identified'].add(species)
+            
+            # Sum quality scores
+            quality = photo.get('quality_score', 0)
+            total_quality += quality
+            
+            # Collect traits
+            traits = ai_analysis.get('traits', {})
+            for trait_name, trait_value in traits.items():
+                if trait_name not in summary['trait_variations']:
+                    summary['trait_variations'][trait_name] = []
+                summary['trait_variations'][trait_name].append(trait_value)
+        
+        # Calculate averages
+        if processed_photos:
+            summary['average_quality_score'] = total_quality / len(processed_photos)
+        
+        # Convert set to list for JSON serialization
+        summary['species_identified'] = list(summary['species_identified'])
+        
+        return summary
+    
+    def _identify_conservation_flags(self, submission_data: Dict, processed_photos: List[Dict]) -> List[str]:
+        """Identify conservation concerns from submission"""
+        flags = []
+        
+        # Check population size
+        pop_count = submission_data.get('population_count')
+        if pop_count and isinstance(pop_count, int):
+            if pop_count < 10:
+                flags.append('CRITICAL_SMALL_POPULATION')
+            elif pop_count < 50:
+                flags.append('VULNERABLE_POPULATION')
+        
+        # Check threats
+        threats = submission_data.get('threats_observed', [])
+        if threats:
+            flags.append('THREATS_IDENTIFIED')
+        
+        # Check species rarity (would need database lookup)
+        species_name = submission_data.get('species_name', '')
+        rare_indicators = ['cypripedium', 'platanthera', 'spiranthes', 'goodyera']
+        if any(indicator in species_name.lower() for indicator in rare_indicators):
+            flags.append('POTENTIALLY_RARE_SPECIES')
+        
+        return flags
+    
+    def _enhance_analysis_with_context(self, ai_analysis: Dict, submission_data: Dict, exif_data: Dict) -> Dict:
+        """Enhance AI analysis with submission context"""
+        enhanced = ai_analysis.copy()
+        
+        # Add location context
+        enhanced['location_context'] = {
+            'coordinates': {
+                'latitude': submission_data.get('latitude'),
+                'longitude': submission_data.get('longitude')
+            },
+            'habitat_description': submission_data.get('habitat_description'),
+            'elevation': submission_data.get('elevation'),
+            'microclimate': submission_data.get('microclimate')
+        }
+        
+        # Add temporal context
+        enhanced['temporal_context'] = {
+            'observation_date': submission_data.get('observation_date'),
+            'flowering_stage': submission_data.get('flowering_stage'),
+            'seasonal_context': self._determine_seasonal_context(submission_data.get('observation_date'))
+        }
+        
+        # Add population context
+        enhanced['population_context'] = {
+            'population_count': submission_data.get('population_count'),
+            'associated_species': submission_data.get('associated_species', []),
+            'threats_present': submission_data.get('threats_observed', [])
+        }
+        
+        # Add photo metadata
+        enhanced['photo_metadata'] = exif_data
+        
+        return enhanced
+    
+    def _determine_seasonal_context(self, observation_date: str) -> str:
+        """Determine seasonal context from observation date"""
+        if not observation_date:
+            return 'unknown'
+        
+        try:
+            date_obj = datetime.fromisoformat(observation_date)
+            month = date_obj.month
+            
+            if month in [12, 1, 2]:
+                return 'winter'
+            elif month in [3, 4, 5]:
+                return 'spring'
+            elif month in [6, 7, 8]:
+                return 'summer'
+            elif month in [9, 10, 11]:
+                return 'fall'
+        except:
+            return 'unknown'
+        
+        return 'unknown'
+    
+    def _calculate_photo_quality(self, exif_data: Dict, ai_analysis: Dict) -> float:
+        """Calculate photo quality score for conservation science"""
+        score = 0.0
+        max_score = 100.0
+        
+        # Image resolution (25 points)
+        width = exif_data.get('image_dimensions', {}).get('width', 'Unknown')
+        if width != 'Unknown' and isinstance(width, (int, str)):
+            try:
+                w = int(width) if isinstance(width, str) else width
+                if w >= 3000:  # High resolution
+                    score += 25
+                elif w >= 1920:  # Medium resolution
+                    score += 20
+                elif w >= 1280:  # Low resolution
+                    score += 15
+            except:
+                pass
+        
+        # GPS data presence (20 points)
+        gps_coords = exif_data.get('gps_coordinates')
+        if gps_coords and gps_coords.get('latitude') and gps_coords.get('longitude'):
+            score += 20
+        
+        # AI analysis confidence (25 points)
+        confidence = ai_analysis.get('confidence', 0)
+        if isinstance(confidence, (int, float)):
+            score += confidence * 0.25  # Scale to 25 points
+        
+        # Trait extraction success (20 points)
+        traits = ai_analysis.get('traits', {})
+        trait_count = len(traits)
+        if trait_count >= 5:
+            score += 20
+        elif trait_count >= 3:
+            score += 15
+        elif trait_count >= 1:
+            score += 10
+        
+        # Focus and composition (10 points)
+        # This would require more sophisticated image analysis
+        # For now, assume good quality if other metrics are high
+        if score >= 70:
+            score += 10
+        elif score >= 50:
+            score += 5
+        
+        return min(score, max_score)  # Cap at 100
+    
+    def _assess_conservation_value(self, ai_analysis: Dict, submission_data: Dict) -> float:
+        """Assess conservation value of the observation"""
+        value = 0.0
+        
+        # Species rarity (40 points)
+        species_name = submission_data.get('species_name', '').lower()
+        if any(rare in species_name for rare in ['cypripedium', 'platanthera', 'spiranthes']):
+            value += 40
+        elif any(uncommon in species_name for uncommon in ['goodyera', 'malaxis', 'liparis']):
+            value += 30
+        else:
+            value += 20  # Any wild orchid has conservation value
+        
+        # Population size (20 points)
+        pop_count = submission_data.get('population_count')
+        if pop_count:
+            if pop_count < 10:
+                value += 20  # Very high conservation value for small populations
+            elif pop_count < 50:
+                value += 15
+            elif pop_count < 100:
+                value += 10
+            else:
+                value += 5
+        
+        # Habitat quality (20 points)
+        threats = submission_data.get('threats_observed', [])
+        if not threats:
+            value += 20  # Pristine habitat
+        elif len(threats) <= 2:
+            value += 10  # Some threats but manageable
+        # No points for heavily threatened habitats
+        
+        # Data quality (20 points)
+        ai_confidence = ai_analysis.get('confidence', 0)
+        value += ai_confidence * 0.2  # Scale to 20 points
+        
+        return min(value, 100.0)
+    
+    def _submit_to_eol(self, submission_record: Dict) -> Optional[Dict]:
+        """Submit observation to Encyclopedia of Life"""
+        try:
+            if not eol_integrator.api_key:
+                return {'status': 'skipped', 'reason': 'No EOL API key configured'}
+            
+            # Format data for EOL submission
+            eol_data = {
+                'species_name': submission_record.get('species_name'),
+                'observer_name': submission_record.get('contributor_name'),
+                'observation_date': submission_record.get('observation_details', {}).get('observation_date'),
+                'latitude': submission_record.get('location', {}).get('latitude'),
+                'longitude': submission_record.get('location', {}).get('longitude'),
+                'traits_observed': self._extract_traits_for_eol(submission_record),
+                'photo_urls': [],  # Would need to upload photos first
+                'habitat_notes': submission_record.get('location', {}).get('habitat_description', '')
+            }
+            
+            result = eol_integrator.submit_citizen_observation(eol_data)
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error submitting to EOL: {str(e)}")
+            return {'status': 'error', 'error': str(e)}
+    
+    def _extract_traits_for_eol(self, submission_record: Dict) -> Dict:
+        """Extract traits from submission for EOL format"""
+        traits = {}
+        
+        # Extract from AI analysis
+        for photo in submission_record.get('photos', []):
+            ai_traits = photo.get('ai_analysis', {}).get('traits', {})
+            traits.update(ai_traits)
+        
+        # Add observation context
+        obs_details = submission_record.get('observation_details', {})
+        traits.update({
+            'flowering_stage': obs_details.get('flowering_stage'),
+            'population_count': obs_details.get('population_count'),
+            'habitat_type': submission_record.get('location', {}).get('habitat_description')
+        })
+        
+        return traits
+    
+    def _generate_contributor_feedback(self, submission_record: Dict, eol_submission: Optional[Dict]) -> Dict:
+        """Generate feedback for contributor"""
+        feedback = {
+            'submission_quality': 'excellent',
+            'conservation_impact': 'high',
+            'scientific_value': 'significant',
+            'recommendations': [],
+            'next_steps': []
+        }
+        
+        # Assess submission quality
+        avg_quality = 0
+        photos = submission_record.get('photos', [])
+        if photos:
+            avg_quality = sum(p.get('quality_score', 0) for p in photos) / len(photos)
+        
+        if avg_quality >= 80:
+            feedback['submission_quality'] = 'excellent'
+            feedback['recommendations'].append('Outstanding photo quality - perfect for research')
+        elif avg_quality >= 60:
+            feedback['submission_quality'] = 'good'
+            feedback['recommendations'].append('Good photo quality - useful for analysis')
+        else:
+            feedback['submission_quality'] = 'needs_improvement'
+            feedback['recommendations'].append('Consider higher resolution photos for better analysis')
+        
+        # Conservation flags
+        flags = submission_record.get('conservation_flags', [])
+        if 'CRITICAL_SMALL_POPULATION' in flags:
+            feedback['conservation_impact'] = 'critical'
+            feedback['next_steps'].append('Alert local conservation authorities')
+        elif 'VULNERABLE_POPULATION' in flags:
+            feedback['conservation_impact'] = 'high'
+            feedback['next_steps'].append('Continue monitoring this population')
+        
+        # EOL submission status
+        if eol_submission and eol_submission.get('success'):
+            feedback['next_steps'].append('Data successfully submitted to Encyclopedia of Life')
+        
+        return feedback
+    
+    def _generate_conservation_insights(self, population_analysis: Dict, project_submissions: List[Dict]) -> Dict:
+        """Generate conservation insights from population analysis"""
+        insights = {
+            'overall_assessment': 'unknown',
+            'priority_level': 'medium',
+            'recommended_actions': [],
+            'monitoring_needs': [],
+            'research_opportunities': []
+        }
+        
+        total_submissions = len(project_submissions)
+        
+        # Assess overall population health
+        critical_flags = sum(1 for s in project_submissions 
+                           if 'CRITICAL_SMALL_POPULATION' in s.get('conservation_flags', []))
+        
+        if critical_flags > total_submissions * 0.3:  # More than 30% critical
+            insights['overall_assessment'] = 'critical'
+            insights['priority_level'] = 'high'
+            insights['recommended_actions'].append('Immediate conservation intervention needed')
+        elif critical_flags > 0:
+            insights['overall_assessment'] = 'concerning'
+            insights['priority_level'] = 'medium-high'
+            insights['recommended_actions'].append('Enhanced monitoring and protection measures')
+        else:
+            insights['overall_assessment'] = 'stable'
+            insights['priority_level'] = 'medium'
+            insights['recommended_actions'].append('Continue current monitoring protocols')
+        
+        # Identify research opportunities
+        species_diversity = set()
+        for submission in project_submissions:
+            species = submission.get('species_name')
+            if species:
+                species_diversity.add(species)
+        
+        if len(species_diversity) > 1:
+            insights['research_opportunities'].append('Multi-species interaction studies')
+        
+        insights['research_opportunities'].extend([
+            'Genetic diversity assessment',
+            'Climate change impact analysis',
+            'Pollinator relationship studies'
+        ])
+        
+        return insights
+    
+    def _identify_selection_pressures(self, all_photos: List[Dict]) -> Dict:
+        """Identify potential selection pressures from photo analysis"""
+        pressures = {
+            'environmental': [],
+            'anthropogenic': [],
+            'biological': [],
+            'genetic': []
+        }
+        
+        # Analyze traits for directional selection
+        trait_data = {}
+        for photo in all_photos:
+            traits = photo.get('ai_analysis', {}).get('traits', {})
+            for trait_name, trait_value in traits.items():
+                if trait_name not in trait_data:
+                    trait_data[trait_name] = []
+                trait_data[trait_name].append(trait_value)
+        
+        # Simple analysis for demonstration
+        for trait_name, values in trait_data.items():
+            numeric_values = [v for v in values if isinstance(v, (int, float))]
+            if len(numeric_values) > 3:
+                variation = max(numeric_values) - min(numeric_values)
+                if variation > 0:
+                    if 'size' in trait_name.lower():
+                        pressures['environmental'].append(f'Size variation in {trait_name}')
+                    elif 'color' in trait_name.lower():
+                        pressures['biological'].append(f'Color polymorphism in {trait_name}')
+        
+        return pressures
+    
+    def _assess_genetic_diversity(self, all_photos: List[Dict]) -> Dict:
+        """Assess genetic diversity from trait variations"""
+        assessment = {
+            'diversity_level': 'unknown',
+            'trait_variations': {},
+            'recommendations': []
+        }
+        
+        # Count trait variations
+        trait_counts = {}
+        for photo in all_photos:
+            traits = photo.get('ai_analysis', {}).get('traits', {})
+            for trait_name in traits.keys():
+                trait_counts[trait_name] = trait_counts.get(trait_name, 0) + 1
+        
+        # Simple diversity assessment
+        avg_trait_count = sum(trait_counts.values()) / len(trait_counts) if trait_counts else 0
+        
+        if avg_trait_count > 10:
+            assessment['diversity_level'] = 'high'
+            assessment['recommendations'].append('Population shows good genetic diversity')
+        elif avg_trait_count > 5:
+            assessment['diversity_level'] = 'medium'
+            assessment['recommendations'].append('Monitor for genetic bottlenecks')
+        else:
+            assessment['diversity_level'] = 'low'
+            assessment['recommendations'].append('Investigate potential inbreeding')
+        
+        assessment['trait_variations'] = trait_counts
+        
+        return assessment
+    
+    def _generate_scientific_recommendations(self, population_analysis: Dict) -> List[str]:
+        """Generate scientific recommendations from analysis"""
+        recommendations = [
+            'Continue systematic photo documentation',
+            'Expand geographic sampling if possible',
+            'Document flowering phenology across seasons',
+            'Investigate pollinator relationships',
+            'Monitor population trends over time'
+        ]
+        
+        # Add specific recommendations based on analysis
+        conservation_insights = population_analysis.get('conservation_insights', {})
+        if conservation_insights.get('priority_level') == 'high':
+            recommendations.insert(0, 'Prioritize immediate conservation action')
+        
+        return recommendations
+    
+    def _store_analysis_results(self, project_id: str, analysis_results: Dict):
+        """Store population analysis results"""
+        try:
+            analysis_dir = 'population_analysis_results'
+            os.makedirs(analysis_dir, exist_ok=True)
+            
+            filename = f"{project_id}_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filepath = os.path.join(analysis_dir, filename)
+            
+            with open(filepath, 'w') as f:
+                json.dump(analysis_results, f, indent=2)
+            
+            logger.info(f"Stored analysis results: {filename}")
+            
+        except Exception as e:
+            logger.error(f"Error storing analysis results: {str(e)}")
 
 
 # Initialize the platform

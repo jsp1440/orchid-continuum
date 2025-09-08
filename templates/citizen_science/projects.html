@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Active Citizen Science Projects{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('citizen_science.citizen_science_home') }}">Citizen Science</a>
+                    </li>
+                    <li class="breadcrumb-item active">Active Projects</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>Active Conservation Projects</h1>
+                    <p class="text-muted">Join ongoing research initiatives to document and protect wild orchid populations</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+                        <i data-feather="plus"></i> Create Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Categories Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-light">
+                <div class="card-body">
+                    <h6 class="card-title">Filter by Category</h6>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterAll" checked>
+                        <label class="btn btn-outline-primary" for="filterAll">All Projects</label>
+                        
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterPopulation">
+                        <label class="btn btn-outline-primary" for="filterPopulation">Population Surveys</label>
+                        
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterRare">
+                        <label class="btn btn-outline-primary" for="filterRare">Rare Species</label>
+                        
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterPhenology">
+                        <label class="btn btn-outline-primary" for="filterPhenology">Phenology</label>
+                        
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterHabitat">
+                        <label class="btn btn-outline-primary" for="filterHabitat">Habitat Studies</label>
+                        
+                        <input type="radio" class="btn-check" name="categoryFilter" id="filterPollinator">
+                        <label class="btn btn-outline-primary" for="filterPollinator">Pollination</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Projects -->
+    <div class="row">
+        {% if projects and projects|length > 0 %}
+            {% for project in projects %}
+            <div class="col-lg-6 col-xl-4 mb-4 project-card" data-category="{{ project.category }}">
+                <div class="card h-100 border-2 border-success">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-title mb-1">{{ project.title }}</h6>
+                                <small class="opacity-75">{{ project.partner_organization or 'Independent Project' }}</small>
+                            </div>
+                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ project.description[:150] }}{% if project.description|length > 150 %}...{% endif %}</p>
+                        
+                        <!-- Project Stats -->
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="text-primary">
+                                    <strong>{{ project.submissions_count }}</strong>
+                                </div>
+                                <small class="text-muted">Submissions</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-info">
+                                    <strong>{{ project.contributors|length }}</strong>
+                                </div>
+                                <small class="text-muted">Contributors</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-success">
+                                    <strong>{{ project.target_species|length }}</strong>
+                                </div>
+                                <small class="text-muted">Target Species</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Geographic Focus -->
+                        {% if project.geographic_focus %}
+                        <div class="mb-3">
+                            <small class="text-muted">Geographic Focus:</small>
+                            <div class="text-primary">{{ project.geographic_focus }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Target Species -->
+                        {% if project.target_species %}
+                        <div class="mb-3">
+                            <small class="text-muted">Target Species:</small>
+                            <div>
+                                {% for species in project.target_species[:3] %}
+                                <span class="badge bg-light text-dark me-1">{{ species }}</span>
+                                {% endfor %}
+                                {% if project.target_species|length > 3 %}
+                                <span class="badge bg-secondary">+{{ project.target_species|length - 3 }} more</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Project Dates -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                {{ project.start_date }} to {{ project.end_date }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('citizen_science.submission_form', project_id=project.project_id) }}" 
+                               class="btn btn-success btn-sm">
+                                <i data-feather="camera"></i> Submit Photos
+                            </a>
+                            <button class="btn btn-outline-primary btn-sm" 
+                                    onclick="viewProjectDetails('{{ project.project_id }}')">
+                                <i data-feather="info"></i> Details
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    onclick="viewProjectAnalysis('{{ project.project_id }}')">
+                                <i data-feather="bar-chart"></i> Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- No Projects Yet -->
+            <div class="col-12">
+                <div class="card border-dashed border-2 h-100">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="camera" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                        <h4 class="text-muted">No Active Projects</h4>
+                        <p class="text-muted mb-4">
+                            Be the first to create a citizen science project for orchid conservation!
+                        </p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+                            <i data-feather="plus"></i> Create First Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal fade" id="newProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Citizen Science Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="newProjectForm" action="/citizen-science/api/create-project" method="POST">
+                <div class="modal-body">
+                    <!-- Project Basic Info -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Project Title *</label>
+                            <input type="text" class="form-control" name="title" required 
+                                   placeholder="e.g., Pacific Northwest Cypripedium Survey">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Category *</label>
+                            <select class="form-select" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="wild_population_survey">Wild Population Survey</option>
+                                <option value="rare_species_documentation">Rare Species Documentation</option>
+                                <option value="phenology_monitoring">Phenology Monitoring</option>
+                                <option value="habitat_characterization">Habitat Characterization</option>
+                                <option value="pollinator_interaction">Pollinator Interaction Studies</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Project Description *</label>
+                        <textarea class="form-control" name="description" rows="3" required
+                                  placeholder="Describe the goals, methodology, and expected outcomes of this project"></textarea>
+                    </div>
+                    
+                    <!-- Geographic Focus -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Geographic Focus</label>
+                            <input type="text" class="form-control" name="geographic_focus" 
+                                   placeholder="e.g., Olympic Peninsula, Washington State">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Partner Organization</label>
+                            <select class="form-select" name="partner_organization">
+                                <option value="">Independent Project</option>
+                                <option value="native_orchid_society">Native Orchid Society</option>
+                                <option value="north_american_orchid_conservation">North American Orchid Conservation Center</option>
+                                <option value="international_orchid_foundation">International Orchid Foundation</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Target Species -->
+                    <div class="mb-3">
+                        <label class="form-label">Target Species (comma-separated)</label>
+                        <input type="text" class="form-control" name="target_species" 
+                               placeholder="e.g., Cypripedium montanum, Cypripedium fasciculatum">
+                        <small class="form-text text-muted">Leave blank for all species</small>
+                    </div>
+                    
+                    <!-- Project Timeline -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" 
+                                   value="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" name="end_date">
+                        </div>
+                    </div>
+                    
+                    <!-- Project Lead -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Project Lead Name *</label>
+                            <input type="text" class="form-control" name="project_lead" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" name="contact_email">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details Modal -->
+<div class="modal fade" id="projectDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Project Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="projectDetailsContent">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Category filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('input[name="categoryFilter"]');
+    const projectCards = document.querySelectorAll('.project-card');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const selectedCategory = this.id.replace('filter', '').toLowerCase();
+            
+            projectCards.forEach(card => {
+                if (selectedCategory === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    const cardCategory = card.dataset.category;
+                    if (cardCategory.includes(selectedCategory)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+    
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+
+// Project management functions
+function viewProjectDetails(projectId) {
+    fetch(`/citizen-science/api/projects/${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('projectDetailsContent').innerHTML = `
+                <div class="project-details">
+                    <h6>Project Information</h6>
+                    <table class="table table-bordered">
+                        <tr><td><strong>Title:</strong></td><td>${data.title}</td></tr>
+                        <tr><td><strong>Category:</strong></td><td>${data.category}</td></tr>
+                        <tr><td><strong>Description:</strong></td><td>${data.description}</td></tr>
+                        <tr><td><strong>Geographic Focus:</strong></td><td>${data.geographic_focus || 'Not specified'}</td></tr>
+                        <tr><td><strong>Project Lead:</strong></td><td>${data.project_lead}</td></tr>
+                        <tr><td><strong>Timeline:</strong></td><td>${data.start_date} to ${data.end_date}</td></tr>
+                    </table>
+                    
+                    <h6>Submission Guidelines</h6>
+                    <div class="submission-guidelines">
+                        ${JSON.stringify(data.submission_guidelines, null, 2)}
+                    </div>
+                </div>
+            `;
+            new bootstrap.Modal(document.getElementById('projectDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading project details:', error);
+        });
+}
+
+function viewProjectAnalysis(projectId) {
+    window.location.href = `/citizen-science/projects/${projectId}/analysis`;
+}
+
+// New project form submission
+document.getElementById('newProjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('/citizen-science/api/create-project', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Project created successfully!');
+            location.reload();
+        } else {
+            alert('Error creating project: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating project');
+    });
+});
+</script>
+{% endblock %}

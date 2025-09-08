@@ -364,6 +364,9 @@ def test_eol_integration():
     return False
 
 
+# Create global instance for import
+eol_integrator = EOLIntegrator()
+
 if __name__ == "__main__":
     # Run test when called directly
     test_eol_integration()
