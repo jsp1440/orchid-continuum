@@ -5594,6 +5594,11 @@ def orchid_maps():
     """Interactive orchid mapping system with topological data"""
     return render_template('orchid_maps.html')
 
+@app.route('/orchid-map')
+def orchid_map():
+    """Interactive orchid mapping system (singular route)"""
+    return render_template('orchid_map.html')
+
 @app.route('/api/orchid-map-data')
 def api_orchid_map_data():
     """API endpoint for orchid mapping data"""
