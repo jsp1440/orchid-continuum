@@ -2046,6 +2046,17 @@ def index():
                     'genus_breakdown': []
                 }
         
+        # STEALTH CONFIGURATION - BOARD PROTECTION
+        try:
+            from stealth_config import stealth_manager
+            user_level = stealth_manager.get_user_access_level()
+            
+            # Serve board-friendly version for public access
+            if user_level == 'public':
+                return render_template('board_friendly_homepage.html')
+        except ImportError:
+            pass  # Continue with full platform if stealth config not available
+        
         return render_template('index.html',
                              orchid_of_day=orchid_of_day,
                              orchid_of_day_enhanced=orchid_of_day_enhanced,
