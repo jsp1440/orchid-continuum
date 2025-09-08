@@ -1464,6 +1464,10 @@ app.register_blueprint(climate_research_bp)
 from global_orchid_climate_analysis import global_analysis_bp
 app.register_blueprint(global_analysis_bp)
 
+# Register Unified Climate Command Center
+from unified_climate_command_center import command_center_bp
+app.register_blueprint(command_center_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
