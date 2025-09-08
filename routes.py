@@ -296,15 +296,23 @@ def space_earth_globe():
 
 @app.route('/api/orchid-coordinates-all')
 def orchid_coordinates_all():
-    """Get ALL orchid coordinates for the 3D globe - thousands of points"""
+    """Get ALL orchid coordinates for the 3D globe with genus filtering"""
     try:
-        # Get all orchids with coordinates from database
-        orchids = OrchidRecord.query.filter(
+        genus_filter = request.args.get('genus', '')
+        
+        # Build base query
+        query = OrchidRecord.query.filter(
             and_(
                 OrchidRecord.decimal_latitude.isnot(None),
                 OrchidRecord.decimal_longitude.isnot(None)
             )
-        ).all()
+        )
+        
+        # Apply genus filter if provided
+        if genus_filter and genus_filter != 'all':
+            query = query.filter(OrchidRecord.genus == genus_filter)
+        
+        orchids = query.all()
         
         coordinates = []
         for orchid in orchids:
@@ -321,11 +329,13 @@ def orchid_coordinates_all():
                     'source': getattr(orchid, 'ingestion_source', 'Database') or 'Database'
                 })
         
-        logger.info(f"🌍 Loaded {len(coordinates)} orchid coordinates for 3D globe")
+        filter_info = f" (filtered by {genus_filter})" if genus_filter and genus_filter != 'all' else ""
+        logger.info(f"🌍 Loaded {len(coordinates)} orchid coordinates for 3D globe{filter_info}")
         return jsonify({
             'success': True,
             'coordinates': coordinates,
-            'total_count': len(coordinates)
+            'total_count': len(coordinates),
+            'filter_applied': genus_filter
         })
         
     except Exception as e:
@@ -366,6 +376,85 @@ def orchid_genera():
             'error': str(e),
             'genera': []
         }), 500
+
+@app.route('/api/global-weather-patterns')
+def global_weather_patterns():
+    """Get current weather patterns for global overlay"""
+    try:
+        from weather_service import WeatherService
+        
+        # Define major cities for weather pattern overlay
+        weather_points = [
+            {'name': 'New York', 'lat': 40.7128, 'lng': -74.0060},
+            {'name': 'London', 'lat': 51.5074, 'lng': -0.1278},
+            {'name': 'Tokyo', 'lat': 35.6762, 'lng': 139.6503},
+            {'name': 'Sydney', 'lat': -33.8688, 'lng': 151.2093},
+            {'name': 'Mumbai', 'lat': 19.0760, 'lng': 72.8777},
+            {'name': 'São Paulo', 'lat': -23.5505, 'lng': -46.6333},
+            {'name': 'Cairo', 'lat': 30.0444, 'lng': 31.2357},
+            {'name': 'Mexico City', 'lat': 19.4326, 'lng': -99.1332},
+            {'name': 'Bangkok', 'lat': 13.7563, 'lng': 100.5018},
+            {'name': 'Cape Town', 'lat': -33.9249, 'lng': 18.4241},
+            {'name': 'Moscow', 'lat': 55.7558, 'lng': 37.6176},
+            {'name': 'Buenos Aires', 'lat': -34.6118, 'lng': -58.3960},
+            {'name': 'Singapore', 'lat': 1.3521, 'lng': 103.8198},
+            {'name': 'Vancouver', 'lat': 49.2827, 'lng': -123.1207},
+            {'name': 'Jakarta', 'lat': -6.2088, 'lng': 106.8456}
+        ]
+        
+        weather_data = []
+        for point in weather_points:
+            try:
+                weather = WeatherService.get_current_weather(
+                    point['lat'], point['lng'], point['name']
+                )
+                if weather:
+                    weather_data.append({
+                        'name': point['name'],
+                        'lat': point['lat'],
+                        'lng': point['lng'],
+                        'temperature': weather.temperature,
+                        'humidity': weather.humidity,
+                        'wind_speed': weather.wind_speed,
+                        'wind_direction': weather.wind_direction,
+                        'pressure': weather.pressure,
+                        'cloud_cover': weather.cloud_cover,
+                        'weather_code': weather.weather_code,
+                        'conditions': get_weather_description(weather.weather_code) if weather.weather_code else 'Unknown'
+                    })
+            except Exception as point_error:
+                logger.warning(f"Weather fetch failed for {point['name']}: {point_error}")
+                continue
+        
+        logger.info(f"🌤️ Loaded weather patterns for {len(weather_data)} global locations")
+        return jsonify({
+            'success': True,
+            'weather_points': weather_data,
+            'total_count': len(weather_data),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading global weather patterns: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'weather_points': []
+        }), 500
+
+def get_weather_description(weather_code):
+    """Convert weather code to description"""
+    weather_codes = {
+        0: 'Clear sky',
+        1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog',
+        51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+        61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+        71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow',
+        80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm with hail'
+    }
+    return weather_codes.get(weather_code, 'Unknown')
 
 @app.route('/admin/diagnostic-status')
 def diagnostic_status():

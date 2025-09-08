@@ -322,6 +322,59 @@
             <button class="space-btn" onclick="toggleRotation()" id="rotationToggle">
                 ⏸️ Pause Rotation
             </button>
+            <div id="zoomStatus" style="padding: 8px; background: rgba(0, 212, 170, 0.1); border-radius: 5px; font-size: 12px; margin-top: 8px;">
+                🛰️ Satellite View
+            </div>
+        </div>
+        
+        <!-- Zoom Controls -->
+        <div class="panel-section">
+            <div class="section-title">🔍 Zoom Controls</div>
+            <button class="space-btn" onclick="zoomToCountry(40, -100, 1.3)">
+                🇺🇸 USA
+            </button>
+            <button class="space-btn" onclick="zoomToCountry(55, 10, 1.3)">
+                🇪🇺 Europe
+            </button>
+            <button class="space-btn" onclick="zoomToCountry(20, 100, 1.3)">
+                🌏 Asia
+            </button>
+            <button class="space-btn" onclick="zoomToCountry(-25, 135, 1.3)">
+                🇦🇺 Australia
+            </button>
+            <button class="space-btn" onclick="zoomToCountry(-10, -55, 1.3)">
+                🇧🇷 South America
+            </button>
+            <button class="space-btn" onclick="resetView()">
+                🌍 Reset to Global View
+            </button>
+        </div>
+        
+        <!-- Weather Pattern Overlay -->
+        <div class="panel-section">
+            <div class="section-title">🌤️ Weather Patterns</div>
+            <button class="space-btn" onclick="toggleWeatherOverlay()" id="weatherBtn">
+                ☁️ Show Weather Overlay
+            </button>
+            <div class="weather-legend" id="weatherLegend" style="display: none; margin-top: 10px; padding: 8px; background: rgba(0, 212, 170, 0.1); border-radius: 5px;">
+                <div style="font-size: 12px; color: #00d4aa; margin-bottom: 5px;">Weather Legend:</div>
+                <div style="font-size: 11px;">🔴 Hot (>30°C) 🟡 Warm (15-30°C) 🔵 Cool (<15°C)</div>
+                <div style="font-size: 11px;">☀️ Clear ☁️ Cloudy 🌧️ Rain ⛈️ Storm ❄️ Snow</div>
+            </div>
+        </div>
+        
+        <!-- Genus Filtering -->
+        <div class="panel-section">
+            <div class="section-title">🌺 Orchid Filters</div>
+            <select class="space-btn" id="genusFilter" onchange="filterByGenus()" style="padding: 8px; background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); color: white;">
+                <option value="all">All Genera (Loading...)</option>
+            </select>
+            <div id="filterStats" style="font-size: 11px; color: #ccc; margin-top: 5px; padding: 5px; background: rgba(0, 212, 170, 0.1); border-radius: 3px;">
+                Showing all orchid points
+            </div>
+            <button class="space-btn" onclick="clearFilters()">
+                🔄 Clear All Filters
+            </button>
             <button class="space-btn" onclick="focusOnOrchids()">
                 ✨ Focus Orchids
             </button>
@@ -373,6 +426,7 @@
         // Global variables
         let scene, camera, renderer, earth, stars;
         let orchidPoints = [];
+        let weatherPoints = [];
         let isRotating = true;
         let controls;
         let sun, moon, sunLight;
@@ -380,6 +434,11 @@
         let isRealSatellite = false;
         let astronomicalEngine; // Real-time celestial mechanics engine
         let planets = {}; // Planetary objects
+        let showWeatherOverlay = false;
+        let currentGenusFilter = 'all';
+        let allOrchidData = [];
+        let weatherOverlayGroup;
+        let orchidPointsGroup;
         
         // Initialize the 3D Earth globe
         async function init3DEarth() {
@@ -545,20 +604,84 @@
                 isDragging = false;
             });
             
-            // Enhanced zoom with mouse wheel - can zoom out to see sun/moon
+            // Enhanced zoom with mouse wheel - can zoom out to see sun/moon or zoom into countries
             renderer.domElement.addEventListener('wheel', (e) => {
                 const zoomSpeed = 0.15;
                 const distance = camera.position.length();
                 
-                // Much wider zoom range to see solar system
+                // Much wider zoom range: country level (1.2) to solar system (50)
                 if (e.deltaY > 0 && distance < 50) {
                     camera.position.multiplyScalar(1 + zoomSpeed);
                 } else if (e.deltaY < 0 && distance > 1.2) {
                     camera.position.multiplyScalar(1 - zoomSpeed);
                 }
                 
+                // Update zoom level status
+                updateZoomStatus(distance);
+                
                 e.preventDefault();
             });
+        }
+        
+        // Update zoom level status display
+        function updateZoomStatus(distance) {
+            let zoomLevel = "";
+            if (distance < 1.5) {
+                zoomLevel = "🔍 Country Level";
+            } else if (distance < 2.5) {
+                zoomLevel = "🌍 Regional View";
+            } else if (distance < 5) {
+                zoomLevel = "🛰️ Satellite View";
+            } else if (distance < 15) {
+                zoomLevel = "🚀 Space Station View";
+            } else {
+                zoomLevel = "☀️ Solar System View";
+            }
+            
+            const statusElement = document.getElementById('zoomStatus');
+            if (statusElement) {
+                statusElement.textContent = zoomLevel;
+            }
+        }
+        
+        // Zoom to specific country/region
+        function zoomToCountry(lat, lng, zoomLevel = 1.5) {
+            // Convert lat/lng to 3D position on sphere
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+            
+            const x = zoomLevel * Math.sin(phi) * Math.cos(theta);
+            const y = zoomLevel * Math.cos(phi);
+            const z = zoomLevel * Math.sin(phi) * Math.sin(theta);
+            
+            // Smoothly animate camera to position
+            animateCameraTo(new THREE.Vector3(x, y, z));
+        }
+        
+        // Smooth camera animation
+        function animateCameraTo(targetPosition) {
+            const startPosition = camera.position.clone();
+            const startTime = performance.now();
+            const duration = 2000; // 2 seconds
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function for smooth movement
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                
+                camera.position.lerpVectors(startPosition, targetPosition, easedProgress);
+                camera.lookAt(0, 0, 0);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    updateZoomStatus(camera.position.length());
+                }
+            }
+            
+            requestAnimationFrame(animate);
         }
         
         // Load ALL orchid locations as points of light
@@ -591,7 +714,8 @@
                     console.log(`✨ Created ${pointCount} orchid points of light across Earth`);
                     document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
                     
-                    // Add genus count info and populate filter dropdown with real data
+                    // Store original data and populate filter dropdown
+                    allOrchidData = data.coordinates;
                     await populateGenusDropdown();
                     
                     const genera = [...new Set(orchidPoints.map(p => p.data.genus).filter(g => g))].sort();
@@ -1026,6 +1150,182 @@
             scene.add(sunLight);
             
             console.log('☀️ Solar system created with sun and moon');
+        }
+        
+        // Weather overlay functionality
+        async function toggleWeatherOverlay() {
+            const weatherBtn = document.getElementById('weatherBtn');
+            const weatherLegend = document.getElementById('weatherLegend');
+            
+            if (showWeatherOverlay) {
+                // Hide weather overlay
+                clearWeatherOverlay();
+                showWeatherOverlay = false;
+                weatherBtn.textContent = '☁️ Show Weather Overlay';
+                weatherLegend.style.display = 'none';
+            } else {
+                // Show weather overlay
+                await loadWeatherOverlay();
+                showWeatherOverlay = true;
+                weatherBtn.textContent = '🌧️ Hide Weather Overlay';
+                weatherLegend.style.display = 'block';
+            }
+        }
+        
+        async function loadWeatherOverlay() {
+            try {
+                const response = await fetch('/api/global-weather-patterns');
+                const data = await response.json();
+                
+                if (data.success && data.weather_points) {
+                    data.weather_points.forEach(weather => {
+                        createWeatherPoint(weather);
+                    });
+                    console.log(`🌤️ Loaded weather overlay with ${data.weather_points.length} points`);
+                }
+            } catch (error) {
+                console.error('Error loading weather overlay:', error);
+            }
+        }
+        
+        function createWeatherPoint(weather) {
+            // Convert lat/lng to 3D position on sphere surface
+            const lat = weather.lat * Math.PI / 180;
+            const lng = weather.lng * Math.PI / 180;
+            const radius = 1.02; // Slightly above Earth surface
+            
+            const x = radius * Math.cos(lat) * Math.cos(lng);
+            const y = radius * Math.sin(lat);
+            const z = radius * Math.cos(lat) * Math.sin(lng);
+            
+            // Color coding based on temperature
+            let color = 0x00ff00; // Default green
+            if (weather.temperature > 30) color = 0xff0000; // Red for hot
+            else if (weather.temperature > 15) color = 0xffff00; // Yellow for warm
+            else color = 0x0000ff; // Blue for cool
+            
+            // Create weather point
+            const geometry = new THREE.SphereGeometry(0.02, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const weatherPoint = new THREE.Mesh(geometry, material);
+            weatherPoint.position.set(x, y, z);
+            
+            // Add to weather overlay group
+            weatherOverlayGroup.add(weatherPoint);
+            
+            // Store weather data for tooltip
+            weatherPoint.userData = weather;
+        }
+        
+        function clearWeatherOverlay() {
+            // Remove all weather points
+            weatherOverlayGroup.clear();
+        }
+        
+        // Genus filtering functionality
+        async function populateGenusDropdown() {
+            try {
+                const response = await fetch('/api/orchid-genera');
+                const data = await response.json();
+                
+                if (data.success && data.genera) {
+                    const genusSelect = document.getElementById('genusFilter');
+                    genusSelect.innerHTML = '<option value="all">All Genera</option>';
+                    
+                    data.genera.forEach(genus => {
+                        const option = document.createElement('option');
+                        option.value = genus;
+                        option.textContent = genus;
+                        genusSelect.appendChild(option);
+                    });
+                    
+                    console.log(`🌺 Populated dropdown with ${data.genera.length} genera`);
+                }
+            } catch (error) {
+                console.error('Error loading genera:', error);
+            }
+        }
+        
+        async function filterByGenus() {
+            const genusSelect = document.getElementById('genusFilter');
+            const selectedGenus = genusSelect.value;
+            const filterStats = document.getElementById('filterStats');
+            
+            currentGenusFilter = selectedGenus;
+            
+            try {
+                // Clear existing orchid points
+                clearOrchidPoints();
+                
+                // Reload with filter
+                const url = selectedGenus === 'all' 
+                    ? '/api/orchid-coordinates-all' 
+                    : `/api/orchid-coordinates-all?genus=${encodeURIComponent(selectedGenus)}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success && data.coordinates) {
+                    let pointCount = 0;
+                    
+                    data.coordinates.forEach(orchid => {
+                        if (orchid.lat && orchid.lng) {
+                            createOrchidPoint(orchid.lat, orchid.lng, orchid);
+                            pointCount++;
+                        }
+                    });
+                    
+                    // Update UI
+                    const filterText = selectedGenus === 'all' 
+                        ? `Showing all ${pointCount} orchid points`
+                        : `Showing ${pointCount} ${selectedGenus} orchids`;
+                    filterStats.textContent = filterText;
+                    document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
+                    
+                    console.log(`🔍 Filtered to ${pointCount} orchids` + (selectedGenus !== 'all' ? ` (genus: ${selectedGenus})` : ''));
+                }
+            } catch (error) {
+                console.error('Error filtering by genus:', error);
+                filterStats.textContent = 'Error applying filter';
+            }
+        }
+        
+        function clearOrchidPoints() {
+            // Remove all existing orchid points
+            orchidPoints.forEach(point => {
+                scene.remove(point);
+            });
+            orchidPoints = [];
+        }
+        
+        function clearFilters() {
+            document.getElementById('genusFilter').value = 'all';
+            filterByGenus();
+        }
+        
+        function focusOnOrchids() {
+            // Calculate center of all orchid points and zoom there
+            if (orchidPoints.length === 0) return;
+            
+            let avgX = 0, avgY = 0, avgZ = 0;
+            orchidPoints.forEach(point => {
+                avgX += point.position.x;
+                avgY += point.position.y;
+                avgZ += point.position.z;
+            });
+            
+            avgX /= orchidPoints.length;
+            avgY /= orchidPoints.length;
+            avgZ /= orchidPoints.length;
+            
+            // Zoom to the center of orchid cluster
+            const targetPosition = new THREE.Vector3(avgX, avgY, avgZ).normalize().multiplyScalar(2.5);
+            animateCameraTo(targetPosition);
         }
         
         // Load real-time satellite imagery from NASA/NOAA
