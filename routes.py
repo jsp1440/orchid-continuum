@@ -26,7 +26,7 @@ from orchid_atlas import atlas_bp
 from darwin_core_exporter import DarwinCoreExporter
 from weather_habitat_routes import register_weather_habitat_routes
 from scraping_dashboard import scraping_dashboard
-from vigilant_monitor import vigilant_monitor
+# DISABLED FOR DEMO: from vigilant_monitor import vigilant_monitor
 from gbif_routes import gbif_bp
 from ai_orchid_routes import ai_orchid_bp
 from geographic_mapping_routes import geo_mapping_bp
@@ -34,7 +34,7 @@ from enhanced_mapping_routes import enhanced_mapping_bp
 from admin_orchid_approval import orchid_approval_bp
 from pattern_analysis_routes import pattern_analysis_bp
 from ai_batch_processor import ai_batch_processor
-from enhanced_data_collection_system import start_enhanced_collection, get_collection_progress, get_source_analytics
+# DISABLED FOR DEMO: from enhanced_data_collection_system import start_enhanced_collection, get_collection_progress, get_source_analytics
 from data_progress_dashboard import data_dashboard_bp
 from breeding_ai import breeding_ai
 import breeding_routes  # Import breeding routes
@@ -53,7 +53,7 @@ import issue_reports
 import chris_howard_reimport
 from image_health_monitor import start_image_monitoring
 from database_backup_system import create_database_backups, get_backup_orchids
-from ai_system_monitor import start_ai_monitoring, get_monitoring_status, get_ai_monitor
+# DISABLED FOR DEMO: from ai_system_monitor import start_ai_monitoring, get_monitoring_status, get_ai_monitor
 from admin_control_center import register_admin_control_center
 # DISABLED: from automated_repair_system import repair_system
 # DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
