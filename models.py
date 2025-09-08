@@ -337,6 +337,12 @@ class OrchidRecord(db.Model):
     # Timestamps
     created_at = db.Column(DateTime, default=datetime.utcnow)
     updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Community identification system
+    identification_status = db.Column(String(20), default='verified', nullable=True)  # verified, unidentified, pending
+    identification_votes = db.Column(Integer, default=0, nullable=True)  # Number of community votes
+    suggested_genus = db.Column(String(100), nullable=True)  # Community suggested genus
+    suggested_species = db.Column(String(100), nullable=True)  # Community suggested species
 
     def get_parentage_display(self):
         """Get formatted parentage display"""
