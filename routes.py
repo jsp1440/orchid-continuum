@@ -117,6 +117,11 @@ except Exception as e:
 #         logger.error(f"🚨 CRITICAL: User-triggered integrity check failed: {e}")
 
 # Add Gary Yong Gee Partnership Demo route
+@app.route('/partnerships')
+def partnerships():
+    """Main partnerships page showcasing all Orchid Continuum partners"""
+    return render_template('partnerships.html')
+
 @app.route('/gary-demo')
 def gary_demo():
     """Gary Yong Gee Partnership Demo"""
