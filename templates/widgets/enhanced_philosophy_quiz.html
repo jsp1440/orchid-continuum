@@ -906,7 +906,10 @@ function updateScoringKeyFromSheet(sheetsScoringKey) {
 // Generate question HTML
 function generateQuestions() {
   const container = document.getElementById('questionsContainer');
+  container.innerHTML = ''; // Clear any existing content
   let html = '';
+  
+  console.log('Generating questions...', QUIZ_QUESTIONS.length, 'questions available');
   
   QUIZ_QUESTIONS.forEach(q => {
     html += `
@@ -928,6 +931,7 @@ function generateQuestions() {
   });
   
   container.innerHTML = html;
+  console.log('Questions generated. Container has', container.children.length, 'question cards');
 }
 
 // Score answers
@@ -1148,18 +1152,26 @@ function updateProgress() {
 
 // Initialize quiz
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎯 Quiz initialization starting...');
+  
   // Load quiz data from Google Sheets API
   loadQuizData().then(() => {
+    console.log('✅ Google Sheets data loaded, generating questions...');
     // Generate questions after data is loaded
     generateQuestions();
     // Add event listeners after questions are generated
     attachEventListeners();
+    // Update progress to enable/disable submit button
+    updateProgress();
   }).catch(error => {
-    console.error('Failed to load quiz data:', error);
+    console.error('❌ Failed to load quiz data:', error);
+    console.log('📋 Using fallback hardcoded data...');
     // Use fallback hardcoded data
     generateQuestions();
     // Add event listeners after questions are generated
     attachEventListeners();
+    // Update progress to enable/disable submit button
+    updateProgress();
   });
 });
 
