@@ -1460,6 +1460,10 @@ app.register_blueprint(mycorrhizal_bp)
 from climate_research_system import climate_research_bp
 app.register_blueprint(climate_research_bp)
 
+# Register Global Analysis Platform
+from global_orchid_climate_analysis import global_analysis_bp
+app.register_blueprint(global_analysis_bp)
+
 # Register Admin Orchid Approval routes
 app.register_blueprint(orchid_approval_bp)
 
