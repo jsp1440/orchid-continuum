@@ -429,8 +429,8 @@ def orchid_ecosystem_data():
             query = query.filter(
                 or_(
                     OrchidRecord.region.ilike(f'%{region_filter}%'),
-                    OrchidRecord.continent.ilike(f'%{region_filter}%'),
-                    OrchidRecord.native_distribution.ilike(f'%{region_filter}%')
+                    OrchidRecord.native_habitat.ilike(f'%{region_filter}%'),
+                    OrchidRecord.country.ilike(f'%{region_filter}%')
                 )
             )
         
@@ -456,18 +456,18 @@ def orchid_ecosystem_data():
                     'growth_habit': orchid.growth_habit,
                     'pollinator_types': [],  # Field doesn't exist in model
                     'region': orchid.region,
-                    'continent': orchid.continent,
+                    'continent': orchid.country or 'Unknown',
                     'native_habitat': orchid.native_habitat,
-                    'native_distribution': orchid.native_distribution,
-                    'mycorrhizal_fungi': orchid.mycorrhizal_fungi or [],
+                    'native_distribution': orchid.native_habitat,
+                    'mycorrhizal_fungi': [],  # Field doesn't exist in model
                     'bloom_time': orchid.bloom_time,
-                    'flowering_time': orchid.flowering_time,
+                    'flowering_time': orchid.bloom_time,
                     'temperature_range': orchid.temperature_range,
                     'light_requirements': orchid.light_requirements,
                     'image_url': orchid.image_url,
                     'google_drive_id': orchid.google_drive_id,
-                    'is_fragrant': orchid.is_fragrant,
-                    'conservation_status_clues': orchid.conservation_status_clues,
+                    'is_fragrant': False,  # Field doesn't exist in model
+                    'conservation_status_clues': 'Unknown',  # Field doesn't exist in model
                     'ecosystem_enhanced': True
                 }
                 orchid_data.append(orchid_info)
@@ -2472,7 +2472,6 @@ def fragrant_gallery():
         # Query fragrant orchids
         query = OrchidRecord.query.filter(
             or_(
-                OrchidRecord.is_fragrant == True,
                 OrchidRecord.ai_description.ilike('%fragrant%'),
                 OrchidRecord.ai_description.ilike('%scented%'),
                 OrchidRecord.ai_description.ilike('%perfume%'),
@@ -3915,12 +3914,12 @@ def api_orchid_ecosystem(orchid_id):
         ecosystem_data = {
             'id': orchid.id,
             'scientific_name': orchid.scientific_name,
-            'pollinators': orchid.pollinator_types or [],
-            'mycorrhizal_fungi': orchid.mycorrhizal_fungi or [],
+            'pollinators': [],  # Field doesn't exist in model
+            'mycorrhizal_fungi': [],  # Field doesn't exist in model
             'native_habitat': orchid.native_habitat,
-            'companion_plants': orchid.companion_plants,
+            'companion_plants': [],  # Field doesn't exist in model
             'temperature_range': orchid.temperature_range,
-            'humidity_preference': orchid.humidity_preference,
+            'humidity_preference': 'Unknown',  # Field doesn't exist
             'light_requirements': orchid.light_requirements,
             'flowering_time': orchid.flowering_time,
             'climate_preference': orchid.climate_preference,
