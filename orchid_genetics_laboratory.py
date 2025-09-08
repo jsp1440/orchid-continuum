@@ -147,8 +147,73 @@ class TraitInheritanceDatabase:
                 },
                 "ai_integration_value": "Provides parentage validation for AI breeding predictions"
             },
-            "trait_inheritance_patterns": {},
-            "prediction_accuracy": {}
+            "comprehensive_genetics_literature": {
+                "mads_box_gene_networks": {
+                    "description": "The 'orchid code' theory explaining floral diversity through four DEF-like MADS-box genes",
+                    "inheritance_pattern": "Loss of DEF-like gene function typically recessive, ectopic expression leads to dominant gain-of-function",
+                    "practical_application": "Monogenic changes explain most floral variations (peloria types) in cultivation",
+                    "breeding_relevance": "Understanding gene networks enables prediction of flower form variations"
+                },
+                "polyploidy_breeding_protocols": {
+                    "commercial_significance": "80% of commercial Phalaenopsis cultivars are tetraploid (2n=76 chromosomes)",
+                    "chromosome_counts": {
+                        "Phalaenopsis": {"diploid": "2n=38", "tetraploid": "4n=76", "commercial_standard": "tetraploid"},
+                        "Cymbidium": {"diploid": "2n=40", "tetraploid": "4n=80", "variations": "41, 43, 60, 80"},
+                        "Dendrobium": {"diploid": "2n=38", "tetraploid": "4n=76", "exceptions": "D. leonis: 40"},
+                        "Oncidium": {"base": "x=7", "variations": "High polyploidy common", "breeding_value": "Enhanced flower quality"}
+                    },
+                    "colchicine_protocols": {
+                        "protocorm_treatment": "0.03-0.05% colchicine for 4-7 days (11.1-60% success rate)",
+                        "ex_vitro_plants": "10 mg/L colchicine for 96 hours (~29% tetraploid conversion)",
+                        "dendrobium_specific": "250 μM for 12 hours = 26% success, 75 μM for 30 days = 34% success",
+                        "safety_notes": "Colchicine more efficient than oryzalin for survival rates"
+                    },
+                    "breeding_advantages": {
+                        "flower_quality": "Larger size, enhanced substance, intense coloring, improved fragrance",
+                        "plant_vigor": "Greater biomass, disease resistance, stress tolerance",
+                        "commercial_value": "Better post-harvest qualities, premium market positioning",
+                        "fertility_considerations": "Tetraploids show reduced but workable fertility"
+                    }
+                },
+                "dominant_recessive_genetics": {
+                    "basic_principles": "Standard heredity laws with dominant/recessive alleles govern trait expression",
+                    "breeding_strategy": "Dominant traits expressed with one parent contribution, recessive requires both parents",
+                    "practical_application": "Breeders strategically plan hybridization by understanding parental genetic makeup",
+                    "intergeneric_challenges": "Genetic incompatibilities may prevent fertilization or produce sterile offspring"
+                },
+                "molecular_breeding_advances": {
+                    "high_throughput_sequencing": "Extensive datasets for discovering genes/pathways controlling key traits",
+                    "gwas_studies": "Genome-wide association studies identify quantitative trait loci for color-related traits",
+                    "ssr_markers": "Simple sequence repeat markers assist trait mapping and candidate gene location",
+                    "breeding_applications": "Molecular techniques accelerate development of superior cultivars"
+                },
+                "vigorous_breeding_stock_selection": {
+                    "polyploid_advantages": "Tetraploids often show superior characteristics for commercial production",
+                    "selection_criteria": "Enhanced fertility, larger flower size, commercial value, export quality",
+                    "breeding_stock_development": [
+                        "Convert superior diploids using colchicine protocols",
+                        "Screen for stable tetraploids through chromosome counting", 
+                        "Test fertility levels before inclusion in breeding programs",
+                        "Maintain genetic diversity to avoid inbreeding depression"
+                    ],
+                    "fred_clark_methodology": "Robust growth and ease to flower, vigorous plants selected throughout development"
+                }
+            },
+            "trait_inheritance_patterns": {
+                "flower_size": "Often enhanced in tetraploids due to increased cell size",
+                "color_intensity": "Polyploidy typically enhances pigment concentration",
+                "fragrance": "Tetraploids frequently show improved fragrance intensity",
+                "plant_vigor": "Hybrid vigor expression often enhanced in polyploid crosses",
+                "flowering_frequency": "Some polyploids show improved blooming regularity",
+                "stress_tolerance": "Polyploids generally show enhanced environmental stress resistance"
+            },
+            "prediction_accuracy": {
+                "polyploidy_success_rates": "Colchicine induction: 11.1-60% depending on species and protocol",
+                "breeding_compatibility": "Diploid × Tetraploid crosses produce sterile triploids",
+                "fertility_predictions": "Tetraploid × Tetraploid crosses show reduced but workable fertility",
+                "trait_expression": "Tetraploid influence is 2x genetic contribution in diploid crosses",
+                "commercial_viability": "80% market dominance validates tetraploid breeding focus"
+            }
         }
     
     def analyze_breeding_collection_photos(self, limit=100):
