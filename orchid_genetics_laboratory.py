@@ -199,6 +199,65 @@ class TraitInheritanceDatabase:
                     "fred_clark_methodology": "Robust growth and ease to flower, vigorous plants selected throughout development"
                 }
             },
+            "pod_maturation_database": {
+                "description": "AOS-referenced pod maturation times for green pod flasking",
+                "fast_maturing_genera": {
+                    "2-6_months": {
+                        "Disa": {"weeks": "2-8", "notes": "A few weeks to 2 months"},
+                        "Ludisia": {"days": "30-40", "notes": "Jewel orchids, very fast"},
+                        "Phragmipedium": {"months": "3-5", "notes": "Some as early as 3 months"},
+                        "Paphiopedilum micranthum": {"months": "4", "notes": "Optimal for green pod"},
+                        "Sophronitis": {"months": "5-6", "notes": "Crosses mature predictably"}
+                    }
+                },
+                "medium_maturing_genera": {
+                    "6-9_months": {
+                        "Phalaenopsis": {"months": "6-8", "green_pod_optimal": "6-7", "notes": "Commercial standard timing"},
+                        "Vanda": {"months": "6-8", "green_pod_optimal": "6-7", "notes": "Consistent timing"},
+                        "Oncidium": {"months": "6-8", "variability": "high", "notes": "Variable by species"},
+                        "Dendrobium": {"months": "6-9", "variability": "species_dependent", "notes": "Wide timing range"}
+                    }
+                },
+                "slow_maturing_genera": {
+                    "9-18_months": {
+                        "Cattleya": {
+                            "bifoliate": {"months": "4-5", "green_pod_optimal": "4-5", "notes": "120-150 days for green pod"},
+                            "standard": {"months": "9-13", "green_pod_optimal": "4-5", "notes": "Dramatic time savings with green pod"},
+                            "full_maturity": "9+ months"
+                        },
+                        "Cymbidium": {"months": "9-12", "green_pod_optimal": "6-8", "notes": "Cold growing, slow development"},
+                        "Paphiopedilum_complex": {
+                            "P_lowii": {"months": "5", "notes": "Relatively fast for genus"},
+                            "P_tigrinum": {"months": "14", "notes": "Exceptionally slow"},
+                            "complex_hybrids": {"months": "9-12", "green_pod_optimal": "6", "notes": "vs traditional 8-10 months"},
+                            "species_range": "5-18 months depending on species"
+                        }
+                    }
+                },
+                "green_pod_advantages": {
+                    "harvest_timing": "6-8 months earlier than natural dehiscence",
+                    "germination_rates": "Higher than dry seed methods",
+                    "sterilization": "Eliminates seed sterilization needs",
+                    "plant_recovery": "Faster mother plant recovery with earlier harvest",
+                    "flowering_time": "Dramatically reduced for resulting seedlings"
+                },
+                "harvest_indicators": {
+                    "visual_cues": [
+                        "Capsule swollen with color change from dark green",
+                        "Three ribs joining capsule segments begin to lift",
+                        "Seeds change from white to cream/yellow (genus-specific)",
+                        "Before any splitting or yellowing at pod ends",
+                        "Capsule walls thin and translucent when backlit"
+                    ],
+                    "timing_rule": "Female parent determines maturation timing in intergeneric crosses"
+                },
+                "flasking_considerations": {
+                    "single_opportunity": "No storage option - immediate processing required",
+                    "sterile_technique": "Critical for success",
+                    "professional_labs": "Most breeders use commercial flasking services",
+                    "success_rates": "Higher germination than traditional dry seed methods"
+                }
+            },
             "trait_inheritance_patterns": {
                 "flower_size": "Often enhanced in tetraploids due to increased cell size",
                 "color_intensity": "Polyploidy typically enhances pigment concentration",
