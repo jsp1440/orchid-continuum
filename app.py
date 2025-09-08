@@ -128,12 +128,13 @@ try:
 except Exception as e:
     print(f"Orchid Games initialization error: {e}")
 
-try:
-    from interactive_species_discovery import discovery_bp
-    app.register_blueprint(discovery_bp)
-    print("Interactive Species Discovery game initialized")
-except Exception as e:
-    print(f"Species Discovery game initialization error: {e}")
+# Temporarily disable discovery game due to import conflicts
+# try:
+#     from interactive_species_discovery import discovery_bp
+#     app.register_blueprint(discovery_bp)
+#     print("Interactive Species Discovery game initialized")
+# except Exception as e:
+#     print(f"Species Discovery game initialization error: {e}")
 
 try:
     from api_v2_routes import api_v2
