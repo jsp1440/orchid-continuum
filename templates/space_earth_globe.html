@@ -507,15 +507,15 @@
         </div>
     </div>
     
-    <!-- Toggle Button for Control Panel -->
-    <button class="panel-toggle" onclick="toggleControlPanel()" id="panelToggle" title="Open Controls">
-        ⚙️
+    <!-- Toggle Button for Control Panel - UNIFIED EARTH INTELLIGENCE -->
+    <button class="panel-toggle" onclick="toggleControlPanel()" id="panelToggle" title="🌍 Earth Intelligence Controls" style="background: linear-gradient(45deg, #00d4aa, #0099cc); border: 3px solid #00d4aa; box-shadow: 0 0 20px rgba(0, 212, 170, 0.8); width: 80px; height: 80px; font-size: 32px; animation: pulse-glow 2s infinite; border-radius: 50%;">
+        🌍
     </button>
     
     <!-- Collapsible Side Control Panel -->
     <div class="control-panel" id="controlPanel">
         <div class="panel-header">
-            <div class="panel-title">🌍 Earth Controls</div>
+            <div class="panel-title">🌍 EARTH INTELLIGENCE PLATFORM</div>
             <button class="close-panel" onclick="toggleControlPanel()">×</button>
         </div>
         
@@ -1504,17 +1504,56 @@
         
         async function loadWeatherOverlay() {
             try {
-                const response = await fetch('/api/global-weather-patterns');
-                const data = await response.json();
+                console.log('🌤️ Loading weather overlay...');
                 
-                if (data.success && data.weather_points) {
+                // Add timeout to the fetch request
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                
+                const response = await fetch('/api/global-weather-patterns', {
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`Weather API returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('🌤️ Weather API response:', data);
+                
+                if (data.success && data.weather_points && data.weather_points.length > 0) {
                     data.weather_points.forEach(weather => {
                         createWeatherPoint(weather);
                     });
                     console.log(`🌤️ Loaded weather overlay with ${data.weather_points.length} points`);
+                    
+                    // Update status
+                    const satelliteStatus = document.getElementById('satelliteStatus');
+                    if (satelliteStatus) {
+                        satelliteStatus.textContent = `Active layers: Weather (${data.weather_points.length} points)`;
+                    }
+                } else {
+                    console.warn('🌤️ No weather data received or API failed');
+                    throw new Error('No weather data available');
                 }
             } catch (error) {
                 console.error('Error loading weather overlay:', error);
+                
+                // Show user-friendly error
+                const satelliteStatus = document.getElementById('satelliteStatus');
+                if (satelliteStatus) {
+                    satelliteStatus.textContent = 'Weather overlay unavailable - check connection';
+                    satelliteStatus.style.color = '#ff6b6b';
+                }
+                
+                // Revert button state
+                const weatherBtn = document.getElementById('weatherBtn');
+                if (weatherBtn) {
+                    weatherBtn.textContent = '☁️ Show Weather Overlay';
+                }
+                showWeatherOverlay = false;
             }
         }
         
