@@ -7041,6 +7041,14 @@ except Exception as e:
 
 logger.info("🚀 ORCHID CONTINUUM: Enhanced monitoring and auto-repair systems active!")
 
+# Register Science Observation Widget
+try:
+    from science_observation_widget import register_science_observation_routes
+    register_science_observation_routes(app)
+    logger.info("🔬 Science Observation Widget registered successfully")
+except ImportError as e:
+    logger.warning(f"Science Observation Widget not available: {e}")
+
 # Workshop Widget Routes
 @app.route('/workshops')
 def workshop_widget():
