@@ -237,7 +237,7 @@ class OrchidSpeciesDiscoveryEngine:
                 'id': target.id,
                 'genus': target.genus,
                 'species': target.species,
-                'common_name': target.common_name,
+                'common_name': getattr(target, 'common_name', None),
                 'description': target.ai_description,
                 'habitat': target.region,
                 'cultural_notes': target.cultural_notes
@@ -579,7 +579,7 @@ class OrchidSpeciesDiscoveryEngine:
             points_earned = base_points
             
             # Time bonus (faster = more points)
-            if time_taken and time_taken < challenge_data['time_limit']:
+            if time_taken is not None and time_taken < challenge_data['time_limit']:
                 time_bonus = int((challenge_data['time_limit'] - time_taken) / challenge_data['time_limit'] * base_points * 0.2)
                 points_earned += time_bonus
             
@@ -720,8 +720,8 @@ class OrchidSpeciesDiscoveryEngine:
             'level_up': False,
             'current_level': current_level,
             'next_level': next_level if current_index < len(level_order) - 1 else None,
-            'progress': min(discoveries / next_threshold * 100, 100) if next_threshold > 0 else 100,
-            'discoveries_needed': max(0, next_threshold - discoveries)
+            'progress': min(discoveries / next_threshold * 100, 100) if next_threshold and next_threshold > 0 else 100,
+            'discoveries_needed': max(0, next_threshold - discoveries) if next_threshold else 0
         }
 
 # Initialize the discovery engine
