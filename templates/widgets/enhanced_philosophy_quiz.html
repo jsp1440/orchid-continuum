@@ -735,6 +735,92 @@ const TIE_ORDER = [
 ];
 
 /* -----------------------------------------------------------
+   QUIZ DATA LOADING FROM GOOGLE SHEETS
+   ----------------------------------------------------------- */
+
+// Load quiz data from Google Sheets API
+async function loadQuizData() {
+  try {
+    const response = await fetch('/api/enhanced-philosophy-quiz-data');
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      // Update global data with Google Sheets data
+      if (result.data.questions && result.data.questions.length > 0) {
+        updateQuestionsFromSheet(result.data.questions);
+      }
+      
+      if (result.data.philosophies && result.data.philosophies.length > 0) {
+        updatePhilosophiesFromSheet(result.data.philosophies);
+      }
+      
+      if (result.data.scoring_key) {
+        updateScoringKeyFromSheet(result.data.scoring_key);
+      }
+      
+      console.log('📊 Quiz data loaded from Google Sheets successfully');
+    } else {
+      console.warn('⚠️ Using fallback quiz data');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load Google Sheets data:', error);
+    throw error;
+  }
+}
+
+// Update questions from Google Sheets
+function updateQuestionsFromSheet(sheetsQuestions) {
+  QUIZ_QUESTIONS.length = 0; // Clear existing questions
+  
+  sheetsQuestions.forEach((row, index) => {
+    const questionId = row.id || (index + 1);
+    QUIZ_QUESTIONS.push({
+      id: parseInt(questionId),
+      question: row.question || row.Question || '',
+      options: {
+        'A': row.option_a || row['Option A'] || '',
+        'B': row.option_b || row['Option B'] || '',
+        'C': row.option_c || row['Option C'] || '',
+        'D': row.option_d || row['Option D'] || ''
+      }
+    });
+  });
+}
+
+// Update philosophies from Google Sheets
+function updatePhilosophiesFromSheet(sheetsPhilosophies) {
+  Object.keys(PHILOS).forEach(key => delete PHILOS[key]); // Clear existing
+  
+  sheetsPhilosophies.forEach(row => {
+    const title = row.title || row.Title || '';
+    const key = row.key || row.Key || title;
+    
+    if (title && key) {
+      PHILOS[title] = {
+        key: key,
+        caption: row.caption || row.Caption || '',
+        life: row.life_philosophy || row['Life Philosophy'] || '',
+        reflect: row.orchid_reflection || row['Orchid Reflection'] || '',
+        haiku: row.haiku || row.Haiku || '',
+        practical: row.practical || row.Practical || '',
+        science: row.science || row.Science || '',
+        badge: row.badge || row.Badge || 'https://imgur.com/a/default',
+        palette: [row.color1 || row.Color1 || '#ddd', row.color2 || row.Color2 || '#eee']
+      };
+    }
+  });
+}
+
+// Update scoring key from Google Sheets
+function updateScoringKeyFromSheet(sheetsScoringKey) {
+  Object.keys(KEY).forEach(key => delete KEY[key]); // Clear existing
+  
+  Object.keys(sheetsScoringKey).forEach(questionNum => {
+    KEY[questionNum] = sheetsScoringKey[questionNum];
+  });
+}
+
+/* -----------------------------------------------------------
    QUIZ FUNCTIONALITY
    ----------------------------------------------------------- */
 
@@ -983,8 +1069,15 @@ function updateProgress() {
 
 // Initialize quiz
 document.addEventListener('DOMContentLoaded', function() {
-  // Generate questions
-  generateQuestions();
+  // Load quiz data from Google Sheets API
+  loadQuizData().then(() => {
+    // Generate questions after data is loaded
+    generateQuestions();
+  }).catch(error => {
+    console.error('Failed to load quiz data:', error);
+    // Use fallback hardcoded data
+    generateQuestions();
+  });
   
   // Add event listeners
   document.querySelectorAll('input[type="radio"]').forEach(radio => {

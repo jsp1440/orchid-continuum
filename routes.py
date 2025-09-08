@@ -5197,13 +5197,13 @@ def standalone_climate_widget():
 # PHILOSOPHY QUIZ SYSTEM - Enhanced 16-philosophy quiz with Google Sheets
 # ============================================================================
 
-@app.route('/philosophy-quiz')
-def philosophy_quiz():
+@app.route('/enhanced-philosophy-quiz')
+def enhanced_philosophy_quiz():
     """Enhanced Philosophy Quiz - Discover Your Orchid Growing Philosophy"""
     return render_template('widgets/enhanced_philosophy_quiz.html')
 
-@app.route('/api/philosophy-quiz-data')
-def get_philosophy_quiz_data():
+@app.route('/api/enhanced-philosophy-quiz-data')
+def get_enhanced_philosophy_quiz_data():
     """API endpoint to fetch quiz data from Google Sheets"""
     try:
         quiz_data = philosophy_quiz_service.get_complete_quiz_data()
@@ -5219,8 +5219,8 @@ def get_philosophy_quiz_data():
             'fallback': True
         }), 500
 
-@app.route('/api/philosophy-quiz-submit', methods=['POST'])
-def submit_philosophy_quiz():
+@app.route('/api/enhanced-philosophy-quiz-submit', methods=['POST'])
+def submit_enhanced_philosophy_quiz():
     """Process quiz submission and return results"""
     try:
         answers = request.json.get('answers', {})
