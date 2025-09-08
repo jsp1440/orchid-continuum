@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Orchid Continuum is a comprehensive research-grade digital platform focused on orchid research and community management. It integrates authoritative taxonomy databases, AI-powered image analysis, and ecological pattern correlation discovery. The platform aims to consolidate orchid data from diverse sources, provide automated data ingestion, AI-driven identification, and real-time web widgets for enthusiasts and researchers. A core ambition is to leverage CAM photosynthesis and mycorrhizal networks for atmospheric CO2 reduction, specifically targeting 5-20 billion tons of CO2 removal annually through collaboration with super-fungal colonies.
+The Orchid Continuum is a comprehensive research-grade digital platform focused on orchid research and community management. It integrates authoritative taxonomy databases, AI-powered image analysis, and ecological pattern correlation discovery. The platform aims to consolidate orchid data from diverse sources, provide automated data ingestion, AI-driven identification, and real-time web widgets for enthusiasts and researchers. 
+
+**IMPORTANT: All climate activism features have been permanently disabled for user protection. This is now a legitimate academic botanical research platform only.**
 
 ## User Preferences
 
