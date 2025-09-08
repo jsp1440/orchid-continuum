@@ -1751,6 +1751,262 @@
             animateCameraTo(targetPosition);
         }
         
+        // ====== ECOSYSTEM EXPLORER FUNCTIONALITY ======
+        
+        let ecosystemMode = false;
+        let allOrchidData = [];
+        let filteredOrchidData = [];
+        
+        // Enhanced ecosystem filtering that combines all filters
+        async function applyEcosystemFilters() {
+            try {
+                console.log('🔬 Applying ecosystem filters...');
+                
+                // Get filter values
+                const genusFilter = document.getElementById('genusFilter').value;
+                const climateFilter = document.getElementById('climateFilter').value;
+                const growthFilter = document.getElementById('growthFilter').value;
+                const pollinatorFilter = document.getElementById('pollinatorFilter').value;
+                const regionFilter = document.getElementById('regionFilter').value;
+                
+                // Build query parameters
+                const params = new URLSearchParams();
+                if (genusFilter !== 'all') params.append('genus', genusFilter);
+                if (climateFilter !== 'all') params.append('climate', climateFilter);
+                if (growthFilter !== 'all') params.append('growth_habit', growthFilter);
+                if (pollinatorFilter !== 'all') params.append('pollinator', pollinatorFilter);
+                if (regionFilter !== 'all') params.append('region', regionFilter);
+                
+                // Fetch filtered data
+                const response = await fetch(`/api/orchid-ecosystem-data?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.success && data.orchids) {
+                    // Clear existing points
+                    clearOrchidPoints();
+                    
+                    // Add filtered points
+                    let pointCount = 0;
+                    filteredOrchidData = data.orchids;
+                    
+                    data.orchids.forEach(orchid => {
+                        if (orchid.decimal_latitude && orchid.decimal_longitude) {
+                            createEcosystemOrchidPoint(orchid.decimal_latitude, orchid.decimal_longitude, orchid);
+                            pointCount++;
+                        }
+                    });
+                    
+                    // Update ecosystem statistics
+                    updateEcosystemStats(data.orchids, pointCount);
+                    
+                    console.log(`🌺 Filtered to ${pointCount} orchids with ecosystem data`);
+                } else {
+                    console.warn('No ecosystem data received');
+                    clearOrchidPoints();
+                    updateEcosystemStats([], 0);
+                }
+                
+            } catch (error) {
+                console.error('Error applying ecosystem filters:', error);
+                document.getElementById('filteredCount').textContent = 'Error loading data';
+            }
+        }
+        
+        function createEcosystemOrchidPoint(lat, lng, orchidData) {
+            // Convert lat/lng to 3D position on sphere surface
+            const latRad = lat * Math.PI / 180;
+            const lngRad = lng * Math.PI / 180;
+            const radius = 1.01; // Slightly above Earth surface
+            
+            const x = radius * Math.cos(latRad) * Math.cos(lngRad);
+            const y = radius * Math.sin(latRad);
+            const z = radius * Math.cos(latRad) * Math.sin(lngRad);
+            
+            // Enhanced color coding based on ecosystem data
+            let color = 0x00ff88; // Default green
+            let size = 0.012;
+            
+            if (ecosystemMode) {
+                // Color by ecosystem characteristics in ecosystem mode
+                if (orchidData.climate_preference) {
+                    switch (orchidData.climate_preference.toLowerCase()) {
+                        case 'cool': color = 0x4488ff; break;
+                        case 'intermediate': color = 0x88ff88; break;
+                        case 'warm': color = 0xffaa44; break;
+                        case 'hot': color = 0xff4444; break;
+                    }
+                }
+                
+                // Size by pollinator diversity
+                if (orchidData.pollinator_types && orchidData.pollinator_types.length > 0) {
+                    size = 0.008 + (orchidData.pollinator_types.length * 0.004);
+                }
+            } else {
+                // Standard orchid point coloring
+                if (orchidData.genus) {
+                    const hue = (orchidData.genus.charCodeAt(0) * 17) % 360;
+                    color = new THREE.Color().setHSL(hue / 360, 0.8, 0.6).getHex();
+                }
+            }
+            
+            // Create enhanced orchid point
+            const geometry = new THREE.SphereGeometry(size, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const orchidPoint = new THREE.Mesh(geometry, material);
+            orchidPoint.position.set(x, y, z);
+            
+            // Store full ecosystem data
+            orchidPoint.userData = {
+                ...orchidData,
+                type: 'orchid',
+                ecosystem_enhanced: true
+            };
+            
+            // Add glow effect in ecosystem mode
+            if (ecosystemMode) {
+                const glowGeometry = new THREE.SphereGeometry(size * 1.5, 8, 8);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                glow.position.copy(orchidPoint.position);
+                scene.add(glow);
+                orchidPoint.glow = glow;
+            }
+            
+            scene.add(orchidPoint);
+            orchidPoints.push(orchidPoint);
+        }
+        
+        function updateEcosystemStats(orchids, pointCount) {
+            // Update filtered count
+            document.getElementById('filteredCount').textContent = pointCount;
+            document.getElementById('orchidCount').textContent = `${pointCount} Ecosystem Points`;
+            
+            // Count unique climate zones
+            const climateZones = new Set();
+            const growthTypes = new Set();
+            const pollinatorTypes = new Set();
+            
+            orchids.forEach(orchid => {
+                if (orchid.climate_preference) climateZones.add(orchid.climate_preference);
+                if (orchid.growth_habit) growthTypes.add(orchid.growth_habit);
+                if (orchid.pollinator_types) {
+                    orchid.pollinator_types.forEach(p => pollinatorTypes.add(p));
+                }
+            });
+            
+            document.getElementById('climateCount').textContent = climateZones.size;
+            document.getElementById('growthCount').textContent = growthTypes.size;
+            document.getElementById('pollinatorCount').textContent = pollinatorTypes.size;
+        }
+        
+        function toggleEcosystemMode() {
+            ecosystemMode = !ecosystemMode;
+            const btn = document.getElementById('ecosystemBtn');
+            
+            if (ecosystemMode) {
+                btn.textContent = '🌍 Standard View Mode';
+                btn.classList.add('active');
+                console.log('🔬 Ecosystem analysis mode enabled');
+                
+                // Re-apply filters with ecosystem visualization
+                applyEcosystemFilters();
+            } else {
+                btn.textContent = '🔬 Ecosystem Analysis Mode';
+                btn.classList.remove('active');
+                console.log('🌍 Standard view mode enabled');
+                
+                // Remove glow effects and revert to standard view
+                orchidPoints.forEach(point => {
+                    if (point.glow) {
+                        scene.remove(point.glow);
+                        point.glow = null;
+                    }
+                });
+                
+                // Re-apply filters with standard visualization
+                applyEcosystemFilters();
+            }
+        }
+        
+        function clearEcosystemFilters() {
+            // Reset all filter dropdowns
+            document.getElementById('genusFilter').value = 'all';
+            document.getElementById('climateFilter').value = 'all';
+            document.getElementById('growthFilter').value = 'all';
+            document.getElementById('pollinatorFilter').value = 'all';
+            document.getElementById('regionFilter').value = 'all';
+            
+            // Reload all orchid data
+            loadAllOrchidPoints();
+            
+            console.log('🔄 All ecosystem filters cleared');
+        }
+        
+        function focusOnFilteredOrchids() {
+            if (orchidPoints.length === 0) {
+                console.log('No filtered orchids to focus on');
+                return;
+            }
+            
+            // Calculate center of filtered orchid points
+            let avgX = 0, avgY = 0, avgZ = 0;
+            orchidPoints.forEach(point => {
+                avgX += point.position.x;
+                avgY += point.position.y;
+                avgZ += point.position.z;
+            });
+            
+            avgX /= orchidPoints.length;
+            avgY /= orchidPoints.length;
+            avgZ /= orchidPoints.length;
+            
+            // Zoom to the center of filtered cluster
+            const targetPosition = new THREE.Vector3(avgX, avgY, avgZ).normalize().multiplyScalar(2.2);
+            animateCameraTo(targetPosition);
+            
+            console.log(`✨ Focused on ${orchidPoints.length} filtered orchids`);
+        }
+        
+        // Enhanced orchid data loading with ecosystem support
+        async function loadAllOrchidPoints() {
+            try {
+                const response = await fetch('/api/orchid-coordinates-all');
+                const data = await response.json();
+                
+                if (data.success && data.coordinates) {
+                    allOrchidData = data.coordinates;
+                    filteredOrchidData = data.coordinates;
+                    
+                    // Clear existing points
+                    clearOrchidPoints();
+                    
+                    let pointCount = 0;
+                    data.coordinates.forEach(orchid => {
+                        if (orchid.lat && orchid.lng) {
+                            createOrchidPoint(orchid.lat, orchid.lng, orchid);
+                            pointCount++;
+                        }
+                    });
+                    
+                    document.getElementById('orchidCount').textContent = `${pointCount} Orchid Points of Light`;
+                    document.getElementById('filteredCount').textContent = pointCount;
+                    
+                    console.log(`🌺 Loaded ${pointCount} total orchid points`);
+                }
+            } catch (error) {
+                console.error('Error loading orchid points:', error);
+            }
+        }
+        
         // Satellite monitoring functionality
         async function toggleSatelliteOverlay(overlayType) {
             if (activeSatelliteOverlays.has(overlayType)) {
