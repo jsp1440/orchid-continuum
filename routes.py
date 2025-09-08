@@ -7534,6 +7534,11 @@ def demo_board_directors():
     """Board Directors funding/integration demonstration page"""
     return render_template('demo_board_directors.html')
 
+@app.route('/orchid-community-resources')
+def orchid_community_resources():
+    """Comprehensive orchid community resources and links page"""
+    return render_template('orchid_community_resources.html')
+
 @app.route('/enhanced-science-lab')
 def enhanced_science_lab():
     """Enhanced scientific method learning platform"""
