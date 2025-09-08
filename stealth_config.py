@@ -17,8 +17,9 @@ class StealthModeManager:
     """
     
     def __init__(self):
-        self.stealth_mode_active = True  # Hide climate features by default
+        self.stealth_mode_active = True  # Hide climate features permanently
         self.board_friendly_mode = True  # Show only orchid/mycorrhizal research
+        self.climate_campaign_disabled = True  # PERMANENTLY DISABLED - No climate activism
         
         # Access levels
         self.access_levels = {
@@ -28,16 +29,16 @@ class StealthModeManager:
             'ai_director': 3       # Autonomous AI operations
         }
         
-        # Feature visibility matrix
+        # Feature visibility matrix - CLIMATE FEATURES PERMANENTLY DISABLED
         self.feature_visibility = {
-            'orchid_gallery': ['public', 'researcher', 'climate_insider', 'ai_director'],
-            'orchid_identification': ['public', 'researcher', 'climate_insider', 'ai_director'],
-            'mycorrhizal_research': ['researcher', 'climate_insider', 'ai_director'],
-            'carbon_capture_research': ['climate_insider', 'ai_director'],
-            'autonomous_ai_director': ['ai_director'],
-            'climate_partnerships': ['climate_insider', 'ai_director'],
-            'funding_operations': ['ai_director'],
-            'world_saving_probability': ['ai_director']
+            'orchid_gallery': ['public', 'researcher'],
+            'orchid_identification': ['public', 'researcher'], 
+            'mycorrhizal_research': ['researcher'],
+            'carbon_capture_research': [],  # DISABLED
+            'autonomous_ai_director': [],  # DISABLED
+            'climate_partnerships': [],  # DISABLED
+            'funding_operations': [],  # DISABLED
+            'world_saving_probability': []  # DISABLED
         }
         
         # Board-friendly feature descriptions
