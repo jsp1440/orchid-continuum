@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Wild Orchid Observation - {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('citizen_science.citizen_science_home') }}">Citizen Science</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('citizen_science.view_projects') }}">Projects</a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ project.title }}</li>
+                </ol>
+            </nav>
+            <div class="row">
+                <div class="col-md-8">
+                    <h1>Submit Wild Orchid Observation</h1>
+                    <p class="text-muted">{{ project.title }} - {{ project.category.replace('_', ' ').title() }}</p>
+                    <div class="alert alert-info">
+                        <i data-feather="info"></i>
+                        <strong>Conservation Impact:</strong> Your submission will be analyzed using AI and integrated 
+                        with the Encyclopedia of Life database to advance orchid conservation science.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">Project Information</h6>
+                        </div>
+                        <div class="card-body small">
+                            <p><strong>Category:</strong> {{ project.category.replace('_', ' ').title() }}</p>
+                            <p><strong>Geographic Focus:</strong> {{ project.geographic_focus or 'Global' }}</p>
+                            <p><strong>Project Lead:</strong> {{ project.project_lead }}</p>
+                            {% if project.target_species %}
+                            <p><strong>Target Species:</strong></p>
+                            <ul class="small">
+                                {% for species in project.target_species %}
+                                <li>{{ species }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Form -->
+    <form id="orchidSubmissionForm" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <input type="hidden" name="project_id" value="{{ project.project_id }}">
+        
+        <!-- Observer Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i data-feather="user"></i> Observer Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Your Name *</label>
+                        <input type="text" class="form-control" name="contributor_name" required>
+                        <div class="invalid-feedback">Please provide your name</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" name="contributor_email" required>
+                        <div class="invalid-feedback">Please provide a valid email address</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Organization/Affiliation</label>
+                        <input type="text" class="form-control" name="organization" 
+                               placeholder="e.g., Local Nature Society, University">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Experience Level</label>
+                        <select class="form-select" name="experience_level">
+                            <option value="beginner">Beginner - New to orchid identification</option>
+                            <option value="intermediate">Intermediate - Some orchid knowledge</option>
+                            <option value="advanced">Advanced - Experienced botanist/orchid enthusiast</option>
+                            <option value="expert">Expert - Professional researcher/taxonomist</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Species Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i data-feather="flower"></i> Species Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Scientific Name (if known) *</label>
+                        <input type="text" class="form-control" name="species_name" required
+                               placeholder="e.g., Cypripedium acaule, Platanthera ciliaris">
+                        <small class="form-text text-muted">
+                            Enter your best identification. AI analysis will help verify and provide suggestions.
+                        </small>
+                        <div class="invalid-feedback">Please provide a species name or best guess</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Identification Confidence</label>
+                        <select class="form-select" name="identification_confidence">
+                            <option value="certain">Certain - 100% confident</option>
+                            <option value="confident">Confident - 75-90% confident</option>
+                            <option value="uncertain" selected>Uncertain - 50-75% confident</option>
+                            <option value="guess">Best Guess - Less than 50% confident</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Common Name (if known)</label>
+                        <input type="text" class="form-control" name="common_name" 
+                               placeholder="e.g., Pink Lady's Slipper, Yellow Fringed Orchid">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Flowering Stage *</label>
+                        <select class="form-select" name="flowering_stage" required>
+                            <option value="">Select flowering stage</option>
+                            <option value="bud">Bud - Flowers not yet open</option>
+                            <option value="early_bloom">Early Bloom - First flowers opening</option>
+                            <option value="full_bloom">Full Bloom - Peak flowering</option>
+                            <option value="late_bloom">Late Bloom - Some flowers fading</option>
+                            <option value="post_bloom">Post Bloom - Flowers finished, seed pods forming</option>
+                            <option value="vegetative">Vegetative - No flowers present</option>
+                        </select>
+                        <div class="invalid-feedback">Please select the flowering stage</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i data-feather="map-pin"></i> Location Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Latitude *</label>
+                        <input type="number" class="form-control" name="latitude" step="0.000001" 
+                               min="-90" max="90" required
+                               placeholder="e.g., 45.123456">
+                        <div class="invalid-feedback">Please provide latitude (-90 to 90)</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Longitude *</label>
+                        <input type="number" class="form-control" name="longitude" step="0.000001" 
+                               min="-180" max="180" required
+                               placeholder="e.g., -122.123456">
+                        <div class="invalid-feedback">Please provide longitude (-180 to 180)</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Elevation (meters)</label>
+                        <input type="number" class="form-control" name="elevation" 
+                               placeholder="e.g., 500">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="getCurrentLocation()">
+                            <i data-feather="navigation"></i> Use Current Location
+                        </button>
+                        <small class="text-muted ms-2">
+                            (Requires location permission and GPS-enabled device)
+                        </small>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Location Description</label>
+                        <input type="text" class="form-control" name="location_description"
+                               placeholder="e.g., Rocky cliff face, Deciduous forest edge">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">GPS Accuracy (meters)</label>
+                        <input type="number" class="form-control" name="gps_accuracy"
+                               placeholder="e.g., 5">
+                        <small class="form-text text-muted">How accurate is your GPS reading?</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observation Details -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i data-feather="eye"></i> Observation Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Observation Date *</label>
+                        <input type="date" class="form-control" name="observation_date" required
+                               value="{{ datetime.now().strftime('%Y-%m-%d') }}">
+                        <div class="invalid-feedback">Please provide the observation date</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Time of Day</label>
+                        <input type="time" class="form-control" name="observation_time">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Population Count *</label>
+                        <input type="number" class="form-control" name="population_count" min="1" required
+                               placeholder="e.g., 25">
+                        <small class="form-text text-muted">Total number of individual plants observed</small>
+                        <div class="invalid-feedback">Please count the individual plants</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Habitat Description *</label>
+                        <textarea class="form-control" name="habitat_description" rows="3" required
+                                  placeholder="Describe the habitat: forest type, soil conditions, associated plants, microclimate, etc."></textarea>
+                        <div class="invalid-feedback">Please describe the habitat</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Associated Species</label>
+                        <textarea class="form-control" name="associated_species" rows="2"
+                                  placeholder="List other plant species growing nearby"></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Environmental Conditions</label>
+                        <textarea class="form-control" name="environmental_conditions" rows="2"
+                                  placeholder="Weather, soil moisture, light levels, etc."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conservation Assessment -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i data-feather="shield"></i> Conservation Assessment</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Observed Threats</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="habitat_destruction">
+                                    <label class="form-check-label">Habitat Destruction</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="invasive_species">
+                                    <label class="form-check-label">Invasive Species</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="trampling">
+                                    <label class="form-check-label">Human Trampling</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="collection">
+                                    <label class="form-check-label">Plant Collection</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="pollution">
+                                    <label class="form-check-label">Pollution</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="climate_stress">
+                                    <label class="form-check-label">Climate Stress</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="development">
+                                    <label class="form-check-label">Development Pressure</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="fragmentation">
+                                    <label class="form-check-label">Habitat Fragmentation</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="threats_observed" value="none_observed">
+                                    <label class="form-check-label">No Threats Observed</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Additional Threat Details</label>
+                        <textarea class="form-control" name="threat_details" rows="2"
+                                  placeholder="Describe any specific threats or conservation concerns observed"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i data-feather="camera"></i> Photo Documentation</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Orchid Photos *</label>
+                        <input type="file" class="form-control" name="photos" multiple accept="image/*" required>
+                        <div class="form-text">
+                            Upload multiple high-resolution photos showing:
+                            <ul class="mt-2 mb-0">
+                                <li>Whole plant in habitat context</li>
+                                <li>Close-up of flowers (front and side views)</li>
+                                <li>Leaves and growth pattern</li>
+                                <li>Surrounding habitat</li>
+                            </ul>
+                        </div>
+                        <div class="invalid-feedback">Please upload at least one photo</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <h6>📸 Photo Quality Guidelines:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Resolution:</strong> Minimum 2MP, 3MP+ preferred for AI analysis</li>
+                                <li><strong>GPS Data:</strong> Enable location services for automatic coordinates</li>
+                                <li><strong>Focus:</strong> Ensure flowers are sharp and well-lit</li>
+                                <li><strong>Composition:</strong> Include scale reference when possible</li>
+                                <li><strong>Multiple Angles:</strong> Front, side, and back views of flowers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Notes -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i data-feather="edit-3"></i> Additional Notes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Additional Observations</label>
+                        <textarea class="form-control" name="additional_notes" rows="3"
+                                  placeholder="Any other observations, unusual characteristics, or relevant information"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="allow_eol_submission" checked>
+                            <label class="form-check-label">
+                                Submit to Encyclopedia of Life (EOL)
+                            </label>
+                            <small class="form-text text-muted">
+                                Help contribute to global biodiversity knowledge
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="allow_research_use" checked>
+                            <label class="form-check-label">
+                                Allow use in conservation research
+                            </label>
+                            <small class="form-text text-muted">
+                                Data may be used in scientific publications
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row mb-5">
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-success btn-lg px-5">
+                    <i data-feather="upload"></i> Submit Observation
+                </button>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Submission will be processed with AI analysis and reviewed by researchers.
+                        You'll receive feedback on conservation value and species identification.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Submission Progress Modal -->
+<div class="modal fade" id="submissionProgressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Processing Submission</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p id="progressText">Uploading photos and analyzing with AI...</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Submission Successful!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="successContent">
+                <!-- Content filled by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('citizen_science.view_projects') }}" class="btn btn-primary">View Projects</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation and submission
+(function() {
+    'use strict';
+    
+    // Initialize form validation
+    const form = document.getElementById('orchidSubmissionForm');
+    
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (form.checkValidity()) {
+            submitObservation();
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // Get current location
+    window.getCurrentLocation = function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.querySelector('input[name="latitude"]').value = position.coords.latitude.toFixed(6);
+                    document.querySelector('input[name="longitude"]').value = position.coords.longitude.toFixed(6);
+                    
+                    if (position.coords.accuracy) {
+                        document.querySelector('input[name="gps_accuracy"]').value = Math.round(position.coords.accuracy);
+                    }
+                    
+                    // Optional: Get elevation if available
+                    if (position.coords.altitude) {
+                        document.querySelector('input[name="elevation"]').value = Math.round(position.coords.altitude);
+                    }
+                },
+                function(error) {
+                    alert('Error getting location: ' + error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by this browser.');
+        }
+    };
+    
+    // Submit observation
+    function submitObservation() {
+        const formData = new FormData(form);
+        
+        // Show progress modal
+        const progressModal = new bootstrap.Modal(document.getElementById('submissionProgressModal'));
+        progressModal.show();
+        
+        // Simulate progress
+        let progress = 0;
+        const progressBar = document.querySelector('.progress-bar');
+        const progressText = document.getElementById('progressText');
+        
+        const progressInterval = setInterval(function() {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+            
+            if (progress === 30) {
+                progressText.textContent = 'Extracting EXIF data from photos...';
+            } else if (progress === 60) {
+                progressText.textContent = 'Running AI species identification...';
+            } else if (progress === 90) {
+                progressText.textContent = 'Submitting to Encyclopedia of Life...';
+            }
+            
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                progressText.textContent = 'Finalizing submission...';
+            }
+        }, 500);
+        
+        // Submit to API
+        fetch('/citizen-science/api/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressModal.hide();
+            
+            if (data.success) {
+                showSuccessModal(data);
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+            }
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressModal.hide();
+            console.error('Error:', error);
+            alert('Submission failed. Please try again.');
+        });
+    }
+    
+    // Show success modal with results
+    function showSuccessModal(data) {
+        const successContent = document.getElementById('successContent');
+        
+        successContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Submission Summary</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Submission ID:</strong></td><td>${data.submission_id}</td></tr>
+                        <tr><td><strong>Photos Processed:</strong></td><td>${data.photos_processed}</td></tr>
+                        <tr><td><strong>AI Confidence:</strong></td><td>${Math.round(data.ai_analysis.average_confidence || 0)}%</td></tr>
+                        <tr><td><strong>Conservation Flags:</strong></td><td>${data.conservation_flags.length}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Analysis Results</h6>
+                    <div class="species-results">
+                        <p><strong>Species Identified:</strong></p>
+                        <ul>
+                            ${(data.ai_analysis.species_identified || []).map(species => 
+                                `<li>${species}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>Conservation Impact</h6>
+                    <div class="alert alert-${data.feedback.conservation_impact === 'critical' ? 'danger' : 
+                                            data.feedback.conservation_impact === 'high' ? 'warning' : 'success'}">
+                        <strong>Impact Level:</strong> ${data.feedback.conservation_impact.toUpperCase()}
+                        <br>
+                        <strong>Quality:</strong> ${data.feedback.submission_quality}
+                        <br>
+                        <strong>Scientific Value:</strong> ${data.feedback.scientific_value}
+                    </div>
+                </div>
+            </div>
+            ${data.eol_submission && data.eol_submission.success ? 
+                '<div class="alert alert-info"><i data-feather="database"></i> Successfully submitted to Encyclopedia of Life!</div>' : 
+                ''
+            }
+        `;
+        
+        // Refresh feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+    }
+    
+    // Initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+})();
+</script>
+{% endblock %}
