@@ -422,17 +422,8 @@ def orchid_ecosystem_data():
             query = query.filter(OrchidRecord.growth_habit.ilike(f'%{growth_habit_filter}%'))
             
         if pollinator_filter:
-            # Handle array search for pollinator types
-            if hasattr(OrchidRecord.pollinator_types, 'any'):
-                query = query.filter(OrchidRecord.pollinator_types.any(pollinator_filter))
-            else:
-                # Fallback for text search in pollinator data
-                query = query.filter(
-                    or_(
-                        OrchidRecord.pollinator_types.contains([pollinator_filter]),
-                        cast(OrchidRecord.pollinator_types, String).ilike(f'%{pollinator_filter}%')
-                    )
-                )
+            # Use native_habitat as fallback for pollinator info
+            query = query.filter(OrchidRecord.native_habitat.ilike(f'%{pollinator_filter}%'))
             
         if region_filter:
             query = query.filter(
@@ -463,7 +454,7 @@ def orchid_ecosystem_data():
                     'decimal_longitude': float(lng),
                     'climate_preference': orchid.climate_preference,
                     'growth_habit': orchid.growth_habit,
-                    'pollinator_types': orchid.pollinator_types or [],
+                    'pollinator_types': [],  # Field doesn't exist in model
                     'region': orchid.region,
                     'continent': orchid.continent,
                     'native_habitat': orchid.native_habitat,
