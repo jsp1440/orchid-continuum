@@ -710,6 +710,82 @@ class TraitInheritanceDatabase:
         
         return prediction
 
+def extract_breeding_notes(record):
+    """Extract relevant breeding information from record"""
+    notes = []
+    
+    if record.pod_parent and record.pollen_parent:
+        notes.append(f"Cross: {record.pod_parent} × {record.pollen_parent}")
+    
+    if 'Kulnura' in record.display_name:
+        notes.append("Kulnura breeding line - potential F226 relation")
+    
+    if record.ingestion_source:
+        notes.append(f"Source: {record.ingestion_source}")
+    
+    return "; ".join(notes)
+
+def build_pedigree_tree(record):
+    """Build multi-generational pedigree tree for inheritance analysis"""
+    pedigree = {
+        'current_plant': {
+            'name': record.display_name,
+            'genus': record.genus,
+            'species': record.species
+        },
+        'parents': {
+            'pod_parent': record.pod_parent,
+            'pollen_parent': record.pollen_parent
+        },
+        'grandparents': {},
+        'inheritance_depth': 2
+    }
+    
+    # Try to find parent records in database for deeper pedigree
+    if record.pod_parent:
+        pod_parent_record = OrchidRecord.query.filter(
+            OrchidRecord.display_name.like(f"%{record.pod_parent}%")
+        ).first()
+        
+        if pod_parent_record and pod_parent_record.pod_parent:
+            pedigree['grandparents']['pod_side'] = {
+                'pod_grandparent': pod_parent_record.pod_parent,
+                'pollen_grandparent': pod_parent_record.pollen_parent
+            }
+            pedigree['inheritance_depth'] = 3
+    
+    if record.pollen_parent:
+        pollen_parent_record = OrchidRecord.query.filter(
+            OrchidRecord.display_name.like(f"%{record.pollen_parent}%")
+        ).first()
+        
+        if pollen_parent_record and pollen_parent_record.pod_parent:
+            pedigree['grandparents']['pollen_side'] = {
+                'pod_grandparent': pollen_parent_record.pod_parent,
+                'pollen_grandparent': pollen_parent_record.pollen_parent
+            }
+            pedigree['inheritance_depth'] = 3
+    
+    return pedigree
+
+def analyze_inheritance_patterns(pedigree_data):
+    """Analyze inheritance patterns from pedigree data"""
+    predictions = []
+    
+    if pedigree_data['inheritance_depth'] >= 2:
+        predictions.append("F1 hybrid - expect trait segregation and hybrid vigor")
+        
+        if 'Kulnura' in str(pedigree_data['parents']):
+            predictions.append("Kulnura line genetics - reference F226 research for color inheritance patterns")
+        
+        if pedigree_data['inheritance_depth'] >= 3:
+            predictions.append("Multi-generational data available - can predict F2 trait ratios")
+            predictions.append("Consider 25% recessive trait expression in next generation")
+    
+    predictions.append("Record breeding outcomes to validate AI predictions")
+    
+    return predictions
+
 # Initialize the Genetics Laboratory
 genetics_laboratory = TraitInheritanceDatabase()
 
@@ -760,6 +836,67 @@ def get_trait_database():
 def get_f226_methodology():
     """Get F226 research methodology details"""
     return jsonify(genetics_laboratory.breeding_database['proven_crosses']['sarcochilus_f226'])
+
+@genetics_lab.route('/api/pod-maturation-data')
+def get_pod_maturation_data():
+    """Get comprehensive pod maturation timing data"""
+    return jsonify(genetics_laboratory.breeding_database['pod_maturation_database'])
+
+@genetics_lab.route('/api/breeding-records', methods=['GET'])
+def get_breeding_records():
+    """Get all breeding records for active breeder management"""
+    try:
+        # Get Sarcochilus breeding records that relate to actual crosses
+        breeding_records = OrchidRecord.query.filter(
+            OrchidRecord.genus == 'Sarcochilus',
+            db.or_(
+                OrchidRecord.pod_parent.isnot(None),
+                OrchidRecord.pollen_parent.isnot(None),
+                OrchidRecord.display_name.like('%×%')
+            )
+        ).all()
+        
+        records_data = []
+        for record in breeding_records:
+            records_data.append({
+                'id': record.id,
+                'display_name': record.display_name,
+                'pod_parent': record.pod_parent,
+                'pollen_parent': record.pollen_parent,
+                'genus': record.genus,
+                'species': record.species,
+                'ingestion_source': record.ingestion_source,
+                'has_photo': record.google_drive_id is not None,
+                'breeding_notes': extract_breeding_notes(record)
+            })
+        
+        return jsonify({
+            'success': True,
+            'records': records_data,
+            'total_count': len(records_data)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@genetics_lab.route('/api/pedigree-analysis/<int:record_id>')
+def get_pedigree_analysis(record_id):
+    """Get multi-generational pedigree analysis for a specific record"""
+    try:
+        record = OrchidRecord.query.get_or_404(record_id)
+        
+        # Build pedigree tree by analyzing parentage
+        pedigree_data = build_pedigree_tree(record)
+        
+        return jsonify({
+            'success': True,
+            'record_name': record.display_name,
+            'pedigree': pedigree_data,
+            'inheritance_predictions': analyze_inheritance_patterns(pedigree_data)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Export for registration
 def register_genetics_laboratory(app):
