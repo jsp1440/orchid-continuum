@@ -377,6 +377,141 @@ def orchid_genera():
             'genera': []
         }), 500
 
+@app.route('/api/orchid-ecosystem-data')
+def orchid_ecosystem_data():
+    """Comprehensive ecosystem data API with filtering support for the unified Earth Intelligence Platform"""
+    try:
+        logger.info("🔬 Fetching orchid ecosystem data with filters...")
+        
+        # Get filter parameters
+        genus_filter = request.args.get('genus')
+        climate_filter = request.args.get('climate')
+        growth_habit_filter = request.args.get('growth_habit')
+        pollinator_filter = request.args.get('pollinator')
+        region_filter = request.args.get('region')
+        
+        # Start with base query for orchids with coordinates
+        query = db.session.query(OrchidRecord).filter(
+            and_(
+                OrchidRecord.decimal_latitude.isnot(None),
+                OrchidRecord.decimal_longitude.isnot(None)
+            )
+        )
+        
+        # Apply filters
+        if genus_filter:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus_filter}%'))
+            
+        if climate_filter:
+            # Map climate filter values to possible database values
+            climate_mapping = {
+                'cool': ['cool', 'cool growing', 'cool-growing', 'cold'],
+                'intermediate': ['intermediate', 'intermediate growing', 'moderate'],
+                'warm': ['warm', 'warm growing', 'warm-growing'],
+                'hot': ['hot', 'hot growing', 'hot-growing']
+            }
+            if climate_filter in climate_mapping:
+                climate_conditions = [
+                    OrchidRecord.climate_preference.ilike(f'%{term}%') 
+                    for term in climate_mapping[climate_filter]
+                ]
+                query = query.filter(or_(*climate_conditions))
+                
+        if growth_habit_filter:
+            query = query.filter(OrchidRecord.growth_habit.ilike(f'%{growth_habit_filter}%'))
+            
+        if pollinator_filter:
+            # Handle array search for pollinator types
+            if hasattr(OrchidRecord.pollinator_types, 'any'):
+                query = query.filter(OrchidRecord.pollinator_types.any(pollinator_filter))
+            else:
+                # Fallback for text search in pollinator data
+                query = query.filter(
+                    or_(
+                        OrchidRecord.pollinator_types.contains([pollinator_filter]),
+                        cast(OrchidRecord.pollinator_types, String).ilike(f'%{pollinator_filter}%')
+                    )
+                )
+            
+        if region_filter:
+            query = query.filter(
+                or_(
+                    OrchidRecord.region.ilike(f'%{region_filter}%'),
+                    OrchidRecord.continent.ilike(f'%{region_filter}%'),
+                    OrchidRecord.native_distribution.ilike(f'%{region_filter}%')
+                )
+            )
+        
+        # Execute query with limit for performance
+        orchids = query.limit(1000).all()
+        
+        # Prepare response data
+        orchid_data = []
+        for orchid in orchids:
+            lat = orchid.decimal_latitude
+            lng = orchid.decimal_longitude
+            
+            if lat and lng:
+                orchid_info = {
+                    'id': orchid.id,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'scientific_name': orchid.scientific_name or f"{orchid.genus or ''} {orchid.species or ''}".strip(),
+                    'display_name': orchid.display_name,
+                    'decimal_latitude': float(lat),
+                    'decimal_longitude': float(lng),
+                    'climate_preference': orchid.climate_preference,
+                    'growth_habit': orchid.growth_habit,
+                    'pollinator_types': orchid.pollinator_types or [],
+                    'region': orchid.region,
+                    'continent': orchid.continent,
+                    'native_habitat': orchid.native_habitat,
+                    'native_distribution': orchid.native_distribution,
+                    'mycorrhizal_fungi': orchid.mycorrhizal_fungi or [],
+                    'bloom_time': orchid.bloom_time,
+                    'flowering_time': orchid.flowering_time,
+                    'temperature_range': orchid.temperature_range,
+                    'light_requirements': orchid.light_requirements,
+                    'image_url': orchid.image_url,
+                    'google_drive_id': orchid.google_drive_id,
+                    'is_fragrant': orchid.is_fragrant,
+                    'conservation_status_clues': orchid.conservation_status_clues,
+                    'ecosystem_enhanced': True
+                }
+                orchid_data.append(orchid_info)
+        
+        # Log filter application
+        filter_info = []
+        if genus_filter: filter_info.append(f"genus={genus_filter}")
+        if climate_filter: filter_info.append(f"climate={climate_filter}")
+        if growth_habit_filter: filter_info.append(f"growth={growth_habit_filter}")
+        if pollinator_filter: filter_info.append(f"pollinator={pollinator_filter}")
+        if region_filter: filter_info.append(f"region={region_filter}")
+        
+        filters_applied = " | ".join(filter_info) if filter_info else "none"
+        logger.info(f"🌺 Ecosystem query returned {len(orchid_data)} orchids with filters: {filters_applied}")
+        
+        return jsonify({
+            'success': True,
+            'orchids': orchid_data,
+            'count': len(orchid_data),
+            'filters_applied': {
+                'genus': genus_filter,
+                'climate': climate_filter,
+                'growth_habit': growth_habit_filter,
+                'pollinator': pollinator_filter,
+                'region': region_filter
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching ecosystem data: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch ecosystem data',
+            'details': str(e)
+        }), 500
+
 @app.route('/api/global-weather-patterns')
 def global_weather_patterns():
     """Get current weather patterns for global overlay"""
