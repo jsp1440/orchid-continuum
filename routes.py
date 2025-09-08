@@ -146,6 +146,11 @@ def gary_demo_working():
     """Gary Yong Gee Working Partnership Demo"""
     return send_file('static/gary-demo-working.html')
 
+@app.route('/widget-demo')
+def widget_demo():
+    """FCOS Orchid Judge Mobile Widget Demo"""
+    return render_template('widget_demo.html')
+
 @app.route('/partner/gary/dashboard')
 def gary_partner_dashboard():
     """Gary's partner dashboard - shows automated sync status"""
