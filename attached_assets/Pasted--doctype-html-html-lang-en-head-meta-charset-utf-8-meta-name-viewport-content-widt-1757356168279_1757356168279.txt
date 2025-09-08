@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FCOS • Orchid Philosophy Quiz</title>
+<style>
+  :root{
+    --ink:#1b2420; --paper:#f5f7f5; --accent:#2b6a30;
+  }
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:960px;margin:28px auto;padding:0 16px}
+  h1{font-size:28px;margin:8px 0 16px}
+  h2{font-size:22px;margin:22px 0 8px;color:var(--accent)}
+  .card{
+    background:#fff;border-radius:16px;padding:20px;
+    box-shadow:0 14px 34px rgba(0,0,0,.09), 0 2px 8px rgba(0,0,0,.04)
+  }
+  .hero{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+  .hero img{max-width:360px;width:100%;height:auto;border-radius:12px}
+  .meta{min-width:260px;flex:1}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef6ef;color:#1f4222;font-weight:600;font-size:14px}
+  .grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .haiku{font-family:"Brush Script MT","Segoe Script","Apple Chancery",cursive;font-size:20px;line-height:1.35;text-align:center;padding:10px 12px;background:#fafafa;border-radius:10px}
+  .small{color:#6b6b6b;font-size:14px}
+  .btn{cursor:pointer;border:none;background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;font-weight:700}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .debug{margin-top:10px}
+  .leader{margin-top:16px}
+  .two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>FCOS • Orchid Philosophy Quiz</h1>
+
+  <!-- (A) If Replit already built your question pages, you won't need this test form.
+         It's just here so you can try scoring immediately. -->
+  <details>
+    <summary><b>Quick test form (optional)</b></summary>
+    <form id="testForm" class="card" style="margin:12px 0">
+      <p>Enter your choices for Q1–Q10 as letters A–D (case-insensitive). Your real site can call <code>computeAndRender(answers)</code> directly.</p>
+      <div class="two-col" id="inputs"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" type="submit">Score it</button>
+        <button class="btn" type="button" onclick="demo()">Try a demo set</button>
+      </div>
+    </form>
+  </details>
+
+  <div id="result" class="card hide"></div>
+
+  <div class="leader card hide" id="leaderboard">
+    <h2>Top Match (Scores)</h2>
+    <pre id="scoreDump" class="small"></pre>
+  </div>
+
+  <div class="debug small" id="debug"></div>
+</div>
+
+<script>
+/* -----------------------------------------------------------
+   DATA
+   ----------------------------------------------------------- */
+
+// 16 philosophies content (badge links: your Imgur albums)
+const PHILOS = {
+  "Enduring Bloom": { // Stoicism
+    key:"Stoicism",
+    caption:"Patient and calm; every bloom is a gift of its own time.",
+    life:"Resilience is your north star. You treasure returns and reliable grace.",
+    reflect:"You love plants that reward steady care with faithful bloom.",
+    haiku:`Storms will come and pass,
+Roots remember how to hold,
+Bloom returns in time.`,
+    practical:"You keep long-lived workhorses (Oncidium, Phalaenopsis) thriving year to year.",
+    science:"Stress–recovery cycles can enhance flowering; resilience pays.",
+    badge:"https://imgur.com/a/O9jy9rP",
+    palette:["Slate Gray","Soft Green"]
+  },
+  "Fragrance Seeker": { // Epicureanism
+    key:"Epicureanism",
+    caption:"You savor orchids for color, fragrance, and simple pleasures.",
+    life:"You savor life through the senses. Blooms are not just seen—they are experienced.",
+    reflect:"A garden of delight; fragrance and color are reasons enough.",
+    haiku:`Sweet scent fills the air,
+Petals glowing, fleeting joy,
+Moments made to keep.`,
+    practical:"You seek Rhynchostylis, Brassavola, and perfumed Oncidiums.",
+    science:"Fragrance evolved for pollinator attraction—your delight echoes ecology.",
+    badge:"https://imgur.com/a/gwzILYd",
+    palette:["Rose Pink","Warm Gold"]
+  },
+  "Harmony": { // Confucianism
+    key:"Confucianism",
+    caption:"You grow with balance, tradition, and learned wisdom.",
+    life:"You value respect, balance, and right relationships. Care is gratitude.",
+    reflect:"Your bench reflects order—a place for each plant’s needs.",
+    haiku:`Guided by the past,
+Hands respect the root and leaf,
+Harmony endures.`,
+    practical:"You gift responsibly and encourage stewardship.",
+    science:"Balanced light/humidity/airflow are keystones of orchid health.",
+    badge:"https://imgur.com/a/Q43hN1U",
+    palette:["Jade Green","Gold"]
+  },
+  "Moonlight Reverie": { // Transcendentalism
+    key:"Transcendentalism",
+    caption:"Orchids are a spiritual journey and a guide to wonder.",
+    life:"Nature is sacred to you; meaning in quiet hours with living things.",
+    reflect:"Night-fragrant blooms feel like messages from the world itself.",
+    haiku:`Moonlight on soft blooms,
+Whispers rise from silent leaves,
+Spirit breathes in green.`,
+    practical:"You place night-fragrant orchids where you rest or reflect.",
+    science:"Brassavola nodosa emits scent at night—timed to moth pollinators.",
+    badge:"https://imgur.com/a/HxR4aNu",
+    palette:["Indigo","Moonlight White"]
+  },
+  "Veil Orchid": { // Skepticism
+    key:"Skepticism",
+    caption:"You question, test, and verify before you trust.",
+    life:"You seek truth through doubt. Inquiry protects you from easy answers.",
+    reflect:"Labels, culture sheets, photos—you verify before trusting.",
+    haiku:`Each leaf asks a why,
+Roots spiral into the truth,
+Answers bloom with doubt.`,
+    practical:"You research identity and keep notes until evidence repeats.",
+    science:"Orchid taxonomy is dynamic; names change with new data.",
+    badge:"https://imgur.com/a/MNIglMs",
+    palette:["Cool Blue","Silver"]
+  },
+  "Vanishing Bloom": { // Nihilism
+    key:"Nihilism",
+    caption:"Every bloom is precious because it vanishes.",
+    life:"You accept impermanence. Fallen petals are facts, not failures.",
+    reflect:"You honor moments as they are and don’t cling.",
+    haiku:`Petals drift away,
+Silent truth beneath the stem,
+Nothing holds for long.`,
+    practical:"Enjoy blooms fully; accept their passing without despair.",
+    science:"Many Stanhopea/Sobralia bloom for a day—intensity over duration.",
+    badge:"https://imgur.com/a/wSgrdLl",
+    palette:["Charcoal","Silver"]
+  },
+  "Self Bloom": { // Egoism
+    key:"Egoism",
+    caption:"Your collection reflects your own brilliance.",
+    life:"Joy begins with self-respect; you choose what truly delights you.",
+    reflect:"Rare, bold, personal—your orchids mirror your taste and triumphs.",
+    haiku:`Mirror of the self,
+Blooming for no eyes but mine,
+Joy in solitude.`,
+    practical:"Bring home the plant that thrills you—even if it’s not “trendy.”",
+    science:"Autogamy (self-pollination) in some orchids—self-sufficiency works.",
+    badge:"https://imgur.com/a/92asMXl",
+    palette:["Deep Red","Gold"]
+  },
+  "Wild Sprout": { // Cynicism
+    key:"Cynicism",
+    caption:"Breaking convention; thriving outside the lines.",
+    life:"You prize authenticity over convention. You grow with instinct.",
+    reflect:"Mounts, bottles, teacups—alive beyond rules.",
+    haiku:`Roots spill from the pot,
+Unruly, untamed, alive,
+Truth grows without rules.`,
+    practical:"Mount epiphytes on wood; try outdoor microclimates; ignore purism.",
+    science:"Wild orchids colonize cliffs, trees, roadsides—fitness over formality.",
+    badge:"https://imgur.com/a/JvdgeyY",
+    palette:["Gray","Magenta Flash"]
+  },
+  "Orchid Muse": { // Renaissance Humanism
+    key:"Renaissance Humanism",
+    caption:"Orchids as art and living masterpieces.",
+    life:"You celebrate art, beauty, and human dignity.",
+    reflect:"Symmetry, form, color—every flower a masterpiece.",
+    haiku:`Velvet petals curve,
+Crafted by a careful hand,
+Living heritage.`,
+    practical:"Value awarded clones and divisions with provenance.",
+    science:"AOS judging codifies standards—tradition shaping beauty.",
+    badge:"https://imgur.com/a/AlFdGYN",
+    palette:["Burgundy","Renaissance Gold"]
+  },
+  "Ordered Bloom": { // Aristotelianism
+    key:"Aristotelianism",
+    caption:"Knowledge through order and precise names.",
+    life:"You love clarity and classification.",
+    reflect:"Patterns in petals and growth tell how the plant “thinks.”",
+    haiku:`Each leaf has its place,
+Patterns hide in nature’s code,
+Truth in order blooms.`,
+    practical:"Organize by genus; track bloom cycles.",
+    science:"~30,000 species—order helps minds grasp diversity.",
+    badge:"https://imgur.com/a/ukuPLxh",
+    palette:["Navy","Ivory"]
+  },
+  "Legacy Bloom": { // Traditionalism
+    key:"Traditionalism",
+    caption:"You trust the time-tested ways.",
+    life:"You honor inherited wisdom and practices.",
+    reflect:"Orchids as living heirlooms—carried grower to grower.",
+    haiku:`Guided by the past,
+Hands respect the root and leaf,
+Harmony endures.`,
+    practical:"Prize awarded lines and classic methods.",
+    science:"Proven practices persist because they work.",
+    badge:"https://imgur.com/a/Q43hN1U", // use your Legacy album if different
+    palette:["Parchment Beige","Muted Green"]
+  },
+  "Grounded Root": { // Pragmatism
+    key:"Pragmatism",
+    caption:"If it thrives, it stays. Function over form.",
+    life:"You value what works; test, observe, keep what helps.",
+    reflect:"Experiments that bloom into methods.",
+    haiku:`Moss, bark, glass, or clay,
+Roots decide what thrives in time,
+Bloom proves what is true.`,
+    practical:"Try semi-hydro, adjust light/media; standardize what blooms.",
+    science:"Hybrids often tolerate varied conditions; adaptability wins.",
+    badge:"https://imgur.com/a/56VvvGz",
+    palette:["Earth Brown","Moss Green"]
+  },
+  "Gifted Orchid": { // Altruism
+    key:"Altruism",
+    caption:"You share divisions generously; joy multiplies.",
+    life:"Your instinct is to share; beauty multiplies when given.",
+    reflect:"Divisions and keikis become bridges—friendship rooted in generosity.",
+    haiku:`Hands give living gifts,
+Roots entwine across the earth,
+Joy grows when it’s shared.`,
+    practical:"Divide thriving plants for new members; donate to auctions.",
+    science:"Keikis are natural clones—biology made for sharing.",
+    badge:"https://imgur.com/a/Hcjw1Gv",
+    palette:["Lavender","Warm Gold"]
+  },
+  "Vision Vine": { // Idealism
+    key:"Idealism",
+    caption:"Chasing flawless symmetry and rare cultivars.",
+    life:"You chase ideals—purity of form, rare color, perfect symmetry.",
+    reflect:"Each plant is a step toward the vision you hold.",
+    haiku:`Unreachable star,
+Petals whisper higher truths,
+Dreams take root in green.`,
+    practical:"You prize Paph. rothschildianum and line-bred Cattleyas.",
+    science:"Hybridizing pursues ideal traits; symmetry is a judging core.",
+    badge:"https://imgur.com/a/9acVnRl",
+    palette:["Ivory","Royal Purple"]
+  },
+  "Being in Bloom": { // “Present” / banner
+    key:"Being in Bloom",
+    caption:"Always hunting the rare, perfect bloom (celebrating the now).",
+    life:"You live in the present; every blossom is celebration.",
+    reflect:"Orchids remind you to notice what’s already here.",
+    haiku:`Sun on open bloom,
+Morning breathes a golden note,
+Now is everything.`,
+    practical:"Keep showy hybrids where you see them daily.",
+    science:"Light-driven rhythms make presence visible.",
+    badge:"https://imgur.com/a/FH4smYG",
+    palette:["Gold","Cream"]
+  },
+  "Wild Bloom": { // untamed
+    key:"Wild Bloom",
+    caption:"Celebrate what won’t be tamed.",
+    life:"You celebrate the edge beyond control.",
+    reflect:"Sprawl, root, surprise—alive and authentic.",
+    haiku:`Edge of ordered beds,
+Green defies the gardener,
+Life writes its own map.`,
+    practical:"Let epiphytes wander over mounts and stone.",
+    science:"Colonization of rough habitats is common—fitness beats neatness.",
+    badge:"https://imgur.com/a/PzuiRKG",
+    palette:["Forest","Stone"]
+  }
+};
+
+// Scoring map: Q1..Q10 → A-D → philosophy key (titles used above)
+const KEY = {
+  1:  {A:"Cynicism",            B:"Renaissance Humanism", C:"Nihilism",        D:"Traditionalism"},
+  2:  {A:"Egoism",              B:"Altruism",            C:"Confucianism",    D:"Nihilism"},
+  3:  {A:"Idealism",            B:"Pragmatism",          C:"Aristotelianism", D:"Epicureanism"},
+  4:  {A:"Egoism",              B:"Altruism",            C:"Confucianism",    D:"Nihilism"},
+  5:  {A:"Traditionalism",      B:"Cynicism",            C:"Skepticism",      D:"Egoism"},
+  6:  {A:"Confucianism",        B:"Pragmatism",          C:"Stoicism",        D:"Skepticism"},
+  7:  {A:"Renaissance Humanism",B:"Epicureanism",        C:"Nihilism",        D:"Transcendentalism"},
+  8:  {A:"Skepticism",          B:"Altruism",            C:"Egoism",          D:"Stoicism"},
+  9:  {A:"Pragmatism",          B:"Traditionalism",      C:"Transcendentalism",D:"Stoicism"},
+  10: {A:"Egoism",              B:"Altruism",            C:"Skepticism",      D:"Confucianism"}
+};
+
+// Tie breaker order (your preferred spotlight order)
+const TIE_ORDER = [
+  "Epicureanism","Stoicism","Confucianism","Egoism","Nihilism",
+  "Renaissance Humanism","Pragmatism","Transcendentalism","Skepticism",
+  "Traditionalism","Cynicism","Idealism","Aristotelianism","Altruism"
+];
+
+/* -----------------------------------------------------------
+   CORE SCORING
+   ----------------------------------------------------------- */
+function scoreAnswers(answers /* {1:'A',2:'D',...} */){
+  const tally = {};
+  for(let q=1;q<=10;q++){
+    const pick = (answers[q]||'').toString().trim().toUpperCase().slice(0,1);
+    const phi = KEY[q] && KEY[q][pick];
+    if(!phi) continue;
+    tally[phi] = (tally[phi]||0) + 1;
+  }
+  return tally;
+}
+
+function pickWinners(tally){
+  let max = 0; Object.values(tally).forEach(v=>{ if(v>max) max=v; });
+  if(max===0) return [];
+  const tied = Object.keys(tally).filter(k=>tally[k]===max);
+  if(tied.length<=1) return tied;
+  // deterministic order by TIE_ORDER
+  tied.sort((a,b)=>TIE_ORDER.indexOf(a)-TIE_ORDER.indexOf(b));
+  return tied;
+}
+
+/* -----------------------------------------------------------
+   RENDER
+   ----------------------------------------------------------- */
+function renderResult(winners, tally){
+  const root = document.getElementById('result');
+  const scoreDump = document.getElementById('scoreDump');
+  const lb = document.getElementById('leaderboard');
+  root.classList.remove('hide'); lb.classList.remove('hide');
+
+  scoreDump.textContent = JSON.stringify(tally, null, 2);
+
+  const blocks = winners.map(w => {
+    // Map philosophy key (e.g., "Stoicism") to your public title used in PHILOS:
+    const titleMap = {
+      "Stoicism":"Enduring Bloom",
+      "Epicureanism":"Fragrance Seeker",
+      "Confucianism":"Harmony",
+      "Transcendentalism":"Moonlight Reverie",
+      "Skepticism":"Veil Orchid",
+      "Nihilism":"Vanishing Bloom",
+      "Egoism":"Self Bloom",
+      "Cynicism":"Wild Sprout",
+      "Renaissance Humanism":"Orchid Muse",
+      "Aristotelianism":"Ordered Bloom",
+      "Traditionalism":"Legacy Bloom",
+      "Pragmatism":"Grounded Root",
+      "Altruism":"Gifted Orchid",
+      "Idealism":"Vision Vine"
+    };
+    const pubTitle = titleMap[w] || w;
+    const P = PHILOS[pubTitle];
+    if(!P) return `<p>Missing content for ${w}</p>`;
+    const [c1,c2] = P.palette||["#ddd","#eee"];
+    return `
+      <div class="card">
+        <div class="hero">
+          <img src="${P.badge}" alt="${pubTitle} badge">
+          <div class="meta">
+            <span class="pill">${w}</span>
+            <h2 style="margin:10px 0 6px">${pubTitle}</h2>
+            <div class="small" style="opacity:.8">${P.caption||''}</div>
+            <div class="row" style="margin-top:8px;gap:6px">
+              <span class="pill" style="background:#eef1ff;color:#2a2f6b">${c1}</span>
+              <span class="pill" style="background:#fff7e8;color:#7a431e">${c2||''}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:14px">
+          <div>
+            <h3 style="margin:6px 0 4px">Life Philosophy</h3>
+            <p>${P.life||''}</p>
+          </div>
+          <div>
+            <h3 style="margin:6px 0 4px">Orchid Reflection</h3>
+            <p>${P.reflect||''}</p>
+          </div>
+          <div class="haiku">${(P.haiku||'').replace(/\n/g,'<br>')}</div>
+          <div class="two-col">
+            <div>
+              <h3 style="margin:6px 0 4px">Practical Tip</h3>
+              <p>${P.practical||''}</p>
+            </div>
+            <div>
+              <h3 style="margin:6px 0 4px">Botanical Note</h3>
+              <p>${P.science||''}</p>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  root.innerHTML = blocks.join('');
+}
+
+/* -----------------------------------------------------------
+   PUBLIC HOOK FOR YOUR REPLIT QUIZ PAGES
+   ----------------------------------------------------------- */
+/** Call this from your existing quiz UI.
+ *  Example input:  computeAndRender({1:'A',2:'D',3:'B',4:'A',5:'C',6:'D',7:'B',8:'A',9:'C',10:'B'})
+ */
+window.computeAndRender = function(answersObj){
+  const tally = scoreAnswers(answersObj);
+  const winners = pickWinners(tally);
+  renderResult(winners, tally);
+}
+
+/* -----------------------------------------------------------
+   OPTIONAL: pull narrative/badge data from Google Sheets (Published CSV)
+   - If you publish your "Philosophies" tab to the web as CSV, you can
+     populate/override PHILOS dynamically. Leave off if you’re happy
+     with the embedded content above.
+   ----------------------------------------------------------- */
+async function loadFromSheetCSV(opts){
+  // opts: {sheetId:'...', gid:'...'} — get gid from the tab’s URL
+  const url = `https://docs.google.com/spreadsheets/d/${opts.sheetId}/export?format=csv&gid=${opts.gid}`;
+  const res = await fetch(url); const text = await res.text();
+  const rows = text.split(/\r?\n/).map(r=>r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(s=>s.replace(/^"|"$/g,'')));
+  const head = rows[0]; // expected: Title, LifePhilosophy, OrchidReflection, Haiku, Practical, Science, BadgeLink
+  const idx = (k)=>head.indexOf(k);
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i]; if(!r[0]) continue;
+    const pubTitle = r[idx('Title')];
+    PHILOS[pubTitle] = {
+      ...(PHILOS[pubTitle]||{}),
+      life:r[idx('LifePhilosophy')],
+      reflect:r[idx('OrchidReflection')],
+      haiku:r[idx('Haiku')],
+      practical:r[idx('Practical')],
+      science:r[idx('Science')],
+      badge:r[idx('BadgeLink')] || (PHILOS[pubTitle]&&PHILOS[pubTitle].badge)
+    };
+  }
+}
+
+/* -----------------------------------------------------------
+   LITTLE TEST UI (can remove in production)
+   ----------------------------------------------------------- */
+(function makeTestInputs(){
+  const box = document.getElementById('inputs');
+  let html = '';
+  for(let q=1;q<=10;q++){
+    html += `<label>Q${q}: <input name="q${q}" maxlength="1" style="width:42px" pattern="[A-Da-d]" required></label>`;
+  }
+  box.innerHTML = html;
+  document.getElementById('testForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const data = {};
+    for(let q=1;q<=10;q++){
+      data[q] = (e.target.elements['q'+q].value||'').toUpperCase();
+    }
+    window.computeAndRender(data);
+    document.getElementById('result').scrollIntoView({behavior:'smooth'});
+  });
+})();
+
+function demo(){
+  window.computeAndRender({1:'B',2:'C',3:'D',4:'B',5:'B',6:'C',7:'B',8:'D',9:'D',10:'B'});
+}
+</script>
+</body>
+</html>
