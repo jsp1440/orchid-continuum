@@ -25,26 +25,31 @@ class OrchidScheduler:
         self.update_count = 0
         
     def start_scheduler(self):
-        """Start the background scheduler"""
-        if self.is_running:
-            logger.warning("Scheduler is already running")
-            return
-            
-        logger.info("Starting orchid record scheduler - updates every 90 seconds")
-        self.is_running = True
+        """Start the background scheduler - DISABLED FOR DEMO"""
+        logger.info("🚫 DEMO MODE: Background scheduler disabled for stability")
+        logger.info("✅ Demo will run with existing data only")
+        return
         
-        # Schedule tasks - FASTER for Gary production scraping
-        schedule.every(30).seconds.do(self.update_orchid_records)  # 3x faster updates
-        schedule.every().hour.do(self.update_orchid_metadata)
-        schedule.every(6).hours.do(self.run_maintenance_tasks)
-        schedule.every().day.at("03:00").do(self.full_database_refresh)
-        schedule.every().day.at("04:30").do(self.run_mislabeling_detection)  # Daily data quality check
-        
-        # Start scheduler in background thread
-        scheduler_thread = threading.Thread(target=self.run_scheduler, daemon=True)
-        scheduler_thread.start()
-        
-        logger.info("Orchid scheduler started successfully")
+        # DISABLED FOR DEMO STABILITY:
+        # if self.is_running:
+        #     logger.warning("Scheduler is already running")
+        #     return
+        #     
+        # logger.info("Starting orchid record scheduler - updates every 90 seconds")
+        # self.is_running = True
+        # 
+        # # Schedule tasks - FASTER for Gary production scraping
+        # schedule.every(30).seconds.do(self.update_orchid_records)  # 3x faster updates
+        # schedule.every().hour.do(self.update_orchid_metadata)
+        # schedule.every(6).hours.do(self.run_maintenance_tasks)
+        # schedule.every().day.at("03:00").do(self.full_database_refresh)
+        # schedule.every().day.at("04:30").do(self.run_mislabeling_detection)  # Daily data quality check
+        # 
+        # # Start scheduler in background thread
+        # scheduler_thread = threading.Thread(target=self.run_scheduler, daemon=True)
+        # scheduler_thread.start()
+        # 
+        # logger.info("Orchid scheduler started successfully")
         
     def run_scheduler(self):
         """Run the scheduler loop"""
