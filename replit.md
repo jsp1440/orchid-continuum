@@ -6,6 +6,8 @@ The Orchid Continuum is a comprehensive research-grade digital platform focused 
 
 **IMPORTANT: All climate activism features have been permanently disabled for user protection. This is now a legitimate academic botanical research platform only.**
 
+**NEW FOCUS: Student Research Inspiration** - The platform now serves as an academic research hub designed to inspire the next generation of researchers in mycorrhizal networks, AI-biology interfaces, and orchid conservation. The goal is to provide legitimate research opportunities that could attract student researchers and academic partnerships.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
