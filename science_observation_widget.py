@@ -8,6 +8,9 @@ import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, render_template, session
 from sqlalchemy import text, func, and_, or_
+from flask import send_file
+from werkzeug.utils import secure_filename
+import io
 from app import db, app
 from models import OrchidRecord
 
@@ -29,27 +32,42 @@ class ObservationDataIntegrator:
             'environmental_data'
         ]
         
-    def collect_field_observation(self, observation_data):
-        """Process and integrate field observation data"""
+        # Export formats supported
+        self.export_formats = ['text', 'word', 'pdf', 'jpeg', 'csv', 'json']
+        
+        # File upload settings
+        self.allowed_extensions = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'xlsx', 'docx'}
+        self.max_file_size = 16 * 1024 * 1024  # 16MB limit
+        
+    def collect_field_observation(self, observation_data, uploaded_files=None):
+        """Process and integrate field observation data with file uploads"""
         try:
             # Validate observation data
             validated_data = self._validate_observation(observation_data)
             
+            # Process uploaded files if any
+            file_data = self._process_uploaded_files(uploaded_files) if uploaded_files else []
+            
             # Match with existing orchid records
             matching_records = self._find_matching_records(validated_data)
             
-            # Create observation entry
+            # Create observation entry with files
             observation_entry = self._create_observation_entry(validated_data, matching_records)
             
             # Update related statistics
             self._update_botany_lab_stats(observation_entry)
+            
+            # Store in Google Sheets if configured
+            self._store_in_google_sheets(observation_entry)
             
             return {
                 'success': True,
                 'observation_id': observation_entry['id'],
                 'matched_records': len(matching_records),
                 'observation_type': validated_data['type'],
-                'timestamp': observation_entry['timestamp']
+                'timestamp': observation_entry['timestamp'],
+                'files_uploaded': len(file_data),
+                'export_available': True
             }
             
         except Exception as e:
@@ -58,6 +76,228 @@ class ObservationDataIntegrator:
                 'success': False,
                 'error': str(e)
             }
+    
+    def _process_uploaded_files(self, uploaded_files):
+        """Process and store uploaded files"""
+        file_data = []
+        
+        for file in uploaded_files:
+            if file and self._allowed_file(file.filename):
+                try:
+                    # Create unique filename
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{file.filename}"
+                    
+                    # Store file metadata (in production, save to cloud storage)
+                    file_info = {
+                        'original_name': file.filename,
+                        'stored_name': filename,
+                        'file_type': file.content_type,
+                        'file_size': len(file.read()),
+                        'upload_time': datetime.now().isoformat()
+                    }
+                    
+                    file.seek(0)  # Reset file pointer
+                    file_data.append(file_info)
+                    
+                except Exception as e:
+                    logger.error(f"Error processing file {file.filename}: {e}")
+                    
+        return file_data
+    
+    def _allowed_file(self, filename):
+        """Check if file extension is allowed"""
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in self.allowed_extensions
+    
+    def _store_in_google_sheets(self, observation_entry):
+        """Store observation data in Google Sheets for collaboration"""
+        try:
+            # Check if Google Sheets integration is available
+            from google_sheets_service import GoogleSheetsService
+            
+            sheets_service = GoogleSheetsService()
+            
+            # Prepare data for Google Sheets
+            sheet_data = {
+                'Timestamp': observation_entry['timestamp'],
+                'Observer': observation_entry['observer'],
+                'Type': observation_entry['type'],
+                'Location': observation_entry['location'],
+                'Description': observation_entry['description'],
+                'Quality Score': observation_entry['data_quality']['score'],
+                'Matched Orchids': len(observation_entry['matched_orchids']),
+                'Coordinates': f"{observation_entry['coordinates']['latitude']},{observation_entry['coordinates']['longitude']}" if observation_entry['coordinates']['latitude'] else ''
+            }
+            
+            # Add to "Research Observations" sheet (would need custom append_row method)
+            logger.info(f"Would save to Google Sheets: {sheet_data}")
+            
+        except ImportError:
+            logger.info("Google Sheets integration not available")
+        except Exception as e:
+            logger.error(f"Error storing in Google Sheets: {e}")
+    
+    def search_orchid_database(self, search_params):
+        """Search the orchid continuum database for data selection"""
+        try:
+            query = OrchidRecord.query
+            results = []
+            
+            # Apply search filters
+            if search_params.get('genus'):
+                query = query.filter(OrchidRecord.genus.ilike(f"%{search_params['genus']}%"))
+            
+            if search_params.get('species'):
+                query = query.filter(OrchidRecord.species.ilike(f"%{search_params['species']}%"))
+            
+            if search_params.get('location'):
+                query = query.filter(OrchidRecord.region.ilike(f"%{search_params['location']}%"))
+            
+            if search_params.get('has_image'):
+                query = query.filter(OrchidRecord.google_drive_id.isnot(None))
+            
+            # Execute search with limit
+            limit = min(search_params.get('limit', 50), 100)  # Max 100 results
+            orchids = query.limit(limit).all()
+            
+            # Format results for selection
+            for orchid in orchids:
+                results.append({
+                    'id': orchid.id,
+                    'scientific_name': orchid.scientific_name or f"{orchid.genus} {orchid.species}",
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'location': orchid.region,
+                    'has_image': bool(orchid.google_drive_id),
+                    'description': orchid.ai_description[:200] if orchid.ai_description else '',
+                    'coordinates': {
+                        'lat': orchid.decimal_latitude,
+                        'lng': orchid.decimal_longitude
+                    } if orchid.decimal_latitude else None
+                })
+            
+            return {
+                'success': True,
+                'results': results,
+                'total_found': len(results),
+                'search_params': search_params
+            }
+            
+        except Exception as e:
+            logger.error(f"Error searching orchid database: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'results': []
+            }
+    
+    def export_observation_data(self, observation_id, export_format, user_profile=None):
+        """Export observation data in specified format"""
+        try:
+            # Find the observation
+            observations = session.get('recent_observations', [])
+            observation = next((obs for obs in observations if obs['id'] == observation_id), None)
+            
+            if not observation:
+                return {'success': False, 'error': 'Observation not found'}
+            
+            # Generate export based on format
+            if export_format == 'text':
+                return self._export_as_text(observation, user_profile)
+            elif export_format == 'word':
+                return self._export_as_word(observation, user_profile)
+            elif export_format == 'pdf':
+                return self._export_as_pdf(observation, user_profile)
+            elif export_format == 'jpeg':
+                return self._export_as_jpeg(observation, user_profile)
+            elif export_format == 'csv':
+                return self._export_as_csv(observation, user_profile)
+            elif export_format == 'json':
+                return self._export_as_json(observation, user_profile)
+            else:
+                return {'success': False, 'error': f'Unsupported export format: {export_format}'}
+                
+        except Exception as e:
+            logger.error(f"Error exporting observation data: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def _export_as_text(self, observation, user_profile):
+        """Export observation as formatted text"""
+        header = self._generate_header(user_profile) if user_profile else ""
+        
+        content = f"""{header}
+FIELD OBSERVATION REPORT
+========================
+
+Observation ID: {observation['id']}
+Date/Time: {observation['timestamp']}
+Observer: {observation['observer']}
+Type: {observation['type'].replace('_', ' ').title()}
+Location: {observation['location']}
+
+DESCRIPTION:
+{observation['description']}
+
+COORDINATES:
+Latitude: {observation['coordinates']['latitude'] or 'Not provided'}
+Longitude: {observation['coordinates']['longitude'] or 'Not provided'}
+
+DATA QUALITY:
+Quality Level: {observation['data_quality']['level']}
+Quality Score: {observation['data_quality']['score']}%
+Quality Factors: {', '.join(observation['data_quality']['factors'])}
+
+MATCHED ORCHID RECORDS:
+"""
+        
+        for i, orchid in enumerate(observation['matched_orchids'], 1):
+            content += f"{i}. {orchid['scientific_name']} (ID: {orchid['id']})\n"
+        
+        if observation.get('environmental_conditions'):
+            content += f"\nENVIRONMENTAL CONDITIONS:\n{observation['environmental_conditions']}\n"
+        
+        content += f"\n---\nGenerated by The Orchid Continuum Science Platform\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        return {
+            'success': True,
+            'content': content,
+            'filename': f"observation_{observation['id']}.txt",
+            'mime_type': 'text/plain'
+        }
+    
+    def _export_as_json(self, observation, user_profile):
+        """Export observation as JSON"""
+        export_data = {
+            'metadata': {
+                'export_timestamp': datetime.now().isoformat(),
+                'exported_by': user_profile.get('name') if user_profile else 'Anonymous',
+                'platform': 'The Orchid Continuum Science Platform'
+            },
+            'user_profile': user_profile or {},
+            'observation': observation
+        }
+        
+        return {
+            'success': True,
+            'content': json.dumps(export_data, indent=2),
+            'filename': f"observation_{observation['id']}.json",
+            'mime_type': 'application/json'
+        }
+    
+    def _generate_header(self, user_profile):
+        """Generate header with user credentials"""
+        if not user_profile:
+            return ""
+        
+        header = f"""RESEARCHER INFORMATION:
+Name: {user_profile.get('name', 'Not provided')}
+Affiliation: {user_profile.get('affiliation', 'Not provided')}
+Credentials: {user_profile.get('credentials', 'Not provided')}
+Contact: {user_profile.get('email', 'Not provided')}
+
+"""
+        return header
     
     def _validate_observation(self, data):
         """Validate and standardize observation data"""
@@ -361,6 +601,62 @@ class ObservationDataIntegrator:
         
         return questions
     
+    def _export_as_word(self, observation, user_profile):
+        """Export observation as Word document (placeholder)"""
+        # Note: Full Word export would require python-docx library
+        return {
+            'success': False,
+            'error': 'Word export requires additional setup'
+        }
+    
+    def _export_as_pdf(self, observation, user_profile):
+        """Export observation as PDF (placeholder)"""
+        # Note: Full PDF export would require reportlab library
+        return {
+            'success': False,
+            'error': 'PDF export requires additional setup'
+        }
+    
+    def _export_as_jpeg(self, observation, user_profile):
+        """Export observation as JPEG image (placeholder)"""
+        return {
+            'success': False,
+            'error': 'JPEG export requires additional setup'
+        }
+    
+    def _export_as_csv(self, observation, user_profile):
+        """Export observation as CSV"""
+        import csv
+        import io
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        headers = ['Field', 'Value']
+        writer.writerow(headers)
+        
+        # Write observation data
+        writer.writerow(['Observation ID', observation['id']])
+        writer.writerow(['Timestamp', observation['timestamp']])
+        writer.writerow(['Observer', observation['observer']])
+        writer.writerow(['Type', observation['type']])
+        writer.writerow(['Location', observation['location']])
+        writer.writerow(['Description', observation['description']])
+        writer.writerow(['Quality Score', observation['data_quality']['score']])
+        writer.writerow(['Matched Orchids', len(observation['matched_orchids'])])
+        
+        if user_profile:
+            writer.writerow(['Researcher Name', user_profile.get('name', '')])
+            writer.writerow(['Affiliation', user_profile.get('affiliation', '')])
+        
+        return {
+            'success': True,
+            'content': output.getvalue(),
+            'filename': f"observation_{observation['id']}.csv",
+            'mime_type': 'text/csv'
+        }
+    
     def get_observation_summary(self):
         """Get summary of recent observations for widget display"""
         try:
@@ -554,6 +850,113 @@ def generate_hypothesis_from_observation():
     except Exception as e:
         logger.error(f"Error in generate_hypothesis_from_observation: {e}")
         return jsonify({'error': str(e)}), 500
+
+@science_obs_bp.route('/api/search-orchid-database', methods=['POST'])
+def search_orchid_database():
+    """API endpoint to search the orchid continuum database"""
+    try:
+        search_params = request.get_json() or {}
+        results = observation_integrator.search_orchid_database(search_params)
+        return jsonify(results)
+    except Exception as e:
+        logger.error(f"Error in search_orchid_database: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@science_obs_bp.route('/api/export-observation/<observation_id>/<export_format>')
+def export_observation(observation_id, export_format):
+    """API endpoint to export observation data"""
+    try:
+        # Get user profile from session if available
+        user_profile = session.get('user_profile', {})
+        
+        result = observation_integrator.export_observation_data(
+            observation_id, export_format, user_profile
+        )
+        
+        if result['success']:
+            # Create file response
+            file_content = result['content']
+            
+            if isinstance(file_content, str):
+                file_content = file_content.encode('utf-8')
+            
+            return send_file(
+                io.BytesIO(file_content),
+                mimetype=result['mime_type'],
+                as_attachment=True,
+                download_name=result['filename']
+            )
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        logger.error(f"Error in export_observation: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@science_obs_bp.route('/api/upload-observation-files', methods=['POST'])
+def upload_observation_files():
+    """API endpoint to handle file uploads for observations"""
+    try:
+        uploaded_files = request.files.getlist('files')
+        observation_data = request.form.to_dict()
+        
+        # Process observation with files
+        result = observation_integrator.collect_field_observation(
+            observation_data, uploaded_files
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error in upload_observation_files: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@science_obs_bp.route('/api/save-user-profile', methods=['POST'])
+def save_user_profile():
+    """API endpoint to save user profile and credentials"""
+    try:
+        profile_data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name']
+        for field in required_fields:
+            if field not in profile_data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Missing required field: {field}'
+                }), 400
+        
+        # Store in session (in production, store in database)
+        session['user_profile'] = {
+            'name': profile_data.get('name'),
+            'affiliation': profile_data.get('affiliation', ''),
+            'credentials': profile_data.get('credentials', ''),
+            'email': profile_data.get('email', ''),
+            'research_interests': profile_data.get('research_interests', ''),
+            'saved_at': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': 'User profile saved successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in save_user_profile: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@science_obs_bp.route('/api/get-user-profile')
+def get_user_profile():
+    """API endpoint to get current user profile"""
+    try:
+        profile = session.get('user_profile', {})
+        return jsonify({
+            'success': True,
+            'profile': profile
+        })
+    except Exception as e:
+        logger.error(f"Error in get_user_profile: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @science_obs_bp.route('/widget/science-observations')
 def science_observations_widget():
