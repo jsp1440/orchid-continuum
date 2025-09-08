@@ -142,6 +142,11 @@ def gary_partnership_demo():
     """Comprehensive partnership demo and proposal for Gary Yong Gee"""
     return render_template('gary_partnership_demo.html')
 
+@app.route('/gary-story-demo')
+def gary_story_demo():
+    """Story-driven Gary partnership demo with compelling narrative flow"""
+    return render_template('gary_partnership_demo_story.html')
+
 @app.route('/gary/upload')
 def gary_upload_page():
     """Simple photo upload page specifically for Gary Yong Gee"""
