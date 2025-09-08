@@ -73,7 +73,45 @@ from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
 from orchid_genetics_laboratory import register_genetics_laboratory
 from citizen_science_platform import citizen_science_bp
+
+# Create themed orchids system
+ORCHID_THEMES = {
+    'fragrant': {'name': 'Fragrant Orchids', 'keywords': ['fragrant', 'scented', 'perfume', 'vanilla', 'citrus', 'sweet']},
+    'miniature': {'name': 'Miniature Orchids', 'keywords': ['mini', 'miniature', 'small', 'compact', 'dwarf']},
+    'unusual': {'name': 'Unusual & Rare', 'keywords': ['unusual', 'rare', 'unique', 'strange', 'exotic', 'uncommon']},
+    'colorful': {'name': 'Colorful Displays', 'keywords': ['colorful', 'vibrant', 'bright', 'rainbow', 'multicolor']},
+    'species': {'name': 'Species Orchids', 'keywords': ['species', 'wild', 'natural', 'native', 'original']},
+    'hybrids': {'name': 'Modern Hybrids', 'keywords': ['hybrid', 'cross', 'breeding', 'modern', 'new']}
+}
 from philosophy_quiz_service import philosophy_quiz_service
+
+def get_orchids_by_theme(theme_keywords):
+    """Helper function to get orchids matching theme keywords"""
+    query = db.session.query(OrchidRecord).filter(
+        OrchidRecord.image_path.isnot(None),
+        OrchidRecord.image_path != '',
+        or_(
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.image_path.like('%.jpg'),
+            OrchidRecord.image_path.like('%.jpeg'),
+            OrchidRecord.image_path.like('%.png')
+        )
+    )
+    
+    # Search for theme keywords in various fields
+    keyword_filters = []
+    for keyword in theme_keywords:
+        keyword_filters.extend([
+            OrchidRecord.scientific_name.ilike(f'%{keyword}%'),
+            OrchidRecord.common_name.ilike(f'%{keyword}%'),
+            OrchidRecord.description.ilike(f'%{keyword}%'),
+            OrchidRecord.notes.ilike(f'%{keyword}%')
+        ])
+    
+    if keyword_filters:
+        query = query.filter(or_(*keyword_filters))
+        
+    return query.limit(48).all()
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
@@ -2755,6 +2793,87 @@ def members_gallery():
         logger.error(f"Error loading members gallery: {e}")
         flash('Unable to load members gallery', 'error')
         return redirect(url_for('gallery'))
+
+@app.route('/themed-orchids')
+@app.route('/themed-orchids/<theme>')
+def themed_orchids(theme=None):
+    """Display orchids organized by themes like fragrant, miniature, unusual, etc."""
+    try:
+        logger.info(f"🎨 Loading themed orchids page, theme: {theme}")
+        
+        # Get all themes for navigation
+        themes = ORCHID_THEMES
+        
+        # If no theme specified, show theme selection page
+        if not theme:
+            return render_template('themed_orchids_index.html', themes=themes)
+            
+        # Validate theme exists
+        if theme not in themes:
+            flash(f"Theme '{theme}' not found", "error")
+            return redirect(url_for('themed_orchids'))
+            
+        theme_info = themes[theme]
+        
+        # Get orchids for this theme
+        orchids = get_orchids_by_theme(theme_info['keywords'])
+        
+        logger.info(f"✅ Found {len(orchids)} orchids for theme '{theme}'")
+        
+        return render_template('themed_orchids.html', 
+                             orchids=orchids, 
+                             theme=theme,
+                             theme_info=theme_info,
+                             themes=themes,
+                             orchid_count=len(orchids))
+                             
+    except Exception as e:
+        logger.error(f"❌ Error in themed orchids: {e}")
+        flash("Error loading themed orchids", "error")
+        return redirect(url_for('gallery'))
+
+@app.route('/api/themed-orchids')
+@app.route('/api/themed-orchids/<theme>')
+def api_themed_orchids(theme=None):
+    """API endpoint for themed orchids data"""
+    try:
+        if not theme:
+            # Return all available themes
+            return jsonify({
+                'themes': ORCHID_THEMES,
+                'success': True
+            })
+            
+        if theme not in ORCHID_THEMES:
+            return jsonify({'error': f'Theme {theme} not found', 'success': False}), 404
+            
+        theme_info = ORCHID_THEMES[theme]
+        orchids = get_orchids_by_theme(theme_info['keywords'])
+        
+        orchid_data = []
+        for orchid in orchids:
+            orchid_data.append({
+                'id': orchid.id,
+                'scientific_name': orchid.scientific_name,
+                'common_name': orchid.common_name,
+                'description': orchid.description,
+                'google_drive_id': orchid.google_drive_id,
+                'image_path': orchid.image_path,
+                'location': orchid.location,
+                'discovery_date': orchid.discovery_date.isoformat() if orchid.discovery_date else None
+            })
+            
+        return jsonify({
+            'orchids': orchid_data,
+            'theme': theme,
+            'theme_info': theme_info,
+            'count': len(orchid_data),
+            'success': True
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error in themed orchids API: {e}")
+        return jsonify({'error': 'Internal server error', 'success': False}), 500
 
 @app.route('/gallery')
 def gallery():
