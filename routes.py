@@ -60,6 +60,7 @@ from admin_control_center import register_admin_control_center
 from eol_integration import EOLIntegrator
 from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
+from orchid_genetics_laboratory import register_genetics_laboratory
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
