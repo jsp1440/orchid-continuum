@@ -1828,11 +1828,19 @@
                 weatherBtn.textContent = '☁️ Show Weather Overlay';
                 weatherLegend.style.display = 'none';
             } else {
-                // Show weather overlay
-                await loadWeatherOverlay();
-                showWeatherOverlay = true;
-                weatherBtn.textContent = '🌧️ Hide Weather Overlay';
-                weatherLegend.style.display = 'block';
+                // Show weather overlay with proper error handling
+                try {
+                    await loadWeatherOverlay();
+                    showWeatherOverlay = true;
+                    weatherBtn.textContent = '🌧️ Hide Weather Overlay';
+                    weatherLegend.style.display = 'block';
+                } catch (error) {
+                    console.error('Failed to load weather overlay:', error);
+                    // Keep overlay off if it fails
+                    showWeatherOverlay = false;
+                    weatherBtn.textContent = '☁️ Show Weather Overlay';
+                    weatherLegend.style.display = 'none';
+                }
             }
         }
         
@@ -1840,9 +1848,9 @@
             try {
                 console.log('🌤️ Loading weather overlay...');
                 
-                // Add timeout to the fetch request
+                // Add shorter timeout to the fetch request
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
                 
                 const response = await fetch('/api/global-weather-patterns', {
                     signal: controller.signal
@@ -1875,20 +1883,37 @@
             } catch (error) {
                 console.error('Error loading weather overlay:', error);
                 
+                // Load fallback weather points when API fails
+                console.log('🌤️ Loading fallback weather points...');
+                loadFallbackWeatherPoints();
+                
                 // Show user-friendly error
                 const satelliteStatus = document.getElementById('satelliteStatus');
                 if (satelliteStatus) {
-                    satelliteStatus.textContent = 'Weather overlay unavailable - check connection';
-                    satelliteStatus.style.color = '#ff6b6b';
+                    satelliteStatus.textContent = 'Weather overlay (fallback data)';
+                    satelliteStatus.style.color = '#ffa500';
                 }
                 
-                // Revert button state
-                const weatherBtn = document.getElementById('weatherBtn');
-                if (weatherBtn) {
-                    weatherBtn.textContent = '☁️ Show Weather Overlay';
-                }
-                showWeatherOverlay = false;
+                // Re-throw to be caught by toggleWeatherOverlay
+                throw error;
             }
+        }
+        
+        function loadFallbackWeatherPoints() {
+            // Create fallback weather points when API fails
+            const fallbackPoints = [
+                {name: 'New York', lat: 40.7, lng: -74.0, temperature: 15, humidity: 65},
+                {name: 'London', lat: 51.5, lng: -0.1, temperature: 12, humidity: 78},
+                {name: 'Tokyo', lat: 35.7, lng: 139.7, temperature: 18, humidity: 70},
+                {name: 'Sydney', lat: -33.9, lng: 151.2, temperature: 22, humidity: 60},
+                {name: 'Rio', lat: -22.9, lng: -43.2, temperature: 28, humidity: 80}
+            ];
+            
+            fallbackPoints.forEach(weather => {
+                createWeatherPoint(weather);
+            });
+            
+            console.log(`🌤️ Loaded ${fallbackPoints.length} fallback weather points`);
         }
         
         function createWeatherPoint(weather) {
