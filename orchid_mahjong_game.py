@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from models import MahjongGame, MahjongPlayer, GameChatMessage, User
 
-mahjong_bp = Blueprint('mahjong', __name__)
+mahjong_bp = Blueprint('orchid_mahjong_widget', __name__)
 
 class OrchidMahjongEngine:
     def __init__(self):
