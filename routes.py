@@ -73,6 +73,7 @@ from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
 from orchid_genetics_laboratory import register_genetics_laboratory
 from citizen_science_platform import citizen_science_bp
+from quantum_care_routes import register_quantum_care_routes
 
 # Create themed orchids system
 ORCHID_THEMES = {
@@ -8744,3 +8745,6 @@ def add_unidentified_navigation():
 
 # Register genetics laboratory
 register_genetics_laboratory(app)
+
+# Register quantum care routes
+register_quantum_care_routes(app)
