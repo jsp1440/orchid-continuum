@@ -195,9 +195,14 @@ def gary_partner_dashboard():
     """Gary's partner dashboard - shows automated sync status"""
     return send_file('static/gary-partner-dashboard.html')
 
-@app.route('/partnership-demo/gary-yong-gee')
+@app.route('/gary-partnership-demo')
 def gary_partnership_demo():
-    """Comprehensive partnership demo and proposal for Gary Yong Gee"""
+    """Gary Yong Gee partnership demo - showing trait analysis research goals"""
+    return render_template('gary_partnership_demo.html')
+
+@app.route('/partnership-demo/gary-yong-gee')
+def gary_partnership_demo_alt():
+    """Alternative route for Gary Yong Gee partnership demo"""
     return render_template('gary_partnership_demo.html')
 
 @app.route('/gary-story-demo')
