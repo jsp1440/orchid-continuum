@@ -7859,6 +7859,22 @@ def compare_page():
 from hollywood_orchids_widget import hollywood_orchids
 app.register_blueprint(hollywood_orchids, url_prefix='/widgets/hollywood-orchids')
 
+# Register Orchid Trivia Challenge Widget
+try:
+    from orchid_trivia_widget import orchid_trivia
+    app.register_blueprint(orchid_trivia, url_prefix='/widgets/orchid-trivia')
+    logger.info("Orchid Trivia Challenge Widget registered successfully")
+except ImportError as e:
+    logger.warning(f"Orchid Trivia Widget not available: {e}")
+
+# Register Orchid Mahjong Game Widget
+try:
+    from orchid_mahjong_game import mahjong_bp
+    app.register_blueprint(mahjong_bp, url_prefix='/widgets/orchid-mahjong')
+    logger.info("Orchid Mahjong Game Widget registered successfully")
+except ImportError as e:
+    logger.warning(f"Orchid Mahjong Widget not available: {e}")
+
 # Research Literature and Writing Lab Systems
 from research_literature_system import research_literature
 from research_writing_lab import writing_lab
