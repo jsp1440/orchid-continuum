@@ -480,11 +480,95 @@ class OrchidWidgetSystem:
     
     def _get_trivia_data(self, **kwargs):
         """Get trivia game data for widget"""
-        return {'questions': []}
+        # Sample trivia questions from the orchid database
+        sample_questions = [
+            {
+                "category": "Basic Knowledge",
+                "difficulty": "easy",
+                "question": "What is the most common orchid found in grocery stores?",
+                "options": ["Phalaenopsis", "Cattleya", "Dendrobium", "Oncidium"],
+                "correct": 0,
+                "explanation": "Phalaenopsis, also called 'Moth Orchids', are the most popular orchids sold commercially.",
+                "points": 10,
+                "image": "images/phalaenopsis_moth_orchid.jpg"
+            },
+            {
+                "category": "Colors",
+                "difficulty": "easy", 
+                "question": "Which color do orchids NOT naturally produce?",
+                "options": ["Blue", "Purple", "White", "Yellow"],
+                "correct": 0,
+                "explanation": "True blue orchids don't exist naturally - blue orchids are typically dyed.",
+                "points": 10,
+                "image": "images/blue_orchid_dyed.jpg"
+            },
+            {
+                "category": "Growing",
+                "difficulty": "easy",
+                "question": "What do most orchids grow on in nature?",
+                "options": ["Soil", "Trees", "Rocks", "Water"],
+                "correct": 1,
+                "explanation": "Most orchids are epiphytes, meaning they grow on trees and get nutrients from the air and rain.",
+                "points": 10,
+                "image": "images/epiphyte_orchid_tree.jpg"
+            },
+            {
+                "category": "Anatomy",
+                "difficulty": "medium",
+                "question": "What is the specialized lip petal of an orchid called?",
+                "options": ["Labellum", "Column", "Pollinia", "Sepals"],
+                "correct": 0,
+                "explanation": "The labellum is the modified lip petal that often serves as a landing platform for pollinators.",
+                "points": 20,
+                "image": "images/orchid_labellum_anatomy.jpg"
+            },
+            {
+                "category": "Biology",
+                "difficulty": "medium",
+                "question": "What are keikis in orchid growing?",
+                "options": ["Diseases", "Baby plants", "Fertilizers", "Pot types"],
+                "correct": 1,
+                "explanation": "Keiki is Hawaiian for 'baby' - these are small plantlets that grow on the mother plant.",
+                "points": 20,
+                "image": "images/orchid_keiki_baby.jpg"
+            }
+        ]
+        return {'questions': sample_questions}
     
     def _get_mahjong_data(self, **kwargs):
         """Get Mahjong game data for widget"""
-        return {'tiles': []}
+        # Generate orchid-themed mahjong tiles
+        orchid_tiles = [
+            # Cattleya suit (purple theme)
+            {'id': 'cattleya_1', 'suit': 'cattleya', 'number': 1, 'symbol': '🌺', 'color': '#9B59B6', 'name': 'Cattleya trianae'},
+            {'id': 'cattleya_2', 'suit': 'cattleya', 'number': 2, 'symbol': '🌺', 'color': '#9B59B6', 'name': 'Cattleya mossiae'},
+            {'id': 'cattleya_3', 'suit': 'cattleya', 'number': 3, 'symbol': '🌺', 'color': '#9B59B6', 'name': 'Cattleya warscewiczii'},
+            {'id': 'cattleya_4', 'suit': 'cattleya', 'number': 4, 'symbol': '🌺', 'color': '#9B59B6', 'name': 'Cattleya maxima'},
+            
+            # Dendrobium suit (blue theme)
+            {'id': 'dendrobium_1', 'suit': 'dendrobium', 'number': 1, 'symbol': '💐', 'color': '#3498DB', 'name': 'Dendrobium nobile'},
+            {'id': 'dendrobium_2', 'suit': 'dendrobium', 'number': 2, 'symbol': '💐', 'color': '#3498DB', 'name': 'Dendrobium kingianum'},
+            {'id': 'dendrobium_3', 'suit': 'dendrobium', 'number': 3, 'symbol': '💐', 'color': '#3498DB', 'name': 'Dendrobium phalaenopsis'},
+            {'id': 'dendrobium_4', 'suit': 'dendrobium', 'number': 4, 'symbol': '💐', 'color': '#3498DB', 'name': 'Dendrobium spectabile'},
+            
+            # Phalaenopsis suit (pink theme)
+            {'id': 'phalaenopsis_1', 'suit': 'phalaenopsis', 'number': 1, 'symbol': '🦋', 'color': '#E91E63', 'name': 'Phalaenopsis amabilis'},
+            {'id': 'phalaenopsis_2', 'suit': 'phalaenopsis', 'number': 2, 'symbol': '🦋', 'color': '#E91E63', 'name': 'Phalaenopsis schilleriana'},
+            {'id': 'phalaenopsis_3', 'suit': 'phalaenopsis', 'number': 3, 'symbol': '🦋', 'color': '#E91E63', 'name': 'Phalaenopsis stuartiana'},
+            {'id': 'phalaenopsis_4', 'suit': 'phalaenopsis', 'number': 4, 'symbol': '🦋', 'color': '#E91E63', 'name': 'Phalaenopsis aphrodite'},
+            
+            # Honor tiles (AOS Awards)
+            {'id': 'am_aos', 'suit': 'honors', 'type': 'AM/AOS', 'symbol': '🏆', 'color': '#F39C12', 'name': 'Award of Merit'},
+            {'id': 'fcc_aos', 'suit': 'honors', 'type': 'FCC/AOS', 'symbol': '🥇', 'color': '#E74C3C', 'name': 'First Class Certificate'},
+            {'id': 'hcc_aos', 'suit': 'honors', 'type': 'HCC/AOS', 'symbol': '🎖️', 'color': '#27AE60', 'name': 'Highly Commended Certificate'},
+            {'id': 'cbr_aos', 'suit': 'honors', 'type': 'CBR/AOS', 'symbol': '📜', 'color': '#8E44AD', 'name': 'Certificate of Botanical Recognition'},
+            
+            # Dragon tiles (Growing Conditions)
+            {'id': 'temp_dragon', 'suit': 'dragons', 'type': 'Temperature', 'symbol': '🌡️', 'color': '#E67E22', 'name': 'Temperature Control'},
+            {'id': 'light_dragon', 'suit': 'dragons', 'type': 'Light', 'symbol': '☀️', 'color': '#F1C40F', 'name': 'Light Requirements'},
+            {'id': 'water_dragon', 'suit': 'dragons', 'type': 'Water', 'symbol': '💧', 'color': '#3498DB', 'name': 'Watering Schedule'}
+        ]
+        return {'tiles': orchid_tiles}
     
     def _get_orchid_explorer_pro_data(self, **kwargs):
         """Get combined geographic and climate data"""
