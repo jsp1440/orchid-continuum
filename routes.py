@@ -200,6 +200,11 @@ def gary_partnership_demo():
     """Gary Yong Gee partnership demo - showing trait analysis research goals"""
     return render_template('gary_partnership_demo.html')
 
+@app.route('/partnership-proposal')
+def partnership_proposal():
+    """Clean partnership proposal for Gary Yong Gee"""
+    return render_template('partnership_proposal.html')
+
 @app.route('/partnership-demo/gary-yong-gee')
 def gary_partnership_demo_alt():
     """Alternative route for Gary Yong Gee partnership demo"""
