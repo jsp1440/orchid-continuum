@@ -373,115 +373,66 @@ WIDGET_JS = r"""
         .slider:before{position:absolute; content:""; height:18px; width:18px; left:3px; top:3px; background:white; transition:.2s; border-radius:50%}
         input:checked + .slider{background:#4caf50}
         input:checked + .slider:before{transform:translateX(22px)}
-        input,label{margin:0 4px 0 0; font-size:14px}
-        button{padding:8px 16px; border:none; border-radius:4px; background:#007bff; color:white; cursor:pointer}
-        button:hover{background:#0056b3}
-        .result{margin-top:8px; padding:8px; background:#f8f9fa; border-radius:4px; font-size:13px}
+        button{padding:8px 12px; border:1px solid #444; background:#fff; cursor:pointer; border-radius:6px}
+        .out{background:#f9fafb; border-radius:6px; padding:8px; margin-top:8px; font-size:14px}
+        label.small{font-size:12px; color:#555}
       `;
+      this.shadowRoot.innerHTML = '';
       this.shadowRoot.appendChild(s);
-      
-      const container = document.createElement('div');
-      container.className = 'card';
-      container.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:8px">🌺 Orchid Quantum Care Widget</div>
+      const card = document.createElement('div'); card.className='card';
+      card.innerHTML = `
+        <div class="row"><strong>Orchid Care Optimizer</strong></div>
         <div class="row">
-          <label>Species:</label>
-          <input type="text" id="species" placeholder="e.g., Phalaenopsis equestris" value="${this.scientificName}" style="flex:1; padding:4px">
+          <label class="small">Temp (°C)</label><input id="temp" type="number" value="24" style="width:70px">
+          <label class="small">RH (%)</label><input id="rh" type="number" value="60" style="width:70px">
+          <label class="small">Lux</label><input id="lux" type="number" value="8000" style="width:90px">
         </div>
         <div class="row">
-          <label>Temp (°C):</label>
-          <input type="number" id="temp" value="22" min="10" max="35" style="width:60px; padding:4px">
-          <label>RH (%):</label>
-          <input type="number" id="rh" value="65" min="30" max="90" style="width:60px; padding:4px">
-        </div>
-        <div class="row">
-          <label>Light (lux):</label>
-          <input type="number" id="lux" value="15000" min="1000" max="50000" style="width:80px; padding:4px">
-        </div>
-        <div class="row">
-          <label style="margin-right:8px">Quantum coherence:</label>
+          <label class="small">Quantum</label>
           <label class="switch">
-            <input type="checkbox" id="quantum">
+            <input id="quantum" type="checkbox">
             <span class="slider"></span>
           </label>
+          <button id="go">Simulate</button>
         </div>
-        <div class="row">
-          <button id="simBtn">Simulate Care</button>
-          <button id="camBtn">CAM Analysis</button>
-        </div>
-        <div id="results"></div>
+        <div class="out" id="out">Ready.</div>
       `;
-      this.shadowRoot.appendChild(container);
-      
-      this.shadowRoot.getElementById('simBtn').onclick = () => this.simulateCare();
-      this.shadowRoot.getElementById('camBtn').onclick = () => this.simulateCam();
-    }
-    
-    async simulateCare(){
-      const species = this.shadowRoot.getElementById('species').value;
-      const temp = parseFloat(this.shadowRoot.getElementById('temp').value);
-      const rh = parseFloat(this.shadowRoot.getElementById('rh').value);
-      const lux = parseFloat(this.shadowRoot.getElementById('lux').value);
-      const quantum = this.shadowRoot.getElementById('quantum').checked;
-      
-      const payload = {scientific_name: species, temp_c: temp, rh: rh, lux: lux, quantum: quantum};
-      try {
-        const resp = await fetch(`${this.apiBase}/simulate/care`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload)
-        });
-        const data = await resp.json();
-        this.shadowRoot.getElementById('results').innerHTML = `
-          <div class="result">
-            <strong>Care Recommendations:</strong><br>
-            VPD: ${data.vpd_kpa} kPa<br>
-            Target PPFD: ${data.target_ppfd} μmol/m²/s<br>
-            Target RH: ${data.target_rh[0]}–${data.target_rh[1]}%<br>
-            Water every: ${data.watering_days.join(', ')} days<br>
-            <em>${data.notes}</em>
-          </div>
-        `;
-      } catch (e) {
-        this.shadowRoot.getElementById('results').innerHTML = `<div class="result" style="color:red">Error: ${e.message}</div>`;
-      }
-    }
-    
-    async simulateCam(){
-      const species = this.shadowRoot.getElementById('species').value;
-      const temp = parseFloat(this.shadowRoot.getElementById('temp').value);
-      const rh = parseFloat(this.shadowRoot.getElementById('rh').value);
-      const quantum = this.shadowRoot.getElementById('quantum').checked;
-      
-      const payload = {scientific_name: species, noct_temp_c: temp, noct_rh: rh, photoperiod_hours: 12, quantum: quantum};
-      try {
-        const resp = await fetch(`${this.apiBase}/simulate/cam`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload)
-        });
-        const data = await resp.json();
-        this.shadowRoot.getElementById('results').innerHTML = `
-          <div class="result">
-            <strong>CAM Analysis:</strong><br>
-            Expected TA swing: ${data.expected_ta_swing[0]}–${data.expected_ta_swing[1]} μmol/g FW<br>
-            Phase I: ${data.phase_schedule['Phase I']}<br>
-            <em>${data.uncertainty}</em>
-          </div>
-        `;
-      } catch (e) {
-        this.shadowRoot.getElementById('results').innerHTML = `<div class="result" style="color:red">Error: ${e.message}</div>`;
-      }
+      this.shadowRoot.appendChild(card);
+      const $ = id => this.shadowRoot.getElementById(id);
+      $('#go').addEventListener('click', async () => {
+        const payload = {
+          temp_c: parseFloat($('#temp').value),
+          rh: parseFloat($('#rh').value),
+          lux: parseFloat($('#lux').value),
+          quantum: $('#quantum').checked
+        };
+        if (this.speciesId) payload.species_id = Number(this.speciesId);
+        if (this.scientificName) payload.scientific_name = this.scientificName;
+        $('#out').textContent = 'Simulating...';
+        try{
+          const res = await fetch(this.apiBase.replace(/\/$/,'') + '/simulate/care', {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          $('#out').innerHTML =
+            `VPD: <b>${data.vpd_kpa} kPa</b><br>` +
+            `Target PPFD: <b>${data.target_ppfd}</b><br>`+
+            `Target RH: <b>${data.target_rh[0]}–${data.target_rh[1]}%</b><br>`+
+            `Watering: days <b>${data.watering_days.join(', ')}</b><br>`+
+            `<i>${data.notes}</i>`;
+        } catch(e){
+          $('#out').textContent = 'Error: ' + (e.message || e);
+        }
+      });
     }
   }
-  
   customElements.define('orchid-quantum-widget', OrchidQuantumWidget);
 })();
 """
 
-@app.get("/public/quantum-toggle-widget.js", response_class=PlainTextResponse)
-def widget_js():
-    return WIDGET_JS
+@app.get("/public/quantum-toggle-widget.js")
+def serve_widget():
+    return PlainTextResponse(WIDGET_JS, media_type="application/javascript")
 
 if __name__ == "__main__":
     import uvicorn
