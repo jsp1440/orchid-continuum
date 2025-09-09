@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Quantum Care Widget - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-4">
+                <h1 class="display-5 text-gradient mb-3">🧬 Quantum Orchid Care</h1>
+                <p class="lead">Advanced care simulation with quantum coherence calculations</p>
+            </div>
+            
+            <!-- Quantum Care Widget -->
+            <div class="card border-0 shadow-lg mb-4">
+                <div class="card-header bg-gradient text-white">
+                    <h5 class="mb-0"><i data-feather="zap"></i> Quantum-Enhanced Care Simulation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="species" class="form-label">Species</label>
+                                <input type="text" class="form-control" id="species" placeholder="e.g., Phalaenopsis equestris">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="temp" class="form-label">Temperature (°C)</label>
+                                        <input type="number" class="form-control" id="temp" value="22" min="10" max="35">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="humidity" class="form-label">Humidity (%)</label>
+                                        <input type="number" class="form-control" id="humidity" value="65" min="30" max="90">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="lux" class="form-label">Light (Lux)</label>
+                                <input type="number" class="form-control" id="lux" value="15000" min="1000" max="50000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="quantumMode">
+                                    <label class="form-check-label" for="quantumMode">
+                                        <strong>Quantum Coherence Mode</strong>
+                                        <br><small class="text-muted">Apply quantum corrections to photosynthetic efficiency</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-lg" onclick="simulateCare()">
+                                    <i data-feather="cpu"></i> Simulate Care
+                                </button>
+                                <button class="btn btn-success" onclick="simulateCAM()">
+                                    <i data-feather="moon"></i> CAM Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Display -->
+            <div id="results" class="d-none">
+                <div class="card border-0 shadow">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i data-feather="bar-chart-2"></i> Analysis Results</h6>
+                    </div>
+                    <div class="card-body" id="resultsContent">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Educational Content -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <h6><i data-feather="book-open"></i> About Quantum-Enhanced Care</h6>
+                    <p class="small text-muted mb-0">
+                        This system applies quantum coherence theory to photosynthetic processes, calculating optimal 
+                        care parameters based on VPD (Vapor Pressure Deficit), PPFD (Photosynthetic Photon Flux Density), 
+                        and quantum tunneling effects in chlorophyll complexes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+feather.replace();
+
+async function simulateCare() {
+    const data = {
+        scientific_name: document.getElementById('species').value,
+        temp_c: parseFloat(document.getElementById('temp').value),
+        rh: parseFloat(document.getElementById('humidity').value),
+        lux: parseFloat(document.getElementById('lux').value),
+        quantum: document.getElementById('quantumMode').checked
+    };
+    
+    try {
+        const response = await fetch('/api/quantum/simulate-care', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        displayResults('Care Simulation Results', result);
+    } catch (error) {
+        displayError('Error running care simulation: ' + error.message);
+    }
+}
+
+async function simulateCAM() {
+    const data = {
+        scientific_name: document.getElementById('species').value,
+        noct_temp_c: parseFloat(document.getElementById('temp').value),
+        noct_rh: parseFloat(document.getElementById('humidity').value),
+        photoperiod_hours: 12,
+        quantum: document.getElementById('quantumMode').checked
+    };
+    
+    try {
+        const response = await fetch('/api/quantum/simulate-cam', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        displayCAMResults('CAM Photosynthesis Analysis', result);
+    } catch (error) {
+        displayError('Error running CAM analysis: ' + error.message);
+    }
+}
+
+function displayResults(title, result) {
+    const content = `
+        <h6>${title}</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>VPD:</strong> ${result.vpd_kpa} kPa</p>
+                <p><strong>Target PPFD:</strong> ${result.target_ppfd} μmol/m²/s</p>
+                <p><strong>Target RH:</strong> ${result.target_rh[0]}–${result.target_rh[1]}%</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Watering Schedule:</strong> Every ${result.watering_days.join(', ')} days</p>
+                <p><strong>Notes:</strong> ${result.notes}</p>
+                <p><small class="text-muted">${result.uncertainty}</small></p>
+            </div>
+        </div>
+    `;
+    document.getElementById('resultsContent').innerHTML = content;
+    document.getElementById('results').classList.remove('d-none');
+}
+
+function displayCAMResults(title, result) {
+    const phases = Object.entries(result.phase_schedule).map(([phase, desc]) => 
+        `<li><strong>${phase}:</strong> ${desc}</li>`
+    ).join('');
+    
+    const content = `
+        <h6>${title}</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Expected TA Swing:</strong> ${result.expected_ta_swing[0]}–${result.expected_ta_swing[1]} μmol/g FW</p>
+                <p><strong>Sensitivity:</strong></p>
+                <ul class="list-unstyled ms-3">
+                    <li>dTA/dRH: ${result.sensitivity.dTA_dRH}</li>
+                    <li>dTA/dT: ${result.sensitivity.dTA_dT}</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <p><strong>CAM Phases:</strong></p>
+                <ol class="small">${phases}</ol>
+                <p><small class="text-muted">${result.uncertainty}</small></p>
+            </div>
+        </div>
+    `;
+    document.getElementById('resultsContent').innerHTML = content;
+    document.getElementById('results').classList.remove('d-none');
+}
+
+function displayError(message) {
+    const content = `<div class="alert alert-danger" role="alert">${message}</div>`;
+    document.getElementById('resultsContent').innerHTML = content;
+    document.getElementById('results').classList.remove('d-none');
+}
+</script>
+{% endblock %}
