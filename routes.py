@@ -7867,13 +7867,13 @@ try:
 except ImportError as e:
     logger.warning(f"Orchid Trivia Widget not available: {e}")
 
-# Register Orchid Mahjong Game Widget
-try:
-    from orchid_mahjong_game import mahjong_bp
-    app.register_blueprint(mahjong_bp, url_prefix='/widgets/orchid-mahjong')
-    logger.info("Orchid Mahjong Game Widget registered successfully")
-except ImportError as e:
-    logger.warning(f"Orchid Mahjong Widget not available: {e}")
+# Register Orchid Mahjong Game Widget - TEMPORARILY DISABLED DUE TO BLUEPRINT CONFLICT
+# try:
+#     from orchid_mahjong_game import mahjong_bp
+#     app.register_blueprint(mahjong_bp, url_prefix='/widgets/orchid-mahjong')
+#     logger.info("Orchid Mahjong Game Widget registered successfully")
+# except ImportError as e:
+#     logger.warning(f"Orchid Mahjong Widget not available: {e}")
 
 # Research Literature and Writing Lab Systems
 from research_literature_system import research_literature
