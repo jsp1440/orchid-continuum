@@ -515,8 +515,9 @@ literature_engine = LiteratureSearchEngine()
 # Routes
 @literature_bp.route('/')
 def literature_home():
-    """Literature search interface"""
-    return render_template('literature/search_interface.html')
+    """Literature search interface - redirect to research wizard"""
+    from flask import redirect, url_for
+    return redirect('/research/research-wizard?stage=hypothesis')
 
 @literature_bp.route('/search', methods=['POST'])
 def search_literature():
