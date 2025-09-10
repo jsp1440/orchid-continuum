@@ -4,9 +4,10 @@ Analyzes image names vs database classifications to identify misclassifications
 """
 
 import re
-from models import OrchidRecord, db
 from typing import Dict, List, Tuple, Optional
 import logging
+
+# Avoid circular imports by importing in functions where needed
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class TaxonomyVerificationSystem:
             'Drac': 'Dracula'
         }
 
-    def analyze_filename_vs_classification(self, orchid_record: OrchidRecord) -> Dict:
+    def analyze_filename_vs_classification(self, orchid_record) -> Dict:
         """
         Analyze if the filename suggests a different genus than the database classification
         """
@@ -162,6 +163,8 @@ class TaxonomyVerificationSystem:
 
     def scan_all_records(self, genus_filter: str = None) -> List[Dict]:
         """Scan all records for potential taxonomy issues"""
+        from models import OrchidRecord
+        
         query = OrchidRecord.query
         if genus_filter:
             query = query.filter_by(genus=genus_filter)
@@ -199,6 +202,8 @@ class TaxonomyVerificationSystem:
 
     def get_taxonomy_statistics(self) -> Dict:
         """Get statistics about taxonomy issues in the database"""
+        from models import OrchidRecord, db
+        
         stats = {
             'total_records': OrchidRecord.query.count(),
             'by_genus': {},
