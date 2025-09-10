@@ -8748,3 +8748,7 @@ register_genetics_laboratory(app)
 
 # Register quantum care routes
 register_quantum_care_routes(app)
+
+@app.route("/lab/ga3_sarcochilus")
+def ga3_sarcochilus():
+    return render_template("lab/ga3_sarcochilus.html")
