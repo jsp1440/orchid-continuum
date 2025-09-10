@@ -8756,3 +8756,11 @@ def ga3_sarcochilus():
 # Register FCOS Judge PWA routes
 from routes_fcos_judge import register_fcos_judge_routes
 register_fcos_judge_routes(app)
+
+# Register Processing Monitor Routes
+try:
+    from processing_monitor_routes import register_processing_monitor_routes
+    register_processing_monitor_routes(app)
+    logger.info("🔍 Processing Pipeline Monitor registered successfully")
+except ImportError as e:
+    logger.warning(f"Processing monitor not available: {e}")
