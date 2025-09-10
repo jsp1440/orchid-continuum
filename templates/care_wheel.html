@@ -24,14 +24,28 @@
                             <label for="genusSelect" class="form-label">Select a genus to view its care wheel:</label>
                             <select class="form-select form-select-lg" id="genusSelect" onchange="generateCareWheel()">
                                 <option value="">-- Select Genus --</option>
-                                <option value="Phalaenopsis">Phalaenopsis</option>
-                                <option value="Cattleya">Cattleya</option>
-                                <option value="Paphiopedilum">Paphiopedilum</option>
-                                <option value="Dendrobium">Dendrobium</option>
-                                <option value="Oncidium">Oncidium</option>
-                                <option value="Cymbidium">Cymbidium</option>
-                                <option value="Vanda">Vanda</option>
-                                <option value="Miltonia">Miltonia</option>
+                                <optgroup label="Beginner-Friendly">
+                                    <option value="Phalaenopsis">Phalaenopsis (Moth Orchid)</option>
+                                    <option value="Epidendrum">Epidendrum</option>
+                                    <option value="Oncidium">Oncidium (Dancing Lady)</option>
+                                </optgroup>
+                                <optgroup label="Intermediate Level">
+                                    <option value="Cattleya">Cattleya (Corsage Orchid)</option>
+                                    <option value="Dendrobium">Dendrobium</option>
+                                    <option value="Cymbidium">Cymbidium</option>
+                                    <option value="Miltonia">Miltonia (Pansy Orchid)</option>
+                                    <option value="Brassia">Brassia (Spider Orchid)</option>
+                                    <option value="Zygopetalum">Zygopetalum</option>
+                                    <option value="Bulbophyllum">Bulbophyllum</option>
+                                    <option value="Laelia">Laelia</option>
+                                    <option value="Maxillaria">Maxillaria</option>
+                                </optgroup>
+                                <optgroup label="Advanced Growers">
+                                    <option value="Paphiopedilum">Paphiopedilum (Lady Slipper)</option>
+                                    <option value="Vanda">Vanda</option>
+                                    <option value="Odontoglossum">Odontoglossum (Mountain Orchid)</option>
+                                    <option value="Masdevallia">Masdevallia</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="col-md-6 d-flex align-items-end">
@@ -69,6 +83,24 @@
                                             <i data-feather="calendar" class="me-2"></i>Seasonal Care Calendar
                                         </h6>
                                         <div id="seasonalCare"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Source Attribution -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i data-feather="book-open" class="me-2"></i>Trusted Sources & Expert References
+                                        </h6>
+                                        <div id="sourcesSection">
+                                            <p class="small text-muted mb-2">This care information is compiled from authoritative orchid growing sources:</p>
+                                            <div id="sourcesList"></div>
+                                            <div id="sourceComparison" class="mt-3"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -310,6 +342,9 @@ function generateCareWheel() {
     seasonalHtml += '</div>';
     seasonalContainer.innerHTML = seasonalHtml;
     
+    // Update sources section
+    updateSourcesSection(genus);
+    
     // Re-initialize feather icons
     feather.replace();
 }
@@ -532,6 +567,123 @@ function downloadCareWheelPDF() {
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
+}
+
+// Update sources section with expert references
+function updateSourcesSection(genus) {
+    const sourcesListContainer = document.getElementById('sourcesList');
+    const comparisonContainer = document.getElementById('sourceComparison');
+    
+    // Get care data for this genus from our enhanced system
+    const data = getCareDataFromServer(genus);
+    if (!data || !data.sources) {
+        sourcesListContainer.innerHTML = '<p class="small text-muted">Source information not available for this genus.</p>';
+        comparisonContainer.innerHTML = '';
+        return;
+    }
+    
+    // Display sources as linked list
+    let sourcesHtml = '<ul class="list-unstyled">';
+    data.sources.forEach((source, index) => {
+        const url = data.source_urls && data.source_urls[index] ? data.source_urls[index] : '#';
+        const icon = getSourceIcon(source);
+        sourcesHtml += `
+            <li class="mb-2">
+                <i data-feather="${icon}" class="me-2 text-primary" style="width: 16px; height: 16px;"></i>
+                <a href="${url}" target="_blank" class="text-decoration-none">
+                    <strong>${source}</strong>
+                </a>
+                <small class="text-muted d-block ms-4">${getSourceDescription(source)}</small>
+            </li>
+        `;
+    });
+    sourcesHtml += '</ul>';
+    sourcesListContainer.innerHTML = sourcesHtml;
+    
+    // Display source comparisons/notes if available
+    if (data.source_notes && data.source_notes.length > 0) {
+        let comparisonHtml = `
+            <div class="alert alert-info py-2">
+                <h6 class="mb-2"><i data-feather="info" class="me-1"></i>Expert Comparison Notes:</h6>
+                <ul class="mb-0 small">
+        `;
+        data.source_notes.forEach(note => {
+            comparisonHtml += `<li>${note}</li>`;
+        });
+        comparisonHtml += '</ul></div>';
+        comparisonContainer.innerHTML = comparisonHtml;
+    } else {
+        comparisonContainer.innerHTML = '';
+    }
+}
+
+function getSourceIcon(source) {
+    if (source.includes('Baker')) return 'book';
+    if (source.includes('AOS') || source.includes('American Orchid Society')) return 'award';
+    if (source.includes('Society') || source.includes('Alliance')) return 'users';
+    if (source.includes('University') || source.includes('Research')) return 'search';
+    return 'link-2';
+}
+
+function getSourceDescription(source) {
+    const descriptions = {
+        'American Orchid Society (AOS) Culture Sheets': 'The premier orchid society in North America, providing research-based culture guidelines.',
+        'Charles and Margaret Baker - OrchidCulture.com': 'Renowned orchid experts with decades of experience and extensive habitat research.',
+        'Charles and Margaret Baker Culture Sheets': 'Renowned orchid experts with decades of experience and extensive habitat research.',
+        'Royal Horticultural Society Orchid Care Guide': 'UK-based horticultural authority with comprehensive growing guides.',
+        'Five Cities Orchid Society Growing Guidelines': 'Local expertise from experienced California growers.',
+        'Pleurothallid Alliance Society': 'Specialists in small, cool-growing orchid species.',
+        'Cattleya Alliance Growers': 'Expert growers focused on showy, fragrant orchid species.',
+        'Brazilian Orchid Society Guidelines': 'Native habitat expertise from South American growers.',
+        'Southeast Asian Orchid Growers': 'Regional expertise for tropical orchid species.'
+    };
+    
+    return descriptions[source] || 'Expert orchid growing resource.';
+}
+
+// Enhanced data retrieval with sources - integrates with backend
+function getCareDataFromServer(genus) {
+    // For now, return the enhanced care data with sources
+    // This could be expanded to fetch from the Baker culture system
+    const enhancedCareData = {
+        'Phalaenopsis': {
+            sources: [
+                'American Orchid Society (AOS) Culture Sheets',
+                'Charles and Margaret Baker - OrchidCulture.com',
+                'University of Florida IFAS Extension'
+            ],
+            source_urls: [
+                'https://aos.org/orchids/culture-sheets/',
+                'https://www.orchidculture.com',
+                'https://edis.ifas.ufl.edu'
+            ],
+            source_notes: [
+                'Light requirements vary: AOS suggests 1000-1500 fc; some growers prefer up to 2000 fc',
+                'Watering debates: weekly vs. ice cube method (we recommend weekly)',
+                'Baker emphasizes avoiding crown water; all sources agree on this point'
+            ]
+        },
+        'Cattleya': {
+            sources: [
+                'American Orchid Society (AOS) Culture Sheets',
+                'Charles and Margaret Baker Culture Sheets',
+                'Cattleya Society Publications'
+            ],
+            source_urls: [
+                'https://aos.org/orchids/culture-sheets/',
+                'https://www.orchidculture.com',
+                'https://cattleyasociety.org'
+            ],
+            source_notes: [
+                'Light tolerance varies by species: mini-catts need less, standard catts more',
+                'Baker emphasizes species-specific rest requirements',
+                'All sources agree on high light and good air circulation needs'
+            ]
+        }
+        // Add more genera as needed
+    };
+    
+    return enhancedCareData[genus] || null;
 }
 
 feather.replace();

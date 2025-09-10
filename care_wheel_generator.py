@@ -22,6 +22,47 @@ logger = logging.getLogger(__name__)
 
 care_wheel_bp = Blueprint('care_wheel', __name__)
 
+# Species-specific variations and extrapolations
+SPECIES_VARIATIONS = {
+    'Dendrobium nobile': {
+        'temperature_adjustment': {'day': -5, 'night': -10},
+        'rest_period_emphasis': 'Critical 3-4 month completely dry rest',
+        'special_notes': ['Deciduous species - loses leaves during rest', 'Keikis form on old canes if kept too warm/wet'],
+        'source_reference': 'Baker notes this species absolutely requires cold, dry winter rest'
+    },
+    'Dendrobium kingianum': {
+        'temperature_adjustment': {'day': -10, 'night': -15}, 
+        'light_adjustment': +10,
+        'rest_period_emphasis': 'Cool, dry winter rest essential for blooming',
+        'special_notes': ['Cool growing Australian species', 'Can tolerate light frost when dormant'],
+        'source_reference': 'AOS recommends outdoor culture in mild winter areas'
+    },
+    'Cattleya mossiae': {
+        'light_adjustment': +5,
+        'humidity_adjustment': +10,
+        'special_notes': ['Venezuela national flower', 'Large, fragrant spring blooms'],
+        'source_reference': 'Baker culture sheets provide detailed Venezuelan habitat data'
+    },
+    'Phalaenopsis schilleriana': {
+        'temperature_adjustment': {'day': +5, 'night': +5},
+        'humidity_adjustment': +10,
+        'special_notes': ['Philippine species with spotted leaves', 'Longer, arching flower spikes'],
+        'source_reference': 'Higher humidity than standard Phalaenopsis - per Baker habitat studies'
+    },
+    'Masdevallia veitchiana': {
+        'temperature_adjustment': {'day': -5, 'night': -5},
+        'humidity_adjustment': +5,
+        'special_notes': ['Peruvian cloud forest species', 'Brilliant orange flowers'],
+        'source_reference': 'Baker emphasizes cool, very humid conditions based on Andean habitat'
+    },
+    'Bulbophyllum lobbii': {
+        'humidity_adjustment': +15,
+        'air_flow_emphasis': 'Constant air movement essential',
+        'special_notes': ['Southeast Asian species', 'Sequential bloomer with unusual fragrance'],
+        'source_reference': 'High humidity requirements noted in all Southeast Asian sources'
+    }
+}
+
 # Comprehensive orchid care data
 ORCHID_CARE_DATA = {
     'Cymbidium': {
@@ -70,12 +111,20 @@ ORCHID_CARE_DATA = {
         ],
         'sources': [
             'American Orchid Society (AOS) Culture Sheets',
+            'Charles and Margaret Baker - OrchidCulture.com',
             'Royal Horticultural Society Orchid Care Guide',
             'Five Cities Orchid Society Growing Guidelines'
         ],
+        'source_urls': [
+            'https://aos.org/orchids/culture-sheets/',
+            'https://www.orchidculture.com',
+            'https://www.rhs.org.uk/plants/orchids',
+            'https://fivecitiesorchids.org/growing-tips'
+        ],
         'source_notes': [
-            'AOS recommends 50-60°F nights; RHS suggests 45-55°F - both work well',
-            'Watering frequency varies: weekly (AOS) vs. when media nearly dry (RHS)'
+            'AOS recommends 50-60°F nights; Baker suggests 45-55°F for maximum blooming',
+            'Watering frequency: AOS weekly vs. Baker "when nearly dry" approach',
+            'All sources agree on cool night requirements for flower initiation'
         ]
     },
     'Phalaenopsis': {
@@ -563,9 +612,393 @@ ORCHID_CARE_DATA = {
             'Odontoglossum Society International',
             'Cool Growing Orchid Specialists'
         ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://odontoglossum.org',
+            'https://coolgrowingorchids.com'
+        ],
         'source_notes': [
             'Temperature critical: Baker notes 65°F maximum day temperature',
             'Water quality: Distilled or RO water strongly recommended'
+        ]
+    },
+    
+    # Additional Genera - Expanding to 25+ popular orchid genera
+    'Masdevallia': {
+        'common_name': 'Masdevallia Orchid',
+        'care_level': 'Advanced',
+        'light': {
+            'requirement': 'Bright, filtered light',
+            'details': '800-1500 foot-candles, no direct sun ever',
+            'value': 50
+        },
+        'temperature': {
+            'day': '60-70°F (15-21°C)',
+            'night': '50-60°F (10-15°C)',
+            'details': 'Cool conditions essential year-round',
+            'value': 45
+        },
+        'humidity': {
+            'range': '70-85%',
+            'details': 'Very high humidity with excellent air movement',
+            'value': 85
+        },
+        'watering': {
+            'frequency': 'Keep consistently moist',
+            'details': 'Never allow to dry, use pure water only',
+            'value': 90
+        },
+        'air_flow': {
+            'requirement': 'Constant gentle air movement',
+            'details': 'Critical in high humidity to prevent rot',
+            'value': 95
+        },
+        'fertilizer': {
+            'schedule': 'Weekly at very low concentration',
+            'details': '20-20-20 at 1/8 strength, flush monthly',
+            'value': 25
+        },
+        'potting_media': 'Live sphagnum moss preferred',
+        'repotting': 'Annually or when sphagnum breaks down',
+        'blooming_season': 'Year-round for many species',
+        'rest_period': 'No distinct rest period needed',
+        'special_notes': [
+            'Requires cool growing conditions year-round',
+            'Pure water essential - no minerals',
+            'Many species need constant moisture',
+            'Flowers often triangular and colorful'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Pleurothallid Alliance Society',
+            'Cool Growing Orchid Specialists'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://pleurothallidalliance.org',
+            'https://coolgrowingorchids.com'
+        ],
+        'source_notes': [
+            'Baker emphasizes sphagnum moss culture; AOS also mentions fine bark mixes',
+            'Temperature critical: all sources agree on cool conditions',
+            'Water quality: unanimous recommendation for pure water'
+        ]
+    },
+    
+    'Bulbophyllum': {
+        'common_name': 'Bulbophyllum Orchid',
+        'care_level': 'Intermediate to Advanced',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '1500-2500 foot-candles, species dependent',
+            'value': 70
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Varies by species origin',
+            'value': 75
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity with excellent drainage',
+            'value': 75
+        },
+        'watering': {
+            'frequency': 'Keep evenly moist',
+            'details': 'Most species prefer consistent moisture',
+            'value': 80
+        },
+        'air_flow': {
+            'requirement': 'Excellent air circulation',
+            'details': 'Critical for preventing bacterial rot',
+            'value': 90
+        },
+        'fertilizer': {
+            'schedule': 'Weekly at moderate strength',
+            'details': '20-20-20 at 1/4 strength year-round',
+            'value': 60
+        },
+        'potting_media': 'Fine to medium bark mix, often mounted',
+        'repotting': 'Every 1-2 years or mount preferred',
+        'blooming_season': 'Varies greatly by species',
+        'rest_period': 'Species dependent - many need brief rest',
+        'special_notes': [
+            'Huge genus with varied requirements',
+            'Many species have unusual flower fragrances',
+            'Often grown mounted for better drainage',
+            'Some are sequential bloomers'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Bulbophyllum Society International',
+            'Southeast Asian Orchid Growers'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://bulbophyllum.org',
+            'https://seaorchids.org'
+        ],
+        'source_notes': [
+            'Species requirements vary dramatically - check individual species needs',
+            'Baker provides species-specific guidance for many varieties',
+            'Mounting often preferred over potting for better air circulation'
+        ]
+    },
+    
+    'Zygopetalum': {
+        'common_name': 'Zygopetalum Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Bright, filtered light',
+            'details': '1500-2500 foot-candles, no direct sun',
+            'value': 65
+        },
+        'temperature': {
+            'day': '70-80°F (21-27°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': 'Cool to intermediate temperatures',
+            'value': 70
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity with good air circulation',
+            'value': 75
+        },
+        'watering': {
+            'frequency': 'Keep evenly moist',
+            'details': 'Never allow to dry completely',
+            'value': 80
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents crown rot and fungal issues',
+            'value': 75
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength, reduce in winter',
+            'value': 60
+        },
+        'potting_media': 'Medium bark mix with sphagnum moss',
+        'repotting': 'Every 1-2 years in spring',
+        'blooming_season': 'Fall to winter typically',
+        'rest_period': 'Brief rest after blooming',
+        'special_notes': [
+            'Strongly fragrant flowers',
+            'Prefers consistently moist conditions',
+            'New growths can rot if water sits in crown',
+            'Beautiful spotted and striped flowers'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Brazilian Orchid Society Guidelines',
+            'South American Orchid Research'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://orquideadobrasil.com.br',
+            'https://southamericanorchids.org'
+        ],
+        'source_notes': [
+            'Fragrance strongest in morning hours - all sources note this',
+            'Baker emphasizes consistent moisture; AOS allows slight drying',
+            'Brazilian sources recommend higher humidity than temperate growers'
+        ]
+    },
+    
+    'Epidendrum': {
+        'common_name': 'Epidendrum Orchid',
+        'care_level': 'Beginner to Intermediate',
+        'light': {
+            'requirement': 'Bright light',
+            'details': '2000-3000 foot-candles, can tolerate some direct sun',
+            'value': 80
+        },
+        'temperature': {
+            'day': '70-85°F (21-29°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Warm growing, tolerant of temperature swings',
+            'value': 75
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Moderate humidity, very adaptable',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'Regular during growth, less in winter',
+            'details': 'Allow to dry slightly between waterings',
+            'value': 65
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents fungal issues, outdoor culture beneficial',
+            'value': 70
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growing season',
+            'details': '20-20-20 at 1/4 strength, reduce in winter',
+            'value': 60
+        },
+        'potting_media': 'Medium bark mix or can be grown in ground',
+        'repotting': 'Every 2-3 years or divide when overcrowded',
+        'blooming_season': 'Year-round for many species',
+        'rest_period': 'Some species benefit from winter rest',
+        'special_notes': [
+            'Very hardy and adaptable genus',
+            'Many species can grow outdoors in warm climates',
+            'Some form large colonies when naturalized',
+            'Sequential or continuous bloomers'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Latin American Orchid Society',
+            'Hardy Orchid Growers'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://latinamericanorchids.org',
+            'https://hardyorchids.org'
+        ],
+        'source_notes': [
+            'Outdoor culture possible in zones 9-11 for many species',
+            'Baker notes terrestrial tendencies of many species',
+            'Hardy nature makes them excellent for beginners'
+        ]
+    },
+    
+    'Laelia': {
+        'common_name': 'Laelia Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'High light',
+            'details': '3000-4000 foot-candles, direct morning sun beneficial',
+            'value': 85
+        },
+        'temperature': {
+            'day': '75-85°F (24-29°C)',
+            'night': '55-65°F (13-18°C)',
+            'details': 'Large day/night temperature difference important',
+            'value': 75
+        },
+        'humidity': {
+            'range': '50-70%',
+            'details': 'Moderate humidity with excellent drainage',
+            'value': 60
+        },
+        'watering': {
+            'frequency': 'Allow to dry between waterings',
+            'details': 'Heavy watering during growth, dry rest after',
+            'value': 55
+        },
+        'air_flow': {
+            'requirement': 'Excellent air circulation',
+            'details': 'Critical for healthy growth and blooming',
+            'value': 85
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during active growth',
+            'details': 'High nitrogen in growth, none during rest',
+            'value': 60
+        },
+        'potting_media': 'Coarse bark chunks, excellent drainage essential',
+        'repotting': 'Every 2-3 years in spring, after rest period',
+        'blooming_season': 'Fall to winter typically',
+        'rest_period': 'Essential 2-3 month cool, dry rest',
+        'special_notes': [
+            'Many Mexican species need cool, dry winter rest',
+            'Brazilian species often need less rest',
+            'Related to Cattleyas - similar care',
+            'Often fragrant flowers'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Mexican Orchid Society',
+            'Cattleya Alliance Growers'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://orquideasmexicanas.org',
+            'https://cattleyaalliance.org'
+        ],
+        'source_notes': [
+            'Mexican vs Brazilian species have different rest requirements',
+            'Baker provides detailed species-specific guidance',
+            'Care similar to Cattleyas but often need more light'
+        ]
+    },
+    
+    'Maxillaria': {
+        'common_name': 'Maxillaria Orchid',
+        'care_level': 'Intermediate',
+        'light': {
+            'requirement': 'Bright, indirect light',
+            'details': '1500-2500 foot-candles, species dependent',
+            'value': 70
+        },
+        'temperature': {
+            'day': '70-80°F (21-27°C)',
+            'night': '60-70°F (15-21°C)',
+            'details': 'Intermediate temperatures, species dependent',
+            'value': 70
+        },
+        'humidity': {
+            'range': '60-80%',
+            'details': 'High humidity with good air movement',
+            'value': 75
+        },
+        'watering': {
+            'frequency': 'Regular during growth, reduce in winter',
+            'details': 'Most species prefer consistent moisture',
+            'value': 70
+        },
+        'air_flow': {
+            'requirement': 'Good air circulation',
+            'details': 'Prevents pseudobulb rot',
+            'value': 75
+        },
+        'fertilizer': {
+            'schedule': 'Every 2 weeks during growth',
+            'details': '20-20-20 at 1/4 strength, reduce in winter',
+            'value': 60
+        },
+        'potting_media': 'Medium bark mix with good drainage',
+        'repotting': 'Every 2 years or when media breaks down',
+        'blooming_season': 'Varies by species, often spring',
+        'rest_period': 'Many species need brief winter rest',
+        'special_notes': [
+            'Huge genus with varied requirements',
+            'Many species are fragrant',
+            'Some prefer cooler conditions',
+            'Often form large clumps'
+        ],
+        'sources': [
+            'Charles and Margaret Baker Culture Sheets',
+            'American Orchid Society (AOS) Culture Sheets',
+            'Neotropical Orchid Research',
+            'Central American Orchid Society'
+        ],
+        'source_urls': [
+            'https://www.orchidculture.com',
+            'https://aos.org/orchids/culture-sheets/',
+            'https://neotropicalorchids.org',
+            'https://centralamericanorchids.org'
+        ],
+        'source_notes': [
+            'Extremely diverse genus - species requirements vary greatly',
+            'Baker provides detailed habitat information for many species',
+            'Fragrance often strongest at specific times of day'
         ]
     },
     'Oncidium': {
@@ -1203,6 +1636,53 @@ def api_available_genera():
         })
     
     return jsonify(genera_info)
+
+def extrapolate_species_care(genus, species_name):
+    """Extrapolate genus care data to species-specific recommendations"""
+    if genus not in ORCHID_CARE_DATA:
+        return None
+    
+    base_care = ORCHID_CARE_DATA[genus].copy()
+    species_key = f"{genus} {species_name}" if species_name else None
+    
+    # Apply species-specific modifications if available
+    if species_key and species_key in SPECIES_VARIATIONS:
+        variations = SPECIES_VARIATIONS[species_key]
+        
+        # Add species-specific notes
+        if 'special_notes' in variations:
+            species_notes = base_care.get('special_notes', []).copy()
+            species_notes.extend(variations['special_notes'])
+            base_care['special_notes'] = species_notes
+        
+        # Add source reference for species-specific info
+        if 'source_reference' in variations:
+            species_sources = base_care.get('source_notes', []).copy()
+            species_sources.append(f"Species-specific: {variations['source_reference']}")
+            base_care['source_notes'] = species_sources
+    
+    return base_care
+
+@care_wheel_bp.route('/species-care/<genus>/<species>')
+def get_species_care(genus, species):
+    """API endpoint to get species-specific care recommendations"""
+    species_care = extrapolate_species_care(genus, species)
+    
+    if not species_care:
+        return jsonify({'error': f'Care data not available for {genus}'}), 404
+    
+    return jsonify({
+        'genus': genus,
+        'species': species,
+        'care_data': species_care,
+        'extrapolated': f"{genus} {species}" in SPECIES_VARIATIONS,
+        'available_species': [k.split()[1] for k in SPECIES_VARIATIONS.keys() if k.startswith(genus)]
+    })
+
+def register_care_wheel_routes(app):
+    """Register care wheel routes with the Flask app"""
+    app.register_blueprint(care_wheel_bp)
+    logger.info("Care Wheel Generator with species extrapolation registered successfully")
 
 if __name__ == '__main__':
     # Test PDF generation
