@@ -1218,10 +1218,10 @@ def create_care_wheel_pdf(genus_name):
         
         # Draw pie segment
         c.beginPath()
-        c.moveto(center_x, center_y)
-        c.lineto(center_x + radius * math.cos(start_rad), 
+        c.moveTo(center_x, center_y)
+        c.lineTo(center_x + radius * math.cos(start_rad), 
                 center_y + radius * math.sin(start_rad))
-        c.arcto(center_x - radius, center_y - radius, 
+        c.arcTo(center_x - radius, center_y - radius, 
                center_x + radius, center_y + radius,
                start_angle, segment_angle)
         c.closePath()

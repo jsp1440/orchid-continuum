@@ -74,6 +74,7 @@ from gary_photo_demo import gary_demo as gary_demo_bp
 from orchid_genetics_laboratory import register_genetics_laboratory
 from citizen_science_platform import citizen_science_bp
 from quantum_care_routes import register_quantum_care_routes
+from widget_error_handler import widget_error_handler, safe_json_parse, safe_get_user_favorites, validate_feather_icon
 
 # Create themed orchids system
 ORCHID_THEMES = {
@@ -1637,9 +1638,9 @@ app.register_blueprint(literature_bp)
 from historical_climate_system import historical_climate_bp
 app.register_blueprint(historical_climate_bp)
 
-# Register Mycorrhizal Network Monitor
-from mycorrhizal_network_monitor import mycorrhizal_bp
-app.register_blueprint(mycorrhizal_bp)
+# Register Mycorrhizal Network Monitor (Skipped - conflicts with mycorrhizal_research_system)
+# from mycorrhizal_network_monitor import mycorrhizal_bp  # DISABLED: Conflicts with existing mycorrhizal_bp
+# app.register_blueprint(mycorrhizal_bp)  # DISABLED: Blueprint already registered above
 
 # Register AI Research Director (Autonomous Climate Commander)
 from ai_research_director import research_director_bp
@@ -6127,6 +6128,7 @@ def download_backup(filename):
 # ==============================================================================
 
 @app.route('/api/recent-orchids')
+@widget_error_handler.with_error_handling(timeout=30, cache_ttl=300, fallback_data={'orchids': [], 'count': 0})
 def api_recent_orchids():
     """API endpoint for recent orchids - FIXED TO USE CORRECT DATABASE DATA"""
     try:

@@ -8,8 +8,68 @@
     <!-- Bootstrap CSS with Replit theme -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     
-    <!-- Feather Icons -->
+    <!-- Feather Icons with Safe Loading -->
     <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Safe Widget Error Handling -->
+    <script>
+    // Safe Feather Icon Handler
+    function safeFeatherReplace() {
+        try {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        } catch (error) {
+            console.warn('Feather icons failed to load:', error);
+            // Fallback: hide broken icons
+            document.querySelectorAll('[data-feather]').forEach(el => {
+                if (!el.innerHTML.trim()) {
+                    el.style.display = 'none';
+                }
+            });
+        }
+    }
+    
+    // Safe JSON parsing for user preferences
+    function safeJsonParse(jsonString, fallback = {}) {
+        try {
+            if (!jsonString || jsonString.trim() === '') return fallback;
+            return JSON.parse(jsonString);
+        } catch (error) {
+            console.warn('JSON parse error:', error);
+            return fallback;
+        }
+    }
+    
+    // Safe favorites management
+    function safeGetFavorites() {
+        try {
+            const favorites = localStorage.getItem('orchid_favorites');
+            return safeJsonParse(favorites, []);
+        } catch (error) {
+            console.warn('Error accessing favorites:', error);
+            return [];
+        }
+    }
+    
+    function safeSetFavorites(favorites) {
+        try {
+            localStorage.setItem('orchid_favorites', JSON.stringify(favorites || []));
+        } catch (error) {
+            console.warn('Error saving favorites:', error);
+        }
+    }
+    
+    // Widget timeout handler
+    function withTimeout(promise, timeout = 30000) {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Operation timeout')), timeout)
+            )
+        ]);
+    }
+    </script>
     
     <!-- Custom CSS -->
     <link href="/static/css/custom.css" rel="stylesheet">
@@ -65,10 +125,10 @@
                                     <i data-feather="map-pin" class="me-3" style="width: 14px; height: 14px; color: #00d4aa;"></i>Thailand Orchids
                                 </a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('madagascar_gallery') }}">
-                                    <i data-feather="island" class="me-3" style="width: 14px; height: 14px; color: #dc3545;"></i>Madagascar Orchids  
+                                    <i data-feather="map-pin" class="me-3" style="width: 14px; height: 14px; color: #dc3545;"></i>Madagascar Orchids  
                                 </a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('fragrant_gallery') }}">
-                                    <i data-feather="wind" class="me-3" style="width: 14px; height: 14px; color: #ffc107;"></i>Fragrant Orchids
+                                    <i data-feather="star" class="me-3" style="width: 14px; height: 14px; color: #ffc107;"></i>Fragrant Orchids
                                 </a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('night_blooming_gallery') }}">
                                     <i data-feather="moon" class="me-3" style="width: 14px; height: 14px; color: #e6e6fa;"></i>Night Blooming
