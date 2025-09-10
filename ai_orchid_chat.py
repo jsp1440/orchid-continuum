@@ -145,10 +145,20 @@ Provide detailed, scientific observations while being practical for orchid care.
             
         except Exception as e:
             logger.error(f"❌ Error analyzing orchid image: {e}")
+            error_message = str(e)
+            
+            # Check for quota exceeded error
+            if "insufficient_quota" in error_message.lower() or "quota" in error_message.lower():
+                error_message = "Your OpenAI API quota has been exceeded. Please add more credits to your OpenAI account to continue using AI analysis."
+            elif "rate_limit" in error_message.lower():
+                error_message = "API rate limit reached. Please try again in a few minutes."
+            
             return {
                 'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
+                'error': error_message,
+                'error_type': 'api_quota' if 'quota' in error_message.lower() else 'general',
+                'timestamp': datetime.now().isoformat(),
+                'suggested_action': 'Please add credits to your OpenAI account to enable AI analysis.' if 'quota' in error_message.lower() else None
             }
 
     def chat_with_data(self, user_message: str, context: Dict = None) -> Dict[str, Any]:
