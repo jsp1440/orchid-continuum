@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Orchid Assistant - The Orchid Continuum</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .chat-container {
+            height: 70vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: rgba(0,0,0,0.1);
+            color: white;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .chat-messages {
+            height: calc(70vh - 200px);
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .message.user {
+            text-align: right;
+        }
+        
+        .message.ai {
+            text-align: left;
+        }
+        
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+        
+        .message.user .message-bubble {
+            background: #007bff;
+            color: white;
+        }
+        
+        .message.ai .message-bubble {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chat-input {
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .orchid-suggestion {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .orchid-suggestion:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .orchid-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        
+        .typing-bubble {
+            background: white;
+            color: #666;
+            padding: 12px 18px;
+            border-radius: 20px;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .ai-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- AI Status Indicator -->
+    <div class="ai-status">
+        🤖 AI Assistant Online (GPT-5)
+    </div>
+    
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Main Chat Interface -->
+            <div class="col-lg-8">
+                <div class="chat-container">
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <h3 class="mb-1">🌺 AI Orchid Assistant</h3>
+                        <p class="mb-0">Ask me anything about orchids - I can analyze images, provide care advice, and query your database!</p>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai">
+                            <div class="message-bubble">
+                                👋 Hello! I'm your AI orchid expert powered by GPT-5. I can:
+                                <br><br>
+                                🔍 <strong>Analyze orchid images</strong> - Upload or select from your collection<br>
+                                📚 <strong>Answer questions</strong> - Care, identification, taxonomy<br>
+                                🗄️ <strong>Query your database</strong> - Search through your 5,963+ orchids<br>
+                                💡 <strong>Provide advice</strong> - Growing tips, troubleshooting, breeding<br>
+                                <br>
+                                What would you like to explore today?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Typing Indicator -->
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="typing-bubble">
+                            🤖 AI is thinking...
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="chat-input">
+                        <div class="row">
+                            <div class="col-10">
+                                <input type="text" class="form-control form-control-lg" 
+                                       id="messageInput" placeholder="Ask about orchids, request image analysis, or query your data..."
+                                       onkeypress="handleEnterKey(event)">
+                            </div>
+                            <div class="col-2">
+                                <button class="btn btn-primary btn-lg w-100" onclick="sendMessage()">
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted">Quick actions:</small>
+                                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="quickMessage('Show me flowering orchids in my collection')">
+                                    🌸 Flowering Orchids
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-1" onclick="quickMessage('What are the most common genera in my database?')">
+                                    📊 Database Stats
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-1" onclick="loadOrchidSuggestions()">
+                                    🖼️ Analyze Images
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orchid Suggestions Sidebar -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🖼️ Orchid Images for Analysis</h5>
+                        <small class="text-muted">Click any orchid to analyze with AI</small>
+                    </div>
+                    <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
+                        <div id="orchidSuggestions">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2">Loading orchid images...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let messageCounter = 0;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrchidSuggestions();
+        });
+        
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function quickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Send to AI
+            fetch('/ai-chat/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                
+                if (data.success) {
+                    addMessage(data.response, 'ai');
+                } else {
+                    addMessage('Sorry, I encountered an error: ' + data.error, 'ai');
+                }
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered a connection error. Please try again.', 'ai');
+                console.error('Chat error:', error);
+            });
+        }
+        
+        function addMessage(content, sender) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${formatMessage(content)}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function formatMessage(content) {
+            // Convert markdown-like formatting to HTML
+            return content
+                .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
+                .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
+                .replace(/\\n/g, '<br>');
+        }
+        
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        function loadOrchidSuggestions() {
+            fetch('/ai-chat/orchid-suggestions')
+                .then(response => response.json())
+                .then(orchids => {
+                    displayOrchidSuggestions(orchids);
+                })
+                .catch(error => {
+                    console.error('Error loading orchid suggestions:', error);
+                    document.getElementById('orchidSuggestions').innerHTML = 
+                        '<div class="text-center text-muted">Error loading orchids</div>';
+                });
+        }
+        
+        function displayOrchidSuggestions(orchids) {
+            const container = document.getElementById('orchidSuggestions');
+            
+            if (orchids.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No orchid images available</div>';
+                return;
+            }
+            
+            container.innerHTML = orchids.map(orchid => `
+                <div class="orchid-suggestion" onclick="analyzeOrchidImage(${orchid.id}, '${orchid.image_url}', '${orchid.display_name}')">
+                    <div class="row align-items-center">
+                        <div class="col-3">
+                            <img src="${orchid.image_url}" class="orchid-image" alt="${orchid.display_name}" loading="lazy">
+                        </div>
+                        <div class="col-9">
+                            <h6 class="mb-1">${orchid.display_name}</h6>
+                            <small class="text-muted">${orchid.genus} ${orchid.species || ''}</small>
+                            ${orchid.has_ai_analysis ? '<br><span class="badge bg-success">🤖 AI Analyzed</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function analyzeOrchidImage(orchidId, imageUrl, orchidName) {
+            // Add user message
+            addMessage(`🔍 Please analyze this orchid image: ${orchidName}`, 'user');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Send for AI analysis
+            fetch('/ai-chat/analyze-image', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    image_url: imageUrl,
+                    orchid_id: orchidId,
+                    question: 'Please provide a detailed analysis of this orchid'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                
+                if (data.success) {
+                    const contextInfo = data.context && data.context.display_name ? 
+                        `<br><br><small><strong>Database Info:</strong> ${data.context.display_name} (${data.context.genus} ${data.context.species})</small>` : '';
+                    
+                    addMessage(`🌺 <strong>AI Analysis of ${orchidName}:</strong><br><br>${data.analysis}${contextInfo}`, 'ai');
+                } else {
+                    addMessage(`Sorry, I couldn't analyze the image: ${data.error}`, 'ai');
+                }
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered an error while analyzing the image.', 'ai');
+                console.error('Image analysis error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

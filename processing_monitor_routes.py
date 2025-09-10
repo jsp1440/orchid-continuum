@@ -11,7 +11,8 @@ Flask routes for the real-time processing pipeline monitor
 import json
 import uuid
 import time
-from flask import Blueprint, render_template, Response, jsonify, request, stream_template
+import queue
+from flask import Blueprint, render_template, Response, jsonify, request, stream_template, stream_with_context
 from processing_pipeline_monitor import pipeline_monitor, ProcessingStage, ProcessingStatus, ErrorType
 import logging
 
@@ -29,6 +30,8 @@ def monitor_dashboard():
 def event_stream():
     """Server-Sent Events endpoint for real-time updates"""
     subscriber_id = str(uuid.uuid4())
+    # Capture Last-Event-ID before generator starts
+    last_event_id = request.headers.get('Last-Event-ID')
     
     def generate():
         # Subscribe to events
@@ -39,7 +42,6 @@ def event_stream():
             yield f"data: {json.dumps({'type': 'connected', 'subscriber_id': subscriber_id})}\n\n"
             
             # Handle Last-Event-ID for replay
-            last_event_id = request.headers.get('Last-Event-ID')
             if last_event_id:
                 # Send missed events from database
                 try:
@@ -62,7 +64,7 @@ def event_stream():
                     yield f"id: {event_data['id']}\n"
                     yield f"data: {json.dumps(event_data)}\n\n"
                     
-                except Exception as e:
+                except queue.Empty:
                     # Send keepalive on timeout
                     yield f"data: {json.dumps({'type': 'keepalive', 'timestamp': time.time()})}\n\n"
                     
@@ -74,10 +76,11 @@ def event_stream():
             logger.error(f"❌ SSE stream error: {e}")
             pipeline_monitor.unsubscribe_from_events(subscriber_id)
     
-    response = Response(generate(), mimetype='text/event-stream')
+    response = Response(stream_with_context(generate)(), mimetype='text/event-stream')
     response.headers['Cache-Control'] = 'no-cache'
     response.headers['Connection'] = 'keep-alive'
     response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['X-Accel-Buffering'] = 'no'  # Prevent proxy buffering
     return response
 
 @processing_monitor_bp.route('/summary')
@@ -172,7 +175,8 @@ def processing_metrics():
 def resolve_error(error_id):
     """Mark an error as resolved"""
     try:
-        action = request.json.get('action', 'acknowledge')
+        data = request.get_json(silent=True) or {}
+        action = data.get('action', 'acknowledge')
         
         import sqlite3
         with sqlite3.connect(pipeline_monitor.db_path) as conn:
@@ -272,6 +276,241 @@ def test_event():
         
     except Exception as e:
         logger.error(f"Error generating test events: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@processing_monitor_bp.route('/analyzed-orchids')
+def get_analyzed_orchids():
+    """Get orchids with AI analysis results for viewing"""
+    try:
+        from models import OrchidRecord
+        from sqlalchemy import or_
+        
+        # Get recently analyzed orchids with AI data
+        analyzed_orchids = OrchidRecord.query.filter(
+            OrchidRecord.ai_description.isnot(None)
+        ).order_by(OrchidRecord.id.desc()).limit(50).all()
+        
+        orchid_data = []
+        for orchid in analyzed_orchids:
+            # Construct image URL
+            image_url = None
+            if orchid.google_drive_id:
+                image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+            elif orchid.image_url:
+                image_url = orchid.image_url
+            
+            orchid_data.append({
+                'id': orchid.id,
+                'display_name': orchid.display_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'image_url': image_url,
+                'ai_description': orchid.ai_description,
+                'ai_confidence': orchid.ai_confidence,
+                'ai_extracted_metadata': orchid.ai_extracted_metadata,
+                'is_flowering': orchid.is_flowering,
+                'flower_count': orchid.flower_count,
+                'flowering_stage': orchid.flowering_stage,
+                'growth_habit': orchid.growth_habit,
+                'native_habitat': orchid.native_habitat,
+                'bloom_time': orchid.bloom_time
+            })
+        
+        return jsonify(orchid_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting analyzed orchids: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@processing_monitor_bp.route('/orchid-analysis/<int:orchid_id>')
+def get_orchid_analysis_details(orchid_id):
+    """Get detailed AI analysis for a specific orchid"""
+    try:
+        from models import OrchidRecord
+        import json
+        
+        orchid = OrchidRecord.query.get_or_404(orchid_id)
+        
+        # Parse AI extracted metadata if it exists
+        ai_metadata = None
+        if orchid.ai_extracted_metadata:
+            try:
+                ai_metadata = json.loads(orchid.ai_extracted_metadata)
+            except (json.JSONDecodeError, TypeError):
+                ai_metadata = {'raw': orchid.ai_extracted_metadata}
+        
+        # Construct image URL
+        image_url = None
+        if orchid.google_drive_id:
+            image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+        elif orchid.image_url:
+            image_url = orchid.image_url
+        
+        analysis_data = {
+            'orchid_info': {
+                'id': orchid.id,
+                'display_name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'author': orchid.author,
+                'image_url': image_url
+            },
+            'ai_analysis': {
+                'description': orchid.ai_description,
+                'confidence': orchid.ai_confidence,
+                'extracted_metadata': ai_metadata,
+                'flowering_analysis': {
+                    'is_flowering': orchid.is_flowering,
+                    'flowering_stage': orchid.flowering_stage,
+                    'flower_count': orchid.flower_count,
+                    'bloom_season_indicator': orchid.bloom_season_indicator
+                }
+            },
+            'habitat_analysis': {
+                'native_habitat': orchid.native_habitat,
+                'growth_habit': orchid.growth_habit,
+                'climate_preference': orchid.climate_preference,
+                'growing_environment': orchid.growing_environment,
+                'substrate_type': orchid.substrate_type
+            },
+            'geographic_data': {
+                'country': orchid.country,
+                'region': orchid.region,
+                'decimal_latitude': orchid.decimal_latitude,
+                'decimal_longitude': orchid.decimal_longitude
+            }
+        }
+        
+        return jsonify(analysis_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting orchid analysis details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@processing_monitor_bp.route('/start-ai-processing', methods=['POST'])
+def start_ai_processing():
+    """Start AI batch processing of orchid images with real-time monitoring"""
+    try:
+        from ai_batch_processor import AIBatchProcessor
+        from threading import Thread
+        
+        # Get processing options
+        data = request.get_json(silent=True) or {}
+        limit = data.get('limit', None)
+        
+        # Initialize batch processor
+        processor = AIBatchProcessor()
+        
+        # Start processing in background thread with pipeline monitoring
+        def monitored_processing():
+            # Override the processor's logging to emit events to our pipeline monitor
+            original_process_orchid = processor._process_single_orchid
+            
+            def monitored_process_orchid(orchid):
+                correlation_id = f"ai_batch_{orchid.id}_{int(time.time())}"
+                
+                # Log start event
+                pipeline_monitor.log_event(
+                    orchid_id=orchid.id,
+                    stage=ProcessingStage.STARTED,
+                    status=ProcessingStatus.PENDING,
+                    correlation_id=correlation_id,
+                    details={'orchid_name': orchid.display_name, 'genus': orchid.genus}
+                )
+                
+                try:
+                    # Log AI analysis start
+                    pipeline_monitor.log_event(
+                        orchid_id=orchid.id,
+                        stage=ProcessingStage.AI_ANALYSIS,
+                        status=ProcessingStatus.PENDING,
+                        correlation_id=correlation_id
+                    )
+                    
+                    # Call original processing
+                    result = original_process_orchid(orchid)
+                    
+                    if result.get('success'):
+                        # Log successful stages
+                        pipeline_monitor.log_event(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.AI_ANALYSIS,
+                            status=ProcessingStatus.SUCCESS,
+                            correlation_id=correlation_id,
+                            details={'ai_confidence': result.get('confidence')},
+                            latency_ms=result.get('processing_time_ms')
+                        )
+                        
+                        pipeline_monitor.log_event(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.METADATA,
+                            status=ProcessingStatus.SUCCESS,
+                            correlation_id=correlation_id
+                        )
+                        
+                        pipeline_monitor.log_event(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.VALIDATION,
+                            status=ProcessingStatus.SUCCESS,
+                            correlation_id=correlation_id
+                        )
+                        
+                        pipeline_monitor.log_event(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.DB_WRITE,
+                            status=ProcessingStatus.SUCCESS,
+                            correlation_id=correlation_id
+                        )
+                        
+                        pipeline_monitor.log_event(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.COMPLETED,
+                            status=ProcessingStatus.SUCCESS,
+                            correlation_id=correlation_id
+                        )
+                    else:
+                        # Log error
+                        error_msg = result.get('error', 'Unknown AI processing error')
+                        pipeline_monitor.log_error(
+                            orchid_id=orchid.id,
+                            stage=ProcessingStage.AI_ANALYSIS,
+                            error_message=error_msg,
+                            correlation_id=correlation_id
+                        )
+                    
+                    return result
+                    
+                except Exception as e:
+                    # Log processing error
+                    pipeline_monitor.log_error(
+                        orchid_id=orchid.id,
+                        stage=ProcessingStage.AI_ANALYSIS,
+                        error_message=str(e),
+                        correlation_id=correlation_id,
+                        stack=str(e.__traceback__) if hasattr(e, '__traceback__') else None
+                    )
+                    raise
+            
+            # Monkey patch the processor to use our monitored version
+            processor._process_single_orchid = monitored_process_orchid
+            
+            # Start the actual processing
+            processor.start_batch_analysis(limit=limit)
+        
+        # Start processing thread
+        processing_thread = Thread(target=monitored_processing, daemon=True)
+        processing_thread.start()
+        
+        logger.info(f"🚀 Started AI batch processing with real-time monitoring (limit: {limit})")
+        return jsonify({
+            'success': True, 
+            'message': f'AI batch processing started with real-time monitoring',
+            'limit': limit
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting AI processing: {e}")
         return jsonify({'error': str(e)}), 500
 
 @processing_monitor_bp.route('/test-error', methods=['POST'])
