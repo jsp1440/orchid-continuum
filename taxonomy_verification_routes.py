@@ -2,22 +2,34 @@
 Flask routes for the Taxonomy Verification System
 """
 
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
 from taxonomy_verification_system import TaxonomyVerificationSystem
 from models import OrchidRecord, db
+from functools import wraps
 import logging
 
 logger = logging.getLogger(__name__)
+
+def admin_required(f):
+    """Decorator to require admin authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            return jsonify({'success': False, 'error': 'Admin authentication required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Create blueprint
 taxonomy_bp = Blueprint('taxonomy_verification', __name__, url_prefix='/admin/taxonomy')
 
 @taxonomy_bp.route('/')
+@admin_required
 def verification_panel():
     """Main taxonomy verification panel"""
     return render_template('admin/taxonomy_verification.html')
 
 @taxonomy_bp.route('/scan-potinara', methods=['POST'])
+@admin_required
 def scan_potinara():
     """Scan all Potinara records for misclassifications"""
     try:
@@ -43,6 +55,7 @@ def scan_potinara():
         }), 500
 
 @taxonomy_bp.route('/scan-all', methods=['POST'])
+@admin_required
 def scan_all():
     """Scan all records for taxonomy issues"""
     try:
@@ -68,6 +81,7 @@ def scan_all():
         }), 500
 
 @taxonomy_bp.route('/apply-single', methods=['POST'])
+@admin_required
 def apply_single_correction():
     """Apply a single taxonomy correction"""
     try:
@@ -121,6 +135,7 @@ def apply_single_correction():
         }), 500
 
 @taxonomy_bp.route('/apply-batch', methods=['POST'])
+@admin_required
 def apply_batch_corrections():
     """Apply multiple taxonomy corrections in batch"""
     try:
@@ -183,6 +198,7 @@ def apply_batch_corrections():
         }), 500
 
 @taxonomy_bp.route('/statistics')
+@admin_required
 def get_statistics():
     """Get taxonomy statistics"""
     try:
@@ -202,6 +218,7 @@ def get_statistics():
         }), 500
 
 @taxonomy_bp.route('/export-corrections/<genus>')
+@admin_required
 def export_corrections(genus):
     """Export corrections for a specific genus"""
     try:
