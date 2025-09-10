@@ -69,6 +69,14 @@ with app.app_context():
 from user_weather_routes import user_weather_bp
 app.register_blueprint(user_weather_bp)
 
+# Initialize AOS glossary system (crossword blueprint already registered elsewhere)
+try:
+    from aos_glossary_extractor import AOSGlossaryExtractor
+    glossary_extractor = AOSGlossaryExtractor()
+    logging.info("✅ AOS Glossary system initialized successfully")
+except ImportError as e:
+    logging.warning(f"⚠️ AOS Glossary system not available: {e}")
+
 # Import routes after app initialization
 import routes  # Full featured routes with complete homepage
 # import simple_routes  # DISABLED - using full routes instead
