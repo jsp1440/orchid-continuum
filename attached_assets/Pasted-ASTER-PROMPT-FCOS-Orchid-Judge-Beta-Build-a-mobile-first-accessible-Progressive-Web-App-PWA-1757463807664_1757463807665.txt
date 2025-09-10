@@ -1,0 +1,221 @@
+ASTER PROMPT — “FCOS Orchid Judge (Beta)”
+
+Build a mobile-first, accessible Progressive Web App (PWA) called “FCOS Orchid Judge (Beta)” for the Five Cities Orchid Society.
+
+Purpose
+
+Let a member:
+	1.	Capture two photos: (a) blooming plant, (b) the tag.
+	2.	OCR the tag → parse genus/grex/clone (editable).
+	3.	AI image analysis (best-effort, not official): flower count, spike count, basic symmetry hints, relative size metrics (see “Reference Card”).
+	4.	Pick a Judging System (AOS default; also AOC (Australia), NZ, RHS/UK).
+	5.	Generate an educational scorecard (transparent rubric, numeric “learning score,” not official).
+	6.	Produce a styled certificate PDF (award-card look) with photos and scores.
+	7.	Save record (photos + fields + score) to Google Sheets, optionally email result to submitter.
+
+Legal & Ethics (required UI)
+	•	Show a persistent banner on scoring screens:
+“Educational tool only — not affiliated with or approved by AOS/AOC/NZ/RHS. For learning & pre-judging practice.”
+	•	Require a checkbox: “I own these photos / have permission. I agree to store them for FCOS educational use.”
+
+Platforms & Install
+	•	PWA (Add to Home Screen on iPhone/Android).
+	•	Works offline for capture; syncs when online.
+	•	Responsive; usable on desktop.
+
+Accessibility & Readability
+	•	Base font 18px+, headings 24–32px; AA contrast; tap targets ≥44px.
+	•	Dark Mode + Large Text toggles (persist in localStorage).
+	•	Plain language labels; icons + text on buttons.
+
+Flow
+	1.	Home
+	•	Big buttons: Start New Entry, View My Last 10, About.
+	•	Footer: “Five Cities Orchid Society · Learn · Grow · Share”.
+	2.	Capture
+	•	Two capture slots: Plant Photo, Tag Photo (allow upload or camera).
+	•	Optional Reference Card overlay: show a ghosted 85.6×54 mm ID/credit-card outline users can hold near a bloom for scale. If detected, use as pixel/mm calibration; else label metrics as “approximate”.
+	3.	OCR & Taxonomy
+	•	Run OCR on Tag Photo.
+	•	Parse fields (editable): Genus, Species/Grex, Clone/Cultivar, Breeder, Date, Source, Pot Size.
+	•	Hybrid toggle → if hybrid, show Parents A × B fields (+ “unknown” allowed).
+	•	Hook: allow later enrichment from FCOS taxonomy DB (by genus/species/grex).
+	4.	Image Analysis (best-effort)
+	•	From Plant Photo (and optional close-up if user adds one):
+	•	Flower count (per spike + total).
+	•	Spike/inflorescence count.
+	•	Basic symmetry hints: left/right petal angle variance, lip orientation consistency across top 3–5 best faces.
+	•	Relative measurements (if Reference Card present): natural spread (NS), dorsal sepal length, petal width, lip width; else label “approx.”
+	•	Condition cues: damage/tear detection, blemish spots, color uniformity (heuristic).
+	•	Show a confidence chip (e.g., “Count 23 ±2”) and an Edit button so user can correct any number quickly.
+	5.	Judging System & Scoring (educational)
+	•	Picker: AOS (default), AOC, NZ, RHS/UK.
+	•	Load rubric weights from the table below; render a transparent, multi-section score form with AI-suggested pre-fill from analysis.
+	•	Sections (example for AOS-style CCE/CCM/CCH educational rubrics):
+	•	Form/Symmetry/Balance
+	•	Color & Saturation
+	•	Size / Substance
+	•	Floriferousness (flower count & arrangement)
+	•	Condition & Grooming
+	•	Distinctiveness/Overall Impression
+	•	Show live total + range badges for common AOS award bands (e.g., HCC 75–79, AM 80–89, FCC 90–100) clearly labeled “for learning only.”
+	6.	Certificate & Save
+	•	Button: Generate Certificate (PDF)
+	•	Layout includes: logo, plant name (Genus species/grex ‘Clone’), hybrid parents, date, submitter, judging system, section scores, total, judge-style notes field, and two photos (plant + tag) with labels.
+	•	Save to Google Sheets + image links (see schema), plus optional email to submitter with PDF attached.
+	7.	About
+	•	Short text on FCOS & disclaimer; links to FCOS site/newsletter.
+
+Visual Design
+	•	Palette: Deep Plum #5B2A6E, Orchid Purple #8E44AD, Leaf Green #2ECC71, Mist White #F7F6FB, Charcoal #2D2D2D.
+	•	Cards 12–16px radius, subtle shadows, 150–250 ms fades.
+	•	Serif headings (Georgia), humanist sans for body (system-ui/Segoe/Roboto).
+
+⸻
+
+Seed Rubrics (configurable by Judging System)
+
+Use this JSON to seed the educational scoring weights; allow editing via a hidden “Admin Weights” panel.
+
+{
+  "rubrics": {
+    "AOS": {
+      "sections": [
+        {"key":"form","label":"Form / Symmetry / Balance","weight":0.30},
+        {"key":"color","label":"Color & Saturation","weight":0.15},
+        {"key":"size","label":"Size / Substance","weight":0.15},
+        {"key":"floriferous","label":"Floriferousness & Arrangement","weight":0.20},
+        {"key":"condition","label":"Condition & Grooming","weight":0.10},
+        {"key":"distinct","label":"Distinctiveness / Impression","weight":0.10}
+      ],
+      "awardBands":[
+        {"label":"HCC (educational)","min":75,"max":79},
+        {"label":"AM (educational)","min":80,"max":89},
+        {"label":"FCC (educational)","min":90,"max":100}
+      ]
+    },
+    "AOC": {
+      "sections": [
+        {"key":"form","label":"Form / Symmetry","weight":0.30},
+        {"key":"color","label":"Color","weight":0.20},
+        {"key":"size","label":"Size / Substance","weight":0.15},
+        {"key":"floriferous","label":"Floriferousness","weight":0.20},
+        {"key":"condition","label":"Condition","weight":0.10},
+        {"key":"distinct","label":"Distinctiveness","weight":0.05}
+      ],
+      "awardBands":[
+        {"label":"Award range A (edu)","min":75,"max":79},
+        {"label":"Award range B (edu)","min":80,"max":89},
+        {"label":"Award range C (edu)","min":90,"max":100}
+      ]
+    },
+    "NZ": { "sections": [/* clone from AOC or customize similarly */], "awardBands":[/* ... */]},
+    "RHS": { "sections": [/* customize per RHS guidance */], "awardBands":[/* ... */]}
+  }
+}
+
+Note: These aren’t official rubrics; they’re educational approximations. Keep the “educational” label in UI.
+
+⸻
+
+Google Sheets — Schema (one row per submission)
+
+Create a sheet “Submissions” with columns:
+	•	Timestamp
+	•	Submitter_Name
+	•	Submitter_Email
+	•	Consent (Y/N)
+	•	Judging_System (AOS/AOC/NZ/RHS)
+	•	Genus
+	•	Species_or_Grex
+	•	Clone_Cultivar
+	•	Hybrid_Parent_A
+	•	Hybrid_Parent_B
+	•	Breeder
+	•	Source/Vendor
+	•	Pot_Size_in
+	•	Flower_Count_AI
+	•	Flower_Count_Final
+	•	Spike_Count_AI
+	•	Spike_Count_Final
+	•	NS_mm (natural spread, mm; “approx” ok)
+	•	Dorsal_Length_mm (approx ok)
+	•	Petal_Width_mm (approx ok)
+	•	Lip_Width_mm (approx ok)
+	•	Symmetry_Score_AI (0–10 heuristic)
+	•	Condition_Flags (comma list)
+	•	Section_form
+	•	Section_color
+	•	Section_size
+	•	Section_floriferous
+	•	Section_condition
+	•	Section_distinct
+	•	Total_Score
+	•	Award_Band_EdU
+	•	Notes_JudgeStyle
+	•	Plant_Photo_URL
+	•	Tag_Photo_URL
+	•	Certificate_PDF_URL
+
+Also create a “Rubrics” sheet mirroring the JSON (system, key, label, weight, band labels/min/max).
+
+⸻
+
+Certificate (PDF) — Layout Spec
+	•	Header bar with FCOS logo & “Educational Practice Certificate”.
+	•	Plant block: Genus species/grex ‘Clone’; Parents (if hybrid); Submitter; Date.
+	•	Scores table: 2 columns — Criterion & Score; footer row = Total.
+	•	Notes area (judge-style prose).
+	•	Photos: left = plant, right = tag (fit within page, rounded corners).
+	•	Watermark: “Educational — Not Official Judging”.
+
+⸻
+
+Components
+	•	<PhotoCaptureCard> (with Reference Card overlay toggle)
+	•	<OCRPanel> (editable parsed fields)
+	•	<AnalysisPreview> (counts, sizes, symmetry, confidence)
+	•	<JudgingSystemPicker>
+	•	<ScoreForm> (auto-prefill + editable)
+	•	<CertificatePreview> + Generate PDF
+	•	<SaveBar> (Save to Sheets, Email me)
+	•	<Settings> (Dark Mode, Large Text)
+
+⸻
+
+Success Criteria
+	•	Phone → two photos → OCR → analysis → score → certificate PDF in ≤ 3 minutes.
+	•	Tap targets ≥44px; legible at arm’s length.
+	•	Works offline through capture and editing; sync on reconnect.
+	•	Data row + image links appear in Google Sheets after save.
+	•	“Add to Home Screen” works (manifest + service worker).
+	•	Clear disclaimers everywhere a score is shown.
+
+⸻
+
+Copy (use verbatim)
+	•	Banner: “Educational tool only — not affiliated with or approved by AOS/AOC/NZ/RHS.”
+	•	Button (start): “Start New Entry”
+	•	Analysis chip: “Count: {{n}} (±{{e}})”
+	•	Certificate button: “Generate Certificate (PDF)”
+	•	Save bar: “Save to FCOS” • “Email me a copy”
+	•	Empty state: “Let’s take two photos to begin: plant and tag.”
+
+⸻
+
+Optional Enhancements (nice-to-haves if builder supports them)
+	•	Background removal for hero bloom photo (cleaner certificate).
+	•	Pose guidance overlay (“center a single flower face; keep tag text sharp”).
+	•	Duplicate detector (same tag text + similar photo as prior submission).
+	•	Switch rubric by section for different award classes (e.g., HCC/AM-like presets).
+
+⸻
+
+Implementation Notes (for the builder)
+	•	For scale metrics: if Reference Card detected, compute mm from pixels; else mark fields “approx.”
+	•	If OCR fails, keep fields blank but don’t block scoring.
+	•	Store images in the builder’s storage and expose shareable URLs to place in the Sheet.
+	•	Use a print CSS for the certificate; also export PDF.
+	•	Keep rubric tables in code and mirror to a “Rubrics” sheet to allow admin edits later.
+
+⸻
