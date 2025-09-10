@@ -8764,3 +8764,11 @@ try:
     logger.info("🔍 Processing Pipeline Monitor registered successfully")
 except ImportError as e:
     logger.warning(f"Processing monitor not available: {e}")
+
+# Register AI Orchid Chat Interface
+try:
+    from ai_orchid_chat import register_ai_chat_routes
+    register_ai_chat_routes(app)
+    logger.info("🤖 AI Orchid Chat interface registered successfully")
+except ImportError as e:
+    logger.warning(f"AI chat not available: {e}")
