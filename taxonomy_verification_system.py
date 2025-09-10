@@ -145,18 +145,27 @@ class TaxonomyVerificationSystem:
             if genus in self.true_genera:
                 abbreviations[abbrev] = genus
         
-        # Auto-generate abbreviations for all database genera
+        logger.debug(f"Manual abbreviations added: {[(k, v) for k, v in abbreviations.items() if k in manual_abbrevs]}")
+        
+        # Auto-generate abbreviations for all database genera with collision handling
+        abbreviation_candidates = {}
+        
         for genus in self.true_genera:
             if len(genus) >= 3:
-                # First 3-4 letters as abbreviation
-                abbrev_3 = genus[:3]
-                abbrev_4 = genus[:4]
+                # Generate multiple abbreviation candidates
+                candidates = [genus[:3], genus[:4]]
+                if len(genus) >= 5:
+                    candidates.append(genus[:5])
                 
-                # Add if not conflicting
-                if abbrev_3 not in abbreviations:
-                    abbreviations[abbrev_3] = genus
-                elif abbrev_4 not in abbreviations:
-                    abbreviations[abbrev_4] = genus
+                # Track all candidates for each genus
+                abbreviation_candidates[genus] = candidates
+        
+        # Resolve collisions by preferring longer abbreviations when needed
+        for genus, candidates in abbreviation_candidates.items():
+            for candidate in candidates:
+                if candidate not in abbreviations:
+                    abbreviations[candidate] = genus
+                    break  # Use the first available (shortest) abbreviation
         
         logger.info(f"🔤 Built {len(abbreviations)} genus abbreviations from database")
         return abbreviations
@@ -166,13 +175,22 @@ class TaxonomyVerificationSystem:
         if not text:
             return None
             
-        # Pattern 1: Look for abbreviation + genus pattern (PT Max -> Maxillaria)
-        abbrev_pattern = r'\b(?:PT\s+)?([A-Z][a-z]{2,})\s+'
-        match = re.search(abbrev_pattern, text)
-        if match:
+        # Pattern 1: Look for abbreviation patterns (including single letters and dots)
+        # Matches: "C.", "Den", "Max", "PT Max", etc.
+        abbrev_pattern = r'\b(?:PT\s+)?([A-Z]\.?|[A-Z][a-z]{1,4}|[A-Z][a-z]{2,})\.?\s+'
+        matches = re.finditer(abbrev_pattern, text)
+        
+        for match in matches:
             potential_abbrev = match.group(1)
+            # Try exact match first, then case-insensitive
             if potential_abbrev in self.genus_abbreviations:
                 return self.genus_abbreviations[potential_abbrev]
+            
+            # Try with dot for single letters
+            if len(potential_abbrev) == 1:
+                potential_with_dot = potential_abbrev + '.'
+                if potential_with_dot in self.genus_abbreviations:
+                    return self.genus_abbreviations[potential_with_dot]
         
         # Pattern 2: Look for full genus names (case-insensitive with caching)
         text_lower = text.lower()
@@ -239,22 +257,38 @@ class TaxonomyVerificationSystem:
         """Specifically scan Potinara records for misclassifications"""
         return self.scan_all_records('Potinara')
 
-    def generate_correction_sql(self, issues: List[Dict]) -> List[str]:
-        """Generate SQL statements to correct the issues"""
-        corrections = []
+    def apply_corrections_safely(self, issues: List[Dict], min_confidence: float = 0.8) -> Dict:
+        """Safely apply corrections using ORM instead of raw SQL"""
+        from models import OrchidRecord, db
+        
+        results = {
+            'applied': 0,
+            'skipped_low_confidence': 0,
+            'errors': []
+        }
         
         for issue in issues:
             if not issue['suggested_corrections']:
                 continue
                 
             correction = issue['suggested_corrections'][0]
-            if correction['confidence'] > 0.7:  # Only high-confidence corrections
-                sql = f"""UPDATE orchid_record 
-                         SET genus = '{correction['to_genus']}' 
-                         WHERE id = {issue['record_id']};"""
-                corrections.append(sql)
+            if correction['confidence'] < min_confidence:
+                results['skipped_low_confidence'] += 1
+                continue
+            
+            try:
+                # Use ORM for safe database updates
+                record = OrchidRecord.query.get(issue['record_id'])
+                if record:
+                    record.genus = correction['to_genus']
+                    db.session.commit()
+                    results['applied'] += 1
+                    logger.info(f"✅ Corrected record {issue['record_id']}: {correction['from_genus']} → {correction['to_genus']}")
+            except Exception as e:
+                results['errors'].append(f"Record {issue['record_id']}: {str(e)}")
+                db.session.rollback()
         
-        return corrections
+        return results
 
     def get_taxonomy_statistics(self) -> Dict:
         """Get statistics about taxonomy issues in the database"""
