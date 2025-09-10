@@ -142,3 +142,10 @@ try:
     print("API v2 routes initialized - FastAPI-compatible endpoints available")
 except Exception as e:
     print(f"API v2 routes initialization error: {e}")
+
+try:
+    from taxonomy_verification_routes import register_taxonomy_routes
+    register_taxonomy_routes(app)
+    print("Taxonomy Verification system initialized")
+except Exception as e:
+    print(f"Taxonomy Verification initialization error: {e}")
