@@ -47,25 +47,64 @@ Your capabilities include:
 Always provide accurate, scientific information while being accessible to both beginners and experts. When analyzing images, be specific about what you observe and confident in your identifications when certain."""
 
     def analyze_orchid_image(self, image_url: str, user_question: str = None) -> Dict[str, Any]:
-        """Analyze an orchid image using GPT-5 vision"""
+        """Analyze an orchid image using GPT-5 vision with structured metadata extraction"""
         try:
-            # Prepare the message
+            # Prepare the message for structured analysis
+            analysis_prompt = f"""As an expert orchid botanist, analyze this orchid image and provide structured metadata. Return your analysis in this exact JSON format:
+
+{{
+    "species_identification": {{
+        "genus": "Best guess for genus",
+        "species": "Best guess for species",
+        "confidence": "1-10 scale",
+        "reasoning": "Why you think this identification"
+    }},
+    "visual_characteristics": {{
+        "flower_color": "Primary and secondary colors",
+        "flower_size": "Estimated size description",
+        "flower_count": "Number of flowers visible",
+        "flower_shape": "Shape description",
+        "lip_characteristics": "Labellum features",
+        "petal_sepals": "Petal and sepal description"
+    }},
+    "plant_assessment": {{
+        "flowering_status": "Current flowering stage",
+        "plant_health": "Overall condition assessment",
+        "growth_habit": "Epiphytic, terrestrial, etc.",
+        "pseudobulb_condition": "If visible",
+        "root_health": "If visible",
+        "leaf_condition": "Leaf health and appearance"
+    }},
+    "growing_conditions": {{
+        "apparent_location": "Indoor, greenhouse, outdoor, etc.",
+        "lighting": "Light conditions visible",
+        "mounting_potting": "How it's grown",
+        "humidity_indicators": "Signs of humidity levels"
+    }},
+    "care_recommendations": {{
+        "immediate_needs": "Any urgent care needed",
+        "watering": "Watering recommendations",
+        "light_requirements": "Light needs",
+        "temperature": "Temperature preferences",
+        "humidity": "Humidity requirements",
+        "fertilizing": "Feeding recommendations"
+    }},
+    "botanical_notes": {{
+        "special_features": "Unique characteristics",
+        "cultivation_difficulty": "Easy, moderate, challenging",
+        "blooming_season": "When it typically blooms",
+        "fragrance": "If any fragrance is apparent"
+    }}
+}}
+
+{f'User specific question: {user_question}' if user_question else ''}
+
+Provide detailed, scientific observations while being practical for orchid care."""
+
             message_content = [
                 {
                     "type": "text",
-                    "text": f"""As an expert orchid botanist, analyze this orchid image in detail. Provide:
-
-1. **Species Identification**: Best guess for genus and species
-2. **Confidence Level**: How certain you are (1-10 scale)
-3. **Key Characteristics**: Notable features you observe
-4. **Flowering Status**: Current flowering stage if visible
-5. **Health Assessment**: Overall plant condition
-6. **Growing Conditions**: Apparent environment/setup
-7. **Care Recommendations**: Specific advice based on what you see
-
-{f'User asked: {user_question}' if user_question else ''}
-
-Format your response as detailed observations with scientific accuracy."""
+                    "text": analysis_prompt
                 },
                 {
                     "type": "image_url",
@@ -79,18 +118,27 @@ Format your response as detailed observations with scientific accuracy."""
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": message_content}
                 ],
-                max_tokens=1000,
-                temperature=0.3
+                max_tokens=1500,
+                temperature=0.3,
+                response_format={"type": "json_object"}
             )
 
-            analysis = response.choices[0].message.content
+            analysis_text = response.choices[0].message.content
+            
+            # Parse the JSON response
+            try:
+                structured_analysis = json.loads(analysis_text)
+            except json.JSONDecodeError:
+                # Fallback to text analysis if JSON parsing fails
+                structured_analysis = {"raw_analysis": analysis_text}
             
             # Log the analysis
-            logger.info(f"🤖 AI analyzed orchid image: {len(analysis)} chars")
+            logger.info(f"🤖 AI analyzed orchid image: {len(analysis_text)} chars, structured: {bool('species_identification' in structured_analysis)}")
             
             return {
                 'success': True,
-                'analysis': analysis,
+                'analysis': analysis_text,
+                'structured_metadata': structured_analysis,
                 'timestamp': datetime.now().isoformat(),
                 'model': 'gpt-5'
             }

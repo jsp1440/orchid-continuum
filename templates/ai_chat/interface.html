@@ -125,6 +125,43 @@
             font-size: 0.9rem;
             z-index: 1000;
         }
+        
+        .structured-analysis {
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .analysis-section {
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            padding-left: 10px;
+        }
+        
+        .analysis-section h6 {
+            margin-bottom: 8px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .metadata-grid div {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .metadata-grid strong {
+            color: #333;
+            min-width: 120px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -290,11 +327,94 @@
         }
         
         function formatMessage(content) {
-            // Convert markdown-like formatting to HTML
-            return content
+            // Escape HTML to prevent XSS, then apply safe formatting
+            const escaped = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            
+            return escaped
                 .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
                 .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
                 .replace(/\\n/g, '<br>');
+        }
+        
+        function formatStructuredAnalysis(data) {
+            if (!data.structured_metadata) {
+                return formatMessage(data.analysis);
+            }
+            
+            const metadata = data.structured_metadata;
+            let html = '<div class="structured-analysis">';
+            
+            // Species Identification
+            if (metadata.species_identification) {
+                const species = metadata.species_identification;
+                html += `
+                    <div class="analysis-section">
+                        <h6>🔬 Species Identification</h6>
+                        <div class="metadata-grid">
+                            <div><strong>Genus:</strong> ${species.genus || 'Unknown'}</div>
+                            <div><strong>Species:</strong> ${species.species || 'Unknown'}</div>
+                            <div><strong>Confidence:</strong> ${species.confidence || 'N/A'}/10</div>
+                            <div><strong>Reasoning:</strong> ${species.reasoning || 'Not provided'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Visual Characteristics
+            if (metadata.visual_characteristics) {
+                const visual = metadata.visual_characteristics;
+                html += `
+                    <div class="analysis-section">
+                        <h6>🌺 Visual Characteristics</h6>
+                        <div class="metadata-grid">
+                            <div><strong>Flower Color:</strong> ${visual.flower_color || 'Not specified'}</div>
+                            <div><strong>Flower Size:</strong> ${visual.flower_size || 'Not specified'}</div>
+                            <div><strong>Flower Count:</strong> ${visual.flower_count || 'Not specified'}</div>
+                            <div><strong>Shape:</strong> ${visual.flower_shape || 'Not specified'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Plant Assessment
+            if (metadata.plant_assessment) {
+                const assessment = metadata.plant_assessment;
+                html += `
+                    <div class="analysis-section">
+                        <h6>🌱 Plant Health Assessment</h6>
+                        <div class="metadata-grid">
+                            <div><strong>Flowering Status:</strong> ${assessment.flowering_status || 'Not assessed'}</div>
+                            <div><strong>Plant Health:</strong> ${assessment.plant_health || 'Not assessed'}</div>
+                            <div><strong>Growth Habit:</strong> ${assessment.growth_habit || 'Not specified'}</div>
+                            <div><strong>Leaf Condition:</strong> ${assessment.leaf_condition || 'Not assessed'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Care Recommendations
+            if (metadata.care_recommendations) {
+                const care = metadata.care_recommendations;
+                html += `
+                    <div class="analysis-section">
+                        <h6>💡 Care Recommendations</h6>
+                        <div class="metadata-grid">
+                            <div><strong>Watering:</strong> ${care.watering || 'Standard orchid care'}</div>
+                            <div><strong>Light:</strong> ${care.light_requirements || 'Bright indirect light'}</div>
+                            <div><strong>Humidity:</strong> ${care.humidity || '50-70%'}</div>
+                            <div><strong>Temperature:</strong> ${care.temperature || 'Room temperature'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            return html;
         }
         
         function showTypingIndicator() {
@@ -369,7 +489,15 @@
                     const contextInfo = data.context && data.context.display_name ? 
                         `<br><br><small><strong>Database Info:</strong> ${data.context.display_name} (${data.context.genus} ${data.context.species})</small>` : '';
                     
-                    addMessage(`🌺 <strong>AI Analysis of ${orchidName}:</strong><br><br>${data.analysis}${contextInfo}`, 'ai');
+                    // Use structured analysis if available
+                    let analysisContent;
+                    if (data.structured_metadata) {
+                        analysisContent = formatStructuredAnalysis(data);
+                    } else {
+                        analysisContent = formatMessage(data.analysis);
+                    }
+                    
+                    addMessage(`🌺 <strong>AI Analysis of ${orchidName}:</strong><br><br>${analysisContent}${contextInfo}`, 'ai');
                 } else {
                     addMessage(`Sorry, I couldn't analyze the image: ${data.error}`, 'ai');
                 }
