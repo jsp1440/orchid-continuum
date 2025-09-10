@@ -345,11 +345,11 @@ class FCOSJudgeApp {
 
                     <div class="certificate-photos">
                         <div class="photo-container">
-                            <img src="${data.photos.plant.url}" alt="Plant photo" class="cert-photo">
+                            <img src="${data.photos?.plant?.url || '/static/images/placeholder-orchid.jpg'}" alt="Plant photo" class="cert-photo">
                             <label>Plant</label>
                         </div>
                         <div class="photo-container">
-                            <img src="${data.photos.tag.url}" alt="Tag photo" class="cert-photo">
+                            <img src="${data.photos?.tag?.url || '/static/images/placeholder-tag.jpg'}" alt="Tag photo" class="cert-photo">
                             <label>Tag</label>
                         </div>
                     </div>
