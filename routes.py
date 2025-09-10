@@ -6078,15 +6078,15 @@ def api_recent_orchids():
         }
     ]
     
-    # Apply any filters requested
-    limit = int(request.args.get('limit', 20))
-    with_coordinates = request.args.get('with_coordinates', 'false').lower() == 'true'
-    
-    if with_coordinates:
-        # Filter to only orchids with coordinates
-        working_orchids = [o for o in working_orchids if o.get('decimal_latitude') and o.get('decimal_longitude')]
-    
-    return jsonify(working_orchids[:limit])
+        # Apply any filters requested
+        limit = int(request.args.get('limit', 20))
+        with_coordinates = request.args.get('with_coordinates', 'false').lower() == 'true'
+        
+        if with_coordinates:
+            # Filter to only orchids with coordinates
+            fallback_orchids = [o for o in fallback_orchids if o.get('decimal_latitude') and o.get('decimal_longitude')]
+        
+        return jsonify(fallback_orchids[:limit])
 
 
 # ==============================================================================
