@@ -1542,35 +1542,37 @@ def get_mahjong_orchid_images():
         }), 500
 
 # Load philosophy quiz system
+# Create mock objects to prevent errors (always available)
+class MockWidgetHub:
+    def get_user_session(self): return {}
+    def manage_favorites(self, action, orchid_id=None, orchid_data=None): return {'favorites': [], 'count': 0}
+    def get_smart_recommendations(self, widget_type): return {'next_widgets': [], 'suggested_actions': []}
+    def track_exploration_progress(self, data): return {'progress': {}, 'new_achievements': []}
+    def get_unified_dashboard_data(self): return {}
+
+class MockMobileOptimizer:
+    def detect_device_type(self): return 'desktop'
+    def get_mobile_optimized_config(self, widget_type, device_type=None): return {'device_type': 'desktop'}
+    def get_touch_controls_javascript(self, widget_type): return '// Mobile controls not available'
+    def get_mobile_css(self): return '/* Mobile styles not available */'
+
+class MockCollectionHub:
+    def get_collection_dashboard_data(self): return {'collection': {'owned_orchids': [], 'wishlist': []}, 'statistics': {}, 'care_reminders': []}
+    def get_personalized_recommendations(self): return {'recommendations': []}
+    def add_to_collection(self, orchid_id, collection_type='owned', care_data=None): return {'success': False, 'error': 'Collection system not available'}
+    def log_care_activity(self, orchid_id, care_type, notes=''): return {'success': False, 'error': 'Collection system not available'}
+    def get_care_reminders(self): return []
+
+# Always create mock objects (can be overridden by real imports later)
+widget_hub = MockWidgetHub()
+mobile_optimizer = MockMobileOptimizer()
+collection_hub = MockCollectionHub()
+
 try:
     import philosophy_quiz_system
     logger.info("✅ Philosophy Quiz system loaded successfully")
 except ImportError as e:
     logger.warning(f"⚠️ Philosophy Quiz system not available: {e}")
-    # Create mock objects to prevent errors
-    class MockWidgetHub:
-        def get_user_session(self): return {}
-        def manage_favorites(self, action, orchid_id=None, orchid_data=None): return {'favorites': [], 'count': 0}
-        def get_smart_recommendations(self, widget_type): return {'next_widgets': [], 'suggested_actions': []}
-        def track_exploration_progress(self, data): return {'progress': {}, 'new_achievements': []}
-        def get_unified_dashboard_data(self): return {}
-    
-    class MockMobileOptimizer:
-        def detect_device_type(self): return 'desktop'
-        def get_mobile_optimized_config(self, widget_type, device_type=None): return {'device_type': 'desktop'}
-        def get_touch_controls_javascript(self, widget_type): return '// Mobile controls not available'
-        def get_mobile_css(self): return '/* Mobile styles not available */'
-    
-    class MockCollectionHub:
-        def get_collection_dashboard_data(self): return {'collection': {'owned_orchids': [], 'wishlist': []}, 'statistics': {}, 'care_reminders': []}
-        def get_personalized_recommendations(self): return {'recommendations': []}
-        def add_to_collection(self, orchid_id, collection_type='owned', care_data=None): return {'success': False, 'error': 'Collection system not available'}
-        def log_care_activity(self, orchid_id, care_type, notes=''): return {'success': False, 'error': 'Collection system not available'}
-        def get_care_reminders(self): return []
-    
-    widget_hub = MockWidgetHub()
-    mobile_optimizer = MockMobileOptimizer()
-    collection_hub = MockCollectionHub()
     
     def track_widget_interaction(widget_name, action, **context_data):
         pass
