@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Pest & Diseases Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-danger">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="shield" class="me-2"></i>
+                            Pest & Diseases Hub
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('identify')">
+                                <i data-feather="search" class="me-1"></i>Identify
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('treatment')">
+                                <i data-feather="activity" class="me-1"></i>Treatment
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('prevention')">
+                                <i data-feather="shield-check" class="me-1"></i>Prevention
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('calendar')">
+                                <i data-feather="calendar" class="me-1"></i>Care Calendar
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Comprehensive plant health management and diagnostic tools</p>
+                </div>
+                <div class="card-body p-0">
+                    <div id="pest-disease-content" style="min-height: 600px;">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'identify';
+
+function switchTab(tab) {
+    currentTab = tab;
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    loadTabContent(tab);
+    
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_pest_disease_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('pest-disease-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-danger" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'identify':
+                await renderIdentifyTab();
+                break;
+            case 'treatment':
+                await renderTreatmentTab();
+                break;
+            case 'prevention':
+                await renderPreventionTab();
+                break;
+            case 'calendar':
+                await renderCalendarTab();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderIdentifyTab() {
+    document.getElementById('pest-disease-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Upload Problem Photo</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="upload-area border border-danger rounded p-4 text-center mb-3" style="border-style: dashed !important;">
+                                <i data-feather="camera" style="width: 48px; height: 48px;" class="text-danger mb-3"></i>
+                                <h6>Upload photo of affected orchid</h6>
+                                <p class="text-muted mb-3">Clear photos help with accurate diagnosis</p>
+                                <input type="file" id="problem-photo" accept="image/*" style="display: none;">
+                                <button class="btn btn-danger" onclick="document.getElementById('problem-photo').click()">
+                                    Choose Photo
+                                </button>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Symptoms Checklist</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-spots">
+                                            <label class="form-check-label small">Spots on leaves</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-yellowing">
+                                            <label class="form-check-label small">Yellowing</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-wilting">
+                                            <label class="form-check-label small">Wilting</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-webbing">
+                                            <label class="form-check-label small">Webbing/sticky</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-insects">
+                                            <label class="form-check-label small">Visible insects</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-rotting">
+                                            <label class="form-check-label small">Soft/rotting areas</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-distortion">
+                                            <label class="form-check-label small">Growth distortion</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="symptom-dropping">
+                                            <label class="form-check-label small">Bud/flower drop</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button class="btn btn-danger" onclick="diagnoseProblem()">
+                                    <i data-feather="search" class="me-1"></i>Diagnose Problem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Common Issues Quick Reference</h6>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            <div class="accordion" id="quickReference">
+                                <div class="accordion-item bg-dark">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#pests">
+                                            Common Pests
+                                        </button>
+                                    </h2>
+                                    <div id="pests" class="accordion-collapse collapse show">
+                                        <div class="accordion-body">
+                                            <div class="mb-2">
+                                                <strong class="text-danger">Spider Mites</strong><br>
+                                                <small>Fine webbing, stippled leaves, tiny moving dots</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-danger">Scale Insects</strong><br>
+                                                <small>Brown/white bumps on stems and leaves</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-danger">Aphids</strong><br>
+                                                <small>Small green/black insects, sticky honeydew</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-danger">Thrips</strong><br>
+                                                <small>Silver streaks on leaves, tiny black specks</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item bg-dark">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed bg-dark text-light" type="button" data-bs-toggle="collapse" data-bs-target="#diseases">
+                                            Common Diseases
+                                        </button>
+                                    </h2>
+                                    <div id="diseases" class="accordion-collapse collapse">
+                                        <div class="accordion-body">
+                                            <div class="mb-2">
+                                                <strong class="text-warning">Black Rot</strong><br>
+                                                <small>Soft, black, water-soaked areas spreading rapidly</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-warning">Crown Rot</strong><br>
+                                                <small>Center of plant turns brown/black and soft</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-warning">Leaf Spot</strong><br>
+                                                <small>Circular brown/black spots with yellow halos</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong class="text-warning">Fusarium Wilt</strong><br>
+                                                <small>Purple/reddish discoloration in roots and stems</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

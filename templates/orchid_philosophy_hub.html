@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Philosophy & Culture Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-purple" style="border-color: #8B4F9C !important;">
+                <div class="card-header text-white" style="background: #8B4F9C;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="flower" class="me-2"></i>
+                            Orchid Philosophy & Culture
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('philosophy')">
+                                <i data-feather="book" class="me-1"></i>Philosophy
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('hollywood')">
+                                <i data-feather="star" class="me-1"></i>Hollywood in Bloom
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('mahjong')">
+                                <i data-feather="grid-3x3" class="me-1"></i>Mahjong
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('culture')">
+                                <i data-feather="globe" class="me-1"></i>Cultural Stories
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Explore the deeper meaning and cultural significance of orchids</p>
+                </div>
+                <div class="card-body p-0">
+                    <div id="philosophy-content" style="min-height: 600px;">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'philosophy';
+
+function switchTab(tab) {
+    currentTab = tab;
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    loadTabContent(tab);
+    
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_philosophy_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('philosophy-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border" style="color: #8B4F9C;" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'philosophy':
+                await renderPhilosophyTab();
+                break;
+            case 'hollywood':
+                await renderHollywoodTab();
+                break;
+            case 'mahjong':
+                await renderMahjongTab();
+                break;
+            case 'culture':
+                await renderCultureTab();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderPhilosophyTab() {
+    document.getElementById('philosophy-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">The Philosophy of Orchids</h6>
+                        </div>
+                        <div class="card-body">
+                            <h5 style="color: #8B4F9C;">Beauty in Complexity</h5>
+                            <p>Orchids teach us that true beauty often lies in complexity - in the intricate relationships between plant and pollinator, in the delicate balance of environmental factors, and in the patience required to witness their extraordinary blooms.</p>
+                            
+                            <h5 style="color: #8B4F9C;" class="mt-4">Lessons from the Orchid</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-warning">Patience</h6>
+                                        <p class="small">Orchids remind us that the most beautiful things in life cannot be rushed. Some species take years to bloom from seed.</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="text-success">Adaptation</h6>
+                                        <p class="small">Found on every continent except Antarctica, orchids show us the power of adaptation and resilience.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-info">Symbiosis</h6>
+                                        <p class="small">Their relationship with mycorrhizal fungi teaches us about the importance of partnership and mutual benefit.</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="text-primary">Elegance</h6>
+                                        <p class="small">In their form and function, orchids embody the principle that true elegance is achieved through perfect harmony.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <h6>Orchid Meditation</h6>
+                                <p class="mb-0">Take a moment to observe an orchid in bloom. Notice the intricate patterns, the subtle color variations, the perfect symmetry. In this moment of mindful observation, we connect with the wonder that has captivated humans for millennia.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-secondary mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Orchid Wisdom Quotes</h6>
+                        </div>
+                        <div class="card-body">
+                            <blockquote class="blockquote small">
+                                <p>"Like the orchid, we must learn to bloom where we are planted, adapting to our circumstances while maintaining our unique beauty."</p>
+                            </blockquote>
+                            <blockquote class="blockquote small">
+                                <p>"An orchid does not hurry to bloom; it takes the time needed to create perfection."</p>
+                            </blockquote>
+                            <blockquote class="blockquote small">
+                                <p>"In the silence of the greenhouse, orchids teach us that growth happens in quiet moments."</p>
+                            </blockquote>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Philosophical Exercises</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-light btn-sm" onclick="startMeditation()">
+                                    Orchid Meditation
+                                </button>
+                                <button class="btn btn-outline-light btn-sm" onclick="openJournal()">
+                                    Reflection Journal
+                                </button>
+                                <button class="btn btn-outline-light btn-sm" onclick="takeQuiz()">
+                                    Philosophy Quiz
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+async function renderMahjongTab() {
+    document.getElementById('philosophy-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Orchid Mahjong</h6>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-light" onclick="startSinglePlayer()">Single Player</button>
+                                <button class="btn btn-outline-light" onclick="joinMultiplayer()">Multiplayer</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="mahjong-game-area" style="min-height: 400px; background: #1a1a1a; border-radius: 8px; position: relative;">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="text-center">
+                                        <i data-feather="grid-3x3" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                                        <h5>Orchid-Themed Mahjong</h5>
+                                        <p class="text-muted mb-3">Match beautiful orchid tiles in this relaxing puzzle game</p>
+                                        <button class="btn btn-primary" onclick="startMahjongGame()" style="background: #8B4F9C; border-color: #8B4F9C;">
+                                            Start New Game
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-dark">
+                                        <div class="card-body p-2">
+                                            <h6 class="small mb-1">Game Statistics</h6>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Games Played</span>
+                                                <span class="badge bg-info">23</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Best Time</span>
+                                                <span class="badge bg-success">4:32</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Win Rate</span>
+                                                <span class="badge bg-warning">78%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-dark">
+                                        <div class="card-body p-2">
+                                            <h6 class="small mb-1">Current Game</h6>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Time</span>
+                                                <span id="game-timer">00:00</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Matches</span>
+                                                <span id="match-count">0</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Remaining</span>
+                                                <span id="tiles-remaining">144</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Orchid Tile Gallery</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-3">Each tile features a different orchid species</p>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Cattleya</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Phalaenopsis</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Dendrobium</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Oncidium</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Vanda</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mahjong-tile bg-light rounded p-2 text-center" style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="/static/images/orchid_placeholder.svg" style="width: 30px; height: 30px;">
+                                    </div>
+                                    <small class="d-block text-center mt-1">Cymbidium</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Leaderboard</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small">1. OrchidMaster</span>
+                                <span class="badge bg-gold">2:45</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small">2. FlowerPower</span>
+                                <span class="badge bg-silver">3:12</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small">3. BloomBuster</span>
+                                <span class="badge bg-bronze">3:28</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="small">You</span>
+                                <span class="badge bg-info">4:32</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+// Game functions
+function startMahjongGame() {
+    console.log('Starting Orchid Mahjong game');
+    // This would initialize the actual mahjong game
+    document.getElementById('mahjong-game-area').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border mb-3" style="color: #8B4F9C;"></div>
+            <p>Loading Orchid Mahjong game...</p>
+        </div>
+    `;
+    
+    // Simulate game loading
+    setTimeout(() => {
+        // This would render the actual game board
+        alert('Mahjong game would load here with orchid-themed tiles!');
+    }, 1500);
+}
+
+function startMeditation() {
+    console.log('Starting orchid meditation');
+    // Could open a meditation widget
+}
+
+function openJournal() {
+    console.log('Opening reflection journal');
+    // Could open a journaling interface
+}
+
+function takeQuiz() {
+    window.open('/widgets/enhanced-philosophy-quiz', '_blank');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+
+<style>
+.badge.bg-gold { background-color: #FFD700 !important; color: #000; }
+.badge.bg-silver { background-color: #C0C0C0 !important; color: #000; }
+.badge.bg-bronze { background-color: #CD7F32 !important; color: #fff; }
+</style>
+{% endblock %}

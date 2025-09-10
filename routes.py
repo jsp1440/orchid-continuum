@@ -8920,3 +8920,338 @@ try:
     logger.info("🤖 AI Orchid Chat interface registered successfully")
 except ImportError as e:
     logger.warning(f"AI chat not available: {e}")
+
+# =============================================================================
+# NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
+# =============================================================================
+
+@app.route('/geo')
+def geo_explorer_hub():
+    """GeoExplorer Hub - Unified geographic exploration"""
+    return render_template('geo_explorer_hub.html')
+
+@app.route('/gallery-hub')
+def gallery_hub():
+    """Gallery Hub - Comprehensive orchid image browsing"""
+    return render_template('gallery_hub.html')
+
+@app.route('/education')
+def education_hub():
+    """Education Hub - Glossary, crosswords, flashcards, and learning tools"""
+    return render_template('education_hub.html')
+
+@app.route('/ai-tools')
+def ai_tools_bundle():
+    """AI Tools Bundle - Breeding, identification, and analysis"""
+    return render_template('ai_tools_bundle.html')
+
+@app.route('/collection')
+def my_collection_hub():
+    """My Collection Hub - Photo management, editing, and publishing"""
+    return render_template('my_collection_hub.html')
+
+@app.route('/pest-diseases')
+def pest_diseases_hub():
+    """Pest & Diseases Hub - Plant health management"""
+    return render_template('pest_diseases_hub.html')
+
+@app.route('/philosophy')
+def orchid_philosophy_hub():
+    """Orchid Philosophy & Culture Hub - Deeper meaning and cultural significance"""
+    return render_template('orchid_philosophy_hub.html')
+
+# =============================================================================
+# EMBED ENDPOINTS FOR NEON ONE INTEGRATION
+# =============================================================================
+
+@app.route('/embed/geo')
+def embed_geo():
+    """Embeddable GeoExplorer widget"""
+    mode = request.args.get('mode', 'map')
+    theme = request.args.get('theme', 'default')
+    return render_template('geo_explorer_hub.html', 
+                         embed_mode=True, 
+                         default_mode=mode,
+                         theme=theme)
+
+@app.route('/embed/gallery')
+def embed_gallery():
+    """Embeddable Gallery widget"""
+    tab = request.args.get('tab', 'browse')
+    return render_template('gallery_hub.html', 
+                         embed_mode=True, 
+                         default_tab=tab)
+
+@app.route('/embed/education')
+def embed_education():
+    """Embeddable Education widget"""
+    tab = request.args.get('tab', 'glossary')
+    difficulty = request.args.get('difficulty', 'beginner')
+    return render_template('education_hub.html', 
+                         embed_mode=True, 
+                         default_tab=tab,
+                         default_difficulty=difficulty)
+
+@app.route('/embed/ai-tools')
+def embed_ai_tools():
+    """Embeddable AI Tools widget"""
+    tab = request.args.get('tab', 'breeding')
+    return render_template('ai_tools_bundle.html', 
+                         embed_mode=True, 
+                         default_tab=tab)
+
+@app.route('/embed/collection')
+def embed_collection():
+    """Embeddable Collection widget"""
+    tab = request.args.get('tab', 'photos')
+    contest = request.args.get('contest', 'false') == 'true'
+    member_id = request.args.get('member_id')
+    member_name = request.args.get('member_name')
+    return render_template('my_collection_hub.html', 
+                         embed_mode=True, 
+                         default_tab=tab,
+                         contest_mode=contest,
+                         member_id=member_id,
+                         member_name=member_name)
+
+@app.route('/embed/pest-diseases')
+def embed_pest_diseases():
+    """Embeddable Pest & Diseases widget"""
+    tab = request.args.get('tab', 'identify')
+    return render_template('pest_diseases_hub.html', 
+                         embed_mode=True, 
+                         default_tab=tab)
+
+@app.route('/embed/philosophy')
+def embed_philosophy():
+    """Embeddable Philosophy widget"""
+    tab = request.args.get('tab', 'philosophy')
+    return render_template('orchid_philosophy_hub.html', 
+                         embed_mode=True, 
+                         default_tab=tab)
+
+@app.route('/embed/sdk.js')
+def embed_sdk():
+    """JavaScript SDK for iframe postMessage integration"""
+    sdk_content = '''
+// Orchid Continuum Embed SDK v1.0
+(function() {
+    'use strict';
+    
+    window.OrchidContinuumSDK = {
+        version: '1.0.0',
+        
+        // Initialize message listeners
+        init: function(config) {
+            this.config = {
+                origin: config.origin || window.location.origin,
+                onPhotoSubmission: config.onPhotoSubmission || null,
+                onContestEntry: config.onContestEntry || null,
+                onMemberActivity: config.onMemberActivity || null,
+                allowedOrigins: config.allowedOrigins || ['https://neon.one', 'https://app.neon.one']
+            };
+            
+            window.addEventListener('message', this.handleMessage.bind(this));
+        },
+        
+        // Handle postMessage events from embedded widgets
+        handleMessage: function(event) {
+            // Security: Check origin
+            const allowed = this.config.allowedOrigins.some(origin => 
+                event.origin.includes(origin) || event.origin === this.config.origin
+            );
+            
+            if (!allowed) {
+                console.warn('OrchidSDK: Message from unauthorized origin:', event.origin);
+                return;
+            }
+            
+            const data = event.data;
+            if (!data.type || !data.type.startsWith('orchid_')) return;
+            
+            switch(data.type) {
+                case 'orchid_photo_submission':
+                    if (this.config.onPhotoSubmission) {
+                        this.config.onPhotoSubmission(data);
+                    }
+                    break;
+                    
+                case 'orchid_contest_submission':
+                    if (this.config.onContestEntry) {
+                        this.config.onContestEntry(data);
+                    }
+                    break;
+                    
+                case 'orchid_member_activity':
+                    if (this.config.onMemberActivity) {
+                        this.config.onMemberActivity(data);
+                    }
+                    break;
+                    
+                case 'orchid_widget_loaded':
+                    console.log('OrchidSDK: Widget loaded:', data.widget);
+                    break;
+                    
+                case 'orchid_widget_error':
+                    console.error('OrchidSDK: Widget error:', data.error);
+                    break;
+            }
+        },
+        
+        // Send message to embedded widget
+        sendToWidget: function(iframe, message) {
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage(message, '*');
+            }
+        }
+    };
+})();
+'''
+    
+    response = Response(sdk_content, mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+# =============================================================================
+# SECURITY MIDDLEWARE FOR EMBED ENDPOINTS
+# =============================================================================
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers for embedding"""
+    # Allow embedding from trusted domains
+    allowed_origins = [
+        'https://neon.one',
+        'https://app.neon.one', 
+        'https://orchidcontinuum.com',
+        'https://*.orchidcontinuum.com'
+    ]
+    
+    # Set X-Frame-Options for embedding
+    if request.path.startswith('/embed/'):
+        response.headers['X-Frame-Options'] = 'ALLOWALL'
+        response.headers['Content-Security-Policy'] = "frame-ancestors 'self' https://neon.one https://app.neon.one https://orchidcontinuum.com https://*.orchidcontinuum.com;"
+    else:
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    
+    return response
+
+# =============================================================================
+# API ENDPOINTS FOR HUB FUNCTIONALITY  
+# =============================================================================
+
+@app.route('/api/hub/education/glossary')
+def api_education_glossary():
+    """API endpoint for glossary terms"""
+    try:
+        from aos_glossary_extractor import OrchidGlossaryTerm
+        
+        category = request.args.get('category', 'all')
+        search = request.args.get('search', '')
+        limit = int(request.args.get('limit', 50))
+        
+        query = OrchidGlossaryTerm.query
+        
+        if category != 'all':
+            query = query.filter(OrchidGlossaryTerm.category == category)
+            
+        if search:
+            query = query.filter(or_(
+                OrchidGlossaryTerm.term.ilike(f'%{search}%'),
+                OrchidGlossaryTerm.definition.ilike(f'%{search}%')
+            ))
+            
+        terms = query.limit(limit).all()
+        
+        return jsonify({
+            'success': True,
+            'terms': [{
+                'term': t.term,
+                'definition': t.definition,
+                'category': t.category,
+                'difficulty': t.difficulty
+            } for t in terms]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error fetching glossary terms: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/hub/education/crossword')
+def api_education_crossword():
+    """API endpoint for crossword puzzle generation"""
+    try:
+        from crossword_generator import CrosswordGenerator
+        
+        difficulty = request.args.get('difficulty', 'beginner')
+        size = request.args.get('size', 'medium')
+        
+        generator = CrosswordGenerator()
+        puzzle = generator.generate_crossword(difficulty=difficulty, size=size)
+        
+        return jsonify({
+            'success': True,
+            'puzzle': puzzle
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating crossword: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/hub/collection/contest-submit', methods=['POST'])
+def api_collection_contest_submit():
+    """API endpoint for contest photo submissions"""
+    try:
+        data = request.get_json()
+        
+        # Use existing monthly contest system
+        from monthly_contest_system import monthly_contest
+        
+        result = monthly_contest.submit_entry(
+            member_id=data.get('member_id'),
+            entry_data=data
+        )
+        
+        # Send postMessage event for Neon One integration
+        return jsonify({
+            'success': True,
+            'contest_entry_id': result.get('entry_id'),
+            'message': 'Contest entry submitted successfully',
+            'postMessage': {
+                'type': 'orchid_contest_submission',
+                'member_id': data.get('member_id'),
+                'contest_month': result.get('contest_period'),
+                'entry_id': result.get('entry_id')
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error submitting contest entry: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/hub/pest-diseases/identify', methods=['POST'])
+def api_pest_diseases_identify():
+    """API endpoint for pest/disease identification"""
+    try:
+        # Use existing AI analysis system
+        from orchid_ai import analyze_orchid_image
+        
+        files = request.files
+        if 'image' not in files:
+            return jsonify({'success': False, 'error': 'No image provided'})
+            
+        image = files['image']
+        analysis_type = request.form.get('analysis_type', 'pest_disease')
+        
+        # Analyze image for pests/diseases
+        result = analyze_orchid_image(image, focus=analysis_type)
+        
+        return jsonify({
+            'success': True,
+            'analysis': result,
+            'recommendations': result.get('care_recommendations', [])
+        })
+        
+    except Exception as e:
+        logger.error(f"Error identifying pest/disease: {e}")
+        return jsonify({'success': False, 'error': str(e)})

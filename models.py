@@ -72,9 +72,70 @@ class MahjongPlayer(db.Model):
     tiles_matched = db.Column(Integer, default=0)
     joined_at = db.Column(DateTime, default=datetime.now)
     is_active = db.Column(Boolean, default=True)
+
+# Contest Entry Model for Monthly Contests
+class ContestEntry(db.Model):
+    """Contest entries for monthly orchid contests"""
+    __tablename__ = 'contest_entries'
     
-    game = db.relationship('MahjongGame', backref='players')
-    user = db.relationship('User', backref='mahjong_sessions')
+    id = db.Column(Integer, primary_key=True)
+    member_id = db.Column(String(100), nullable=False)  # Neon One member ID
+    member_name = db.Column(String(200), nullable=True)  # Member display name
+    contest_month = db.Column(String(7), nullable=False)  # Format: 2025-01
+    category = db.Column(String(50), nullable=False)  # 'species', 'hybrids', 'miniature', etc.
+    
+    # Photo details
+    photo_url = db.Column(String(500), nullable=False)  # URL to uploaded photo
+    google_drive_id = db.Column(String(200), nullable=True)  # Google Drive file ID
+    orchid_name = db.Column(String(200), nullable=False)  # Scientific or common name
+    description = db.Column(Text, nullable=True)  # Optional description
+    care_notes = db.Column(Text, nullable=True)  # Care information
+    
+    # Contest metadata
+    status = db.Column(String(20), default='pending')  # 'pending', 'approved', 'rejected', 'winner'
+    vote_count = db.Column(Integer, default=0)
+    admin_notes = db.Column(Text, nullable=True)
+    winner_position = db.Column(Integer, nullable=True)  # 1st, 2nd, 3rd place
+    
+    # Timestamps
+    submitted_at = db.Column(DateTime, default=datetime.utcnow)
+    moderated_at = db.Column(DateTime, nullable=True)
+    winner_announced_at = db.Column(DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'member_id': self.member_id,
+            'member_name': self.member_name,
+            'contest_month': self.contest_month,
+            'category': self.category,
+            'orchid_name': self.orchid_name,
+            'description': self.description,
+            'photo_url': self.photo_url,
+            'status': self.status,
+            'vote_count': self.vote_count,
+            'winner_position': self.winner_position,
+            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
+        }
+    
+    @staticmethod
+    def get_current_contest_period():
+        """Get current contest month in YYYY-MM format"""
+        return datetime.now().strftime('%Y-%m')
+    
+    @classmethod
+    def get_contest_entries(cls, contest_month=None, category=None, status=None):
+        """Get contest entries with optional filters"""
+        query = cls.query
+        
+        if contest_month:
+            query = query.filter(cls.contest_month == contest_month)
+        if category:
+            query = query.filter(cls.category == category)
+        if status:
+            query = query.filter(cls.status == status)
+            
+        return query.order_by(cls.vote_count.desc(), cls.submitted_at.asc()).all()
 
 class GameChatMessage(db.Model):
     """Chat messages in game rooms"""

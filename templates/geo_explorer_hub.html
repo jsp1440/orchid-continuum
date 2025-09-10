@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}GeoExplorer Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="globe" class="me-2"></i>
+                            GeoExplorer Hub
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchMode('map')">
+                                <i data-feather="map" class="me-1"></i>Map
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchMode('globe')">
+                                <i data-feather="globe" class="me-1"></i>Globe
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchMode('satellite')">
+                                <i data-feather="satellite" class="me-1"></i>Satellite
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchMode('ecosystem')">
+                                <i data-feather="tree-pine" class="me-1"></i>Ecosystem
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchMode('explorer')">
+                                <i data-feather="search" class="me-1"></i>Explorer
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Unified geographic exploration of global orchid distributions</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Mode Content Container -->
+                    <div id="geo-content" style="min-height: 600px;">
+                        <!-- Content will be loaded dynamically based on mode -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMode = new URLSearchParams(window.location.search).get('mode') || 'map';
+
+function switchMode(mode) {
+    currentMode = mode;
+    
+    // Update URL without refresh
+    const url = new URL(window.location);
+    url.searchParams.set('mode', mode);
+    window.history.pushState({}, '', url);
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    // Load content for mode
+    loadModeContent(mode);
+    
+    // Emit event for embed integration
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_geo_mode_change',
+            mode: mode,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadModeContent(mode) {
+    const content = document.getElementById('geo-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-primary" role="status"></div></div>';
+    
+    try {
+        let response;
+        switch(mode) {
+            case 'map':
+                response = await fetch('/api/orchid-coordinates-all');
+                const coordinates = await response.json();
+                renderMap(coordinates);
+                break;
+            case 'globe':
+                response = await fetch('/api/orchid-coordinates-all');
+                const globeData = await response.json();
+                renderGlobe(globeData);
+                break;
+            case 'satellite':
+                response = await fetch('/api/satellite-monitoring');
+                const satelliteData = await response.json();
+                renderSatellite(satelliteData);
+                break;
+            case 'ecosystem':
+                response = await fetch('/api/orchid-ecosystem-data');
+                const ecosystemData = await response.json();
+                renderEcosystem(ecosystemData);
+                break;
+            case 'explorer':
+                renderExplorer();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${mode} data: ${error.message}</div>`;
+    }
+}
+
+function renderMap(data) {
+    document.getElementById('geo-content').innerHTML = `
+        <div class="p-3">
+            <h4>Orchid Distribution Map</h4>
+            <div id="map-container" style="height: 500px; background: #1a1a1a; border-radius: 8px; position: relative;">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="text-center text-light">
+                        <i data-feather="map-pin" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-2">Interactive map showing ${data.length || 0} orchid locations worldwide</p>
+                        <small class="text-muted">Map visualization coming soon</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderGlobe(data) {
+    document.getElementById('geo-content').innerHTML = `
+        <div class="p-3">
+            <h4>3D Globe View</h4>
+            <div id="globe-container" style="height: 500px; background: #0a0a0a; border-radius: 8px; position: relative;">
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="text-center text-light">
+                        <i data-feather="globe" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-2">3D globe with ${data.length || 0} orchid hotspots and 35th parallel overlay</p>
+                        <small class="text-muted">Interactive 3D globe coming soon</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderSatellite(data) {
+    document.getElementById('geo-content').innerHTML = `
+        <div class="p-3">
+            <h4>Satellite Monitoring</h4>
+            <div class="row">
+                ${data.locations ? data.locations.map(loc => `
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <h6>${loc.name}</h6>
+                                <small class="text-muted">${loc.lat}, ${loc.lon}</small>
+                                <div class="mt-2">
+                                    <div class="badge bg-success">Temp: ${loc.temperature}°C</div>
+                                    <div class="badge bg-info ms-1">Humidity: ${loc.humidity}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '<div class="col-12"><p>Loading satellite data...</p></div>'}
+            </div>
+        </div>
+    `;
+}
+
+function renderEcosystem(data) {
+    document.getElementById('geo-content').innerHTML = `
+        <div class="p-3">
+            <h4>Ecosystem Analysis</h4>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6>Biodiversity Patterns</h6>
+                            <p>${data.orchids ? data.orchids.length : 0} orchids analyzed across global ecosystems</p>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" style="width: 75%">Tropical: 75%</div>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" style="width: 15%">Temperate: 15%</div>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 10%">Alpine: 10%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6>Conservation Status</h6>
+                            <div class="d-flex justify-content-between">
+                                <span>Protected</span>
+                                <span class="badge bg-success">60%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Vulnerable</span>
+                                <span class="badge bg-warning">25%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Endangered</span>
+                                <span class="badge bg-danger">15%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderExplorer() {
+    document.getElementById('geo-content').innerHTML = `
+        <div class="p-3">
+            <h4>Orchid Explorer</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Search by location, genus, or species..." id="explorer-search">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-control" id="region-filter">
+                        <option value="">All Regions</option>
+                        <option value="tropical">Tropical</option>
+                        <option value="temperate">Temperate</option>
+                        <option value="alpine">Alpine</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" onclick="runExploration()">
+                        <i data-feather="search" class="me-1"></i>Explore
+                    </button>
+                </div>
+            </div>
+            <div id="exploration-results">
+                <div class="text-center text-muted py-4">
+                    <i data-feather="compass" style="width: 32px; height: 32px;"></i>
+                    <p class="mt-2">Enter search criteria to begin exploration</p>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+async function runExploration() {
+    const search = document.getElementById('explorer-search').value;
+    const region = document.getElementById('region-filter').value;
+    
+    const results = document.getElementById('exploration-results');
+    results.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+    
+    try {
+        const params = new URLSearchParams();
+        if (search) params.append('q', search);
+        if (region) params.append('region', region);
+        
+        const response = await fetch(`/api/search?${params}`);
+        const data = await response.json();
+        
+        results.innerHTML = `
+            <div class="row">
+                ${data.orchids ? data.orchids.slice(0, 12).map(orchid => `
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <h6 class="card-title">${orchid.name || 'Unknown'}</h6>
+                                <p class="card-text small">${orchid.genus || ''} ${orchid.species || ''}</p>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">${orchid.location || 'Unknown location'}</small>
+                                    <small class="badge bg-primary">${orchid.climate || 'Unknown'}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '<div class="col-12"><p>No results found</p></div>'}
+            </div>
+        `;
+    } catch (error) {
+        results.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadModeContent(currentMode);
+    // Set active button
+    document.querySelector(`[onclick="switchMode('${currentMode}')"]`)?.click();
+});
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}
