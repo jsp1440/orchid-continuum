@@ -147,25 +147,9 @@ class TaxonomyVerificationSystem:
         
         logger.debug(f"Manual abbreviations added: {[(k, v) for k, v in abbreviations.items() if k in manual_abbrevs]}")
         
-        # Auto-generate abbreviations for all database genera with collision handling
-        abbreviation_candidates = {}
-        
-        for genus in self.true_genera:
-            if len(genus) >= 3:
-                # Generate multiple abbreviation candidates
-                candidates = [genus[:3], genus[:4]]
-                if len(genus) >= 5:
-                    candidates.append(genus[:5])
-                
-                # Track all candidates for each genus
-                abbreviation_candidates[genus] = candidates
-        
-        # Resolve collisions by preferring longer abbreviations when needed
-        for genus, candidates in abbreviation_candidates.items():
-            for candidate in candidates:
-                if candidate not in abbreviations:
-                    abbreviations[candidate] = genus
-                    break  # Use the first available (shortest) abbreviation
+        # Only add curated abbreviations for now to avoid false positives
+        # Auto-generation disabled until multi-source validation is implemented
+        logger.info(f"🔤 Using curated abbreviations only: {len(abbreviations)} patterns")
         
         logger.info(f"🔤 Built {len(abbreviations)} genus abbreviations from database")
         return abbreviations

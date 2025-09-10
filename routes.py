@@ -3712,9 +3712,110 @@ def _get_approximate_location(region, habitat):
     
     return {}
 
+def _get_origin_summary(orchid):
+    """Get comprehensive origin summary for an orchid"""
+    origin_parts = []
+    
+    if orchid.country:
+        origin_parts.append(orchid.country)
+    if orchid.state_province:
+        origin_parts.append(orchid.state_province)
+    if orchid.region:
+        origin_parts.append(orchid.region)
+    
+    if origin_parts:
+        return f"Native to {', '.join(origin_parts)}"
+    elif orchid.native_habitat:
+        return f"Found in {orchid.native_habitat}"
+    else:
+        return "Geographic origin not specified"
+
+def _get_habitat_description(orchid):
+    """Get detailed habitat description"""
+    habitat_parts = []
+    
+    if orchid.native_habitat:
+        habitat_parts.append(orchid.native_habitat)
+    
+    if orchid.growth_habit:
+        habit_desc = {
+            'epiphytic': 'grows on trees and other plants',
+            'terrestrial': 'grows in soil on the ground',
+            'lithophytic': 'grows on rocks and cliff faces'
+        }
+        if orchid.growth_habit in habit_desc:
+            habitat_parts.append(habit_desc[orchid.growth_habit])
+    
+    if orchid.climate_preference:
+        climate_desc = {
+            'cool': 'prefers cool climates (55-75°F)',
+            'intermediate': 'thrives in intermediate climates (65-85°F)',
+            'warm': 'requires warm climates (70-90°F)'
+        }
+        if orchid.climate_preference in climate_desc:
+            habitat_parts.append(climate_desc[orchid.climate_preference])
+    
+    return '. '.join(habitat_parts).capitalize() if habitat_parts else None
+
+def _get_climate_analysis(orchid):
+    """Get climate analysis based on available data"""
+    analysis = []
+    
+    if orchid.bloom_time:
+        analysis.append(f"Blooming season: {orchid.bloom_time}")
+    
+    if orchid.temperature_range:
+        analysis.append(f"Temperature range: {orchid.temperature_range}")
+    
+    if orchid.light_requirements:
+        analysis.append(f"Light needs: {orchid.light_requirements}")
+    
+    return analysis
+
+def _get_conservation_notes(orchid):
+    """Get conservation and rarity information"""
+    notes = []
+    
+    if orchid.conservation_status_clues:
+        notes.append(orchid.conservation_status_clues)
+    
+    # Add general conservation awareness
+    if orchid.native_habitat and any(keyword in orchid.native_habitat.lower() 
+                                   for keyword in ['cloud forest', 'montane', 'endemic']):
+        notes.append("This orchid may come from a sensitive ecosystem. Please support conservation efforts.")
+    
+    return notes
+
+def _get_cultural_recommendations(orchid):
+    """Get cultural recommendations from database and external sources"""
+    recommendations = {
+        'light': orchid.light_requirements,
+        'temperature': orchid.temperature_range,
+        'water': orchid.water_requirements,
+        'fertilizer': orchid.fertilizer_needs,
+        'general_notes': orchid.cultural_notes,
+        'growing_tips': []
+    }
+    
+    # Add specific growing tips based on growth habit
+    if orchid.growth_habit == 'epiphytic':
+        recommendations['growing_tips'].append("Use well-draining bark mix or mount on tree fern")
+        recommendations['growing_tips'].append("Provide good air circulation around roots")
+    elif orchid.growth_habit == 'terrestrial':
+        recommendations['growing_tips'].append("Use terrestrial orchid mix with good drainage")
+        recommendations['growing_tips'].append("Keep evenly moist during growing season")
+    
+    # Add climate-based tips
+    if orchid.climate_preference == 'cool':
+        recommendations['growing_tips'].append("Provide cool nights (10-15°F drop)")
+    elif orchid.climate_preference == 'warm':
+        recommendations['growing_tips'].append("Maintain consistent warmth year-round")
+    
+    return recommendations
+
 @app.route('/orchid/<int:id>')
 def orchid_detail(id):
-    """Display detailed orchid information"""
+    """Display detailed orchid information with enhanced metadata and care recommendations"""
     try:
         # Query with specific columns to avoid column mapping issues
         orchid = db.session.query(OrchidRecord).filter(OrchidRecord.id == id).first()
@@ -3745,7 +3846,50 @@ def orchid_detail(id):
         except Exception as e:
             print(f"Warning: Could not load related orchids: {e}")
         
-        return render_template('orchid_detail.html', orchid=orchid, related_orchids=related_orchids)
+        # Get comprehensive care data from multiple sources
+        care_data = None
+        care_available = False
+        baker_notes = None
+        
+        try:
+            from care_wheel_generator import ORCHID_CARE_DATA, extrapolate_species_care
+            from attribution_system import attribution_manager, Sources
+            
+            if orchid.genus in ORCHID_CARE_DATA:
+                care_available = True
+                # Get species-specific care if available
+                if orchid.species:
+                    care_data = extrapolate_species_care(orchid.genus, orchid.species)
+                else:
+                    care_data = ORCHID_CARE_DATA[orchid.genus].copy()
+                
+                # Add attribution information
+                sources_used = [Sources.BAKER_CULTURE, Sources.AOS, Sources.RHS]
+                care_data['attribution'] = attribution_manager.create_attribution_block(
+                    sources_used, format_type='html'
+                )
+                
+        except Exception as e:
+            print(f"Warning: Could not load care data for {orchid.genus}: {e}")
+        
+        # Get habitat and geographic insights
+        habitat_info = {
+            'origin_summary': _get_origin_summary(orchid),
+            'habitat_description': _get_habitat_description(orchid),
+            'climate_analysis': _get_climate_analysis(orchid),
+            'conservation_notes': _get_conservation_notes(orchid)
+        }
+        
+        # Get cultural recommendations from database fields
+        cultural_recommendations = _get_cultural_recommendations(orchid)
+        
+        return render_template('orchid_detail.html', 
+                             orchid=orchid, 
+                             related_orchids=related_orchids,
+                             care_data=care_data,
+                             care_available=care_available,
+                             habitat_info=habitat_info,
+                             cultural_recommendations=cultural_recommendations)
         
     except Exception as e:
         print(f"Error loading orchid detail for ID {id}: {e}")

@@ -84,11 +84,68 @@
 
         <!-- Details Section -->
         <div class="col-lg-6">
+            <!-- Quick Care Sheet Generation -->
+            {% if care_available %}
+            <div class="alert alert-success border-0 shadow-sm mb-4">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <h6 class="alert-heading mb-1">
+                            <i data-feather="printer" class="me-2"></i>Professional Care Sheet Available
+                        </h6>
+                        <p class="mb-0 small">Generate a printable care guide based on Charles Baker, AOS, and RHS expertise</p>
+                    </div>
+                    <div class="col-4 text-end">
+                        <a href="/generate-care-wheel/{{ orchid.genus }}" 
+                           class="btn btn-success btn-sm" target="_blank">
+                            <i data-feather="download" class="me-1" style="width: 16px; height: 16px;"></i>
+                            Generate PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Origin & Habitat Information -->
+            {% if habitat_info.origin_summary or habitat_info.habitat_description %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Origin & Natural Habitat
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if habitat_info.origin_summary %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Geographic Origin</label>
+                        <p class="fw-semibold"><i data-feather="map-pin" class="me-1" style="width: 16px; height: 16px;"></i>{{ habitat_info.origin_summary }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if habitat_info.habitat_description %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Natural Habitat</label>
+                        <p>{{ habitat_info.habitat_description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if habitat_info.conservation_notes %}
+                    <div class="alert alert-warning py-2 px-3 mb-0">
+                        <small><i data-feather="shield" class="me-1" style="width: 14px; height: 14px;"></i>
+                        {% for note in habitat_info.conservation_notes %}
+                            {{ note }}{% if not loop.last %} {% endif %}
+                        {% endfor %}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Basic Information -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i data-feather="info" class="me-2"></i>Basic Information
+                        <i data-feather="info" class="me-2"></i>Classification
                     </h5>
                 </div>
                 <div class="card-body">
@@ -214,65 +271,168 @@
         </div>
     </div>
 
-    <!-- Cultural Information -->
+    <!-- Enhanced Cultural Information with Baker Integration -->
     <div class="row mt-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
-                        <i data-feather="book-open" class="me-2"></i>Cultural Information & Care Tips
+                        <i data-feather="book-open" class="me-2"></i>Cultural Recommendations & Expert Care
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
-                        {% if orchid.light_requirements %}
+                    <!-- Expert Care Data from Multiple Sources -->
+                    {% if care_data %}
+                    <div class="row g-4 mb-4">
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <i data-feather="sun" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
-                                <h6>Light</h6>
-                                <p class="small mb-0">{{ orchid.light_requirements }}</p>
+                                <h6>Light Requirements</h6>
+                                <p class="small mb-1"><strong>{{ care_data.light.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.light.details }}</small>
                             </div>
                         </div>
-                        {% endif %}
                         
-                        {% if orchid.temperature_range %}
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <i data-feather="thermometer" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
                                 <h6>Temperature</h6>
-                                <p class="small mb-0">{{ orchid.temperature_range }}</p>
+                                <p class="small mb-1"><strong>Day:</strong> {{ care_data.temperature.day }}</p>
+                                <p class="small mb-0"><strong>Night:</strong> {{ care_data.temperature.night }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="droplets" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Humidity</h6>
+                                <p class="small mb-1"><strong>{{ care_data.humidity.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.humidity.range }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="wind" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Air Flow</h6>
+                                <p class="small mb-1"><strong>{{ care_data.air_flow.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.air_flow.details }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Care Instructions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i data-feather="droplets" class="me-1"></i>Watering</h6>
+                            <p class="small">{{ care_data.watering.details }}</p>
+                            
+                            <h6><i data-feather="package" class="me-1"></i>Fertilizer</h6>
+                            <p class="small">{{ care_data.fertilizer.details }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i data-feather="calendar" class="me-1"></i>Blooming & Rest</h6>
+                            <p class="small"><strong>Season:</strong> {{ care_data.blooming_season }}</p>
+                            <p class="small"><strong>Rest Period:</strong> {{ care_data.rest_period }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Special Notes from Experts -->
+                    {% if care_data.special_notes %}
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading"><i data-feather="lightbulb" class="me-1"></i>Expert Growing Tips</h6>
+                        <ul class="mb-0">
+                        {% for note in care_data.special_notes %}
+                            <li>{{ note }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Source Attribution -->
+                    {% if care_data.attribution %}
+                    <div class="border-top pt-3 mt-3">
+                        <small class="text-muted">
+                            {{ care_data.attribution|safe }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <!-- Fallback to database cultural information -->
+                    <div class="row g-4">
+                        {% if cultural_recommendations.light %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="sun" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Light</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.light }}</p>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if orchid.water_requirements %}
+                        {% if cultural_recommendations.temperature %}
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <i data-feather="droplet" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                <i data-feather="thermometer" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Temperature</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.temperature }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cultural_recommendations.water %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="droplets" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
                                 <h6>Water</h6>
-                                <p class="small mb-0">{{ orchid.water_requirements }}</p>
+                                <p class="small mb-0">{{ cultural_recommendations.water }}</p>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if orchid.fertilizer_needs %}
+                        {% if cultural_recommendations.fertilizer %}
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
-                                <i data-feather="zap" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                                <i data-feather="package" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
                                 <h6>Fertilizer</h6>
-                                <p class="small mb-0">{{ orchid.fertilizer_needs }}</p>
+                                <p class="small mb-0">{{ cultural_recommendations.fertilizer }}</p>
                             </div>
                         </div>
                         {% endif %}
                     </div>
                     
-                    {% if orchid.cultural_notes %}
-                        <div class="mt-4">
-                            <h6>Additional Care Notes</h6>
-                            <div class="p-3 bg-light rounded">
-                                <p class="mb-0">{{ orchid.cultural_notes }}</p>
-                            </div>
-                        </div>
+                    <!-- Growing Tips from Database Analysis -->
+                    {% if cultural_recommendations.growing_tips %}
+                    <div class="alert alert-info mt-4">
+                        <h6 class="alert-heading"><i data-feather="lightbulb" class="me-1"></i>Growing Tips</h6>
+                        <ul class="mb-0">
+                        {% for tip in cultural_recommendations.growing_tips %}
+                            <li>{{ tip }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- General Notes -->
+                    {% if cultural_recommendations.general_notes %}
+                    <div class="mt-4">
+                        <h6><i data-feather="bookmark" class="me-1"></i>Additional Notes</h6>
+                        <p class="small">{{ cultural_recommendations.general_notes }}</p>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+
+                    <!-- Climate Analysis -->
+                    {% if habitat_info.climate_analysis %}
+                    <div class="border-top pt-3 mt-3">
+                        <h6><i data-feather="cloud" class="me-1"></i>Climate Preferences</h6>
+                        <ul class="mb-0">
+                        {% for analysis in habitat_info.climate_analysis %}
+                            <li class="small">{{ analysis }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
                     {% endif %}
                 </div>
             </div>
