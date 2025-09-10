@@ -15,14 +15,9 @@ class TaxonomyVerificationSystem:
     """System for verifying and correcting orchid taxonomy classifications"""
     
     def __init__(self):
-        # True orchid genera (not intergeneric hybrids)
-        self.true_genera = {
-            'Maxillaria', 'Dendrobium', 'Epidendrum', 'Cattleya', 'Laelia', 
-            'Phalaenopsis', 'Oncidium', 'Vanda', 'Cymbidium', 'Paphiopedilum',
-            'Brassavola', 'Sophronitis', 'Encyclia', 'Bulbophyllum', 'Pleurothallis',
-            'Masdevallia', 'Dracula', 'Angraecum', 'Aerangis', 'Brassia',
-            'Miltonia', 'Odontoglossum', 'Coelogyne', 'Zygopetalum', 'Calanthe'
-        }
+        # Load true orchid genera from the authoritative 34,000 taxonomy database
+        self.true_genera = self._load_genera_from_database()
+        self._cache_genus_lookup = {genus.lower(): genus for genus in self.true_genera}
         
         # Intergeneric hybrid designations (require × symbol)
         self.intergeneric_hybrids = {
@@ -36,24 +31,8 @@ class TaxonomyVerificationSystem:
         }
         
         # Common abbreviation patterns in image filenames
-        self.genus_abbreviations = {
-            'Max': 'Maxillaria',
-            'Den': 'Dendrobium', 
-            'Epi': 'Epidendrum',
-            'Cat': 'Cattleya',
-            'C.': 'Cattleya',
-            'L.': 'Laelia',
-            'Phal': 'Phalaenopsis',
-            'Onc': 'Oncidium',
-            'Van': 'Vanda',
-            'Cymbidium': 'Cymbidium',
-            'Paph': 'Paphiopedilum',
-            'Brs': 'Brassavola',
-            'Enc': 'Encyclia',
-            'Bulb': 'Bulbophyllum',
-            'Masd': 'Masdevallia',
-            'Drac': 'Dracula'
-        }
+        # Now dynamically updated based on database genera
+        self.genus_abbreviations = self._build_abbreviation_mapping()
 
     def analyze_filename_vs_classification(self, orchid_record) -> Dict:
         """
@@ -106,6 +85,82 @@ class TaxonomyVerificationSystem:
         
         return analysis
 
+    def _load_genera_from_database(self) -> set:
+        """Load all unique genera from the authoritative OrchidTaxonomy database"""
+        try:
+            from models import OrchidTaxonomy
+            from app import db
+            
+            # Get all unique genera from the database
+            genera_query = db.session.query(OrchidTaxonomy.genus).distinct().all()
+            genera_set = {genus[0] for genus in genera_query if genus[0]}
+            
+            logger.info(f"🌿 Loaded {len(genera_set)} genera from authoritative taxonomy database")
+            
+            # Add fallback common genera in case database is empty
+            fallback_genera = {
+                'Cattleya', 'Dendrobium', 'Phalaenopsis', 'Oncidium', 'Cymbidium',
+                'Paphiopedilum', 'Vanda', 'Epidendrum', 'Laelia', 'Maxillaria'
+            }
+            
+            if not genera_set:
+                logger.warning("⚠️ Taxonomy database empty, using fallback genera")
+                return fallback_genera
+            
+            return genera_set
+            
+        except Exception as e:
+            logger.error(f"❌ Error loading genera from database: {e}")
+            # Return basic fallback set
+            return {
+                'Cattleya', 'Dendrobium', 'Phalaenopsis', 'Oncidium', 'Cymbidium',
+                'Paphiopedilum', 'Vanda', 'Epidendrum', 'Laelia', 'Maxillaria'
+            }
+
+    def _build_abbreviation_mapping(self) -> Dict[str, str]:
+        """Build abbreviation mapping dynamically from database genera"""
+        abbreviations = {}
+        
+        # Common manual abbreviations
+        manual_abbrevs = {
+            'Max': 'Maxillaria',
+            'Den': 'Dendrobium',
+            'Epi': 'Epidendrum', 
+            'Cat': 'Cattleya',
+            'C.': 'Cattleya',
+            'L.': 'Laelia',
+            'Phal': 'Phalaenopsis',
+            'Onc': 'Oncidium',
+            'Van': 'Vanda',
+            'Paph': 'Paphiopedilum',
+            'Brs': 'Brassavola',
+            'Enc': 'Encyclia',
+            'Bulb': 'Bulbophyllum',
+            'Masd': 'Masdevallia',
+            'Drac': 'Dracula'
+        }
+        
+        # Add manual abbreviations if the genus exists in our database
+        for abbrev, genus in manual_abbrevs.items():
+            if genus in self.true_genera:
+                abbreviations[abbrev] = genus
+        
+        # Auto-generate abbreviations for all database genera
+        for genus in self.true_genera:
+            if len(genus) >= 3:
+                # First 3-4 letters as abbreviation
+                abbrev_3 = genus[:3]
+                abbrev_4 = genus[:4]
+                
+                # Add if not conflicting
+                if abbrev_3 not in abbreviations:
+                    abbreviations[abbrev_3] = genus
+                elif abbrev_4 not in abbreviations:
+                    abbreviations[abbrev_4] = genus
+        
+        logger.info(f"🔤 Built {len(abbreviations)} genus abbreviations from database")
+        return abbreviations
+
     def _extract_genus_from_text(self, text: str) -> Optional[str]:
         """Extract genus from text using various patterns"""
         if not text:
@@ -119,10 +174,11 @@ class TaxonomyVerificationSystem:
             if potential_abbrev in self.genus_abbreviations:
                 return self.genus_abbreviations[potential_abbrev]
         
-        # Pattern 2: Look for full genus names
-        for genus in self.true_genera:
-            if re.search(rf'\b{genus}\b', text, re.IGNORECASE):
-                return genus
+        # Pattern 2: Look for full genus names (case-insensitive with caching)
+        text_lower = text.lower()
+        for genus_lower, genus_proper in self._cache_genus_lookup.items():
+            if re.search(rf'\b{genus_lower}\b', text_lower):
+                return genus_proper
         
         # Pattern 3: Look for intergeneric hybrid names
         for hybrid in self.intergeneric_hybrids:
