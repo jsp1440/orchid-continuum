@@ -499,7 +499,15 @@
                     
                     addMessage(`🌺 <strong>AI Analysis of ${orchidName}:</strong><br><br>${analysisContent}${contextInfo}`, 'ai');
                 } else {
-                    addMessage(`Sorry, I couldn't analyze the image: ${data.error}`, 'ai');
+                    // Show clear error message for quota issues
+                    let errorMessage = data.error || 'Unknown error occurred';
+                    if (data.error_type === 'api_quota') {
+                        errorMessage = `💳 <strong>OpenAI API Quota Exceeded</strong><br><br>${errorMessage}`;
+                        if (data.suggested_action) {
+                            errorMessage += `<br><br>💡 <strong>Solution:</strong> ${data.suggested_action}`;
+                        }
+                    }
+                    addMessage(`❌ ${errorMessage}`, 'ai');
                 }
             })
             .catch(error => {
