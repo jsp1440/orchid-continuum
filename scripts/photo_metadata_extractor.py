@@ -6,7 +6,7 @@ from PIL import Image, ExifTags
 def exif_dict(img_path):
   try:
     img = Image.open(img_path)
-    exif = img._getexif() or {}
+    exif = img.getexif() or {}
     return {ExifTags.TAGS.get(k,k):v for k,v in exif.items()}
   except Exception:
     return {}
@@ -50,18 +50,18 @@ def main(folder):
           lat=gps_coord(gl); lon=gps_coord(gL)
           if gr in ['S','s']: lat=-lat
           if gR in ['W','w']: lon=-lon
-      row['gps_lat'] = f"{lat:.6f}" if isinstance(lat,float) else ''
-      row['gps_lon'] = f"{lon:.6f}" if isinstance(lon,float) else ''
+      row['gps_lat'] = f"{lat:.6f}" if isinstance(lat, (int, float)) and lat is not None else ''
+      row['gps_lon'] = f"{lon:.6f}" if isinstance(lon, (int, float)) and lon is not None else ''
       try:
         with Image.open(p) as im: row['width'],row['height']=im.size
       except: pass
-      row['orientation'] = ex.get('Orientation','')
-      row['fnumber']     = ex.get('FNumber','')
-      row['iso']         = ex.get('ISOSpeedRatings','')
-      row['exposure_time']=ex.get('ExposureTime','')
+      row['orientation'] = str(ex.get('Orientation',''))
+      row['fnumber']     = str(ex.get('FNumber',''))
+      row['iso']         = str(ex.get('ISOSpeedRatings',''))
+      row['exposure_time']=str(ex.get('ExposureTime',''))
       row['dominant_color_rgb']=dominant_color(p)
       filled = sum(1 for k in fields if k not in ['file','filled_count','total_possible'] and row.get(k) not in ['',None])
-      row['filled_count']=filled; row['total_possible']=total_possible
+      row['filled_count']=str(filled); row['total_possible']=str(total_possible)
       w.writerow(row)
   print("Wrote:", out_csv)
 
