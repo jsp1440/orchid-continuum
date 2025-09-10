@@ -8752,3 +8752,7 @@ register_quantum_care_routes(app)
 @app.route("/lab/ga3_sarcochilus")
 def ga3_sarcochilus():
     return render_template("lab/ga3_sarcochilus.html")
+
+# Register FCOS Judge PWA routes
+from routes_fcos_judge import register_fcos_judge_routes
+register_fcos_judge_routes(app)
