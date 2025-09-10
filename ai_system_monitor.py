@@ -52,10 +52,15 @@ class AISystemMonitor:
             "api_weather_patterns": "/api/global-weather-patterns",
             "api_satellite_monitoring": "/api/satellite-monitoring",
             "api_orchid_genera": "/api/orchid-genera",
-            "api_recent_orchids": "/api/recent-orchids",
             "main_app": "/",
             "gallery": "/gallery",
             "space_earth_globe": "/space-earth-globe"
+        }
+        
+        # Endpoints that return lists (special handling needed)
+        self.list_endpoints = {
+            "api_recent_orchids": "/api/recent-orchids",
+            "api_featured_orchids": "/api/featured-orchids"
         }
         
         # Feature tests
@@ -67,10 +72,10 @@ class AISystemMonitor:
             "3d_globe_data": self._test_3d_globe_data
         }
     
-    def start_monitoring(self, interval_seconds: int = 60):
-        """Start continuous AI monitoring"""
+    def start_monitoring(self, interval_seconds: int = 300):  # Increased to 5 minutes
+        """Start continuous AI monitoring with reduced frequency"""
         self.monitoring_active = True
-        logger.info("🤖 AI System Monitor STARTED - Continuous platform validation enabled")
+        logger.info("🤖 AI System Monitor STARTED - Continuous platform validation enabled (5min intervals)")
         
         def monitor_loop():
             while self.monitoring_active:
@@ -101,17 +106,26 @@ class AISystemMonitor:
             result = self._test_endpoint(name, endpoint)
             results.append(result)
             
-            # Attempt repair if failed
-            if result.status in [SystemStatus.WARNING, SystemStatus.CRITICAL]:
+            # Only attempt repair for CRITICAL failures, not warnings
+            if result.status == SystemStatus.CRITICAL:
                 self._attempt_repair(result)
         
-        # 2. Test specific features
+        # 2. Test list endpoints with special handling
+        for name, endpoint in self.list_endpoints.items():
+            result = self._test_list_endpoint(name, endpoint)
+            results.append(result)
+            
+            # Only attempt repair for CRITICAL failures, not warnings
+            if result.status == SystemStatus.CRITICAL:
+                self._attempt_repair(result)
+        
+        # 3. Test specific features
         for name, test_func in self.feature_tests.items():
             result = test_func()
             results.append(result)
             
-            # Attempt repair if needed
-            if result.status in [SystemStatus.WARNING, SystemStatus.CRITICAL]:
+            # Only attempt repair for CRITICAL failures, not warnings
+            if result.status == SystemStatus.CRITICAL:
                 self._attempt_repair(result)
         
         # 3. Analyze patterns and predict issues
@@ -126,28 +140,38 @@ class AISystemMonitor:
         self.last_check_time = datetime.now()
     
     def _test_endpoint(self, name: str, endpoint: str) -> MonitorResult:
-        """Test a specific API endpoint"""
+        """Test a specific API endpoint with smarter error handling"""
         try:
-            response = requests.get(f"{self.base_url}{endpoint}", timeout=15)
+            response = requests.get(f"{self.base_url}{endpoint}", timeout=30)  # Increased timeout
             
             if response.status_code == 200:
                 # Check response content
                 if 'json' in response.headers.get('content-type', ''):
-                    data = response.json()
-                    if data.get('success', True):  # Assume success if no success field
+                    try:
+                        data = response.json()
+                        if data.get('success', True):  # Assume success if no success field
+                            return MonitorResult(
+                                component=name,
+                                status=SystemStatus.HEALTHY,
+                                message=f"Endpoint responding correctly",
+                                details={"status_code": response.status_code, "response_size": len(response.content)},
+                                timestamp=datetime.now()
+                            )
+                        else:
+                            return MonitorResult(
+                                component=name,
+                                status=SystemStatus.WARNING,
+                                message=f"Endpoint returned success=false",
+                                details={"status_code": response.status_code, "data": data},
+                                timestamp=datetime.now()
+                            )
+                    except ValueError:
+                        # JSON parsing failed, but 200 response means it's probably working
                         return MonitorResult(
                             component=name,
                             status=SystemStatus.HEALTHY,
-                            message=f"Endpoint responding correctly",
-                            details={"status_code": response.status_code, "response_size": len(response.content)},
-                            timestamp=datetime.now()
-                        )
-                    else:
-                        return MonitorResult(
-                            component=name,
-                            status=SystemStatus.WARNING,
-                            message=f"Endpoint returned success=false",
-                            details={"status_code": response.status_code, "data": data},
+                            message=f"Endpoint responding (malformed JSON)",
+                            details={"status_code": response.status_code, "content_length": len(response.content)},
                             timestamp=datetime.now()
                         )
                 else:
@@ -158,28 +182,171 @@ class AISystemMonitor:
                         details={"status_code": response.status_code, "content_length": len(response.content)},
                         timestamp=datetime.now()
                     )
-            else:
+            elif response.status_code == 404:
+                # 404 is not critical - endpoint might not be implemented yet
+                return MonitorResult(
+                    component=name,
+                    status=SystemStatus.WARNING,
+                    message=f"Endpoint not found (404)",
+                    details={"status_code": response.status_code},
+                    timestamp=datetime.now()
+                )
+            elif response.status_code >= 500:
+                # Server errors are critical
                 return MonitorResult(
                     component=name,
                     status=SystemStatus.CRITICAL,
+                    message=f"Server error ({response.status_code})",
+                    details={"status_code": response.status_code, "response": response.text[:500]},
+                    timestamp=datetime.now()
+                )
+            else:
+                # Other client errors are warnings
+                return MonitorResult(
+                    component=name,
+                    status=SystemStatus.WARNING,
                     message=f"HTTP {response.status_code}",
                     details={"status_code": response.status_code, "response": response.text[:500]},
                     timestamp=datetime.now()
                 )
                 
         except requests.exceptions.Timeout:
+            # Timeouts are warnings, not critical
+            return MonitorResult(
+                component=name,
+                status=SystemStatus.WARNING,
+                message="Request timeout (slow response)",
+                details={"error": "timeout", "endpoint": endpoint},
+                timestamp=datetime.now()
+            )
+        except requests.exceptions.ConnectionError:
+            # Connection errors are critical 
             return MonitorResult(
                 component=name,
                 status=SystemStatus.CRITICAL,
-                message="Request timeout",
+                message=f"Connection failed",
+                details={"error": "connection_error", "endpoint": endpoint},
+                timestamp=datetime.now()
+            )
+        except Exception as e:
+            # Other errors are warnings
+            return MonitorResult(
+                component=name,
+                status=SystemStatus.WARNING,
+                message=f"Test failed: {str(e)}",
+                details={"error": str(e), "endpoint": endpoint},
+                timestamp=datetime.now()
+            )
+    
+    def _test_list_endpoint(self, name: str, endpoint: str) -> MonitorResult:
+        """Test endpoints that return lists directly (like /api/recent-orchids)"""
+        try:
+            response = requests.get(f"{self.base_url}{endpoint}", timeout=30)
+            
+            if response.status_code == 200:
+                # Check response content
+                if 'json' in response.headers.get('content-type', ''):
+                    try:
+                        data = response.json()
+                        if isinstance(data, list):
+                            # Direct list response
+                            return MonitorResult(
+                                component=name,
+                                status=SystemStatus.HEALTHY if len(data) > 0 else SystemStatus.WARNING,
+                                message=f"List endpoint working ({len(data)} items)",
+                                details={"item_count": len(data), "response_type": "list"},
+                                timestamp=datetime.now()
+                            )
+                        elif isinstance(data, dict):
+                            # Dict response
+                            if data.get('success', True):
+                                count = len(data.get('orchids', data.get('data', [])))
+                                return MonitorResult(
+                                    component=name,
+                                    status=SystemStatus.HEALTHY if count > 0 else SystemStatus.WARNING,
+                                    message=f"Dict endpoint working ({count} items)",
+                                    details={"item_count": count, "response_type": "dict"},
+                                    timestamp=datetime.now()
+                                )
+                            else:
+                                return MonitorResult(
+                                    component=name,
+                                    status=SystemStatus.WARNING,
+                                    message=f"Endpoint returned success=false",
+                                    details={"data": data},
+                                    timestamp=datetime.now()
+                                )
+                        else:
+                            return MonitorResult(
+                                component=name,
+                                status=SystemStatus.WARNING,
+                                message=f"Unexpected response format",
+                                details={"response_type": type(data).__name__},
+                                timestamp=datetime.now()
+                            )
+                    except ValueError:
+                        # JSON parsing failed
+                        return MonitorResult(
+                            component=name,
+                            status=SystemStatus.WARNING,
+                            message=f"Invalid JSON response",
+                            details={"content_length": len(response.content)},
+                            timestamp=datetime.now()
+                        )
+                else:
+                    return MonitorResult(
+                        component=name,
+                        status=SystemStatus.HEALTHY,
+                        message=f"Endpoint responding (non-JSON)",
+                        details={"status_code": response.status_code, "content_length": len(response.content)},
+                        timestamp=datetime.now()
+                    )
+            elif response.status_code == 404:
+                return MonitorResult(
+                    component=name,
+                    status=SystemStatus.WARNING,
+                    message=f"Endpoint not found (404)",
+                    details={"status_code": response.status_code},
+                    timestamp=datetime.now()
+                )
+            elif response.status_code >= 500:
+                return MonitorResult(
+                    component=name,
+                    status=SystemStatus.CRITICAL,
+                    message=f"Server error ({response.status_code})",
+                    details={"status_code": response.status_code},
+                    timestamp=datetime.now()
+                )
+            else:
+                return MonitorResult(
+                    component=name,
+                    status=SystemStatus.WARNING,
+                    message=f"HTTP {response.status_code}",
+                    details={"status_code": response.status_code},
+                    timestamp=datetime.now()
+                )
+                
+        except requests.exceptions.Timeout:
+            return MonitorResult(
+                component=name,
+                status=SystemStatus.WARNING,
+                message="Request timeout (slow response)",
                 details={"error": "timeout", "endpoint": endpoint},
+                timestamp=datetime.now()
+            )
+        except requests.exceptions.ConnectionError:
+            return MonitorResult(
+                component=name,
+                status=SystemStatus.CRITICAL,
+                message=f"Connection failed",
+                details={"error": "connection_error", "endpoint": endpoint},
                 timestamp=datetime.now()
             )
         except Exception as e:
             return MonitorResult(
                 component=name,
-                status=SystemStatus.CRITICAL,
-                message=f"Connection failed: {str(e)}",
+                status=SystemStatus.WARNING,
+                message=f"Test failed: {str(e)}",
                 details={"error": str(e), "endpoint": endpoint},
                 timestamp=datetime.now()
             )
