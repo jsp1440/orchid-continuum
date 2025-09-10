@@ -368,13 +368,16 @@ def api_user_orchids():
         return jsonify({'error': 'Unable to load orchid collection'}), 500
 
 @user_weather_bp.route('/collections')
-@login_required
 def orchid_collections():
-    """Manage user's orchid collection for weather widget"""
-    collections = UserOrchidCollection.query.filter_by(
-        user_id=current_user.id,
-        is_active=True
-    ).order_by(UserOrchidCollection.widget_priority.asc()).all()
+    """Public weather widget and orchid collections view - no login required"""
+    # If user is logged in, show their collections
+    if current_user.is_authenticated:
+        collections = UserOrchidCollection.query.filter_by(
+            user_id=current_user.id,
+            is_active=True
+        ).order_by(UserOrchidCollection.widget_priority.asc()).all()
+    else:
+        collections = []
     
     # Get available orchids to add to collection
     available_orchids = OrchidRecord.query.filter(
@@ -384,7 +387,8 @@ def orchid_collections():
     
     return render_template('weather/orchid_collections.html',
                          collections=collections,
-                         available_orchids=available_orchids)
+                         available_orchids=available_orchids,
+                         user_authenticated=current_user.is_authenticated)
 
 @user_weather_bp.route('/collections/add', methods=['POST'])
 @login_required
