@@ -34,7 +34,7 @@ openai.api_key = os.environ.get('OPENAI_API_KEY')
 @fcos_judge.route('/')
 def index():
     """Main FCOS Judge PWA interface"""
-    return render_template('fcos_judge/index.html')
+    return render_template('fcos_judge_index.html')
 
 @fcos_judge.route('/api/ocr', methods=['POST'])
 def perform_ocr():
