@@ -8975,6 +8975,7 @@ def embed_geo():
                          theme=theme)
 
 @app.route('/embed/gallery')
+@app.route('/embed/gallery-hub')
 def embed_gallery():
     """Embeddable Gallery widget"""
     tab = request.args.get('tab', 'browse')
@@ -9177,7 +9178,7 @@ def api_education_glossary():
         logger.error(f"Error fetching glossary terms: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/hub/education/crossword')
+@app.route('/api/hub/education/crossword', methods=['GET', 'POST'])
 def api_education_crossword():
     """API endpoint for crossword puzzle generation"""
     try:
