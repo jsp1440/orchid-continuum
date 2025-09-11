@@ -5516,6 +5516,7 @@ def submit_widgets_philosophy_quiz():
         # Create result object
         result = {
             'philosophy_data': philosophy_data,
+            'philosophy': philosophy_result,  # Template expects this key
             'score': philosophy_result,
             'user_name': user_name,
             'user_email': user_email
