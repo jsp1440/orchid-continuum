@@ -178,7 +178,7 @@ except Exception as e:
 @app.route('/articles')
 def featured_articles():
     """Display featured articles page showcasing written content"""
-    return render_template('featured_articles.html')
+    return render_template('featured_articles.html', articles=FEATURED_ARTICLES)
 
 # Articles configuration
 FEATURED_ARTICLES = {
