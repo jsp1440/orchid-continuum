@@ -492,12 +492,16 @@ class PhilosophyQuizEngine:
         ]
     
     def calculate_philosophy_result(self, answers):
-        """Calculate philosophy result from quiz answers"""
+        """Calculate philosophy result using authentic scoring key from response file"""
+        from authentic_philosophy_data import SCORING_KEY, PHILOSOPHY_NAME_MAP
+        
         philosophy_scores = {}
         
+        # Score answers using the exact mapping from response file  
         for question_id, answer in answers.items():
-            if question_id in self.scoring_key and answer in self.scoring_key[question_id]:
-                philosophy = self.scoring_key[question_id][answer]
+            question_num = int(question_id.replace('question_', ''))
+            if question_num in SCORING_KEY and answer.upper() in SCORING_KEY[question_num]:
+                philosophy = SCORING_KEY[question_num][answer.upper()]
                 philosophy_scores[philosophy] = philosophy_scores.get(philosophy, 0) + 1
         
         # Find winner (handle ties with priority system)
@@ -510,9 +514,12 @@ class PhilosophyQuizEngine:
         # Use tie-breaker priority
         for philosophy in self.tie_priority:
             if philosophy in tied_philosophies:
-                return philosophy
+                # Return mapped display name
+                return PHILOSOPHY_NAME_MAP.get(philosophy, philosophy)
                 
-        return tied_philosophies[0]  # Final fallback
+        # Return first tied philosophy with name mapping
+        winner = tied_philosophies[0]
+        return PHILOSOPHY_NAME_MAP.get(winner, winner)
     
     def award_philosophy_badge(self, user_id, philosophy):
         """Award philosophy badge to user and update leaderboard"""

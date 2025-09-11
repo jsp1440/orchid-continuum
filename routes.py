@@ -5498,47 +5498,85 @@ def get_enhanced_philosophy_quiz_data():
 
 @app.route('/api/enhanced-philosophy-quiz-submit', methods=['POST'])
 def submit_enhanced_philosophy_quiz():
-    """Process quiz submission and return results"""
+    """Process quiz submission using authentic data from response file"""
     try:
-        answers = request.json.get('answers', {})
+        # Handle both JSON and form data
+        if request.is_json:
+            answers = request.json.get('answers', {})
+            user_email = request.json.get('email')
+            user_name = request.json.get('name', 'Orchid Grower')
+        else:
+            answers = request.form.to_dict()
+            user_email = request.form.get('email')
+            user_name = request.form.get('name', 'Orchid Grower')
         
-        # Get scoring key from Google Sheets
-        scoring_key = philosophy_quiz_service.get_scoring_key()
+        # Import authentic data
+        from authentic_philosophy_data import get_philosophy_data
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        from sendgrid_email_automation import PhilosophyQuizEmailer
         
-        # Score the answers
-        scores = {}
-        for question_num, answer in answers.items():
-            philosophy = scoring_key.get(str(question_num), {}).get(answer.upper())
-            if philosophy:
-                scores[philosophy] = scores.get(philosophy, 0) + 1
+        # Initialize quiz engine
+        quiz_engine = PhilosophyQuizEngine()
         
-        # Find top scoring philosophies
-        max_score = max(scores.values()) if scores else 0
-        top_philosophies = [k for k, v in scores.items() if v == max_score]
+        # Calculate result using authentic scoring
+        philosophy_result = quiz_engine.calculate_philosophy_result(answers)
         
-        # Get philosophy details
-        philosophies_data = philosophy_quiz_service.get_philosophies_data()
-        philosophy_map = {p.get('key', ''): p for p in philosophies_data}
+        # Get authentic philosophy data
+        philosophy_data = get_philosophy_data(philosophy_result)
         
-        result_philosophies = []
-        for phil_key in top_philosophies:
-            if phil_key in philosophy_map:
-                result_philosophies.append(philosophy_map[phil_key])
+        # Get user info from session or form
+        user_id = session.get('user_id', 1)  # Default for demo
         
-        return jsonify({
+        # Award badge
+        badge_awarded = quiz_engine.award_philosophy_badge(user_id, philosophy_result)
+        
+        # Send email if email provided
+        email_sent = False
+        if user_email:
+            try:
+                emailer = PhilosophyQuizEmailer()
+                email_sent = emailer.send_philosophy_result_email(
+                    user_email, user_name, philosophy_result, philosophy_data
+                )
+                logger.info(f"✅ Philosophy quiz email sent to {user_email}: {philosophy_result}")
+            except Exception as e:
+                logger.error(f"Email sending failed: {e}")
+        
+        # Return result data
+        result_data = {
             'success': True,
-            'scores': scores,
-            'top_philosophies': top_philosophies,
-            'philosophy_details': result_philosophies,
+            'philosophy': philosophy_result,
+            'philosophy_data': philosophy_data,
+            'badge_awarded': badge_awarded,
+            'email_sent': email_sent,
+            'answers_processed': len(answers),
             'timestamp': datetime.now().isoformat()
-        })
+        }
+        
+        logger.info(f"✅ Philosophy quiz completed: {philosophy_result} for user {user_id}")
+        
+        if request.is_json:
+            return jsonify(result_data)
+        else:
+            # Redirect to results page for form submission
+            return render_template('widgets/philosophy_quiz_result.html', 
+                                 result=result_data, 
+                                 philosophy_data=philosophy_data,
+                                 philosophy=philosophy_result)
         
     except Exception as e:
-        logger.error(f"Failed to process quiz submission: {e}")
-        return jsonify({
+        logger.error(f"Philosophy quiz submission error: {e}")
+        error_data = {
             'success': False,
-            'error': 'Failed to process quiz results'
-        }), 500
+            'error': 'Failed to process quiz results',
+            'details': str(e)
+        }
+        
+        if request.is_json:
+            return jsonify(error_data), 500
+        else:
+            return render_template('widgets/philosophy_quiz_result.html', 
+                                 error=error_data)
 
 # Register care wheel generator system
 try:
