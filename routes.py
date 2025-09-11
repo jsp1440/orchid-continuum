@@ -171,6 +171,77 @@ except Exception as e:
 #     except Exception as e:
 #         logger.error(f"🚨 CRITICAL: User-triggered integrity check failed: {e}")
 
+# ============================================================================
+# FEATURED ARTICLES SYSTEM - Showcase written articles
+# ============================================================================
+
+@app.route('/articles')
+def featured_articles():
+    """Display featured articles page showcasing written content"""
+    return render_template('featured_articles.html')
+
+# Articles configuration
+FEATURED_ARTICLES = {
+    'greek-mythology-orchids': {
+        'title': 'Orchids and Greek Mythology: A Floral Odyssey',
+        'category': 'Mythology & Culture',
+        'read_time': '15 min read',
+        'file_path': 'static/articles/greek_mythology_orchids.txt',
+        'excerpt': 'Embark on a whimsical journey through the world of orchids and Greek mythology, where the ethereal beauty of these flowers intertwines with the tales of gods, heroes, and mythical creatures.'
+    },
+    'vanilla-boy-story': {
+        'title': 'The Boy Who Saved Vanilla: A Story of Innovation and Freedom',
+        'category': 'History & Innovation', 
+        'read_time': '12 min read',
+        'file_path': 'static/articles/vanilla_boy_story.txt',
+        'excerpt': 'The remarkable true story of a young slave who revolutionized the vanilla industry by discovering the secret of hand-pollinating vanilla orchids.'
+    },
+    'mars-terraforming': {
+        'title': 'Bioengineering Orchids for Mars: The Future of Planetary Terraforming',
+        'category': 'Science & Future',
+        'read_time': '18 min read', 
+        'file_path': 'static/articles/mars_terraforming_orchids.txt',
+        'excerpt': 'Exploring the cutting-edge science of adapting orchids for extraterrestrial environments and their role in making Mars habitable.'
+    }
+}
+
+@app.route('/articles/<article_slug>')
+def display_article(article_slug):
+    """Display a specific article by slug"""
+    article = FEATURED_ARTICLES.get(article_slug)
+    if not article:
+        logger.warning(f"Article not found: {article_slug}")
+        return render_template('article_display.html',
+                             title="Article Not Found",
+                             content="The requested article could not be found.",
+                             category="Error",
+                             read_time="")
+    
+    try:
+        # Load article content
+        with open(article['file_path'], 'r', encoding='utf-8') as f:
+            article_content = f.read()
+        
+        return render_template('article_display.html',
+                             title=article['title'],
+                             content=article_content,
+                             category=article['category'],
+                             read_time=article['read_time'])
+    except FileNotFoundError:
+        logger.warning(f"Article file not found: {article['file_path']}")
+        return render_template('article_display.html',
+                             title=article['title'],
+                             content="This article is being prepared for publication. Please check back soon!",
+                             category=article['category'],
+                             read_time=article['read_time'])
+    except Exception as e:
+        logger.error(f"Failed to load article {article_slug}: {e}")
+        return render_template('article_display.html',
+                             title=article['title'],
+                             content="Article content temporarily unavailable.",
+                             category=article['category'],
+                             read_time=article['read_time'])
+
 # Add Gary Yong Gee Partnership Demo route
 @app.route('/partnerships')
 def partnerships():
