@@ -229,6 +229,14 @@ FEATURED_ARTICLES = {
         'file_path': 'static/articles/halloween_black_rot.txt',
         'excerpt': 'A spooky Halloween tale featuring the Five Cities Orchid Society battling supernatural black rot with knowledge, community, and a protective charm.',
         'status': 'published'
+    },
+    'mars-orchids-terraforming': {
+        'title': 'Orchids on Mars: Bioengineering the Future of Planetary Terraforming',
+        'category': 'Science & Future',
+        'read_time': '20 min read',
+        'file_path': 'static/articles/mars_orchids_terraforming.txt',
+        'excerpt': 'Explore the cutting-edge science of genetically engineered orchids designed to transform Mars into a habitable world, from soil remediation to oxygen production and even Martian ice cream.',
+        'status': 'published'
     }
 }
 
