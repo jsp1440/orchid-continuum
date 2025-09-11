@@ -5479,6 +5479,228 @@ def enhanced_philosophy_quiz():
     """Enhanced Philosophy Quiz - Discover Your Orchid Growing Philosophy"""
     return render_template('widgets/enhanced_philosophy_quiz.html')
 
+# =============================================================================
+# DUAL QUIZ ACCESS FLOWS - NeonOne Widget vs Social Media Lead Generation
+# =============================================================================
+
+@app.route('/quiz/philosophy/widget')
+def philosophy_quiz_widget():
+    """NeonOne Widget Route - Direct quiz access for existing members
+    
+    Features:
+    - Direct quiz access without email collection
+    - Inline results display
+    - NO newsletter signup or CRM integration
+    - Optimized for iframe embedding in NeonOne
+    """
+    try:
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        
+        # Initialize quiz engine and get questions
+        quiz_engine = PhilosophyQuizEngine()
+        questions = quiz_engine.questions
+        
+        # Check for existing philosophy badge for logged in users
+        existing_philosophy = None
+        if session.get('user_id'):
+            try:
+                from models import PhilosophyBadge
+                existing_philosophy = PhilosophyBadge.query.filter_by(
+                    user_id=session['user_id']
+                ).first()
+            except:
+                pass
+        
+        return render_template('widgets/philosophy_quiz_widget.html', 
+                             questions=questions,
+                             existing_philosophy=existing_philosophy,
+                             widget_mode=True)
+                             
+    except Exception as e:
+        logger.error(f"Philosophy quiz widget error: {e}")
+        return render_template('widgets/philosophy_quiz_widget.html', 
+                             questions=[], 
+                             error="Quiz temporarily unavailable")
+
+@app.route('/quiz/philosophy/lead')
+def philosophy_quiz_lead():
+    """Social Media Landing Route - Lead generation flow
+    
+    Features:
+    - Landing page collects name/email first
+    - Shows quiz after email collection
+    - Emails results and subscribes to newsletter
+    - Full CRM integration for lead capture
+    """
+    return render_template('widgets/philosophy_quiz_lead_landing.html')
+
+@app.route('/quiz/philosophy/lead/with-email', methods=['POST'])
+def philosophy_quiz_lead_with_email():
+    """Handle email collection and show quiz to lead"""
+    try:
+        # Get email collection data
+        user_email = request.form.get('email')
+        user_name = request.form.get('name', 'Orchid Grower')
+        newsletter_opt_in = request.form.get('newsletter') == 'on'
+        
+        if not user_email or not user_name:
+            flash('Both name and email are required')
+            return redirect(url_for('philosophy_quiz_lead'))
+            
+        # Store in session for quiz submission
+        session['lead_email'] = user_email
+        session['lead_name'] = user_name
+        session['lead_newsletter'] = newsletter_opt_in
+        
+        # Get quiz questions
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        quiz_engine = PhilosophyQuizEngine()
+        questions = quiz_engine.questions
+        
+        # Render quiz with lead context
+        return render_template('widgets/philosophy_quiz.html', 
+                             questions=questions,
+                             lead_mode=True,
+                             user_name=user_name,
+                             user_email=user_email)
+                             
+    except Exception as e:
+        logger.error(f"Lead email collection failed: {e}")
+        flash('An error occurred. Please try again.')
+        return redirect(url_for('philosophy_quiz_lead'))
+
+@app.route('/quiz/philosophy/widget/submit', methods=['POST'])
+def submit_philosophy_quiz_widget():
+    """Process NeonOne widget quiz submission - NO email collection or CRM"""
+    try:
+        # Handle form data - answers only, no email collection
+        answers = request.form.to_dict()
+        
+        # Remove any email/name fields that might have been submitted
+        answers = {k: v for k, v in answers.items() if k not in ['email', 'name']}
+        
+        # Import quiz system
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        from authentic_philosophy_data import get_philosophy_data
+        
+        # Initialize quiz engine
+        quiz_engine = PhilosophyQuizEngine()
+        
+        # Calculate result
+        philosophy_result = quiz_engine.calculate_philosophy_result(answers)
+        philosophy_data = get_philosophy_data(philosophy_result)
+        
+        # Create result object for widget display
+        result = {
+            'philosophy_data': philosophy_data,
+            'philosophy': philosophy_result,
+            'widget_mode': True,
+            'inline_display': True
+        }
+        
+        # Save badge for logged in users
+        if session.get('user_id'):
+            try:
+                from models import PhilosophyBadge
+                existing_badge = PhilosophyBadge.query.filter_by(
+                    user_id=session['user_id']
+                ).first()
+                
+                if not existing_badge:
+                    new_badge = PhilosophyBadge(
+                        user_id=session['user_id'],
+                        philosophy_type=philosophy_result,
+                        badge_name=philosophy_data.get('badge_name', philosophy_result),
+                        badge_emoji=philosophy_data.get('badge_emoji', '🌺'),
+                        description=philosophy_data.get('life_philosophy', ''),
+                        earned_date=datetime.now().isoformat()
+                    )
+                    db.session.add(new_badge)
+                    db.session.commit()
+                    result['badge_earned'] = True
+            except Exception as e:
+                logger.error(f"Failed to save philosophy badge: {e}")
+        
+        return render_template('widgets/philosophy_quiz_widget_result.html', result=result)
+        
+    except Exception as e:
+        logger.error(f"Widget quiz submission failed: {e}")
+        return render_template('widgets/philosophy_quiz_widget_result.html', 
+                             result={'error': 'Quiz processing failed'})
+
+@app.route('/quiz/philosophy/lead/submit', methods=['POST'])
+def submit_philosophy_quiz_lead():
+    """Process social media lead quiz submission - FULL email and CRM integration"""
+    try:
+        # Handle form data including email collection
+        answers = request.form.to_dict()
+        user_email = request.form.get('email')
+        user_name = request.form.get('name', 'Orchid Grower')
+        
+        if not user_email:
+            flash('Email is required for this quiz version')
+            return redirect(url_for('philosophy_quiz_lead'))
+        
+        # Remove email/name from answers dict
+        quiz_answers = {k: v for k, v in answers.items() if k not in ['email', 'name']}
+        
+        # Import systems
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        from authentic_philosophy_data import get_philosophy_data
+        from sendgrid_email_automation import PhilosophyQuizEmailer
+        from fcos_integrations import process_quiz_lead
+        
+        # Initialize quiz engine
+        quiz_engine = PhilosophyQuizEngine()
+        
+        # Calculate result
+        philosophy_result = quiz_engine.calculate_philosophy_result(quiz_answers)
+        philosophy_data = get_philosophy_data(philosophy_result)
+        
+        # Create result object
+        result = {
+            'philosophy_data': philosophy_data,
+            'philosophy': philosophy_result,
+            'user_name': user_name,
+            'user_email': user_email,
+            'lead_mode': True
+        }
+        
+        # Send email with results
+        try:
+            emailer = PhilosophyQuizEmailer()
+            emailer.send_philosophy_result_email(
+                user_email=user_email,
+                user_name=user_name,
+                philosophy_result=philosophy_result
+            )
+            result['email_sent'] = True
+        except Exception as e:
+            logger.error(f"Failed to send philosophy result email: {e}")
+            result['email_sent'] = False
+        
+        # LEAD GENERATION: Auto-subscribe to newsletter & add to CRM
+        try:
+            lead_results = process_quiz_lead(
+                email=user_email,
+                name=user_name,
+                philosophy_result=philosophy_result,
+                quiz_answers=quiz_answers
+            )
+            result['lead_processed'] = lead_results['lead_processed']
+            result['newsletter_subscribed'] = lead_results['newsletter_subscribed']
+            result['crm_added'] = lead_results['crm_added']
+        except Exception as e:
+            logger.error(f"Lead processing failed: {e}")
+            result['lead_processed'] = False
+        
+        return render_template('widgets/philosophy_quiz_lead_result.html', result=result)
+        
+    except Exception as e:
+        logger.error(f"Lead quiz submission failed: {e}")
+        return render_template('widgets/philosophy_quiz_lead_result.html', 
+                             result={'error': 'Quiz processing failed'})
+
 @app.route('/widgets/philosophy-quiz')
 def widgets_philosophy_quiz():
     """Philosophy Quiz Widget Route - Discover Your Orchid Growing Philosophy"""
@@ -5535,6 +5757,21 @@ def submit_widgets_philosophy_quiz():
             except Exception as e:
                 logger.error(f"Failed to send philosophy result email: {e}")
                 result['email_sent'] = False
+                
+            # LEAD GENERATION: Auto-subscribe to newsletter & add to CRM
+            try:
+                from fcos_integrations import process_quiz_lead
+                lead_results = process_quiz_lead(
+                    email=user_email,
+                    name=user_name,
+                    philosophy_result=philosophy_result,
+                    quiz_answers=answers
+                )
+                result['lead_capture'] = lead_results
+                logger.info(f"Lead capture completed for {user_email}: {lead_results}")
+            except Exception as e:
+                logger.error(f"Lead capture failed for {user_email}: {e}")
+                result['lead_capture'] = {'lead_processed': False}
         
         # Render result template with proper data
         return render_template('widgets/philosophy_quiz_result.html', result=result)

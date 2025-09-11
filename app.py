@@ -18,6 +18,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "orchid-continuum-secret-key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# Configure CSP headers for iframe embedding (NeonOne compatibility)
+@app.after_request
+def add_security_headers(response):
+    # Allow NeonOne iframe embedding
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *.neoncrm.com *.app.neoncrm.com https://fivecitiesorchidsociety.app.neoncrm.com"
+    return response
+
 # Configure the database - Use PostgreSQL from environment
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///orchid_continuum.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
