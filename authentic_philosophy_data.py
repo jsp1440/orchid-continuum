@@ -42,7 +42,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Petals drift away,\nSilent truth beneath the stem,\nNothing holds for long.',
         'practical': 'You enjoy blooms fully and accept their passing without despair.',
         'science': 'Many Stanhopea/Sobralia flowers last a day - evolution trades duration for intensity.',
-        'badge_link': 'https://imgur.com/a/wSgrdLl'
+        'badge_link': 'https://imgur.com/a/nihlist-wSgrdLl'
     },
     'Wild Spirit': {
         'life_philosophy': 'You prize authenticity over convention. You grow with instinct and courage.',
