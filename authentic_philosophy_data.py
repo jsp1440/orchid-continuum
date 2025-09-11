@@ -10,7 +10,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Silent orchid waits,\nWinter frost upon its leaves,\nSpring reveals its truth.',
         'practical': 'You do not force bloom. You repot when new roots emerge and allow rest when needed.',
         'science': 'Many Paphiopedilum and Cymbidium rely on cool nights and rest phases to trigger flowering - patience is adaptive.',
-        'badge_link': 'https://imgur.com/a/7rzV2ZV'
+        'badge_link': 'https://i.imgur.com/7rzV2ZV.png'
     },
     'Self Bloom': {
         'life_philosophy': 'You believe joy begins with self-respect. Egoism here means choosing what truly delights you and allowing that light to shine.',
@@ -18,7 +18,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Mirror of the self,\nBlooming for no eyes but mine,\nJoy in solitude.',
         'practical': 'You bring home the plant that thrills you - even if it is not trendy.',
         'science': 'Autogamy (self-pollination) occurs in some orchids - a reminder that self-sufficiency can be a valid strategy.',
-        'badge_link': 'https://imgur.com/a/92asMXl'
+        'badge_link': 'https://i.imgur.com/92asMXl.png'
     },
     'Altruism': {
         'life_philosophy': 'Your first instinct is to share. Beauty multiplies when given, and orchids are your living gifts.',
@@ -26,7 +26,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Hands give living gifts,\nRoots entwine across the earth,\nJoy grows when it is shared.',
         'practical': 'You divide thriving plants for new members and donate to auctions.',
         'science': 'Keikis (on Phalaenopsis/Dendrobium) are natural clones - biology built for sharing.',
-        'badge_link': 'https://imgur.com/a/Hcjw1Gv'
+        'badge_link': 'https://i.imgur.com/Hcjw1Gv.png'
     },
     'Pragmatic Bloomer': {
         'life_philosophy': 'You value what works. Pragmatism is your compass - test, observe, keep what helps the plant thrive.',
@@ -34,7 +34,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Moss, bark, glass, or clay,\nRoots decide what thrives in time,\nBloom proves what is true.',
         'practical': 'You try semi-hydro, change light, adjust media - then standardize what blooms.',
         'science': 'Hybrids often tolerate varied conditions; adaptability wins in cultivation.',
-        'badge_link': 'https://imgur.com/a/56VvvGz'
+        'badge_link': 'https://i.imgur.com/56VvvGz.png'
     },
     'Endless Night Bloom': {
         'life_philosophy': 'You accept impermanence. Nihilism, to you, means seeing beauty without clinging to it.',
@@ -42,7 +42,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Petals drift away,\nSilent truth beneath the stem,\nNothing holds for long.',
         'practical': 'You enjoy blooms fully and accept their passing without despair.',
         'science': 'Many Stanhopea/Sobralia flowers last a day - evolution trades duration for intensity.',
-        'badge_link': 'https://imgur.com/a/nihlist-wSgrdLl'
+        'badge_link': 'https://i.imgur.com/wSgrdLl.png'
     },
     'Wild Spirit': {
         'life_philosophy': 'You prize authenticity over convention. You grow with instinct and courage.',
@@ -50,7 +50,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Roots spill from the pot,\nUnruly, untamed, alive,\nTruth grows without rules.',
         'practical': 'You mount epiphytes on wood, try outdoor microclimates, and ignore purist debates.',
         'science': 'Wild orchids colonize cliffs, trees, roadsides - fitness over formality.',
-        'badge_link': 'https://imgur.com/a/JvdgeyY'
+        'badge_link': 'https://i.imgur.com/JvdgeyY.png'
     },
     'Fragrance Seeker': {
         'life_philosophy': 'You savor life through the senses. Epicurean by heart, you collect delight.',
@@ -58,7 +58,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Sweet scent fills the air,\nPetals glowing, fleeting joy,\nMoments made to keep.',
         'practical': 'You seek Rhynchostylis, Brassavola, and perfumed Oncidiums.',
         'science': 'Fragrance evolved for pollinator attraction—your delight echoes ecology.',
-        'badge_link': 'https://imgur.com/a/gwzILYd'
+        'badge_link': 'https://i.imgur.com/gwzILYd.png'
     },
     'Vision Vine': {
         'life_philosophy': 'You chase ideals - purity of form, rare color, perfect symmetry. Idealism guides your eye.',
@@ -66,7 +66,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Unreachable star,\nPetals whisper higher truths,\nDreams take root in green.',
         'practical': 'You prize Paphiopedilum rothschildianum, classic Cattleyas, and line-bred perfection.',
         'science': 'Hybridizing pursues ideal traits; symmetry is a core judging criterion.',
-        'badge_link': 'https://imgur.com/a/9acVnRl'
+        'badge_link': 'https://i.imgur.com/9acVnRl.png'
     },
     'Royal Bloom': {
         'life_philosophy': 'You honor tradition and lineage. Beauty for you is heritage made visible.',
@@ -74,7 +74,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Velvet petals curve,\nCrafted by a careful hand,\nLiving heritage.',
         'practical': 'You value awarded clones and divisions with provenance.',
         'science': 'AOS judging codifies standards—tradition shaping modern beauty.',
-        'badge_link': 'https://imgur.com/a/AlFdGYN'
+        'badge_link': 'https://i.imgur.com/AlFdGYN.png'
     },
     'Moonlight Reverie': {
         'life_philosophy': 'Nature is sacred to you. You find meaning beyond the material, in quiet hours with living things.',
@@ -82,7 +82,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Moonlight on soft blooms,\nWhispers rise from silent leaves,\nSpirit breathes in green.',
         'practical': 'You place night-fragrant orchids where you rest or reflect.',
         'science': 'Brassavola nodosa emits scent at night—timed to moth pollinators.',
-        'badge_link': 'https://imgur.com/a/HxR4aNu'
+        'badge_link': 'https://i.imgur.com/HxR4aNu.png'
     },
     'Harmony': {
         'life_philosophy': 'You value respect, balance, and right relationships. Care is a form of gratitude.',
@@ -90,7 +90,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Guided by the past,\nHands respect the root and leaf,\nHarmony endures.',
         'practical': 'You gift responsibly and encourage good stewardship.',
         'science': 'Balanced light/humidity/airflow are keystones of orchid health.',
-        'badge_link': 'https://imgur.com/a/Q43hN1U'
+        'badge_link': 'https://i.imgur.com/Q43hN1U.png'
     },
     'Questioning Bloom': {
         'life_philosophy': 'You seek truth through doubt. Skepticism protects you from easy answers.',
@@ -98,7 +98,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Each leaf asks a why,\nRoots spiral into the truth,\nAnswers bloom with doubt.',
         'practical': 'You research identity and keep notes until evidence repeats.',
         'science': 'Orchid taxonomy is dynamic; names change with new data.',
-        'badge_link': 'https://imgur.com/a/MNIglMs'
+        'badge_link': 'https://i.imgur.com/MNIglMs.png'
     },
     'Order & Form': {
         'life_philosophy': 'You love clarity and classification. Understanding increases beauty.',
@@ -106,7 +106,7 @@ PHILOSOPHY_DATA = {
         'haiku': "Each leaf has its place,\nPatterns hide in nature's code,\nTruth in order blooms.",
         'practical': 'You organize by genus and track bloom cycles.',
         'science': '~30,000 orchid species: order helps minds grasp diversity.',
-        'badge_link': 'https://imgur.com/a/ukuPLxh'
+        'badge_link': 'https://i.imgur.com/ukuPLxh.png'
     },
     'Being in Bloom': {
         'life_philosophy': 'You live in the present. Every blossom is a celebration.',
@@ -114,7 +114,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Sun on open bloom,\nMorning breathes a golden note,\nNow is everything.',
         'practical': "You keep showy hybrids where you'll see them daily.",
         'science': 'Light-driven opening/closing rhythms make presence visible.',
-        'badge_link': 'https://imgur.com/a/FH4smYG'
+        'badge_link': 'https://i.imgur.com/FH4smYG.png'
     },
     'Enduring Bloom': {
         'life_philosophy': 'Resilience is your north star. You treasure returns and reliable grace.',
@@ -122,7 +122,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Storms will come and pass,\nRoots remember how to hold,\nBloom returns in time.',
         'practical': 'You keep long-lived workhorses (Oncidium, Phalaenopsis) thriving year to year.',
         'science': 'Stress–recovery cycles can enhance flowering; resilience pays.',
-        'badge_link': 'https://imgur.com/a/O9jy9rP'
+        'badge_link': 'https://i.imgur.com/O9jy9rP.png'
     },
     'Wild Bloom': {
         'life_philosophy': "You celebrate what won't be tamed. Beauty, for you, lives just outside control.",
@@ -130,7 +130,7 @@ PHILOSOPHY_DATA = {
         'haiku': 'Edge of ordered beds,\nGreen defies the gardener,\nLife writes its own map.',
         'practical': 'You let epiphytes wander over mounts and stone.',
         'science': 'Colonization of rough habitats is common—fitness beats neatness.',
-        'badge_link': 'https://imgur.com/a/PzuiRKG'
+        'badge_link': 'https://i.imgur.com/PzuiRKG.png'
     }
 }
 
