@@ -499,6 +499,9 @@ class PhilosophyQuizEngine:
         
         # Score answers using the exact mapping from response file  
         for question_id, answer in answers.items():
+            # Only process question fields, skip name/email/other fields
+            if not question_id.startswith('question_'):
+                continue
             question_num = int(question_id.replace('question_', ''))
             if question_num in SCORING_KEY and answer.upper() in SCORING_KEY[question_num]:
                 philosophy = SCORING_KEY[question_num][answer.upper()]
