@@ -9361,3 +9361,11 @@ def api_pest_diseases_identify():
     except Exception as e:
         logger.error(f"Error identifying pest/disease: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route("/badge-test")
+def badge_test():
+    """Test page to display all philosophy badges"""
+    from badge_test_route import create_badge_test_page
+    return Response(create_badge_test_page(), mimetype="text/html")
+
