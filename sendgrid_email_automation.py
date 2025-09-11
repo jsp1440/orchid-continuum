@@ -16,7 +16,7 @@ class PhilosophyQuizEmailer:
         self.logo_url = "https://i.imgur.com/WK10q2B.png"
         
     def send_philosophy_result_email(self, user_email, user_name, philosophy_result):
-        """Send personalized philosophy result email with badge, haiku, and science fact"""
+        """Send personalized philosophy result email with badge and insights"""
         try:
             # Get the complete authentic data for this philosophy
             phil_data = get_philosophy_data(philosophy_result)
@@ -101,9 +101,8 @@ class PhilosophyQuizEmailer:
                         <p style="font-size:16px;color:#444;line-height:1.7;margin:0;">{phil_data['orchid_reflection']}</p>
                     </div>
                     
-                    <!-- Haiku Section -->
+                    <!-- Poetic Reflection Section -->
                     <div style="text-align:center;margin:35px 0;padding:30px;background:linear-gradient(135deg, #e8f5e8, #f0f8f0);border-radius:12px;border:1px solid #d4e6d4;">
-                        <h3 style="color:#2b6a30;font-size:20px;margin:0 0 20px 0;">Your Personal Haiku</h3>
                         <div style="font-family:'Brush Script MT','Segoe Script','Apple Chancery',cursive;font-size:24px;color:#1e4d23;line-height:1.8;font-style:italic;">
                             {phil_data['haiku'].replace(chr(10), '<br>')}
                         </div>
