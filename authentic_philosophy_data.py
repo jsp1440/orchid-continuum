@@ -168,13 +168,31 @@ PHILOSOPHY_NAME_MAP = {
 
 def get_philosophy_data(philosophy_name):
     """Get complete data for a philosophy by internal or display name"""
+    from flask import url_for
+    
     # First try direct lookup
     if philosophy_name in PHILOSOPHY_DATA:
-        return PHILOSOPHY_DATA[philosophy_name]
+        data = PHILOSOPHY_DATA[philosophy_name].copy()
+    else:
+        # Try mapping from internal name to display name
+        display_name = PHILOSOPHY_NAME_MAP.get(philosophy_name)
+        if display_name and display_name in PHILOSOPHY_DATA:
+            data = PHILOSOPHY_DATA[display_name].copy()
+        else:
+            return None
     
-    # Try mapping from internal name to display name
-    display_name = PHILOSOPHY_NAME_MAP.get(philosophy_name)
-    if display_name and display_name in PHILOSOPHY_DATA:
-        return PHILOSOPHY_DATA[display_name]
+    # Compute badge URL from badge_slug
+    if 'badge_slug' in data:
+        try:
+            data['badge_link'] = url_for('static', filename=f'images/badges/{data["badge_slug"]}.svg')
+        except:
+            # Fallback if url_for fails (outside request context)
+            data['badge_link'] = f'/static/images/badges/{data["badge_slug"]}.svg'
+    else:
+        # Fallback badge
+        try:
+            data['badge_link'] = url_for('static', filename='images/badges/fallback.svg')
+        except:
+            data['badge_link'] = '/static/images/badges/fallback.svg'
     
-    return None
+    return data
