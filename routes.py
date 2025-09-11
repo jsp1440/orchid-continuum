@@ -5479,6 +5479,17 @@ def enhanced_philosophy_quiz():
     """Enhanced Philosophy Quiz - Discover Your Orchid Growing Philosophy"""
     return render_template('widgets/enhanced_philosophy_quiz.html')
 
+@app.route('/widgets/philosophy-quiz')
+def widgets_philosophy_quiz():
+    """Philosophy Quiz Widget Route - Discover Your Orchid Growing Philosophy"""
+    from philosophy_quiz_system import PhilosophyQuizEngine
+    
+    # Initialize quiz engine and get questions
+    quiz_engine = PhilosophyQuizEngine()
+    questions = quiz_engine.questions  # Use the questions attribute directly
+    
+    return render_template('widgets/philosophy_quiz.html', questions=questions)
+
 @app.route('/api/enhanced-philosophy-quiz-data')
 def get_enhanced_philosophy_quiz_data():
     """API endpoint to fetch quiz data from Google Sheets"""
