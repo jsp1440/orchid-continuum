@@ -23,7 +23,7 @@ PHILOSOPHY_DATA = {
     'Altruism': {
         'life_philosophy': 'Your first instinct is to share. Beauty multiplies when given, and orchids are your living gifts.',
         'orchid_reflection': 'Divisions and keikis become bridges - friendships rooted in generosity.',
-        'haiku': 'Hands give living gifts,\nRoots entwine across the earth,\nJoy grows when it's shared.',
+        'haiku': 'Hands give living gifts,\nRoots entwine across the earth,\nJoy grows when it is shared.',
         'practical': 'You divide thriving plants for new members and donate to auctions.',
         'science': 'Keikis (on Phalaenopsis/Dendrobium) are natural clones - biology built for sharing.',
         'badge_link': 'https://imgur.com/a/Hcjw1Gv'
@@ -86,7 +86,7 @@ PHILOSOPHY_DATA = {
     },
     'Harmony': {
         'life_philosophy': 'You value respect, balance, and right relationships. Care is a form of gratitude.',
-        'orchid_reflection': 'Your bench reflects order—a place for each plant's needs.',
+        'orchid_reflection': 'Your bench reflects order - a place for each plant needs.',
         'haiku': 'Guided by the past,\nHands respect the root and leaf,\nHarmony endures.',
         'practical': 'You gift responsibly and encourage good stewardship.',
         'science': 'Balanced light/humidity/airflow are keystones of orchid health.',
@@ -103,7 +103,7 @@ PHILOSOPHY_DATA = {
     'Order & Form': {
         'life_philosophy': 'You love clarity and classification. Understanding increases beauty.',
         'orchid_reflection': 'Patterns in petals and growth tell you how the plant "thinks."',
-        'haiku': 'Each leaf has its place,\nPatterns hide in nature's code,\nTruth in order blooms.',
+        'haiku': "Each leaf has its place,\nPatterns hide in nature's code,\nTruth in order blooms.",
         'practical': 'You organize by genus and track bloom cycles.',
         'science': '~30,000 orchid species: order helps minds grasp diversity.',
         'badge_link': 'https://imgur.com/a/ukuPLxh'
@@ -112,7 +112,7 @@ PHILOSOPHY_DATA = {
         'life_philosophy': 'You live in the present. Every blossom is a celebration.',
         'orchid_reflection': 'You let orchids remind you to notice what is already here.',
         'haiku': 'Sun on open bloom,\nMorning breathes a golden note,\nNow is everything.',
-        'practical': 'You keep showy hybrids where you'll see them daily.',
+        'practical': "You keep showy hybrids where you'll see them daily.",
         'science': 'Light-driven opening/closing rhythms make presence visible.',
         'badge_link': 'https://imgur.com/a/FH4smYG'
     },
@@ -125,7 +125,7 @@ PHILOSOPHY_DATA = {
         'badge_link': 'https://imgur.com/a/O9jy9rP'
     },
     'Wild Bloom': {
-        'life_philosophy': 'You celebrate what won't be tamed. Beauty, for you, lives just outside control.',
+        'life_philosophy': "You celebrate what won't be tamed. Beauty, for you, lives just outside control.",
         'orchid_reflection': 'Your orchids sprawl, root, and surprise—alive and authentic.',
         'haiku': 'Edge of ordered beds,\nGreen defies the gardener,\nLife writes its own map.',
         'practical': 'You let epiphytes wander over mounts and stone.',

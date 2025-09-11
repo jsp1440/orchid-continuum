@@ -5490,6 +5490,61 @@ def widgets_philosophy_quiz():
     
     return render_template('widgets/philosophy_quiz.html', questions=questions)
 
+@app.route('/widgets/philosophy-quiz-submit', methods=['POST'])
+def submit_widgets_philosophy_quiz():
+    """Process regular philosophy quiz submission"""
+    try:
+        # Handle form data from regular quiz
+        answers = request.form.to_dict()
+        user_email = request.form.get('email')
+        user_name = request.form.get('name', 'Orchid Grower')
+        
+        # Import authentic data and quiz system
+        from authentic_philosophy_data import get_philosophy_data
+        from philosophy_quiz_system import PhilosophyQuizEngine
+        from sendgrid_email_automation import PhilosophyQuizEmailer
+        
+        # Initialize quiz engine
+        quiz_engine = PhilosophyQuizEngine()
+        
+        # Calculate result using authentic scoring
+        philosophy_result = quiz_engine.calculate_philosophy_result(answers)
+        
+        # Get authentic philosophy data
+        philosophy_data = get_philosophy_data(philosophy_result)
+        
+        # Create result object
+        result = {
+            'philosophy_data': philosophy_data,
+            'score': philosophy_result,
+            'user_name': user_name,
+            'user_email': user_email
+        }
+        
+        # Send email if email provided
+        if user_email:
+            try:
+                emailer = PhilosophyQuizEmailer()
+                emailer.send_philosophy_result_email(
+                    user_email=user_email,
+                    user_name=user_name,
+                    philosophy_result=philosophy_result
+                )
+                result['email_sent'] = True
+            except Exception as e:
+                logger.error(f"Failed to send philosophy result email: {e}")
+                result['email_sent'] = False
+        
+        # Render result template with proper data
+        return render_template('widgets/philosophy_quiz_result.html', result=result)
+        
+    except Exception as e:
+        logger.error(f"Philosophy quiz submission failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to process quiz submission'
+        }), 500
+
 @app.route('/api/enhanced-philosophy-quiz-data')
 def get_enhanced_philosophy_quiz_data():
     """API endpoint to fetch quiz data from Google Sheets"""
@@ -5547,7 +5602,7 @@ def submit_enhanced_philosophy_quiz():
             try:
                 emailer = PhilosophyQuizEmailer()
                 email_sent = emailer.send_philosophy_result_email(
-                    user_email, user_name, philosophy_result, philosophy_data
+                    user_email, user_name, philosophy_result
                 )
                 logger.info(f"✅ Philosophy quiz email sent to {user_email}: {philosophy_result}")
             except Exception as e:
