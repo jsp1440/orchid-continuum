@@ -581,6 +581,161 @@ class PhilosophyQuizEngine:
             logger.error(f"Error awarding philosophy badge: {e}")
             db.session.rollback()
             return False
+    
+    def get_philosophy_haiku(self, philosophy):
+        """Get authentic haiku from the response file data"""
+        from authentic_philosophy_data import get_philosophy_data
+        
+        phil_data = get_philosophy_data(philosophy)
+        if phil_data and 'haiku' in phil_data:
+            return phil_data['haiku']
+        
+        return "Mystery unfolds\nYour path unique among many\nWisdom finds its way"
+    
+    def get_orchid_science_fact(self, philosophy):
+        """Get authentic science facts from the response file data"""
+        from authentic_philosophy_data import get_philosophy_data
+        
+        phil_data = get_philosophy_data(philosophy)
+        if phil_data and 'science' in phil_data:
+            return phil_data['science']
+        
+        return "Orchids are the largest family of flowering plants, showing us that diversity and uniqueness create the most beautiful communities."
+    
+    def send_philosophy_result_email(self, email, name, philosophy, philosophy_data):
+        """Send personalized philosophy result email with badge, haiku, and science fact"""
+        try:
+            # Check if SendGrid is available
+            try:
+                import os
+                from sendgrid import SendGridAPIClient
+                from sendgrid.helpers.mail import Mail
+                
+                api_key = os.environ.get('SENDGRID_API_KEY')
+                if not api_key:
+                    logger.warning("SendGrid API key not found")
+                    return False
+                    
+            except ImportError:
+                logger.warning("SendGrid not available")
+                return False
+            
+            # Get additional content
+            haiku = self.get_philosophy_haiku(philosophy)
+            science_fact = self.get_orchid_science_fact(philosophy)
+            
+            # Create personalized email content
+            display_name = name if name else "Fellow Orchid Enthusiast"
+            badge_name = philosophy_data.get('badge_name', f'{philosophy} Grower')
+            badge_emoji = philosophy_data.get('badge_emoji', '🌺')
+            description = philosophy_data.get('description', 'A unique orchid philosophy')
+            growing_style = philosophy_data.get('growing_style', 'Individual approach')
+            
+            # Generate sharing URL
+            share_url = f"https://orchidcontinuum.replit.app/philosophy-quiz?ref={philosophy.lower()}"
+            
+            # Create HTML email content
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orchid Philosophy Result</title>
+    <style>
+        body {{ font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #1a1a2e; color: #e94560; }}
+        .container {{ background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }}
+        .logo {{ text-align: center; margin-bottom: 30px; }}
+        .logo img {{ max-width: 200px; height: auto; }}
+        .header {{ text-align: center; margin-bottom: 30px; }}
+        .header h1 {{ color: #20c997; font-size: 28px; margin: 0; }}
+        .badge-section {{ text-align: center; background: rgba(32, 201, 151, 0.1); border-radius: 15px; padding: 25px; margin: 25px 0; border: 2px solid #20c997; }}
+        .badge-emoji {{ font-size: 60px; margin: 10px 0; }}
+        .badge-name {{ font-size: 24px; font-weight: bold; color: #20c997; margin: 10px 0; }}
+        .philosophy-name {{ font-size: 32px; font-weight: bold; color: #e94560; margin: 15px 0; }}
+        .description {{ font-size: 18px; line-height: 1.6; margin: 20px 0; color: #f8f9fa; }}
+        .haiku {{ background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560; padding: 20px; margin: 25px 0; font-style: italic; text-align: center; }}
+        .haiku-text {{ font-size: 16px; line-height: 1.8; color: #f8f9fa; }}
+        .science-section {{ background: rgba(32, 201, 151, 0.1); border-radius: 10px; padding: 20px; margin: 25px 0; }}
+        .science-title {{ color: #20c997; font-weight: bold; font-size: 18px; margin-bottom: 10px; }}
+        .science-fact {{ font-size: 16px; line-height: 1.6; color: #f8f9fa; }}
+        .share-section {{ text-align: center; margin: 30px 0; }}
+        .share-button {{ display: inline-block; background: #e94560; color: white; text-decoration: none; padding: 12px 25px; border-radius: 25px; margin: 5px; font-weight: bold; }}
+        .newsletter {{ background: rgba(233, 69, 96, 0.1); border-radius: 10px; padding: 20px; margin: 25px 0; text-align: center; }}
+        .newsletter h3 {{ color: #e94560; margin-bottom: 15px; }}
+        .footer {{ text-align: center; margin-top: 40px; font-size: 14px; color: #6c757d; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://orchidcontinuum.replit.app/static/images/orchid_continuum_new_logo.png" alt="The Orchid Continuum">
+        </div>
+        
+        <div class="header">
+            <h1>🌺 Your Orchid Philosophy Revealed!</h1>
+            <p>Hello {display_name},</p>
+            <p>Thank you for taking The Philosophy of Orchids quiz. Your unique growing philosophy has been revealed...</p>
+        </div>
+        
+        <div class="badge-section">
+            <div class="badge-emoji">{badge_emoji}</div>
+            <div class="badge-name">{badge_name}</div>
+            <div class="philosophy-name">{philosophy}</div>
+            <div class="description">{description}</div>
+            <p><strong>Your Growing Style:</strong> {growing_style}</p>
+        </div>
+        
+        <div class="haiku">
+            <h3 style="color: #e94560; margin-bottom: 15px;">🌸 Your Philosophy Haiku</h3>
+            <div class="haiku-text">{haiku.replace(chr(10), '<br>')}</div>
+        </div>
+        
+        <div class="science-section">
+            <div class="science-title">🔬 Orchid Science Connection</div>
+            <div class="science-fact">{science_fact}</div>
+        </div>
+        
+        <div class="share-section">
+            <h3 style="color: #20c997;">Share Your Philosophy!</h3>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={share_url}" class="share-button">Share on Facebook</a>
+            <a href="https://twitter.com/intent/tweet?text=I%20just%20discovered%20my%20orchid%20philosophy%3A%20{philosophy}%20{badge_emoji}%20Take%20the%20quiz%3A&url={share_url}" class="share-button">Share on Twitter</a>
+            <a href="{share_url}" class="share-button">Refer a Friend</a>
+        </div>
+        
+        <div class="newsletter">
+            <h3>🌺 Join The Orchid Continuum Newsletter</h3>
+            <p>Get weekly orchid care tips, philosophy insights, and community highlights delivered to your inbox.</p>
+            <a href="https://orchidcontinuum.replit.app/newsletter-signup?email={email}" class="share-button">Subscribe Now</a>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 The Orchid Continuum - Digital Botanical Research Platform</p>
+            <p>This email was sent because you completed our Philosophy of Orchids quiz.</p>
+            <p><a href="https://orchidcontinuum.replit.app/philosophy-quiz" style="color: #20c997;">Take the quiz again</a> | <a href="https://orchidcontinuum.replit.app" style="color: #20c997;">Visit our platform</a></p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+            
+            # Create and send email
+            message = Mail(
+                from_email='noreply@orchidcontinuum.replit.app',
+                to_emails=email,
+                subject=f'🌺 Your Orchid Philosophy: {badge_name} {badge_emoji}',
+                html_content=html_content
+            )
+            
+            sg = SendGridAPIClient(api_key)
+            response = sg.send(message)
+            
+            logger.info(f"Philosophy result email sent to {email}, status: {response.status_code}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending philosophy result email: {e}")
+            return False
 
 # Initialize quiz engine
 quiz_engine = PhilosophyQuizEngine()
@@ -629,6 +784,10 @@ def submit_philosophy_quiz():
             if answer:
                 answers[i] = answer
         
+        # Get email from form for lead magnet functionality
+        user_email = request.form.get('email', '').strip()
+        user_name = request.form.get('name', '').strip()
+        
         if len(answers) < 29:  # Changed from 10 to 29
             flash('Please answer all questions to get your philosophy result', 'error')
             return redirect(url_for('philosophy_quiz'))
@@ -642,7 +801,9 @@ def submit_philosophy_quiz():
             'philosophy': philosophy,
             'philosophy_data': philosophy_data,
             'answers': answers,
-            'completed_at': datetime.now().isoformat()
+            'completed_at': datetime.now().isoformat(),
+            'user_email': user_email,
+            'user_name': user_name
         }
         
         # Award badge if user is logged in
@@ -650,11 +811,18 @@ def submit_philosophy_quiz():
         if 'user_id' in session:
             badge_awarded = quiz_engine.award_philosophy_badge(session['user_id'], philosophy)
         
+        # Send automated email with results if email provided
+        email_sent = False
+        if user_email:
+            email_sent = quiz_engine.send_philosophy_result_email(user_email, user_name, philosophy, philosophy_data)
+        
         # Track completion activity
         widget_hub.update_widget_context('philosophy_quiz', {
             'action': 'complete',
             'philosophy': philosophy,
-            'badge_awarded': badge_awarded
+            'badge_awarded': badge_awarded,
+            'email_sent': email_sent,
+            'email_provided': bool(user_email)
         })
         
         return redirect(url_for('philosophy_quiz_result'))

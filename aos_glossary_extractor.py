@@ -6,6 +6,9 @@ Extracts terms and definitions from American Orchid Society glossary for crosswo
 
 import re
 import logging
+import requests
+from bs4 import BeautifulSoup
+import time
 from app import db, app
 from sqlalchemy import Column, Integer, String, Text
 
@@ -32,8 +35,8 @@ class AOSGlossaryExtractor:
         
     def load_aos_glossary_data(self):
         """Load comprehensive AOS glossary terms from authoritative source"""
-        
-        # Core botanical terms for crosswords and flashcards
+        # Don't scrape during app initialization to avoid startup delays
+        # Use fallback data initially, scraping will be done on-demand
         aos_terms = [
             {
                 'term': 'aberrant',
@@ -193,6 +196,191 @@ class AOSGlossaryExtractor:
         ]
         
         self.glossary_terms = aos_terms
+    
+    def expand_glossary_from_aos(self):
+        """Expand glossary by scraping AOS website - call this manually"""
+        print("🌐 Scraping comprehensive AOS glossary from aos.org...")
+        
+        # Scrape all A-Z pages from AOS website
+        scraped_terms = self.scrape_aos_website()
+        
+        if scraped_terms:
+            print(f"✅ Scraped {len(scraped_terms)} terms from AOS website")
+            self.glossary_terms.extend(scraped_terms)  # Add to existing terms
+            
+            # Populate database with new terms
+            added_count = self.populate_database()
+            print(f"✅ Added {added_count} new terms to database")
+            return added_count
+        else:
+            print("❌ AOS scraping failed")
+            return 0
+    
+    def scrape_aos_website(self):
+        """Scrape comprehensive AOS glossary from all A-Z pages"""
+        all_terms = []
+        base_url = "https://www.aos.org/orchids/orchid-basics/orchid-glossary/orchid-glossary-"
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        
+        for letter in letters:
+            try:
+                print(f"📖 Scraping letter {letter.upper()}...")
+                url = f"{base_url}{letter}"
+                
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                terms = self.extract_terms_from_page(soup, letter)
+                all_terms.extend(terms)
+                
+                print(f"✅ Letter {letter.upper()}: {len(terms)} terms")
+                time.sleep(1)  # Be respectful to the server
+                
+            except Exception as e:
+                logger.error(f"Error scraping letter {letter}: {e}")
+                print(f"❌ Letter {letter.upper()}: failed")
+                continue
+                
+        return all_terms
+    
+    def extract_terms_from_page(self, soup, letter):
+        """Extract terms and definitions from a single AOS glossary page"""
+        terms = []
+        
+        # Find all bold terms and their definitions
+        for element in soup.find_all(['strong', 'b']):
+            term_text = element.get_text().strip()
+            
+            # Skip if term is too short or contains unwanted characters
+            if len(term_text) < 2 or term_text.startswith(letter.upper()) and len(term_text) == 1:
+                continue
+                
+            # Skip common headers and navigation
+            if term_text.lower() in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']:
+                continue
+                
+            # Get definition text (usually the next sibling or parent's next sibling)
+            definition = self.extract_definition(element)
+            
+            if definition and len(definition) > 10:  # Ensure we have a real definition
+                # Extract pronunciation if present
+                pronunciation = self.extract_pronunciation(definition)
+                
+                # Clean up the term (remove formatting, extra characters)
+                clean_term = self.clean_term(term_text)
+                clean_definition = self.clean_definition(definition)
+                
+                if clean_term and clean_definition:
+                    # Categorize the term
+                    category = self.categorize_term(clean_term, clean_definition)
+                    difficulty = self.assess_difficulty(clean_term, clean_definition)
+                    
+                    terms.append({
+                        'term': clean_term,
+                        'definition': clean_definition,
+                        'pronunciation': pronunciation,
+                        'category': category,
+                        'difficulty': difficulty,
+                        'example_usage': '',
+                        'etymology': self.extract_etymology(clean_definition)
+                    })
+        
+        return terms
+    
+    def extract_definition(self, element):
+        """Extract definition text following a term"""
+        # Try to find definition in the next text node or paragraph
+        current = element
+        definition_parts = []
+        
+        # Look for definition in various ways
+        if element.parent:
+            # Get all text after the term element
+            for sibling in element.parent.children:
+                if sibling == element:
+                    continue
+                if hasattr(sibling, 'get_text'):
+                    text = sibling.get_text().strip()
+                    if text and not text.startswith('('):  # Skip pronunciation guides for now
+                        definition_parts.append(text)
+                        break
+                elif isinstance(sibling, str):
+                    text = sibling.strip()
+                    if text:
+                        definition_parts.append(text)
+                        break
+        
+        return ' '.join(definition_parts) if definition_parts else ''
+    
+    def extract_pronunciation(self, text):
+        """Extract pronunciation guide from definition text"""
+        # Look for pronunciation in parentheses
+        match = re.search(r'\(([^)]*(?:AIR|ah|ay|ell|iss|us|um|ent|ant|in)[^)]*)\)', text)
+        return match.group(1) if match else ''
+    
+    def clean_term(self, text):
+        """Clean up term text"""
+        # Remove italic markers, extra spaces, special characters
+        clean = re.sub(r'[_*]', '', text)
+        clean = clean.strip()
+        
+        # Remove trailing punctuation
+        clean = re.sub(r'[.,:;!?]+$', '', clean)
+        
+        return clean.lower() if clean else ''
+    
+    def clean_definition(self, text):
+        """Clean up definition text"""
+        # Remove pronunciation guides from definition
+        clean = re.sub(r'\([^)]*(?:AIR|ah|ay|ell|iss|us|um|ent|ant|in)[^)]*\)', '', text)
+        
+        # Clean up extra spaces
+        clean = re.sub(r'\s+', ' ', clean).strip()
+        
+        # Remove leading/trailing punctuation
+        clean = clean.strip('.,;:')
+        
+        return clean if len(clean) > 5 else ''
+    
+    def categorize_term(self, term, definition):
+        """Categorize terms based on content"""
+        definition_lower = definition.lower()
+        term_lower = term.lower()
+        
+        # Awards and judging
+        if any(word in term_lower for word in ['aos', 'award', 'merit', 'certificate', 'ccm', 'ccr', 'cbe']):
+            return 'awards'
+        
+        # Cultural and growing terms
+        if any(word in definition_lower for word in ['growing', 'culture', 'medium', 'potting', 'fertiliz', 'watering']):
+            return 'cultural'
+        
+        # Morphological/botanical terms
+        if any(word in definition_lower for word in ['flower', 'petal', 'sepal', 'root', 'stem', 'leaf', 'bulb']):
+            return 'botanical'
+        
+        # Genetic and breeding
+        if any(word in definition_lower for word in ['hybrid', 'breeding', 'cross', 'genetic', 'chromosome']):
+            return 'genetics'
+        
+        return 'botanical'  # Default category
+    
+    def assess_difficulty(self, term, definition):
+        """Assess difficulty level of a term"""
+        # Simple heuristics for difficulty assessment
+        if len(term) <= 6 and len(definition) <= 50:
+            return 'beginner'
+        elif len(term) <= 12 and len(definition) <= 100:
+            return 'intermediate'
+        else:
+            return 'advanced'
+    
+    def extract_etymology(self, definition):
+        """Extract etymological information from definition"""
+        # Look for Latin/Greek origins
+        etymology_match = re.search(r'(Latin|Greek|derived from).*?([.,;]|$)', definition, re.IGNORECASE)
+        return etymology_match.group(0) if etymology_match else ''
 
     def populate_database(self):
         """Add all glossary terms to database"""
