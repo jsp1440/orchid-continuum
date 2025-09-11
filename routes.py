@@ -182,26 +182,53 @@ def featured_articles():
 
 # Articles configuration
 FEATURED_ARTICLES = {
-    'greek-mythology-orchids': {
-        'title': 'Orchids and Greek Mythology: A Floral Odyssey',
+    'mythic-orchids': {
+        'title': 'The Mythic Times and Orchids: A Journey Through Legend and Lore',
         'category': 'Mythology & Culture',
-        'read_time': '15 min read',
-        'file_path': 'static/articles/greek_mythology_orchids.txt',
-        'excerpt': 'Embark on a whimsical journey through the world of orchids and Greek mythology, where the ethereal beauty of these flowers intertwines with the tales of gods, heroes, and mythical creatures.'
+        'read_time': '18 min read',
+        'file_path': 'static/articles/mythic_orchids.txt',
+        'excerpt': 'Journey through the mythical connections between orchids and ancient civilizations, from Greek gods to Amazonian spirits, Chinese philosophy, and Nordic legends.',
+        'status': 'published'
     },
     'vanilla-boy-story': {
         'title': 'The Boy Who Saved Vanilla: A Story of Innovation and Freedom',
         'category': 'History & Innovation', 
         'read_time': '12 min read',
         'file_path': 'static/articles/vanilla_boy_story.txt',
-        'excerpt': 'The remarkable true story of a young slave who revolutionized the vanilla industry by discovering the secret of hand-pollinating vanilla orchids.'
+        'excerpt': 'The remarkable true story of Edmond Albius, a young slave who revolutionized the vanilla industry by discovering the secret of hand-pollinating vanilla orchids.',
+        'status': 'published'
     },
-    'mars-terraforming': {
-        'title': 'Bioengineering Orchids for Mars: The Future of Planetary Terraforming',
-        'category': 'Science & Future',
-        'read_time': '18 min read', 
-        'file_path': 'static/articles/mars_terraforming_orchids.txt',
-        'excerpt': 'Exploring the cutting-edge science of adapting orchids for extraterrestrial environments and their role in making Mars habitable.'
+    'jewel-orchids': {
+        'title': 'The Fascinating World of Jewel Orchids',
+        'category': 'Botanical Science',
+        'read_time': '15 min read',
+        'file_path': 'static/articles/jewel_orchids.txt',
+        'excerpt': 'Step into the dazzling realm of jewel orchids, where leaves steal the spotlight with intricate patterns, metallic sheens, and fascinating biology.',
+        'status': 'published'
+    },
+    'literary-orchids': {
+        'title': 'Famous Literary Works Featuring Orchids',
+        'category': 'Literature & Culture',
+        'read_time': '8 min read',
+        'file_path': 'static/articles/literary_orchids.txt',
+        'excerpt': 'Explore how orchids have captivated writers throughout history, from "The Orchid Thief" to works by Neil Gaiman and Julia Alvarez.',
+        'status': 'published'
+    },
+    'august-orchid-care': {
+        'title': 'Orchid Care Tips for August',
+        'category': 'Practical Guides',
+        'read_time': '10 min read',
+        'file_path': 'static/articles/august_orchid_care.txt',
+        'excerpt': 'Essential August care tips for orchid enthusiasts, covering watering, light management, temperature control, and preparing for blooming season.',
+        'status': 'published'
+    },
+    'halloween-black-rot': {
+        'title': 'The Night of the Black Rot: A Tale of Orchids and Halloween',
+        'category': 'Seasonal Stories',
+        'read_time': '12 min read',
+        'file_path': 'static/articles/halloween_black_rot.txt',
+        'excerpt': 'A spooky Halloween tale featuring the Five Cities Orchid Society battling supernatural black rot with knowledge, community, and a protective charm.',
+        'status': 'published'
     }
 }
 
