@@ -9,8 +9,8 @@ const CONFIG = {
   timezone: 'America/Los_Angeles',
   containerId: 'orchid-of-the-day',
   DATA_SOURCE: {
-    type: 'json', // 'google_sheet' | 'json' | 'local'
-    url: '/api/orchid-of-the-day-data' // Your Orchid Continuum API
+    type: 'google_sheet', // 'google_sheet' | 'json' | 'local'
+    url: '<<PASTE_YOUR_GOOGLE_SHEET_CSV_URL_HERE>>' // Get from File > Share > Publish to web > CSV
   },
   cacheTtlMinutes: 120,   // cache fetch in sessionStorage
   maxRecentHistory: 30,   // prevent repeats within last N days
@@ -104,8 +104,20 @@ class OrchidOfTheDayWidget {
   }
   
   async fetchGoogleSheet() {
-    const response = await fetch(this.config.DATA_SOURCE.url);
-    if (!response.ok) throw new Error(`Failed to fetch sheet: ${response.status}`);
+    const url = this.config.DATA_SOURCE.url;
+    
+    // Ensure the URL is a CSV export URL
+    let csvUrl = url;
+    if (url.includes('/edit') && !url.includes('/export')) {
+      // Convert edit URL to CSV export URL
+      const sheetId = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+      if (sheetId) {
+        csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
+      }
+    }
+    
+    const response = await fetch(csvUrl);
+    if (!response.ok) throw new Error(`Failed to fetch sheet: ${response.status} - Make sure sheet is published to web as CSV`);
     
     const csvText = await response.text();
     return this.parseCSV(csvText);
