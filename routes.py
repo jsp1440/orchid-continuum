@@ -9712,3 +9712,17 @@ def badge_test():
     from badge_test_route import create_badge_test_page
     return Response(create_badge_test_page(), mimetype="text/html")
 
+# Register Enhanced Systems (International Scraping + Mobile Field Research)
+try:
+    from enhanced_system_integration import register_enhanced_systems
+    if register_enhanced_systems(app):
+        logger.info("🚀 Enhanced international scraping and mobile field research systems registered")
+        logger.info("📱 Mobile field research available at: /field/")
+        logger.info("🌍 International scraping admin at: /admin/international/")
+    else:
+        logger.warning("⚠️ Failed to register enhanced systems")
+except ImportError as e:
+    logger.warning(f"Enhanced systems not available: {e}")
+except Exception as e:
+    logger.error(f"Error registering enhanced systems: {e}")
+
