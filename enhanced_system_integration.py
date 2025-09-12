@@ -10,7 +10,7 @@ from datetime import datetime
 
 # Import the new systems
 from international_scraping_routes import international_scraping_bp
-from field_research_system import field_research_bp, FieldObservation, create_field_observation_table
+from field_research_system import field_research_bp
 from models import db
 
 logger = logging.getLogger(__name__)
@@ -68,13 +68,19 @@ def get_system_status():
 def check_table_exists(table_name: str) -> bool:
     """Check if database table exists"""
     try:
-        result = db.engine.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';")
-        return bool(result.fetchone())
+        from sqlalchemy import text
+        # Try PostgreSQL first (since we're using PostgreSQL)
+        with db.engine.connect() as conn:
+            result = conn.execute(text("SELECT tablename FROM pg_catalog.pg_tables WHERE tablename = :table_name"), 
+                                {"table_name": table_name})
+            return bool(result.fetchone())
     except:
         try:
-            # For PostgreSQL
-            result = db.engine.execute(f"SELECT tablename FROM pg_catalog.pg_tables WHERE tablename = '{table_name}';")
-            return bool(result.fetchone())
+            # Fallback to SQLite check
+            with db.engine.connect() as conn:
+                result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name = :table_name"), 
+                                    {"table_name": table_name})
+                return bool(result.fetchone())
         except:
             return False
 
