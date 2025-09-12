@@ -9712,6 +9712,125 @@ def badge_test():
     from badge_test_route import create_badge_test_page
     return Response(create_badge_test_page(), mimetype="text/html")
 
+@app.route('/api/orchid-of-the-day-data')
+def orchid_of_the_day_data():
+    """API endpoint for Orchid of the Day widget - serves orchid data in widget format"""
+    try:
+        # Get all orchids with images for the widget
+        orchids = OrchidRecord.query.filter(
+            or_(
+                OrchidRecord.image_url.isnot(None),
+                OrchidRecord.google_drive_id.isnot(None)
+            )
+        ).filter(
+            OrchidRecord.validation_status == 'validated'
+        ).all()
+        
+        widget_data = []
+        
+        for orchid in orchids:
+            # Determine image URL
+            image_url = None
+            if orchid.google_drive_id:
+                image_url = f"/api/drive-photo/{orchid.google_drive_id}"
+            elif orchid.image_url:
+                image_url = orchid.image_url
+            
+            if not image_url:
+                continue
+                
+            # Format scientific name parts
+            genus = orchid.genus or ""
+            species = orchid.species or ""
+            
+            # Determine if hybrid
+            hybrid = orchid.grex_name if orchid.is_hybrid else ""
+            grex = orchid.grex_name or ""
+            clonal_name = orchid.clone_name or ""
+            
+            # Build title based on available data
+            title_parts = []
+            if genus and species:
+                title_parts.append(f"{genus} {species}")
+            elif hybrid or grex:
+                title_parts.append(hybrid or grex)
+            elif orchid.display_name:
+                title_parts.append(orchid.display_name)
+            
+            if clonal_name:
+                title_parts.append(f"'{clonal_name}'")
+                
+            title = " ".join(title_parts) if title_parts else orchid.display_name or "Unknown Orchid"
+            
+            # Build caption from available data
+            caption_parts = []
+            
+            if orchid.ai_description:
+                # Use AI description but limit to ~55 words
+                ai_desc = orchid.ai_description[:300] + "..." if len(orchid.ai_description) > 300 else orchid.ai_description
+                caption_parts.append(ai_desc)
+            else:
+                # Build caption from other fields
+                if orchid.native_habitat:
+                    caption_parts.append(f"Native to {orchid.native_habitat}")
+                elif orchid.country:
+                    caption_parts.append(f"Found in {orchid.country}")
+                
+                if orchid.bloom_time:
+                    caption_parts.append(f"Blooms {orchid.bloom_time}")
+                    
+                if orchid.growth_habit:
+                    caption_parts.append(f"{orchid.growth_habit.replace('_', ' ').title()} growth habit")
+                    
+                if orchid.cultural_notes:
+                    notes = orchid.cultural_notes[:150] + "..." if len(orchid.cultural_notes) > 150 else orchid.cultural_notes
+                    caption_parts.append(notes)
+            
+            caption = ". ".join(caption_parts) if caption_parts else "A beautiful orchid from our collection."
+            
+            # Build the widget record
+            record = {
+                'id': orchid.id,
+                'genus': genus,
+                'species': species,
+                'variety': '',  # Not used in current schema
+                'hybrid': hybrid,
+                'grex': grex,
+                'clonal_name': clonal_name,
+                'infraspecific_rank': '',  # Not used in current schema
+                'orchid_group': genus,  # Use genus as group
+                'title': title,
+                'caption': caption,
+                'image_url': image_url,
+                'photographer': orchid.photographer or '',
+                'credit': orchid.photographer or orchid.image_source or '',
+                'license': '',  # Not tracked in current schema
+                'license_url': '',  # Not tracked in current schema
+                'native_range': orchid.country or orchid.region or orchid.native_habitat or '',
+                'habitat': orchid.native_habitat or orchid.growing_environment or '',
+                'elevation_m': '',  # Not easily accessible in current schema
+                'blooming_season': orchid.bloom_time or orchid.bloom_season_indicator or '',
+                'culture_notes': orchid.cultural_notes or '',
+                'date': orchid.created_at.isoformat() if orchid.created_at else '',
+                'tags': '',  # Not used in current schema
+                'accession_id': str(orchid.id)
+            }
+            
+            widget_data.append(record)
+        
+        logger.info(f"🌺 Serving {len(widget_data)} orchids for widget data")
+        
+        return jsonify(widget_data)
+        
+    except Exception as e:
+        logger.error(f"Error serving orchid widget data: {e}")
+        return jsonify({'error': 'Failed to load orchid data'}), 500
+
+@app.route('/orchid-widget-demo')
+def orchid_widget_demo():
+    """Demo page showing the Orchid of the Day widget in action"""
+    return render_template('orchid_widget_demo.html')
+
 # Register Enhanced Systems (International Scraping + Mobile Field Research)
 try:
     from enhanced_system_integration import register_enhanced_systems
