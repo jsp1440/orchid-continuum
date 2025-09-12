@@ -16,7 +16,7 @@ from PIL import Image
 import io
 import base64
 
-from models import db
+from models import db, FieldObservation
 from google_drive_service import upload_to_drive
 from orchid_ai import analyze_orchid_image
 
@@ -25,110 +25,7 @@ logger = logging.getLogger(__name__)
 # Create blueprint for field research mobile app
 field_research_bp = Blueprint('field_research', __name__, url_prefix='/field')
 
-# Create new model for field observations
-class FieldObservation(db.Model):
-    """Field observation records from mobile researchers"""
-    __tablename__ = 'field_observations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    
-    # User and session info
-    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=True)
-    session_id = db.Column(db.String(50), nullable=False)  # For anonymous users
-    researcher_name = db.Column(db.String(200), nullable=True)
-    researcher_email = db.Column(db.String(120), nullable=True)
-    
-    # Observation data
-    observation_id = db.Column(db.String(20), unique=True, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Location data
-    latitude = db.Column(db.Float, nullable=True)
-    longitude = db.Column(db.Float, nullable=True)
-    altitude = db.Column(db.Float, nullable=True)
-    location_accuracy = db.Column(db.Float, nullable=True)  # GPS accuracy in meters
-    location_description = db.Column(db.String(500), nullable=True)
-    
-    # Environmental conditions
-    habitat_notes = db.Column(db.Text, nullable=True)
-    weather_conditions = db.Column(db.String(200), nullable=True)
-    light_conditions = db.Column(db.String(100), nullable=True)
-    substrate_type = db.Column(db.String(100), nullable=True)  # tree_trunk, rock, soil, etc.
-    companion_species = db.Column(db.Text, nullable=True)
-    
-    # Orchid observation data
-    tentative_genus = db.Column(db.String(100), nullable=True)
-    tentative_species = db.Column(db.String(100), nullable=True)
-    growth_stage = db.Column(db.String(50), nullable=True)  # seedling, juvenile, flowering, fruiting
-    flower_color = db.Column(db.String(100), nullable=True)
-    estimated_size = db.Column(db.String(100), nullable=True)
-    population_count = db.Column(db.Integer, nullable=True)
-    
-    # Photo data
-    photo_drive_id = db.Column(db.String(200), nullable=True)
-    photo_url = db.Column(db.String(500), nullable=True)
-    photo_filename = db.Column(db.String(300), nullable=True)
-    
-    # AI Analysis results
-    ai_identification = db.Column(db.JSON, nullable=True)
-    ai_confidence = db.Column(db.Float, nullable=True)
-    
-    # Processing status
-    sync_status = db.Column(db.String(20), default='pending')  # pending, synced, processed, error
-    processing_status = db.Column(db.String(20), default='queue')  # queue, processing, completed, failed
-    admin_status = db.Column(db.String(20), default='pending')  # pending, approved, needs_review
-    
-    # Privacy and conservation
-    sensitivity_flag = db.Column(db.Boolean, default=False)  # For rare/endangered species
-    location_privacy = db.Column(db.String(20), default='precise')  # precise, approximate, hidden
-    research_consent = db.Column(db.Boolean, default=True)  # User consent for research use
-    
-    # Field notes
-    field_notes = db.Column(db.Text, nullable=True)
-    research_questions = db.Column(db.Text, nullable=True)
-    conservation_concerns = db.Column(db.Text, nullable=True)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    def __init__(self, **kwargs):
-        super(FieldObservation, self).__init__(**kwargs)
-        if not self.observation_id:
-            self.observation_id = self.generate_observation_id()
-        if not self.session_id:
-            self.session_id = str(uuid.uuid4())[:8]
-    
-    def generate_observation_id(self):
-        """Generate unique observation ID"""
-        timestamp = datetime.now().strftime('%Y%m%d')
-        random_suffix = str(uuid.uuid4())[:6].upper()
-        return f"OBS{timestamp}{random_suffix}"
-    
-    def to_dict(self):
-        """Convert to dictionary for API responses"""
-        return {
-            'id': self.id,
-            'observation_id': self.observation_id,
-            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'location_description': self.location_description,
-            'tentative_genus': self.tentative_genus,
-            'tentative_species': self.tentative_species,
-            'habitat_notes': self.habitat_notes,
-            'field_notes': self.field_notes,
-            'photo_url': self.photo_url,
-            'sync_status': self.sync_status,
-            'processing_status': self.processing_status,
-            'ai_identification': self.ai_identification,
-            'ai_confidence': self.ai_confidence
-        }
-
-# Add to database creation
-def create_field_observation_table():
-    """Create field observation table if it doesn't exist"""
-    with db.app.app_context():
-        db.create_all()
+# FieldObservation model is now imported from models.py
 
 @field_research_bp.route('/')
 def mobile_app():
