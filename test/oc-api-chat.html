@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Chat API Test</title></head>
+  <body>
+    <h1>Chat Test with Orchid Continuum API</h1>
+
+    <input id="prompt" type="text" value="Give me one fun fact about orchids." style="width:60%">
+    <button onclick="ask()">Ask</button>
+
+    <pre id="out"></pre>
+
+    <script>
+      async function ask() {
+        const userPrompt = document.getElementById('prompt').value;
+        const res = await fetch('/oc-api', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'chat',
+            payload: { prompt: userPrompt }
+          })
+        });
+        const data = await res.json();
+        document.getElementById('out').textContent =
+          JSON.stringify(data, null, 2);
+      }
+    </script>
+  </body>
+</html>
