@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orchid Assistant</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Arial;margin:0;background:#0b1220;color:#e8edf6}
+  .wrap{max-width:720px;margin:0 auto;padding:16px}
+  .log{background:#121a2a;border:1px solid #22304d;border-radius:10px;padding:12px;height:420px;overflow:auto}
+  .msg{margin:10px 0;white-space:pre-wrap}
+  .you{color:#a9c7ff}.me{color:#ffd59e}
+  form{display:flex;gap:8px;margin-top:10px}
+  input{flex:1;padding:10px;border-radius:8px;border:1px solid #22304d;background:#0e1626;color:#e8edf6}
+  button{padding:10px 14px;border-radius:8px;border:0;background:#3cd17b;color:#0a1512;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="log" id="log"></div>
+  <form id="f"><input id="t" placeholder="Ask about FCOS, orchids, or the site..." autofocus><button>Send</button></form>
+</div>
+<script>
+const log = document.getElementById('log'), t = document.getElementById('t'), f = document.getElementById('f');
+let history = [{role:'system', content:'You are the Orchid Continuum site assistant. Be concise and helpful.'}];
+function add(role, text){ const d=document.createElement('div'); d.className='msg ' + (role==='user'?'me':'you'); d.textContent=(role==='user'?'You: ':'Orchid Assistant: ')+text; log.appendChild(d); log.scrollTop=log.scrollHeight; }
+f.addEventListener('submit', async (e)=>{
+  e.preventDefault(); const q=t.value.trim(); if(!q) return; t.value=''; add('user', q); history.push({role:'user', content:q});
+  const r = await fetch('/.netlify/functions/chat', { method:'POST', body: JSON.stringify({messages: history}) });
+  const {reply, error} = await r.json(); if(error){ add('assistant', 'Error: '+error); return; }
+  add('assistant', reply); history.push({role:'assistant', content: reply});
+});
+</script>
+</body>
+</html>
