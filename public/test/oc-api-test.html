@@ -1,28 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>OC API Test</title>
+  <meta charset="utf-8">
+  <title>API Test</title>
 </head>
 <body>
-  <h1>Test OC API Function</h1>
-  <button id="callApi">Call Function</button>
-  <pre id="output"></pre>
+  <button onclick="ping()">Ping API</button>
+  <pre id="out"></pre>
 
   <script>
-    document.getElementById("callApi").addEventListener("click", async () => {
-      try {
-        const res = await fetch("/.netlify/functions/oc-api", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: "Hello Orchid Continuum!" })
-        });
-        const data = await res.json();
-        document.getElementById("output").textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        document.getElementById("output").textContent = "Error: " + err;
-      }
+  async function ping() {
+    const res = await fetch('/oc-api', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'echo', payload: { hello: 'orchids' } })
     });
+    const data = await res.json();
+    document.getElementById('out').textContent = JSON.stringify(data, null, 2);
+  }
   </script>
 </body>
 </html>
