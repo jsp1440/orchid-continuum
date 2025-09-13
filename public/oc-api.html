@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OC API Test</title>
+</head>
+<body>
+  <h1>Test Orchid Continuum API</h1>
+
+  <form id="testForm">
+    <label for="question">Ask something:</label><br />
+    <input type="text" id="question" name="question" placeholder="Type your question..." />
+    <button type="submit">Send</button>
+  </form>
+
+  <h2>Response:</h2>
+  <pre id="response"></pre>
+
+  <script>
+    document.getElementById("testForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = document.getElementById("question").value;
+
+      const res = await fetch("/.netlify/functions/oc-api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await res.json();
+      document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>
