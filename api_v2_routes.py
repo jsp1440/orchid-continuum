@@ -3,7 +3,7 @@ FastAPI-compatible endpoints for the current Flask system
 Bridge endpoints that provide the new API structure while working with existing data
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from models import db, OrchidRecord
 from sqlalchemy import func
 import logging
@@ -12,6 +12,42 @@ import logging
 api_v2 = Blueprint('api_v2', __name__)
 
 logger = logging.getLogger(__name__)
+
+@api_v2.route('/api', methods=['GET'])
+def list_routes():
+    """
+    List all available routes and their HTTP methods
+    """
+    try:
+        routes = []
+        
+        # Iterate through all registered routes in the Flask application
+        for rule in current_app.url_map.iter_rules():
+            # Skip static file serving routes
+            if rule.endpoint == 'static':
+                continue
+                
+            # Get all HTTP methods for this route (excluding OPTIONS and HEAD)
+            methods = [method for method in rule.methods if method not in ['OPTIONS', 'HEAD']]
+            
+            # Add each method as a separate entry
+            for method in methods:
+                routes.append({
+                    "method": method,
+                    "path": str(rule.rule)
+                })
+        
+        # Sort routes by path for better readability
+        routes.sort(key=lambda x: x["path"])
+        
+        return jsonify({
+            "ok": True,
+            "routes": routes
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in list_routes: {e}")
+        return jsonify({"ok": False, "error": "Internal server error"}), 500
 
 @api_v2.route('/api/v2/orchids', methods=['GET'])
 def get_orchids():
