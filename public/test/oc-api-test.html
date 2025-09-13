@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OC API Test</title>
+</head>
+<body>
+  <h1>Test OC API Function</h1>
+  <button id="callApi">Call Function</button>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById("callApi").addEventListener("click", async () => {
+      try {
+        const res = await fetch("/.netlify/functions/oc-api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: "Hello Orchid Continuum!" })
+        });
+        const data = await res.json();
+        document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("output").textContent = "Error: " + err;
+      }
+    });
+  </script>
+</body>
+</html>
