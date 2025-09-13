@@ -123,6 +123,20 @@ except Exception as e:
     print(f"Widget system initialization error: {e}")
 
 try:
+    from youtube_orchid_widget import youtube_widget
+    app.register_blueprint(youtube_widget)
+    print("YouTube Orchid Widget initialized for FCOS integration")
+except Exception as e:
+    print(f"YouTube widget initialization error: {e}")
+
+try:
+    from neon_one_widget_package import neon_one_widgets
+    app.register_blueprint(neon_one_widgets)
+    print("Neon One Widget Package initialized for CMS integration")
+except Exception as e:
+    print(f"Neon One widget package initialization error: {e}")
+
+try:
     from orchid_interaction_routes import orchid_interaction_bp
     app.register_blueprint(orchid_interaction_bp)
     print("Orchid Interaction Explorer system initialized")
