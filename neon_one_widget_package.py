@@ -188,6 +188,16 @@ class NeonOneWidgetManager:
                 'features': ['bibtex_export', 'multiple_formats', 'academic_standards']
             },
             
+            # 📺 VIDEO & MEDIA WIDGETS
+            'youtube_channel': {
+                'name': 'FCOS YouTube Channel',
+                'description': 'Five Cities Orchid Society YouTube video player with search and detachable viewing',
+                'category': 'video_media',
+                'embed_url': '/neon-one/embed/youtube',
+                'preview_url': '/neon-one/preview/youtube',
+                'features': ['channel_videos', 'video_search', 'in_place_player', 'detachable_player', 'orchid_discovery']
+            },
+            
             # 🌟 FEATURED WIDGETS
             'orchid_of_day': {
                 'name': 'Orchid of the Day',
@@ -268,6 +278,7 @@ def widget_catalog():
         'breeding_research': 'Breeding & Research',
         'care_cultivation': 'Care & Cultivation',
         'education_games': 'Education & Games',
+        'video_media': 'Video & Media',
         'utilities': 'Utilities',
         'featured': 'Featured Widgets'
     }
@@ -305,11 +316,35 @@ def widget_embed(widget_id):
         'monthly_contest': 'neon_one/widgets/contest.html',
         'photo_uploader': 'neon_one/widgets/upload.html',
         'citation_generator': 'neon_one/widgets/citations.html',
+        'youtube_channel': 'youtube_widget/embed.html',
         'orchid_of_day': 'neon_one/widgets/orchid_of_day.html',
         'featured_gallery': 'neon_one/widgets/featured_gallery.html'
     }
     
     template = template_map.get(widget_id, 'neon_one/widgets/default.html')
+    
+    # Special handling for YouTube widget
+    if widget_id == 'youtube_channel':
+        from youtube_orchid_widget import youtube_widget_manager
+        width = request.args.get('width', '100%')
+        height = request.args.get('height', '600px')
+        theme = request.args.get('theme', 'light')
+        show_search = request.args.get('search', 'true').lower() == 'true'
+        
+        channel_stats = youtube_widget_manager.get_channel_stats()
+        recent_videos = youtube_widget_manager.search_channel_videos(max_results=6)
+        
+        return render_template(template,
+                             width=width,
+                             height=height,
+                             theme=theme,
+                             show_search=show_search,
+                             channel_stats=channel_stats,
+                             recent_videos=recent_videos,
+                             widget=widget,
+                             widget_id=widget_id,
+                             compact_mode=True,
+                             neon_one_integration=True)
     
     return render_template(template,
                          widget=widget,
