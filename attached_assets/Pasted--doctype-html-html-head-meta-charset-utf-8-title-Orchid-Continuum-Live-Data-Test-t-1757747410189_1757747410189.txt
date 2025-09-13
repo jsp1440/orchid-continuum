@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Orchid Continuum – Live Data Test</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial; max-width:960px; margin:24px auto; padding:0 12px}
+    input,button{padding:10px; border-radius:10px; border:1px solid #ccc}
+    input{flex:1}
+    button{background:#5c6cff; color:#fff; border:0; cursor:pointer}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    pre{background:#f6f8fa; padding:12px; border-radius:10px; overflow:auto; max-height:60vh}
+    code{background:#eee; padding:2px 6px; border-radius:6px}
+  </style>
+</head>
+<body>
+  <h1>Live Data Test</h1>
+  <p>Calls your <code>/functions/oc-data-live</code> proxy and hits your **real** Orchid Continuum API.</p>
+  <div class="row">
+    <input id="path" value="/v2/orchids" />
+    <input id="q" placeholder="q=Phalaenopsis (optional)" />
+    <button id="go">Fetch</button>
+  </div>
+  <p>GET → <code id="url"></code></p>
+  <pre id="out">—</pre>
+
+  <script>
+    const BASE = "/functions/oc-data-live";
+    const pathEl = document.getElementById("path");
+    const qEl = document.getElementById("q");
+    const out = document.getElementById("out");
+    const urlEl = document.getElementById("url");
+
+    document.getElementById("go").onclick = async () => {
+      const path = (pathEl.value || "").trim();
+      const q = (qEl.value || "").trim();
+      const url = new URL(BASE, location.origin);
+      url.searchParams.set("path", path);
+      if (q) {
+        const [k, v] = q.split("=");
+        if (k && v !== undefined) url.searchParams.set(k, v);
+      }
+      urlEl.textContent = url.pathname + url.search;
+      out.textContent = "Loading…";
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        out.textContent = "Error: " + (e?.message || e);
+      }
+    };
+  </script>
+</body>
+</html>
