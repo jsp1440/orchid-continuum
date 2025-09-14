@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Orchid Continuum — Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; line-height: 1.45; }
+    h1 { margin-bottom: 0.25rem; }
+    .muted { color: #666; font-size: 0.95rem; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin: 16px 0; background: #fafafa; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    button, a.btn { display: inline-block; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: white; text-decoration: none; color: #111; }
+    code { background: #f1f1f1; padding: 2px 6px; border-radius: 4px; }
+    pre { background: #111; color: #0f0; padding: 12px; border-radius: 8px; overflow: auto; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Orchid Continuum — Admin</h1>
+  <div class="muted">Quick deploy info & handy links</div>
+
+  <div id="info" class="card">Loading…</div>
+
+  <div class="card">
+    <h3>Actions</h3>
+    <div class="row">
+      <!-- Visit the live site -->
+      <a id="visitSite" class="btn" target="_blank" rel="noopener">Visit site</a>
+
+      <!-- Open Deployments list in Cloudflare (paste your direct dash URL once and it will stick) -->
+      <a id="openDash" class="btn" target="_blank" rel="noopener">Open Cloudflare Deployments</a>
+
+      <!-- Cache-busting reload of home page -->
+      <a id="hardReload" class="btn" target="_blank" rel="noopener">Bypass cache (home)</a>
+    </div>
+    <p class="muted" style="margin-top:8px">
+      Purging cache via API needs an API token; for now this “Bypass cache” link appends a timestamp to the URL.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Raw JSON</h3>
+    <pre id="raw"></pre>
+  </div>
+
+  <script>
+    (async function init() {
+      try {
+        const res = await fetch('/api/deploy-info');
+        const data = await res.json();
+
+        const infoEl = document.getElementById('info');
+        const rawEl = document.getElementById('raw');
+        const openDash = document.getElementById('openDash');
+        const visitSite = document.getElementById('visitSite');
+        const hardReload = document.getElementById('hardReload');
+
+        rawEl.textContent = JSON.stringify(data, null, 2);
+
+        // Build the info panel
+        infoEl.innerHTML = `
+          <div><strong>Project:</strong> ${esc(data.project)}</div>
+          <div><strong>URL:</strong> <a href="${esc(data.url)}" target="_blank" rel="noopener">${esc(data.url)}</a></div>
+          <div><strong>Branch:</strong> <code>${esc(data.branch)}</code></div>
+          <div><strong>Commit:</strong> <code>${esc(data.commit_short || '')}</code> — ${esc(data.commit_msg || '')}</div>
+          <div class="muted">Deployed: ${new Date(data.deployed_at).toLocaleString()}</div>
+        `;
+
+        // Buttons
+        const site = data.url || location.origin;
+        visitSite.href = site;
+        hardReload.href = site + '/?v=' + Date.now();
+
+        // Put your dash URL here once; after that you won’t need to change it.
+        // Tip: while you’re on your Deployments page in Cloudflare, copy the address bar URL and paste below:
+        const CLOUDFLARE_DASH_DEPLOYMENTS_URL = localStorage.getItem('CF_DASH_URL') || '';
+        if (!CLOUDFLARE_DASH_DEPLOYMENTS_URL) {
+          openDash.textContent = 'Set Dash URL';
+          openDash.href = '#';
+          openDash.addEventListener('click', (e) => {
+            e.preventDefault();
+            const u = prompt('Paste your Cloudflare Deployments page URL (from your browser address bar):');
+            if (u) {
+              localStorage.setItem('CF_DASH_URL', u);
+              openDash.textContent = 'Open Cloudflare Deployments';
+              openDash.href = u;
+            }
+          });
+        } else {
+          openDash.href = CLOUDFLARE_DASH_DEPLOYMENTS_URL;
+        }
+      } catch (e) {
+        document.getElementById('info').innerHTML = '<strong>Error loading deploy info.</strong>';
+        document.getElementById('raw').textContent = String(e);
+      }
+
+      function esc(s) { return (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    })();
+  </script>
+</body>
+</html>
