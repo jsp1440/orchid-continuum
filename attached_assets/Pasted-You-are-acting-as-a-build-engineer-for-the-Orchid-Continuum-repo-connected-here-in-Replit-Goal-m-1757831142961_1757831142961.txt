@@ -1,0 +1,76 @@
+You are acting as a build engineer for the “Orchid Continuum” repo connected here in Replit. Goal: make the gallery images render on the deployed Cloudflare Pages site without me writing code by hand.
+
+CONTEXT
+- Hosting: Cloudflare Pages (connected to this GitHub repo).
+- Public URL root: https://orchid-continuum.pages.dev
+- Static files are served from /public at the site root. Example: /public/images/AAA.jpg -> https://orchid-continuum.pages.dev/images/AAA.jpg
+- Gallery widget fetches /assets/data/gallery.json and renders "src" values as <img src="...">.
+- Images currently live under /public/images/. Some filenames contain spaces.
+- Symptom: Widget loads JSON and shows cards, but images are broken. Root cause is likely that gallery.json paths (often /assets/images/...) do not match actual files under /public/images/ and/or need URL-encoding for spaces.
+
+YOUR TASKS (do these in order; no steps may be skipped)
+1) SYNC
+   - Pull the latest from the default branch.
+   - Confirm repo root contents and show a brief tree for:
+     - /assets/data/
+     - /public/images/
+     - /widgets/gallery/ (HTML/JS)
+   - Do not run heavy jobs and do not change package managers.
+
+2) DIAGNOSTIC (produce a clear report)
+   - Parse /assets/data/gallery.json (if missing, say so).
+   - For each entry’s "src", resolve what the deployed URL would be (absolute path).
+   - Check if that URL corresponds to a real file in /public/images (remember: deployed path /images/...).
+   - Detect issues: wrong folder (/assets/images vs /images), missing files, spaces not encoded, case mismatches, wrong extensions.
+   - Output a single table listing:
+        src_in_json | expected_deployed_url | exists? | fix_needed (yes/no) | suggested_fixed_src
+
+3) FIX FILES (return full replacements, not snippets)
+   - Create a corrected file at /assets/data/gallery.json where every "src" points to the deployed path that WILL load:
+     * Use /images/<exact-file-name>
+     * If a file has spaces in its name, EITHER:
+         a) URL-encode spaces as %20 in "src", OR
+         b) Preferably: propose a rename plan to replace spaces with underscores and lower-case the extension; if you choose (b), actually perform the renames in /public/images and update the JSON accordingly so no %20 is needed.
+     * Ensure case-sensitive matches (e.g., .jpg vs .JPG).
+   - Return the complete corrected /assets/data/gallery.json in one block.
+   - If you renamed any files in /public/images, list the before/after pairs.
+
+4) WIDGET FETCH SAFETY
+   - Open the gallery widget JS (likely /widgets/gallery/widget.js). Ensure it fetches the JSON by an ABSOLUTE path: fetch('/assets/data/gallery.json') and not relative paths that depend on the current directory.
+   - If it is not absolute, change it and return the full corrected file.
+
+5) TEST PAGE (lightweight)
+   - Add /public/tools/gallery-sanity.html that:
+       * fetches '/assets/data/gallery.json',
+       * renders a simple list of <img> using the "src",
+       * shows a green “OK” badge next to images that load (onload), red “MISSING” for those that 404 (onerror).
+   - Return the full file content of /public/tools/gallery-sanity.html.
+
+6) COMMIT & PUSH
+   - Stage only the files you touched:
+       * /assets/data/gallery.json
+       * any renamed files under /public/images
+       * /widgets/gallery/widget.js (if changed)
+       * /public/tools/gallery-sanity.html
+   - Commit with message: "Fix: gallery image paths, encoding/case; add sanity test"
+   - Push to the default branch (so Cloudflare Pages redeploys automatically).
+
+7) VERIFY & REPORT
+   - After push, provide the exact URLs to test in the browser:
+       * https://orchid-continuum.pages.dev/assets/data/gallery.json
+       * 3 sample direct image URLs that you guarantee exist (no spaces or properly encoded)
+       * https://orchid-continuum.pages.dev/widgets/gallery/?v=now
+       * https://orchid-continuum.pages.dev/tools/gallery-sanity.html?v=now
+   - State PASS/FAIL expectations for each link so I know what “good” looks like.
+   - If anything still cannot be guaranteed to load, say exactly why and what filename(s) are blocking it.
+
+REQUIREMENTS
+- Do not give me partial snippets. Return full file replacements for anything you modify.
+- Keep explanations minimal; the output must be actionable with exact files and URLs.
+- Avoid heavy/paid tasks. Do not add new dependencies. Operate only within the repo and its existing structure.
+
+ACCEPTANCE CRITERIA
+- Visiting a direct image URL renders an image.
+- Visiting /assets/data/gallery.json shows entries whose "src" fields resolve to existing files.
+- Visiting /widgets/gallery/ shows thumbnails with no broken images.
+- Visiting /tools/gallery-sanity.html shows all green “OK”.
