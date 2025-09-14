@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Sanity Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .test-image {
+            width: 100px;
+            height: 75px;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .test-info {
+            flex-grow: 1;
+        }
+        .test-path {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 3px;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+        .status-ok {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-missing {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌺 Gallery Sanity Check</h1>
+            <p>Testing image loading for Orchid Continuum Gallery</p>
+            <p><strong>Test URL:</strong> <span id="current-url"></span></p>
+        </div>
+        
+        <div id="content">
+            <div class="loading">
+                📡 Loading gallery data and testing images...
+            </div>
+        </div>
+        
+        <div id="summary" class="summary" style="display: none;">
+            <h3>📊 Test Summary</h3>
+            <p><strong>Total Images:</strong> <span id="total-count">0</span></p>
+            <p><strong>✅ Working:</strong> <span id="ok-count">0</span></p>
+            <p><strong>❌ Missing:</strong> <span id="missing-count">0</span></p>
+            <p><strong>Success Rate:</strong> <span id="success-rate">0%</span></p>
+        </div>
+    </div>
+
+    <script>
+        class GallerySanityCheck {
+            constructor() {
+                this.galleryData = null;
+                this.testResults = {
+                    total: 0,
+                    ok: 0,
+                    missing: 0
+                };
+                this.init();
+            }
+
+            async init() {
+                // Show current URL
+                document.getElementById('current-url').textContent = window.location.href;
+                
+                try {
+                    await this.loadGalleryData();
+                    await this.runImageTests();
+                    this.showSummary();
+                } catch (error) {
+                    this.showError('Failed to load gallery data: ' + error.message);
+                }
+            }
+
+            async loadGalleryData() {
+                const response = await fetch('/assets/data/gallery.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                this.galleryData = await response.json();
+            }
+
+            async runImageTests() {
+                if (!this.galleryData || !this.galleryData.images) {
+                    throw new Error('No gallery data available');
+                }
+
+                const content = document.getElementById('content');
+                this.testResults.total = this.galleryData.images.length;
+                
+                content.innerHTML = '<h3>🧪 Testing Images...</h3>';
+                
+                for (const image of this.galleryData.images) {
+                    const testItem = this.createTestItem(image);
+                    content.appendChild(testItem);
+                    await this.testImage(image, testItem);
+                }
+            }
+
+            createTestItem(image) {
+                const item = document.createElement('div');
+                item.className = 'test-item';
+                item.innerHTML = `
+                    <img src="${image.src}" alt="${image.title}" class="test-image" style="display: none;">
+                    <div class="test-info">
+                        <div><strong>${image.title}</strong></div>
+                        <div class="test-path">${image.src}</div>
+                        <div style="font-size: 12px; color: #6c757d;">${image.description}</div>
+                    </div>
+                    <span class="status-badge status-loading">Testing...</span>
+                `;
+                return item;
+            }
+
+            testImage(image, testItem) {
+                return new Promise((resolve) => {
+                    const img = testItem.querySelector('.test-image');
+                    const badge = testItem.querySelector('.status-badge');
+                    
+                    const timer = setTimeout(() => {
+                        badge.textContent = 'TIMEOUT';
+                        badge.className = 'status-badge status-missing';
+                        this.testResults.missing++;
+                        resolve();
+                    }, 10000); // 10 second timeout
+
+                    img.onload = () => {
+                        clearTimeout(timer);
+                        img.style.display = 'block';
+                        badge.textContent = 'OK';
+                        badge.className = 'status-badge status-ok';
+                        this.testResults.ok++;
+                        resolve();
+                    };
+
+                    img.onerror = () => {
+                        clearTimeout(timer);
+                        badge.textContent = 'MISSING';
+                        badge.className = 'status-badge status-missing';
+                        this.testResults.missing++;
+                        resolve();
+                    };
+                });
+            }
+
+            showSummary() {
+                const summary = document.getElementById('summary');
+                const successRate = this.testResults.total > 0 
+                    ? Math.round((this.testResults.ok / this.testResults.total) * 100)
+                    : 0;
+
+                document.getElementById('total-count').textContent = this.testResults.total;
+                document.getElementById('ok-count').textContent = this.testResults.ok;
+                document.getElementById('missing-count').textContent = this.testResults.missing;
+                document.getElementById('success-rate').textContent = successRate + '%';
+
+                summary.style.display = 'block';
+
+                // Change summary color based on success rate
+                if (successRate === 100) {
+                    summary.style.backgroundColor = '#d4edda';
+                    summary.style.borderColor = '#28a745';
+                } else if (successRate >= 75) {
+                    summary.style.backgroundColor = '#fff3cd';
+                    summary.style.borderColor = '#ffc107';
+                } else {
+                    summary.style.backgroundColor = '#f8d7da';
+                    summary.style.borderColor = '#dc3545';
+                }
+            }
+
+            showError(message) {
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <div class="error-message">
+                        <h3>❌ Test Failed</h3>
+                        <p>${message}</p>
+                        <p><strong>Debugging Tips:</strong></p>
+                        <ul>
+                            <li>Check if <code>/assets/data/gallery.json</code> exists and is accessible</li>
+                            <li>Verify image paths in the JSON file</li>
+                            <li>Ensure images exist in <code>/public/images/</code> directory</li>
+                            <li>Check browser developer console for network errors</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        // Start the sanity check when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new GallerySanityCheck();
+        });
+    </script>
+</body>
+</html>
