@@ -1,101 +1,53 @@
-// functions/api.js  (Cloudflare Pages Functions)
+// Cloudflare Pages Function
+export async function onRequest({ request, env }) {
+  const url = new URL(request.url);
+  const path = url.pathname;              // e.g., /api/ping, /api/gallery, /api/search
+  const base = env.OC_API_BASE;           // e.g., https://replit.com/@fcospresident/OrchidContinuum?s=app (use the API base you exposed)
+  const apiKey = env.OC_API_KEY || env.OPENAI_API_KEY || ""; // whichever you actually need
 
-function j(res, status = 200) {
-  return new Response(JSON.stringify(res, null, 2), {
-    status,
+  // quick helpers
+  const ok = (data) => new Response(JSON.stringify(data, null, 2), {
     headers: { "content-type": "application/json; charset=utf-8" }
   });
-}
+  const bad = (msg, code=400) => ok({ ok:false, error: msg, code });
 
-async function readGallery(request) {
-  // Fetch the static JSON file we deployed at /assets/data/gallery.json
-  const origin = new URL(request.url).origin;
-  const url = `${origin}/assets/data/gallery.json`;
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) return [];
-    return await r.json();
-  } catch {
-    return [];
+  // Only handle /api/* here
+  if (!path.startsWith("/api")) return bad("Unknown route", 404);
+
+  // simple health check
+  if (path === "/api/ping") {
+    return ok({ ok: true, service: "pages-fn", time: new Date().toISOString() });
   }
-}
 
-export async function onRequestPost({ request, env }) {
-  let body = {};
-  try { body = await request.json(); } catch {}
-  const action = body?.action;
-  const payload = body?.payload || {};
+  // Map front-end routes to your Replit endpoints
+  // Adjust the right-hand URLs to match your Replit routes
+  const routes = {
+    "/api/gallery": "/gallery",               // returns [{src,alt,caption:{sciname,text}}, ...]
+    "/api/search":  "/search",                // expects ?q=...
+    "/api/orchid-of-the-day": "/orchid-of-the-day"
+  };
 
-  switch (action) {
-    case "ping":
-      return j({ ok: true, pong: true });
+  const replitPath = routes[path];
+  if (!replitPath) return bad(`Unknown action: ${path}`, 404);
 
-    case "echo":
-      return j({ ok: true, echo: payload });
-
-    case "listGallery": {
-      const items = await readGallery(request);
-      return j({ ok: true, count: items.length, items });
-    }
-
-    case "orchidOfTheDay": {
-      const items = await readGallery(request);
-      if (!items.length) return j({ ok: false, error: "No gallery data." }, 404);
-      const pick = items[Math.floor(Math.random() * items.length)];
-      return j({ ok: true, item: pick });
-    }
-
-    case "searchTaxon": {
-      const q = (payload?.q || "").toLowerCase().trim();
-      if (!q) return j({ ok: false, error: "Missing q" }, 400);
-      const items = await readGallery(request);
-      const hits = items.filter(it => {
-        const hay = `${it.genus || ""} ${it.species || ""} ${it.name || ""}`.toLowerCase();
-        return hay.includes(q);
-      });
-      return j({ ok: true, query: q, count: hits.length, items: hits.slice(0, 25) });
-    }
-
-    case "chat": {
-      const prompt = payload?.prompt || "Give me one fun fact about orchids.";
-      const apiKey = env.OPENAI_API_KEY;
-      if (!apiKey) return j({ ok: false, error: "OPENAI_API_KEY missing in Cloudflare → Settings → Variables." }, 500);
-
-      // Minimal OpenAI Chat Completions call
-      const r = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini-2024-07-18",
-          messages: [
-            { role: "system", content: "You are a concise orchid assistant." },
-            { role: "user", content: prompt }
-          ]
-        })
-      });
-      if (!r.ok) {
-        const text = await r.text().catch(() => "");
-        return j({ ok: false, error: "OpenAI error", detail: text }, 502);
-      }
-      const data = await r.json();
-      const reply = data?.choices?.[0]?.message?.content || "";
-      return j({ ok: true, reply });
-    }
-
-    default:
-      return j({ ok: false, error: `Unknown action: ${action}` }, 400);
+  // Build target URL with query string
+  const target = new URL(replitPath, base);
+  for (const [k, v] of new URL(request.url).searchParams.entries()) {
+    target.searchParams.set(k, v);
   }
-}
 
-export async function onRequestGet() {
-  // Optional: simple info if someone GETs /api
-  return j({
-    ok: true,
-    routes: [
-      { method: "POST", path: "/api", actions: ["ping","echo","listGallery","orchidOfTheDay","searchTaxon","chat"] }
-    ]
+  // Forward request to Replit with any header your Replit expects
+  const headers = new Headers({
+    "content-type": "application/json",
+    "x-api-key": apiKey,                  // If your Replit API checks this; otherwise remove it
+    "authorization": `Bearer ${apiKey}`   // If your Replit API checks Bearer; otherwise remove
   });
-}
+
+  const upstream = await fetch(target.toString(), {
+    method: "GET",
+    headers
+  });
+
+  // bubble up status + body (and keep JSON content-type)
+  const text = await upstream.text();
+  return new Response
