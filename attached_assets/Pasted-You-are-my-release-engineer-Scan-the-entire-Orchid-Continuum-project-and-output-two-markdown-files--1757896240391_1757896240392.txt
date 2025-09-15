@@ -1,0 +1,37 @@
+You are my release engineer. Scan the entire Orchid Continuum project and output two markdown files at the repo root:
+
+A) INVENTORY.md — a complete, structured inventory of EVERYTHING:
+- Top-level tree (folders + files) with brief purpose notes:
+  - widgets/ (every widget: name, path, purpose, data sources, embed snippet)
+  - apps/ or routes/ (non-widget features: name, path, purpose, UI entrypoint)
+  - functions/ or server api/ (API endpoints: method, path, input schema, output schema, which widgets call them)
+  - assets/ (json/csv configs and schemas; where used)
+  - public/ and static/ (html test pages, images, icons, css/js)
+  - scripts/ or tools/ (build, scraping, importers)
+- Environment variables actually referenced in code (grep the code): list each KEY, where used, and a one-line description.
+- External dependencies/services (Neon Postgres, Google Drive, YouTube, OpenAI, etc.) and which files call them.
+- Known issues / TODO comments found in code (summarize).
+- Exact list of image folders and approx counts (e.g., public/images/gary_collection: ~N files).
+- A “CRITICAL” section to flag anything required for Orchid-of-the-Day, Gallery, Judging, Climate Comparator, Search, Map, AI analysis.
+
+B) WIDGETIZATION_PLAN.md — convert every non-widget into a widget:
+For each non-widget feature (apps, routes, tools), produce:
+- Name + current entrypoint path
+- Purpose + audience
+- Data inputs (api paths, local json, DB tables)
+- Minimal widget wrapper design (file paths):
+  - widgets/<feature>/index.html
+  - widgets/<feature>/widget.js
+  - widgets/<feature>/widget.css (optional)
+- One-paragraph embed instructions (<div id="..."> + <script src="...">)
+- Complexity rating (S/M/L) and effort notes (e.g., needs API, needs auth)
+- Dependencies (env keys, third-party APIs)
+- Test URL(s) to add under /public/tools/ for QA
+
+Constraints:
+- Do NOT move or rename any files; only READ.
+- Write the two new files at project root:
+  - INVENTORY.md
+  - WIDGETIZATION_PLAN.md
+- Keep both files human-scannable (bulleted, short lines). No code execution. Just analysis and markdown output.
+- When done, print: “INVENTORY.md and WIDGETIZATION_PLAN.md created.”
