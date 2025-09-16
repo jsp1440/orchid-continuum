@@ -9377,6 +9377,14 @@ try:
 except ImportError as e:
     logger.warning(f"Care Helper widget not available: {e}")
 
+# Register Guided Care Form
+try:
+    from guided_care_form import register_guided_care_routes
+    register_guided_care_routes(app)
+    logger.info("🌺 Guided Care Form registered successfully")
+except ImportError as e:
+    logger.warning(f"Guided Care Form not available: {e}")
+
 # =============================================================================
 # NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
 # =============================================================================
