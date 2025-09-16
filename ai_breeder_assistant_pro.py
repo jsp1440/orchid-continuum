@@ -25,6 +25,14 @@ try:
 except ImportError:
     SVO_SCRAPER_AVAILABLE = False
     logging.warning("⚠️ SVO Enhanced Scraper not available - using fallback data")
+
+# Import Google Cloud integration
+try:
+    from google_cloud_integration import get_google_integration, save_breeding_analysis_to_sheets, upload_image_to_google_drive
+    GOOGLE_CLOUD_AVAILABLE = True
+except ImportError:
+    GOOGLE_CLOUD_AVAILABLE = False
+    logging.warning("⚠️ Google Cloud integration not available - using local storage only")
 from pathlib import Path
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
@@ -35,6 +43,17 @@ from werkzeug.utils import send_file
 from werkzeug.datastructures import FileStorage
 import tempfile
 import logging
+
+# Import enhanced AI analysis functionality
+try:
+    from enhanced_ai_analysis import (
+        enhanced_image_analysis_with_drive_upload,
+        save_breeding_analysis_with_cloud_integration
+    )
+    ENHANCED_AI_AVAILABLE = True
+except ImportError:
+    ENHANCED_AI_AVAILABLE = False
+    logging.warning("⚠️ Enhanced AI analysis not available - using standard functionality")
 
 # Configure upload settings with enhanced security
 UPLOAD_FOLDER = 'static/uploads/breeding'
@@ -208,6 +227,14 @@ class UnifiedBreederAssistant:
         except ImportError:
             logging.warning("⚠️ breeding_ai module not found - using fallback analysis")
             self.breeding_ai = None
+        
+        # Initialize Google Cloud integration
+        if GOOGLE_CLOUD_AVAILABLE:
+            self.google_integration = get_google_integration()
+            logging.info("🌤️ Google Cloud integration available for AI Breeder Pro")
+        else:
+            self.google_integration = None
+            logging.info("📂 Using local storage only for AI Breeder Pro")
         
         self.f226_case_study = self._load_f226_research()
         self.sarcochilus_data = self._load_sarcochilus_breeding_data()
