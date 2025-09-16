@@ -9401,6 +9401,14 @@ try:
 except ImportError as e:
     logger.warning(f"AI Collection Manager not available: {e}")
 
+# Register AI Collection Onboarding
+try:
+    from ai_collection_onboarding import register_onboarding_routes
+    register_onboarding_routes(app)
+    logger.info("🎯 AI Collection Onboarding registered successfully")
+except ImportError as e:
+    logger.warning(f"AI Collection Onboarding not available: {e}")
+
 # =============================================================================
 # NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
 # =============================================================================
