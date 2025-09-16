@@ -9369,6 +9369,14 @@ try:
 except ImportError as e:
     logger.warning(f"AI chat not available: {e}")
 
+# Register Care Helper Widget
+try:
+    from care_helper_widget import register_care_helper_routes
+    register_care_helper_routes(app)
+    logger.info("🌺 Care Helper widget registered successfully")
+except ImportError as e:
+    logger.warning(f"Care Helper widget not available: {e}")
+
 # =============================================================================
 # NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
 # =============================================================================
