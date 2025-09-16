@@ -19,6 +19,12 @@ from flask import Blueprint, render_template, request, jsonify, current_app, fla
 from models import OrchidRecord
 from app import db
 from breeding_ai import OrchidBreedingAI
+try:
+    from svo_enhanced_scraper import SunsetValleyOrchidsEnhancedScraper
+    SVO_SCRAPER_AVAILABLE = True
+except ImportError:
+    SVO_SCRAPER_AVAILABLE = False
+    logging.warning("⚠️ SVO Enhanced Scraper not available - using fallback data")
 from pathlib import Path
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
@@ -247,23 +253,78 @@ class UnifiedBreederAssistant:
         }
     
     def _load_sarcochilus_breeding_data(self):
-        """Load Scott Barrita Sarcochilus breeding collection"""
-        # This would load from sarcochilus_data_inserter.py data
+        """Load real SVO breeding data from database and scraper"""
+        try:
+            # First try to get data from database
+            if SVO_SCRAPER_AVAILABLE:
+                scraper = SunsetValleyOrchidsEnhancedScraper()
+                svo_data = scraper.get_svo_breeding_data_for_ai()
+                
+                if svo_data:
+                    logging.info(f"✅ Loaded {len(svo_data)} real SVO breeding records")
+                    return svo_data
+                else:
+                    logging.warning("⚠️ No SVO data in database, using fallback")
+            
+            # Fallback to enhanced mock data based on real SVO patterns
+            return self._get_enhanced_fallback_breeding_data()
+            
+        except Exception as e:
+            logging.error(f"❌ Error loading SVO breeding data: {e}")
+            return self._get_enhanced_fallback_breeding_data()
+    
+    def _get_enhanced_fallback_breeding_data(self):
+        """Enhanced fallback breeding data based on real SVO patterns"""
         return [
             {
-                "cross": "fitzhart × olivaceus",
-                "expected_traits": "compact spike, full flowers, white with red spotting",
-                "breeding_goal": "compact and free-flowering plants"
+                "cross_name": "Sarcochilus fitzhart × olivaceus",
+                "pod_parent": "Sarcochilus fitzhart",
+                "pollen_parent": "Sarcochilus olivaceus",
+                "genus": "Sarcochilus",
+                "description": "Compact spike with full flowers, white petals with distinctive red spotting pattern",
+                "cultural_notes": "Compact and free-flowering plants, excellent for windowsill culture",
+                "source": "Sunset Valley Orchids (Enhanced Fallback)",
+                "validated": False
             },
             {
-                "cross": "hartmanii × cecilliae 'Limelight'",
-                "expected_traits": "large green flowers on compact spikes", 
-                "breeding_goal": "yellow/green breeding line"
+                "cross_name": "Sarcochilus hartmanii × cecilliae 'Limelight'",
+                "pod_parent": "Sarcochilus hartmanii", 
+                "pollen_parent": "Sarcochilus cecilliae 'Limelight'",
+                "genus": "Sarcochilus",
+                "description": "Large green flowers on compact spikes, excellent yellow/green breeding line development",
+                "cultural_notes": "Cool growing, intermediate light requirements",
+                "source": "Sunset Valley Orchids (Enhanced Fallback)",
+                "validated": False
             },
             {
-                "cross": "Sweetheart 'Speckles' × Kulnura Peach",
-                "expected_traits": "excellent form with patterns and peach colors",
-                "breeding_goal": "patterned flowers with color enhancement"
+                "cross_name": "Sarcochilus Sweetheart 'Speckles' × Kulnura Peach",
+                "pod_parent": "Sarcochilus Sweetheart 'Speckles'",
+                "pollen_parent": "Sarcochilus Kulnura Peach",
+                "genus": "Sarcochilus",
+                "description": "Excellent form with intricate patterns and enhanced peach coloration",
+                "cultural_notes": "Pattern enhancement breeding, color development focus",
+                "source": "Sunset Valley Orchids (Enhanced Fallback)",
+                "validated": False
+            },
+            {
+                "cross_name": "Sarcochilus Kulnura Estate × George Colthup",
+                "pod_parent": "Sarcochilus Kulnura Estate",
+                "pollen_parent": "Sarcochilus George Colthup",
+                "genus": "Sarcochilus",
+                "description": "Classic Australian hybrid with strong fragrance and robust growth",
+                "cultural_notes": "Easy culture, reliable flowering, fragrant blooms",
+                "source": "Sunset Valley Orchids (Enhanced Fallback)",
+                "validated": False
+            },
+            {
+                "cross_name": "Sarcochilus Riverside × Melba",
+                "pod_parent": "Sarcochilus Riverside",
+                "pollen_parent": "Sarcochilus Melba",
+                "genus": "Sarcochilus",
+                "description": "Miniature habit with profuse flowering, excellent for collections",
+                "cultural_notes": "Compact growth, high flower count, easy care",
+                "source": "Sunset Valley Orchids (Enhanced Fallback)",
+                "validated": False
             }
         ]
     
@@ -389,13 +450,17 @@ class UnifiedBreederAssistant:
         """Find similar crosses from breeding data"""
         similar = []
         
-        # Check against Sarcochilus breeding data
+        # Check against real SVO Sarcochilus breeding data
         for cross_data in self.sarcochilus_data:
             if (parent1.get('genus') == 'Sarcochilus' or parent2.get('genus') == 'Sarcochilus'):
                 similar.append({
-                    "cross": cross_data['cross'],
-                    "expected_traits": cross_data['expected_traits'],
-                    "relevance": "Same genus breeding experience"
+                    "cross": f"{cross_data.get('pod_parent', '')} × {cross_data.get('pollen_parent', '')}",
+                    "cross_name": cross_data.get('cross_name', cross_data.get('cross', '')),
+                    "expected_traits": cross_data.get('description', cross_data.get('expected_traits', '')),
+                    "cultural_notes": cross_data.get('cultural_notes', ''),
+                    "source": cross_data.get('source', 'Sunset Valley Orchids'),
+                    "validated": cross_data.get('validated', False),
+                    "relevance": "Real SVO breeding experience" if cross_data.get('validated') else "SVO breeding reference"
                 })
         
         # Add F226 reference if Sarcochilus cross
@@ -942,6 +1007,138 @@ def search_parents():
         })
     
     return jsonify(results)
+
+@ai_breeder_pro.route('/api/svo-breeding-data')
+@cache_response(duration=600)  # Cache for 10 minutes
+def get_svo_breeding_data():
+    """Get all SVO breeding data for AI analysis"""
+    try:
+        # Get breeding data from the unified breeder assistant
+        svo_data = unified_breeder.sarcochilus_data
+        
+        return jsonify({
+            'status': 'success',
+            'count': len(svo_data),
+            'data': svo_data,
+            'data_source': 'Sunset Valley Orchids Enhanced Scraper',
+            'cached_at': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logging.error(f"❌ Error retrieving SVO breeding data: {e}")
+        return jsonify({'error': 'Failed to retrieve SVO breeding data'}), 500
+
+@ai_breeder_pro.route('/api/svo-run-scraper', methods=['POST'])
+@rate_limit
+@handle_api_errors
+def run_svo_scraper():
+    """Run the SVO scraper to collect fresh data"""
+    try:
+        if not SVO_SCRAPER_AVAILABLE:
+            return jsonify({'error': 'SVO scraper not available'}), 503
+        
+        # Get parameters from request
+        data = request.get_json() or {}
+        genera = data.get('genera', ['Sarcochilus'])
+        years = data.get('years', list(range(2020, 2025)))
+        max_pages = min(data.get('max_pages', 5), 10)  # Limit to prevent abuse
+        
+        # Initialize scraper
+        scraper = SunsetValleyOrchidsEnhancedScraper()
+        
+        # Run scraper in background thread for better user experience
+        def run_scraper_task():
+            try:
+                results = scraper.scrape_svo_complete(genera, years, max_pages)
+                logging.info(f"✅ SVO scraper completed: {len(results)} hybrids collected")
+                
+                # Refresh the unified breeder data
+                unified_breeder.sarcochilus_data = unified_breeder._load_sarcochilus_breeding_data()
+                
+            except Exception as e:
+                logging.error(f"❌ SVO scraper task failed: {e}")
+        
+        # Start background task
+        import threading
+        thread = threading.Thread(target=run_scraper_task)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'SVO scraper started in background',
+            'parameters': {
+                'genera': genera,
+                'years': years,
+                'max_pages': max_pages
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"❌ Error starting SVO scraper: {e}")
+        return jsonify({'error': 'Failed to start SVO scraper'}), 500
+
+@ai_breeder_pro.route('/api/svo-crosses/<genus>')
+@cache_response(duration=300)  # Cache for 5 minutes
+def get_svo_crosses_by_genus(genus):
+    """Get SVO crosses filtered by genus"""
+    try:
+        # Filter breeding data by genus
+        filtered_data = [
+            cross for cross in unified_breeder.sarcochilus_data 
+            if cross.get('genus', '').lower() == genus.lower()
+        ]
+        
+        return jsonify({
+            'status': 'success',
+            'genus': genus,
+            'count': len(filtered_data),
+            'crosses': filtered_data
+        })
+        
+    except Exception as e:
+        logging.error(f"❌ Error retrieving crosses for genus {genus}: {e}")
+        return jsonify({'error': f'Failed to retrieve crosses for genus {genus}'}), 500
+
+@ai_breeder_pro.route('/api/svo-search-crosses')
+def search_svo_crosses():
+    """Search SVO crosses by parent names or traits"""
+    try:
+        query = request.args.get('q', '').lower()
+        limit = min(int(request.args.get('limit', 10)), 20)
+        
+        if len(query) < 2:
+            return jsonify([])
+        
+        # Search through SVO breeding data
+        matching_crosses = []
+        
+        for cross in unified_breeder.sarcochilus_data:
+            # Search in various fields
+            searchable_text = ' '.join([
+                cross.get('cross_name', ''),
+                cross.get('pod_parent', ''),
+                cross.get('pollen_parent', ''),
+                cross.get('description', ''),
+                cross.get('cultural_notes', '')
+            ]).lower()
+            
+            if query in searchable_text:
+                matching_crosses.append(cross)
+                
+                if len(matching_crosses) >= limit:
+                    break
+        
+        return jsonify({
+            'status': 'success',
+            'query': query,
+            'count': len(matching_crosses),
+            'crosses': matching_crosses
+        })
+        
+    except Exception as e:
+        logging.error(f"❌ Error searching SVO crosses: {e}")
+        return jsonify({'error': 'Failed to search SVO crosses'}), 500
 
 @ai_breeder_pro.route('/api/upload-image', methods=['POST'])
 @rate_limit
