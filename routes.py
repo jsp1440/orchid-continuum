@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response, abort
+from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response, abort, make_response
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
@@ -48,6 +48,7 @@ import json
 import logging
 import requests
 import re
+import time
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_, cast, String
 from io import BytesIO
@@ -90,13 +91,12 @@ from philosophy_quiz_service import philosophy_quiz_service
 def get_orchids_by_theme(theme_keywords):
     """Helper function to get orchids matching theme keywords"""
     query = db.session.query(OrchidRecord).filter(
-        OrchidRecord.image_path.isnot(None),
-        OrchidRecord.image_path != '',
         or_(
             OrchidRecord.google_drive_id.isnot(None),
-            OrchidRecord.image_path.like('%.jpg'),
-            OrchidRecord.image_path.like('%.jpeg'),
-            OrchidRecord.image_path.like('%.png')
+            OrchidRecord.image_url.isnot(None),
+            OrchidRecord.image_filename.like('%.jpg'),
+            OrchidRecord.image_filename.like('%.jpeg'),
+            OrchidRecord.image_filename.like('%.png')
         )
     )
     
@@ -105,9 +105,9 @@ def get_orchids_by_theme(theme_keywords):
     for keyword in theme_keywords:
         keyword_filters.extend([
             OrchidRecord.scientific_name.ilike(f'%{keyword}%'),
-            OrchidRecord.common_name.ilike(f'%{keyword}%'),
-            OrchidRecord.description.ilike(f'%{keyword}%'),
-            OrchidRecord.notes.ilike(f'%{keyword}%')
+            OrchidRecord.common_names.ilike(f'%{keyword}%'),
+            OrchidRecord.ai_description.ilike(f'%{keyword}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{keyword}%')
         ])
     
     if keyword_filters:
@@ -2513,7 +2513,7 @@ def upload():
                 flash('No file selected', 'error')
                 return redirect(request.url)
             
-            if file and allowed_file(file.filename):
+            if file and file.filename and allowed_file(file.filename):
                 # Generate secure filename
                 original_filename = secure_filename(file.filename)
                 new_filename = generate_filename(original_filename)
@@ -2975,12 +2975,12 @@ def api_themed_orchids(theme=None):
             orchid_data.append({
                 'id': orchid.id,
                 'scientific_name': orchid.scientific_name,
-                'common_name': orchid.common_name,
-                'description': orchid.description,
+                'common_names': orchid.common_names,
+                'ai_description': orchid.ai_description,
                 'google_drive_id': orchid.google_drive_id,
-                'image_path': orchid.image_path,
-                'location': orchid.location,
-                'discovery_date': orchid.discovery_date.isoformat() if orchid.discovery_date else None
+                'image_url': orchid.image_url,
+                'locality': orchid.locality,
+                'event_date': orchid.event_date
             })
             
         return jsonify({
@@ -3475,10 +3475,10 @@ def search():
         if light_requirement in light_keywords:
             pattern = light_keywords[light_requirement]
             query = query.filter(
-                or_(
+                or_(*[
                     OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%') 
                     for keyword in pattern.split('|')
-                )
+                ])
             )
     
     if temperature_range:
@@ -3492,10 +3492,10 @@ def search():
         if temperature_range in temp_keywords:
             pattern = temp_keywords[temperature_range]
             query = query.filter(
-                or_(
+                or_(*[
                     OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
                     for keyword in pattern.split('|')
-                )
+                ])
             )
     
     if humidity_range:
@@ -3508,10 +3508,10 @@ def search():
         if humidity_range in humidity_keywords:
             pattern = humidity_keywords[humidity_range]
             query = query.filter(
-                or_(
+                or_(*[
                     OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
                     for keyword in pattern.split('|')
-                )
+                ])
             )
     
     # Get results
@@ -4151,7 +4151,8 @@ def add_weather_location():
             db.session.commit()
             
             # Fetch initial weather data
-            WeatherService.get_current_weather(latitude, longitude, location_name)
+            if location_name:
+                WeatherService.get_current_weather(latitude, longitude, location_name)
             
             if request.is_json:
                 return jsonify({'success': True, 'location_id': location.id})
@@ -7242,7 +7243,7 @@ def vote_contest_entry():
     try:
         data = request.get_json()
         entry_id = data.get('entry_id')
-        voter_ip = request.remote_addr
+        voter_ip = request.remote_addr or 'unknown'
         
         result = monthly_contest.vote_for_entry(entry_id, voter_ip)
         return jsonify(result)
@@ -7255,7 +7256,7 @@ def vote_contest_entry():
 def get_contest_entries():
     """Get contest entries by category"""
     try:
-        category = request.args.get('category')
+        category = request.args.get('category') or ''
         status = request.args.get('status', 'approved')
         
         entries = monthly_contest.get_contest_entries(category=category, status=status)
@@ -7975,6 +7976,281 @@ def restart_service(service_name):
     except Exception as e:
         logger.error(f"Error restarting service {service_name}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================================
+# UNIFIED GOOGLE CLOUD DATA FLOW ADMIN ROUTES
+# ============================================================================
+
+@app.route('/admin/unified-data-flow', methods=['POST'])
+def trigger_unified_data_flow():
+    """Trigger the complete unified Google Cloud data flow pipeline"""
+    try:
+        from flask_wtf.csrf import validate_csrf
+        from unified_orchid_continuum import UnifiedOrchidContinuum
+        
+        # Validate CSRF token
+        csrf_token = request.form.get('csrf_token')
+        if csrf_token:
+            try:
+                validate_csrf(csrf_token)
+            except Exception as e:
+                logger.warning(f"❌ Invalid CSRF token for unified data flow: {e}")
+                return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 400
+        
+        # Get configuration parameters from request
+        config = {
+            'enable_svo_scraping': request.form.get('enable_svo_scraping', 'true').lower() == 'true',
+            'enable_data_sync': request.form.get('enable_data_sync', 'true').lower() == 'true',
+            'enable_image_processing': request.form.get('enable_image_processing', 'true').lower() == 'true',
+            'enable_ai_analysis': request.form.get('enable_ai_analysis', 'true').lower() == 'true',
+            'svo_config': {
+                'genus': request.form.get('genus', 'Sarcochilus'),
+                'year_range': (
+                    int(request.form.get('year_start', 2020)),
+                    int(request.form.get('year_end', 2024))
+                ),
+                'max_pages': int(request.form.get('max_pages', 5))
+            }
+        }
+        
+        logger.info(f"🚀 Starting unified data flow with config: {config}")
+        
+        # Initialize and execute unified data flow
+        continuum = UnifiedOrchidContinuum()
+        results = continuum.execute_unified_data_flow(config)
+        
+        # Log results for observability
+        logger.info(f"✅ Unified data flow completed: {results.get('success', False)}")
+        logger.info(f"📊 Pipeline stages: {list(results.get('stages', {}).keys())}")
+        
+        if results.get('success'):
+            flash('Unified Google Cloud data flow completed successfully!', 'success')
+            return jsonify({
+                'success': True,
+                'message': 'Unified data flow completed',
+                'pipeline_id': results.get('pipeline_id'),
+                'summary': results.get('summary', {}),
+                'stages_completed': list(results.get('stages', {}).keys())
+            })
+        else:
+            error_msg = results.get('error', 'Unknown error occurred')
+            flash(f'Unified data flow failed: {error_msg}', 'error')
+            return jsonify({
+                'success': False,
+                'error': error_msg,
+                'pipeline_id': results.get('pipeline_id')
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"❌ Error executing unified data flow: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/test-google-cloud-integration', methods=['POST'])
+def test_google_cloud_integration():
+    """Test Google Cloud integration (Sheets and Drive) end-to-end"""
+    try:
+        from google_cloud_integration import get_google_integration
+        
+        # Validate CSRF token
+        csrf_token = request.form.get('csrf_token')
+        if csrf_token:
+            try:
+                from flask_wtf.csrf import validate_csrf
+                validate_csrf(csrf_token)
+            except Exception as e:
+                logger.warning(f"❌ Invalid CSRF token for cloud test: {e}")
+                return jsonify({'success': False, 'error': 'Invalid CSRF token'}), 400
+        
+        logger.info("🧪 Testing Google Cloud integration...")
+        
+        # Initialize Google Cloud integration
+        google_integration = get_google_integration()
+        
+        if not google_integration or not google_integration.is_available():
+            return jsonify({
+                'success': False,
+                'error': 'Google Cloud integration not available',
+                'details': 'Check GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_DRIVE_FOLDER_ID environment variables'
+            }), 400
+        
+        test_results = {
+            'sheets_test': {'status': 'pending'},
+            'drive_test': {'status': 'pending'},
+            'environment_check': {'status': 'pending'}
+        }
+        
+        # Test 1: Environment Variables Check
+        try:
+            env_check = _validate_google_cloud_environment()
+            test_results['environment_check'] = env_check
+            logger.info(f"🔍 Environment check: {env_check}")
+        except Exception as e:
+            test_results['environment_check'] = {'status': 'failed', 'error': str(e)}
+        
+        # Test 2: Google Sheets Test
+        try:
+            sheet_name = f"OrchidContinuum_Test_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            test_data = ['Test', 'Google', 'Sheets', 'Integration', datetime.now().isoformat()]
+            headers = ['Type', 'Service', 'Component', 'Purpose', 'Timestamp']
+            
+            success = google_integration.append_to_sheet(sheet_name, test_data, headers)
+            if success:
+                test_results['sheets_test'] = {
+                    'status': 'success',
+                    'sheet_name': sheet_name,
+                    'test_data_count': len(test_data)
+                }
+                logger.info(f"✅ Google Sheets test successful: {sheet_name}")
+            else:
+                test_results['sheets_test'] = {'status': 'failed', 'error': 'Failed to write to sheet'}
+        except Exception as e:
+            test_results['sheets_test'] = {'status': 'failed', 'error': str(e)}
+            logger.error(f"❌ Google Sheets test failed: {e}")
+        
+        # Test 3: Google Drive Test
+        try:
+            # Create a simple test image
+            from PIL import Image
+            from io import BytesIO
+            
+            # Create a 100x100 test image
+            test_image = Image.new('RGB', (100, 100), color='red')
+            image_buffer = BytesIO()
+            test_image.save(image_buffer, format='JPEG')
+            image_data = image_buffer.getvalue()
+            
+            # Upload to Google Drive
+            test_filename = f"orchid_continuum_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            drive_url = google_integration.upload_image_to_drive(image_data, test_filename)
+            
+            if drive_url:
+                test_results['drive_test'] = {
+                    'status': 'success',
+                    'filename': test_filename,
+                    'drive_url': drive_url,
+                    'image_size': len(image_data)
+                }
+                logger.info(f"✅ Google Drive test successful: {drive_url}")
+            else:
+                test_results['drive_test'] = {'status': 'failed', 'error': 'Failed to upload to Drive'}
+        except Exception as e:
+            test_results['drive_test'] = {'status': 'failed', 'error': str(e)}
+            logger.error(f"❌ Google Drive test failed: {e}")
+        
+        # Overall success determination
+        all_success = all(
+            test['status'] == 'success' 
+            for test in test_results.values()
+        )
+        
+        if all_success:
+            flash('Google Cloud integration test completed successfully!', 'success')
+            logger.info("✅ All Google Cloud integration tests passed")
+        else:
+            failed_tests = [k for k, v in test_results.items() if v['status'] != 'success']
+            flash(f'Google Cloud integration test failed for: {", ".join(failed_tests)}', 'warning')
+            logger.warning(f"⚠️ Google Cloud tests failed: {failed_tests}")
+        
+        return jsonify({
+            'success': all_success,
+            'test_results': test_results,
+            'message': 'Google Cloud integration test completed',
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error testing Google Cloud integration: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/google-cloud-status')
+def google_cloud_status():
+    """Get current status of Google Cloud integration"""
+    try:
+        from google_cloud_integration import get_google_integration
+        from unified_orchid_continuum import UnifiedOrchidContinuum
+        
+        # Check environment variables
+        env_status = _validate_google_cloud_environment()
+        
+        # Check Google integration availability
+        google_integration = get_google_integration()
+        integration_available = google_integration and google_integration.is_available()
+        
+        # Check unified continuum status
+        try:
+            continuum = UnifiedOrchidContinuum()
+            data_flow_status = continuum.data_flow_status
+        except Exception as e:
+            data_flow_status = {'error': str(e)}
+        
+        return jsonify({
+            'environment': env_status,
+            'integration_available': integration_available,
+            'data_flow_status': data_flow_status,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error getting Google Cloud status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def _validate_google_cloud_environment():
+    """Validate Google Cloud environment variables and configuration"""
+    env_status = {
+        'status': 'success',
+        'required_vars': {},
+        'optional_vars': {},
+        'errors': []
+    }
+    
+    # Required environment variables
+    required_vars = {
+        'GOOGLE_SERVICE_ACCOUNT_JSON': 'Google Service Account credentials for Sheets and Drive access',
+        'GOOGLE_DRIVE_FOLDER_ID': 'Google Drive folder ID for image uploads'
+    }
+    
+    # Optional environment variables  
+    optional_vars = {
+        'SESSION_SECRET': 'Flask session secret for CSRF protection'
+    }
+    
+    # Check required variables
+    for var_name, description in required_vars.items():
+        value = os.getenv(var_name)
+        if value:
+            env_status['required_vars'][var_name] = {
+                'status': 'set',
+                'description': description,
+                'length': len(value) if var_name != 'GOOGLE_SERVICE_ACCOUNT_JSON' else 'JSON_DATA'
+            }
+            
+            # Validate JSON format for service account
+            if var_name == 'GOOGLE_SERVICE_ACCOUNT_JSON':
+                try:
+                    json.loads(value)
+                    env_status['required_vars'][var_name]['json_valid'] = True
+                except json.JSONDecodeError as e:
+                    env_status['required_vars'][var_name]['json_valid'] = False
+                    env_status['required_vars'][var_name]['json_error'] = str(e)
+                    env_status['errors'].append(f'{var_name} is not valid JSON: {e}')
+                    env_status['status'] = 'error'
+        else:
+            env_status['required_vars'][var_name] = {
+                'status': 'missing',
+                'description': description
+            }
+            env_status['errors'].append(f'Required environment variable {var_name} is not set')
+            env_status['status'] = 'error'
+    
+    # Check optional variables
+    for var_name, description in optional_vars.items():
+        value = os.getenv(var_name)
+        env_status['optional_vars'][var_name] = {
+            'status': 'set' if value else 'missing',
+            'description': description
+        }
+    
+    return env_status
 
 @app.route('/api/database-stats')
 def database_stats_api():

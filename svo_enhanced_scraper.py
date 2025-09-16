@@ -28,6 +28,14 @@ except ImportError:
     GOOGLE_SHEETS_AVAILABLE = False
     logging.warning("Google Sheets libraries not available - sheets integration disabled")
 
+# Import the new Google Cloud integration
+try:
+    from google_cloud_integration import get_google_integration, save_svo_data_to_sheets
+    GOOGLE_CLOUD_INTEGRATION_AVAILABLE = True
+except ImportError:
+    GOOGLE_CLOUD_INTEGRATION_AVAILABLE = False
+    logging.warning("Google Cloud integration not available - using fallback functionality")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -53,7 +61,13 @@ class SunsetValleyOrchidsEnhancedScraper:
         self.sarcochilus_hybrids = []
         self.intergeneric_crosses = []
         
-        # Google Sheets integration
+        # Google Cloud integration (preferred)
+        self.google_integration = None
+        if GOOGLE_CLOUD_INTEGRATION_AVAILABLE:
+            self.google_integration = get_google_integration()
+            logger.info("🌤️ Using enhanced Google Cloud integration")
+        
+        # Legacy Google Sheets integration (fallback)
         self.google_sheets_client = None
         self.worksheet = None
         self.initialize_google_sheets()
@@ -134,6 +148,41 @@ class SunsetValleyOrchidsEnhancedScraper:
         except Exception as e:
             logger.error(f"❌ Error downloading image {url}: {e}")
             return None
+    
+    def download_and_upload_to_drive(self, url: str, filename: str = None) -> Tuple[Optional[str], Optional[str]]:
+        """Download image and upload to Google Drive, return (local_path, drive_url)"""
+        try:
+            # Download image first
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+            
+            # Create filename if not provided
+            if not filename:
+                parsed_url = urlparse(url)
+                filename = os.path.basename(parsed_url.path)
+                if not filename:
+                    filename = f"svo_image_{int(time.time())}.jpg"
+            
+            # Save locally first
+            local_path = os.path.join(self.image_folder, filename)
+            with open(local_path, "wb") as f:
+                f.write(response.content)
+            
+            # Upload to Google Drive if available
+            drive_url = None
+            if self.google_integration and self.google_integration.is_available():
+                drive_url = self.google_integration.upload_image_to_drive(
+                    response.content, 
+                    f"svo_{filename}"
+                )
+                if drive_url:
+                    logger.info(f"☁️ Uploaded to Drive: {filename} -> {drive_url}")
+            
+            return local_path, drive_url
+            
+        except Exception as e:
+            logger.error(f"❌ Error downloading/uploading image {url}: {e}")
+            return None, None
     
     def parse_hybrid_dynamic(self, soup: BeautifulSoup) -> List[Dict[str, Any]]:
         """Dynamic parsing of hybrid information from various HTML structures"""
@@ -336,14 +385,19 @@ class SunsetValleyOrchidsEnhancedScraper:
                             break  # No more hybrids on this page
                         
                         for hybrid in hybrids:
-                            # Download images
-                            downloaded_files = []
-                            for img_url in hybrid.get('images', []):
-                                local_path = self.download_image(img_url)
-                                if local_path:
-                                    downloaded_files.append(local_path)
+                            # Download images and upload to Google Drive
+                            local_files = []
+                            drive_urls = []
                             
-                            # Prepare hybrid data
+                            for img_url in hybrid.get('images', []):
+                                # Use enhanced download with Google Drive integration
+                                local_path, drive_url = self.download_and_upload_to_drive(img_url)
+                                if local_path:
+                                    local_files.append(local_path)
+                                if drive_url:
+                                    drive_urls.append(drive_url)
+                            
+                            # Prepare hybrid data with enhanced Google integration
                             hybrid_data = {
                                 'genus': genus,
                                 'name': hybrid.get('name', ''),
@@ -351,7 +405,8 @@ class SunsetValleyOrchidsEnhancedScraper:
                                 'parent2': hybrid.get('parent2', ''),
                                 'year': str(year),
                                 'notes': hybrid.get('notes', ''),
-                                'image_paths': ", ".join(downloaded_files),
+                                'image_paths': ", ".join(local_files),
+                                'image_urls': ", ".join(drive_urls),  # Google Drive URLs
                                 'price': hybrid.get('price', ''),
                                 'availability': hybrid.get('availability', ''),
                                 'source_url': url,
@@ -360,8 +415,27 @@ class SunsetValleyOrchidsEnhancedScraper:
                             
                             all_hybrids.append(hybrid_data)
                             
-                            # Add to Google Sheets if available
-                            if self.worksheet:
+                            # Save to Google Sheets using enhanced integration
+                            if self.google_integration and self.google_integration.is_available():
+                                # Use the new standardized Google integration
+                                svo_data = {
+                                    'genus': hybrid_data['genus'],
+                                    'name': hybrid_data['name'],
+                                    'parent1': hybrid_data['parent1'],
+                                    'parent2': hybrid_data['parent2'],
+                                    'year': hybrid_data['year'],
+                                    'notes': hybrid_data['notes'],
+                                    'image_urls': hybrid_data['image_urls'],
+                                    'price': hybrid_data['price'],
+                                    'availability': hybrid_data['availability'],
+                                    'source_url': hybrid_data['source_url']
+                                }
+                                success = self.google_integration.save_svo_data(svo_data)
+                                if success:
+                                    logger.info(f"📊 Saved {hybrid_data['name']} to Google Sheets")
+                            
+                            # Fallback to legacy Google Sheets if available
+                            elif self.worksheet:
                                 try:
                                     self.worksheet.append_row([
                                         hybrid_data['genus'],
@@ -370,14 +444,15 @@ class SunsetValleyOrchidsEnhancedScraper:
                                         hybrid_data['parent2'],
                                         hybrid_data['year'],
                                         hybrid_data['notes'],
-                                        hybrid_data['image_paths'],
+                                        hybrid_data.get('image_urls', hybrid_data['image_paths']),
                                         hybrid_data['price'],
                                         hybrid_data['availability'],
                                         hybrid_data['source_url'],
                                         hybrid_data['scraped_at']
                                     ])
+                                    logger.info(f"📊 Added {hybrid_data['name']} to legacy Google Sheets")
                                 except Exception as e:
-                                    logger.error(f"❌ Error adding to Google Sheets: {e}")
+                                    logger.error(f"❌ Failed to add to legacy Google Sheets: {e}")
                         
                         time.sleep(self.request_delay)  # Rate limiting
                         

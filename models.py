@@ -287,7 +287,7 @@ class OrchidRecord(db.Model):
     id = db.Column(Integer, primary_key=True)
     
     # User and source tracking
-    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(Integer, nullable=True)  # Fixed: Should be Integer, not String
     
     # Taxonomy relationship
     taxonomy_id = db.Column(Integer, db.ForeignKey('orchid_taxonomy.id'), nullable=True)
@@ -309,13 +309,16 @@ class OrchidRecord(db.Model):
     # Basic information
     display_name = db.Column(String(200), nullable=False)
     scientific_name = db.Column(String(200), index=True)
+    common_names = db.Column(Text, nullable=True)  # Fixed: Use plural form that exists in DB
     genus = db.Column(String(100), index=True)
     species = db.Column(String(100))
     author = db.Column(String(200))
+    # REMOVED: description, notes - don't exist in actual database
     
     # Geographic and habitat data
     region = db.Column(String(100))
     native_habitat = db.Column(Text)
+    # REMOVED: location, discovery_date - don't exist in actual database
     decimal_latitude = db.Column(Float, nullable=True)
     decimal_longitude = db.Column(Float, nullable=True)
     country = db.Column(String(100), nullable=True)
@@ -332,6 +335,7 @@ class OrchidRecord(db.Model):
     climate_preference = db.Column(String(20))  # cool, intermediate, warm
     leaf_form = db.Column(String(100))
     pseudobulb_presence = db.Column(Boolean)
+    # REMOVED pollinator_types here - it exists as ARRAY type elsewhere in DB, not Text
     
     # Cultural information
     light_requirements = db.Column(String(50))
@@ -343,6 +347,7 @@ class OrchidRecord(db.Model):
     # Image and source metadata
     image_filename = db.Column(String(300))
     image_url = db.Column(String(500))
+    # REMOVED: image_path - doesn't exist in actual database
     google_drive_id = db.Column(String(100))
     photographer = db.Column(String(200))
     image_source = db.Column(String(200))
@@ -908,6 +913,7 @@ class JudgingAnalysis(db.Model):
     
     # Analysis metadata
     analysis_date = db.Column(DateTime, default=datetime.utcnow)
+    created_at = db.Column(DateTime, default=datetime.utcnow)  # Added for routes.py compatibility
     ai_model_used = db.Column(String(50))
     confidence_level = db.Column(Float)
     
