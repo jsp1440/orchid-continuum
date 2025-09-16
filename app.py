@@ -210,3 +210,10 @@ try:
     print("🌸 Breeder Pro+ Orchestrator web interface initialized")
 except Exception as e:
     print(f"Breeder Pro+ Orchestrator initialization error: {e}")
+
+try:
+    from svo_analysis_routes import svo_bp
+    app.register_blueprint(svo_bp)
+    print("🔍 SVO Analysis web interface initialized")
+except Exception as e:
+    print(f"SVO Analysis initialization error: {e}")
