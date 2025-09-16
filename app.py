@@ -4,6 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_wtf.csrf import CSRFProtect
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +16,13 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "orchid-continuum-secret-key")
+
+# Critical security: No fallback value for secret key
+app.secret_key = os.environ.get("SESSION_SECRET")
+if not app.secret_key:
+    raise RuntimeError("CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is not set. "
+                      "Application cannot start without a secure session secret.")
+
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure CSP headers for iframe embedding (NeonOne compatibility)
@@ -40,6 +47,9 @@ app.config['UPLOAD_FOLDER'] = 'temp'
 
 # Initialize the app with the extension
 db.init_app(app)
+
+# Initialize CSRF protection for AI Breeder Pro widget forms
+csrf = CSRFProtect(app)
 
 with app.app_context():
     # Import models to ensure tables are created - lazy import to avoid circular import
@@ -70,6 +80,14 @@ with app.app_context():
         print("Judging standards initialized")
     except Exception as e:
         print(f"Judging standards initialization error: {e}")
+    
+    # Initialize AI Breeder Assistant Pro widget
+    try:
+        from ai_breeder_assistant_pro import register_ai_breeder_pro
+        register_ai_breeder_pro(app)
+        print("🧬 AI Breeder Assistant Pro widget initialized with enhanced features")
+    except Exception as e:
+        print(f"AI Breeder Assistant Pro initialization error: {e}")
 
 # Auth blueprint is now registered inside app context above
 

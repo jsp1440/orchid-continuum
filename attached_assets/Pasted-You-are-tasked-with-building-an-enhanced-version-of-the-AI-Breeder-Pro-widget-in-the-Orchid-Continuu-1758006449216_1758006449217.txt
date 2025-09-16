@@ -1,0 +1,82 @@
+You are tasked with building an enhanced version of the AI Breeder Pro widget in the Orchid Continuum. Your goal is to **keep the existing interface** intact while layering advanced functionality for breeding analysis.
+
+Requirements:
+
+1. **Interface Enhancements**
+   - Maintain current parent selection dropdowns and trait checkboxes.
+   - Add an **Image Upload Section**:
+     - Supports multiple images per hybrid.
+     - Displays preview thumbnails.
+     - Optional metadata input (growth stage, collection location).
+   - Add a **Trait Extraction Panel**:
+     - Displays traits extracted from uploaded images with confidence scores.
+   - Add a **Breeder-Intent Comparison Table**:
+     - Columns: Desired Trait, Observed Trait, Match?, Confidence.
+     - Color-coded: green = match, yellow = partial, red = mismatch.
+   - Update **Inheritance Prediction Visualization**:
+     - Incorporate AI-extracted traits into inheritance probability charts.
+   - Optional **Wild Species Toggle** for conservation insights.
+
+2. **Functional Workflow**
+   - **Parent Selection & Trait Selection**: Keep current workflow.
+   - **Image Upload & Analysis**:
+     - Accept multiple images per hybrid.
+     - Use OpenAI GPT-4o Vision API to detect flower morphology, color, pattern, leaf structure, spike form.
+     - Store results in a database (SQLAlchemy + PostgreSQL or equivalent).
+   - **Breeder-Intent Comparison**:
+     - Compare extracted traits with breeder-specified desired traits.
+     - Generate match percentages for each trait and overall.
+   - **Inheritance Prediction**:
+     - Combine parent traits + hybrid traits + breeder intent.
+     - Predict inheritance patterns and probability of achieving desired traits.
+     - Suggest optimal crosses to enhance target traits.
+   - **Database Integration**:
+     - Import hybrid data and images from Sunset Valley Orchids (multiple breeding lines).
+     - Store parentage, hybrid description, and images for analysis.
+   - **Extrapolation for Wild Species**:
+     - Optional: upload wild orchid photos.
+     - AI analyzes traits, suggests inheritance, and predicts potential selection pressures.
+     - Includes environmental metadata if provided.
+
+3. **Technical Implementation**
+   - **Frontend**: HTML/Bootstrap + JS for UI, Chart.js for heatmaps and inheritance charts.
+   - **Backend**: Flask + SQLAlchemy ORM with PostgreSQL for data storage.
+   - **AI Integration**:
+     - Use GPT-4o for image trait extraction and inheritance prediction.
+     - Example Python code for analysis:
+
+```python
+# Analyze uploaded hybrid image
+def analyze_hybrid_image(image_url, hybrid_id=None):
+    response = openai_client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Analyze this orchid image and list morphological traits with confidence scores."},
+                {"type": "image_url", "image_url": image_url}
+            ]
+        }]
+    )
+    traits = parse_ai_response(response)
+    save_traits_to_db(traits, hybrid_id)
+    return traits
+
+# Predict inheritance and suggest crosses
+def predict_inheritance(parent1_id, parent2_id, observed_traits, desired_traits):
+    prompt = f"""
+    Parent traits: {parent1.traits}, {parent2.traits}
+    Observed hybrid traits: {observed_traits}
+    Desired traits: {desired_traits}
+    Predict inheritance patterns and suggest optimal crosses.
+    """
+    response = openai_client.chat.completions.create(model="gpt-4o", messages=[{"role":"user","content":prompt}])
+    return parse_inheritance_response(response)
+
+# Compare observed traits to breeder intent
+def compare_to_intent(observed_traits, breeder_intent):
+    comparison = {}
+    for trait, goal in breeder_intent.items():
+        match = evaluate_match(observed_traits.get(trait), goal)
+        comparison[trait] = {"observed": observed_traits.get(trait), "goal": goal, "match": match}
+    return comparison
