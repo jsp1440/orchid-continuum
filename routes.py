@@ -64,6 +64,7 @@ except ImportError:
     get_monitoring_status = None
     get_ai_monitor = None
 from admin_control_center import register_admin_control_center
+from admin_svo_research import admin_svo as admin_svo_bp
 try:
     from automated_repair_system import repair_system
 except ImportError:
@@ -964,7 +965,9 @@ EMERGENCY DATA SOURCES:
 Respond helpfully about orchids, weather, navigation, or emergency preparedness. Include relevant commands when appropriate."""
 
         # Make API call to OpenAI
-        response = openai.ChatCompletion.create(
+        from openai import OpenAI
+        client = OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -1019,7 +1022,8 @@ Respond helpfully about orchids, weather, navigation, or emergency preparedness.
 def diagnostic_status():
     """Get diagnostic system status"""
     try:
-        status = get_diagnostic_status()
+        # Diagnostic system is disabled
+        status = {'status': 'disabled', 'message': 'Diagnostic system is currently disabled'}
         return jsonify(status)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1056,9 +1060,9 @@ def restart_media():
 def start_enhanced_collection_route():
     """Start enhanced data collection"""
     try:
-        start_enhanced_collection()
-        logger.info("🌐 Enhanced data collection started manually")
-        return jsonify({'status': 'enhanced collection started'})
+        # Enhanced collection system is disabled
+        logger.info("🌐 Enhanced data collection system is currently disabled")
+        return jsonify({'status': 'Enhanced collection system is disabled'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1324,15 +1328,14 @@ def judging_analyze_orchid(orchid_id):
         
         # Save analysis to database
         if current_user and hasattr(current_user, 'id'):
-            judging_analysis = JudgingAnalysis(
-                orchid_id=orchid_id,
-                user_id=current_user.id,
-                organization=organization,
-                total_score=analysis_result.get('total_score', 0),
-                category_scores=json.dumps(analysis_result.get('category_scores', {})),
-                analysis_details=json.dumps(analysis_result),
-                created_at=datetime.utcnow()
-            )
+            judging_analysis = JudgingAnalysis()
+            judging_analysis.orchid_id = orchid_id
+            judging_analysis.user_id = current_user.id
+            judging_analysis.judging_standard_id = 1  # Default standard
+            judging_analysis.score = analysis_result.get('total_score', 0)
+            judging_analysis.percentage = (analysis_result.get('total_score', 0) / 100.0) * 100  # Convert to percentage
+            judging_analysis.detailed_analysis = json.dumps(analysis_result)
+            judging_analysis.ai_comments = f"Organization: {organization}"
             db.session.add(judging_analysis)
             db.session.commit()
         
@@ -2565,20 +2568,19 @@ def upload():
                     ai_result = analyze_orchid_image(temp_path)
                     
                     # Create orchid record
-                    orchid = OrchidRecord(
-                        display_name=ai_result.get('suggested_name', f'Unknown Orchid {upload_record.id}'),
-                        scientific_name=ai_result.get('scientific_name'),
-                        genus=ai_result.get('genus'),
-                        species=ai_result.get('species'),
-                        image_filename=new_filename,
-                        image_url=image_url,
-                        google_drive_id=drive_file_id,
-                        ai_description=ai_result.get('description'),
-                        ai_confidence=ai_result.get('confidence', 0.0),
-                        ai_extracted_metadata=json.dumps(ai_result.get('metadata', {})),
-                        ingestion_source='upload',
-                        cultural_notes=request.form.get('notes', '')
-                    )
+                    orchid = OrchidRecord()
+                    orchid.display_name = ai_result.get('suggested_name', f'Unknown Orchid {upload_record.id}')
+                    orchid.scientific_name = ai_result.get('scientific_name')
+                    orchid.genus = ai_result.get('genus')
+                    orchid.species = ai_result.get('species')
+                    orchid.image_filename = new_filename
+                    orchid.image_url = image_url
+                    orchid.google_drive_id = drive_file_id
+                    orchid.ai_description = ai_result.get('description')
+                    orchid.ai_confidence = ai_result.get('confidence', 0.0)
+                    orchid.ai_extracted_metadata = json.dumps(ai_result.get('metadata', {}))
+                    orchid.ingestion_source = 'upload'
+                    orchid.cultural_notes = request.form.get('notes', '')
                     
                     # Try to match with taxonomy
                     if orchid.scientific_name:
@@ -4149,16 +4151,15 @@ def add_weather_location():
             latitude, longitude = coordinates
             
             # Create new location
-            location = UserLocation(
-                name=location_name,
-                city=city,
-                state_province=state_province,
-                country=country,
-                latitude=latitude,
-                longitude=longitude,
-                growing_type=growing_type,
-                track_weather=True
-            )
+            location = UserLocation()
+            location.name = location_name
+            location.city = city
+            location.state_province = state_province
+            location.country = country
+            location.latitude = latitude
+            location.longitude = longitude
+            location.growing_type = growing_type
+            location.track_weather = True
             
             db.session.add(location)
             db.session.commit()
@@ -4690,15 +4691,14 @@ def feedback():
                 return render_template('feedback.html')
             
             # Create feedback record
-            feedback_record = UserFeedback(
-                name=name,
-                email=email,
-                feedback_type=feedback_type,
-                subject=subject,
-                message=message,
-                page_url=request.referrer or request.url,
-                browser_info=request.headers.get('User-Agent', '')
-            )
+            feedback_record = UserFeedback()
+            feedback_record.name = name
+            feedback_record.email = email
+            feedback_record.feedback_type = feedback_type
+            feedback_record.subject = subject
+            feedback_record.message = message
+            feedback_record.page_url = request.referrer or request.url
+            feedback_record.browser_info = request.headers.get('User-Agent', '')
             
             db.session.add(feedback_record)
             db.session.commit()
@@ -5558,8 +5558,9 @@ def standalone_discovery_widget():
 def standalone_orchid_of_day_widget():
     """Standalone Orchid of the Day Widget for embedding"""
     try:
-        from enhanced_orchid_of_day import get_enhanced_orchid_of_day
-        orchid_data = get_enhanced_orchid_of_day()
+        # Enhanced orchid of day is disabled, using fallback
+        from utils import get_orchid_of_day
+        orchid_data = get_orchid_of_day()
         widget_data = {'orchid': orchid_data} if orchid_data else {}
     except ImportError:
         # Fallback to regular featured orchid
@@ -8308,6 +8309,13 @@ try:
 except Exception as e:
     logger.error(f"Failed to register admin control center: {e}")
 
+# Register admin SVO research dashboard
+try:
+    app.register_blueprint(admin_svo_bp, url_prefix='/admin/svo-research', name='admin_svo_research_unique')
+    logger.info("🔬 Admin SVO Research Dashboard registered successfully")
+except Exception as e:
+    logger.error(f"Failed to register admin SVO research dashboard: {e}")
+
 # Start automated repair system
 try:
     if repair_system:
@@ -8339,22 +8347,21 @@ def submit_workshop_registration():
         data = request.get_json()
         
         # Create new registration
-        registration = WorkshopRegistration(
-            first_name=data.get('firstName'),
-            last_name=data.get('lastName'),
-            email=data.get('email'),
-            phone=data.get('phone', ''),
-            experience_level=data.get('experience', ''),
-            member_status=data.get('memberStatus'),
-            bringing_orchid=data.get('bringingOrchid', False),
-            orchid_type=data.get('orchidType', ''),
-            primary_interest=data.get('interests', ''),
-            special_needs=data.get('specialNeeds', ''),
-            workshop_date=datetime.strptime(data.get('workshopDate'), '%Y-%m-%d').date(),
-            amount_paid=data.get('amount', 10.00),
-            payment_status=data.get('paymentStatus', 'pending'),
-            payment_method=data.get('paymentMethod', 'cash')
-        )
+        registration = WorkshopRegistration()
+        registration.first_name = data.get('firstName')
+        registration.last_name = data.get('lastName')
+        registration.email = data.get('email')
+        registration.phone = data.get('phone', '')
+        registration.experience_level = data.get('experience', '')
+        registration.member_status = data.get('memberStatus')
+        registration.bringing_orchid = data.get('bringingOrchid', False)
+        registration.orchid_type = data.get('orchidType', '')
+        registration.primary_interest = data.get('interests', '')
+        registration.special_needs = data.get('specialNeeds', '')
+        registration.workshop_date = datetime.strptime(data.get('workshopDate'), '%Y-%m-%d').date()
+        registration.amount_paid = data.get('amount', 10.00)
+        registration.payment_status = data.get('paymentStatus', 'pending')
+        registration.payment_method = data.get('paymentMethod', 'cash')
         
         # Add PayPal transaction details if provided
         if data.get('paymentId'):
@@ -8934,22 +8941,20 @@ def create_mahjong_room():
             session['player_name'] = player_name
         
         # Create game room
-        game = MahjongGame(
-            room_code=room_code,
-            host_user_id=session['user_id'],
-            max_players=4,
-            current_players=1,
-            game_state='waiting'
-        )
+        game = MahjongGame()
+        game.room_code = room_code
+        game.host_user_id = session['user_id']
+        game.max_players = 4
+        game.current_players = 1
+        game.game_state = 'waiting'
         db.session.add(game)
         db.session.flush()  # Get the game ID
         
         # Add host as first player
-        player = MahjongPlayer(
-            game_id=game.id,
-            user_id=session['user_id'],
-            player_position=1
-        )
+        player = MahjongPlayer()
+        player.game_id = game.id
+        player.user_id = session['user_id']
+        player.player_position = 1
         db.session.add(player)
         db.session.commit()
         
@@ -8999,11 +9004,10 @@ def join_mahjong_room():
             return jsonify({'success': False, 'error': 'Room is full'})
         
         # Add player to room
-        player = MahjongPlayer(
-            game_id=game.id,
-            user_id=session['user_id'],
-            player_position=game.current_players + 1
-        )
+        player = MahjongPlayer()
+        player.game_id = game.id
+        player.user_id = session['user_id']
+        player.player_position = game.current_players + 1
         db.session.add(player)
         
         # Update player count
@@ -9080,26 +9084,24 @@ def submit_mahjong_score():
             session['user_id'] = f'user_{secrets.token_hex(8)}'
         
         # For demo purposes, we'll create a single-player "game"
-        game = MahjongGame(
-            room_code=f'SOLO_{secrets.randbelow(999):03d}',
-            host_user_id=session['user_id'],
-            max_players=1,
-            current_players=1,
-            game_state='finished',
-            game_duration=time_seconds,
-            finished_at=datetime.now()
-        )
+        game = MahjongGame()
+        game.room_code = f'SOLO_{secrets.randbelow(999):03d}'
+        game.host_user_id = session['user_id']
+        game.max_players = 1
+        game.current_players = 1
+        game.game_state = 'finished'
+        game.game_duration = time_seconds
+        game.finished_at = datetime.now()
         db.session.add(game)
         db.session.flush()
         
         # Add player score
-        player = MahjongPlayer(
-            game_id=game.id,
-            user_id=session['user_id'],
-            player_position=1,
-            score=score,
-            tiles_matched=moves
-        )
+        player = MahjongPlayer()
+        player.game_id = game.id
+        player.user_id = session['user_id']
+        player.player_position = 1
+        player.score = score
+        player.tiles_matched = moves
         db.session.add(player)
         db.session.commit()
         

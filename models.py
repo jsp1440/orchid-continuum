@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime, timedelta
 from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, JSON, Enum
+from sqlalchemy.sql import operators
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -35,6 +36,159 @@ class BugReport(db.Model):
             'status': self.status,
             'created_at': self.created_at.isoformat(),
             'fixed_at': self.fixed_at.isoformat() if self.fixed_at else None
+        }
+
+# SVO Analysis Models for Web Interface
+class SvoAnalysisSession(db.Model):
+    """SVO analysis sessions tracking multi-website analysis"""
+    __tablename__ = 'svo_analysis_sessions'
+    
+    id = db.Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_name = db.Column(String(200), nullable=False)
+    urls = db.Column(JSON, nullable=False)  # List of URLs to analyze
+    status = db.Column(String(20), default='pending')  # pending, running, completed, failed
+    progress_percent = db.Column(Integer, default=0)
+    current_url_index = db.Column(Integer, default=0)
+    total_svo_found = db.Column(Integer, default=0)
+    
+    # Analysis configuration
+    max_retries = db.Column(Integer, default=3)
+    timeout_seconds = db.Column(Integer, default=10)
+    extraction_patterns = db.Column(String(50), default='all')  # all, growth_patterns, etc.
+    min_context_length = db.Column(Integer, default=10)
+    max_results_per_url = db.Column(Integer, default=500)
+    include_scientific_terms = db.Column(Boolean, default=True)
+    filter_noise = db.Column(Boolean, default=True)
+    collection_type = db.Column(String(50), default='custom')  # custom, orchid_care_sites, etc.
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    started_at = db.Column(DateTime, nullable=True)
+    completed_at = db.Column(DateTime, nullable=True)
+    
+    # Error tracking
+    error_message = db.Column(Text, nullable=True)
+    failed_urls = db.Column(JSON, nullable=True)  # URLs that failed to analyze
+    
+    # Research metadata
+    research_notes = db.Column(Text, nullable=True)
+    tags = db.Column(JSON, nullable=True)  # Research tags for categorization
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_name': self.session_name,
+            'urls': self.urls,
+            'status': self.status,
+            'progress_percent': self.progress_percent,
+            'current_url_index': self.current_url_index,
+            'total_svo_found': self.total_svo_found,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'error_message': self.error_message,
+            'failed_urls': self.failed_urls
+        }
+
+class SvoResult(db.Model):
+    """Individual SVO tuples extracted from analysis"""
+    __tablename__ = 'svo_results'
+    
+    id = db.Column(Integer, primary_key=True)
+    session_id = db.Column(String, db.ForeignKey('svo_analysis_sessions.id'), nullable=False)
+    source_url = db.Column(String(500), nullable=False)
+    
+    # Raw SVO data
+    subject = db.Column(String(200), nullable=False)
+    verb = db.Column(String(200), nullable=False)
+    object = db.Column(String(200), nullable=False)
+    
+    # Cleaned SVO data
+    subject_clean = db.Column(String(200), nullable=False)
+    verb_clean = db.Column(String(200), nullable=False)
+    object_clean = db.Column(String(200), nullable=False)
+    
+    # Context information
+    context_text = db.Column(Text, nullable=True)  # Surrounding text for context
+    confidence_score = db.Column(Float, default=1.0)  # Confidence in extraction
+    
+    # Botanical categorization
+    botanical_category = db.Column(String(50), nullable=True)  # growth_patterns, flowering_behavior, etc.
+    is_scientific_term = db.Column(Boolean, default=False)
+    relevance_score = db.Column(Float, default=0.5)  # How relevant to botanical research
+    
+    # Enhanced metadata
+    extraction_method = db.Column(String(50), default='pattern_matching')
+    language_detected = db.Column(String(10), default='en')
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    session = db.relationship('SvoAnalysisSession', backref='results')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'source_url': self.source_url,
+            'subject': self.subject,
+            'verb': self.verb,
+            'object': self.object,
+            'subject_clean': self.subject_clean,
+            'verb_clean': self.verb_clean,
+            'object_clean': self.object_clean,
+            'context_text': self.context_text,
+            'confidence_score': self.confidence_score,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class SvoAnalysisSummary(db.Model):
+    """Analysis summary and frequency data for sessions"""
+    __tablename__ = 'svo_analysis_summaries'
+    
+    id = db.Column(Integer, primary_key=True)
+    session_id = db.Column(String, db.ForeignKey('svo_analysis_sessions.id'), nullable=False)
+    
+    # Frequency data (stored as JSON)
+    subject_frequencies = db.Column(JSON, nullable=False)  # Counter data as dict
+    verb_frequencies = db.Column(JSON, nullable=False)
+    object_frequencies = db.Column(JSON, nullable=False)
+    
+    # Summary statistics
+    total_tuples = db.Column(Integer, nullable=False)
+    unique_subjects = db.Column(Integer, nullable=False)
+    unique_verbs = db.Column(Integer, nullable=False)
+    unique_objects = db.Column(Integer, nullable=False)
+    
+    # Chart file paths
+    subject_chart_path = db.Column(String(500), nullable=True)
+    verb_chart_path = db.Column(String(500), nullable=True)
+    object_chart_path = db.Column(String(500), nullable=True)
+    
+    # CSV export path
+    csv_export_path = db.Column(String(500), nullable=True)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    session = db.relationship('SvoAnalysisSession', backref='summary', uselist=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'subject_frequencies': self.subject_frequencies,
+            'verb_frequencies': self.verb_frequencies,
+            'object_frequencies': self.object_frequencies,
+            'total_tuples': self.total_tuples,
+            'unique_subjects': self.unique_subjects,
+            'unique_verbs': self.unique_verbs,
+            'unique_objects': self.unique_objects,
+            'subject_chart_path': self.subject_chart_path,
+            'verb_chart_path': self.verb_chart_path,
+            'object_chart_path': self.object_chart_path,
+            'csv_export_path': self.csv_export_path,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 # Gaming and User Management Models - Using unified User model below
