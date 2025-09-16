@@ -1627,3 +1627,453 @@ class FieldObservation(db.Model):
             'ai_identification': self.ai_identification,
             'ai_confidence': self.ai_confidence
         }
+
+
+# ==========================================
+# Breeder Pro+ Pipeline Models
+# ==========================================
+
+class PipelineRun(db.Model):
+    """Master record for each Breeder Pro+ pipeline execution"""
+    __tablename__ = 'pipeline_runs'
+    
+    id = db.Column(Integer, primary_key=True)
+    pipeline_id = db.Column(String(100), unique=True, nullable=False)  # UUID for tracking
+    name = db.Column(String(200), nullable=False)  # User-friendly name
+    
+    # User and configuration
+    started_by_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    config = db.Column(JSON, nullable=True)  # Pipeline configuration JSON
+    
+    # Status tracking
+    status = db.Column(String(20), default='queued')  # queued, running, completed, failed, cancelled
+    stage = db.Column(String(50), default='initializing')  # Current stage
+    progress_percentage = db.Column(Float, default=0.0)
+    
+    # Timing
+    started_at = db.Column(DateTime, default=datetime.utcnow)
+    completed_at = db.Column(DateTime, nullable=True)
+    duration_seconds = db.Column(Integer, nullable=True)
+    
+    # Results
+    success_count = db.Column(Integer, default=0)  # Number of successful operations
+    error_count = db.Column(Integer, default=0)   # Number of errors
+    total_operations = db.Column(Integer, default=0)  # Total operations planned
+    
+    # Output files and reports
+    report_files = db.Column(JSON, nullable=True)  # JSON array of generated report file paths
+    data_files = db.Column(JSON, nullable=True)   # JSON array of data file paths
+    log_file_path = db.Column(String(500), nullable=True)  # Path to detailed log file
+    
+    # Email notification
+    notification_emails = db.Column(JSON, nullable=True)  # JSON array of email addresses
+    email_sent = db.Column(Boolean, default=False)
+    
+    # Error information
+    error_message = db.Column(Text, nullable=True)
+    error_details = db.Column(JSON, nullable=True)  # Detailed error information
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    started_by = db.relationship('User', backref='pipeline_runs')
+    steps = db.relationship('PipelineStep', backref='pipeline_run', cascade='all, delete-orphan')
+    
+    def __init__(self, **kwargs):
+        super(PipelineRun, self).__init__(**kwargs)
+        if not self.pipeline_id:
+            self.pipeline_id = str(uuid.uuid4())
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'pipeline_id': self.pipeline_id,
+            'name': self.name,
+            'status': self.status,
+            'stage': self.stage,
+            'progress_percentage': self.progress_percentage,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'duration_seconds': self.duration_seconds,
+            'success_count': self.success_count,
+            'error_count': self.error_count,
+            'total_operations': self.total_operations,
+            'report_files': self.report_files,
+            'data_files': self.data_files,
+            'email_sent': self.email_sent,
+            'error_message': self.error_message,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+    def update_progress(self, stage, progress_percentage, success_count=None, error_count=None):
+        """Update pipeline progress"""
+        self.stage = stage
+        self.progress_percentage = progress_percentage
+        if success_count is not None:
+            self.success_count = success_count
+        if error_count is not None:
+            self.error_count = error_count
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def mark_completed(self, success=True, error_message=None):
+        """Mark pipeline as completed"""
+        self.status = 'completed' if success else 'failed'
+        self.completed_at = datetime.utcnow()
+        self.duration_seconds = int((self.completed_at - self.started_at).total_seconds())
+        if error_message:
+            self.error_message = error_message
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    @classmethod
+    def get_recent_runs(cls, limit=20):
+        """Get recent pipeline runs"""
+        return cls.query.order_by(cls.started_at.desc()).limit(limit).all()
+    
+    @classmethod
+    def get_active_runs(cls):
+        """Get currently active pipeline runs"""
+        return cls.query.filter(cls.status.in_(['queued', 'running'])).all()
+
+
+class PipelineStep(db.Model):
+    """Individual steps within a pipeline run"""
+    __tablename__ = 'pipeline_steps'
+    
+    id = db.Column(Integer, primary_key=True)
+    pipeline_run_id = db.Column(Integer, db.ForeignKey('pipeline_runs.id'), nullable=False)
+    
+    # Step identification
+    step_name = db.Column(String(100), nullable=False)  # scraping, upload, analysis, reporting, email
+    step_order = db.Column(Integer, nullable=False)     # Order in pipeline
+    
+    # Status tracking
+    status = db.Column(String(20), default='pending')  # pending, running, completed, failed, skipped
+    progress_percentage = db.Column(Float, default=0.0)
+    
+    # Timing
+    started_at = db.Column(DateTime, nullable=True)
+    completed_at = db.Column(DateTime, nullable=True)
+    duration_seconds = db.Column(Integer, nullable=True)
+    
+    # Results
+    items_processed = db.Column(Integer, default=0)
+    items_successful = db.Column(Integer, default=0)
+    items_failed = db.Column(Integer, default=0)
+    
+    # Step-specific data
+    step_data = db.Column(JSON, nullable=True)  # Step-specific information
+    output_files = db.Column(JSON, nullable=True)  # Files generated by this step
+    
+    # Error information
+    error_message = db.Column(Text, nullable=True)
+    error_details = db.Column(JSON, nullable=True)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'step_name': self.step_name,
+            'step_order': self.step_order,
+            'status': self.status,
+            'progress_percentage': self.progress_percentage,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'duration_seconds': self.duration_seconds,
+            'items_processed': self.items_processed,
+            'items_successful': self.items_successful,
+            'items_failed': self.items_failed,
+            'step_data': self.step_data,
+            'output_files': self.output_files,
+            'error_message': self.error_message,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+    
+    def start_step(self):
+        """Mark step as started"""
+        self.status = 'running'
+        self.started_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def update_progress(self, progress_percentage, items_processed=None, items_successful=None, items_failed=None):
+        """Update step progress"""
+        self.progress_percentage = progress_percentage
+        if items_processed is not None:
+            self.items_processed = items_processed
+        if items_successful is not None:
+            self.items_successful = items_successful
+        if items_failed is not None:
+            self.items_failed = items_failed
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def complete_step(self, success=True, error_message=None):
+        """Mark step as completed"""
+        self.status = 'completed' if success else 'failed'
+        self.completed_at = datetime.utcnow()
+        if self.started_at:
+            self.duration_seconds = int((self.completed_at - self.started_at).total_seconds())
+        if error_message:
+            self.error_message = error_message
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+
+
+class PipelineTemplate(db.Model):
+    """Saved pipeline templates for reuse"""
+    __tablename__ = 'pipeline_templates'
+    
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(200), nullable=False)
+    description = db.Column(Text, nullable=True)
+    
+    # Template configuration
+    config = db.Column(JSON, nullable=False)  # Template configuration
+    steps = db.Column(JSON, nullable=False)   # Ordered list of steps
+    
+    # Usage tracking
+    created_by_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    usage_count = db.Column(Integer, default=0)
+    is_default = db.Column(Boolean, default=False)
+    is_active = db.Column(Boolean, default=True)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    created_by = db.relationship('User', backref='pipeline_templates')
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'config': self.config,
+            'steps': self.steps,
+            'usage_count': self.usage_count,
+            'is_default': self.is_default,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+    
+    @classmethod
+    def get_active_templates(cls):
+        """Get all active templates"""
+        return cls.query.filter_by(is_active=True).order_by(cls.name).all()
+    
+    @classmethod
+    def get_default_template(cls):
+        """Get the default pipeline template"""
+        return cls.query.filter_by(is_default=True, is_active=True).first()
+
+
+class PipelineSchedule(db.Model):
+    """Scheduled pipeline runs"""
+    __tablename__ = 'pipeline_schedules'
+    
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(200), nullable=False)
+    description = db.Column(Text, nullable=True)
+    
+    # Schedule configuration
+    template_id = db.Column(Integer, db.ForeignKey('pipeline_templates.id'), nullable=False)
+    schedule_type = db.Column(String(20), nullable=False)  # daily, weekly, monthly, custom
+    schedule_config = db.Column(JSON, nullable=False)  # Cron-like schedule configuration
+    
+    # Status
+    is_active = db.Column(Boolean, default=True)
+    next_run_at = db.Column(DateTime, nullable=True)
+    last_run_at = db.Column(DateTime, nullable=True)
+    last_run_status = db.Column(String(20), nullable=True)  # completed, failed
+    
+    # User and notification
+    created_by_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    notification_emails = db.Column(JSON, nullable=True)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    template = db.relationship('PipelineTemplate', backref='schedules')
+    created_by = db.relationship('User', backref='pipeline_schedules')
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'schedule_type': self.schedule_type,
+            'schedule_config': self.schedule_config,
+            'is_active': self.is_active,
+            'next_run_at': self.next_run_at.isoformat() if self.next_run_at else None,
+            'last_run_at': self.last_run_at.isoformat() if self.last_run_at else None,
+            'last_run_status': self.last_run_status,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class SVOExtractedData(db.Model):
+    """Store SVO (Subject-Verb-Object) extracted data and analysis results"""
+    __tablename__ = 'svo_extracted_data'
+    
+    id = db.Column(Integer, primary_key=True)
+    
+    # Source information
+    source_url = db.Column(String(500), nullable=False, index=True)
+    source_type = db.Column(String(50), nullable=False)  # 'svo_primary', 'gary_yong_gee', 'aos_resources'
+    page_title = db.Column(String(200), nullable=True)
+    
+    # SVO Triple data
+    subject = db.Column(String(200), nullable=False, index=True)  # orchid species/hybrid name
+    verb = db.Column(String(100), nullable=False)  # action/relationship verb
+    object = db.Column(Text, nullable=False)  # object/description
+    
+    # Extracted context and metadata
+    original_text = db.Column(Text, nullable=False)  # Original sentence/paragraph
+    context_before = db.Column(Text, nullable=True)  # Text before the SVO
+    context_after = db.Column(Text, nullable=True)  # Text after the SVO
+    
+    # Confidence and quality scores
+    extraction_confidence = db.Column(Float, nullable=False, default=0.0)  # 0.0-1.0
+    svo_confidence = db.Column(Float, nullable=False, default=0.0)  # 0.0-1.0
+    text_quality_score = db.Column(Float, nullable=True)  # Overall text quality
+    
+    # Classification and taxonomy
+    genus = db.Column(String(100), nullable=True, index=True)  # Extracted genus
+    species = db.Column(String(100), nullable=True, index=True)  # Extracted species
+    orchid_type = db.Column(String(50), nullable=True)  # 'species', 'hybrid', 'variety', 'cultivar'
+    
+    # Care information categories
+    care_category = db.Column(String(50), nullable=True)  # 'light', 'water', 'temperature', 'humidity', etc.
+    care_subcategory = db.Column(String(50), nullable=True)  # More specific categorization
+    seasonal_relevance = db.Column(String(20), nullable=True)  # 'spring', 'summer', 'fall', 'winter', 'year-round'
+    
+    # Processing metadata
+    processing_status = db.Column(String(20), default='pending')  # pending, validated, rejected, archived
+    validation_notes = db.Column(Text, nullable=True)
+    batch_id = db.Column(String(50), nullable=True)  # For batch processing tracking
+    
+    # Analysis results (stored as JSON)
+    nlp_metadata = db.Column(JSON, nullable=True)  # NLP processing results
+    extraction_metadata = db.Column(JSON, nullable=True)  # Additional extraction data
+    quality_metrics = db.Column(JSON, nullable=True)  # Quality assessment results
+    
+    # Relationships to other data
+    orchid_record_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=True)
+    related_svo_ids = db.Column(JSON, nullable=True)  # Array of related SVO record IDs
+    
+    # System tracking
+    ingestion_source = db.Column(String(50), default='svo_processor')
+    is_featured = db.Column(Boolean, default=False)
+    view_count = db.Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    extracted_at = db.Column(DateTime, nullable=True)  # When the data was originally extracted
+    validated_at = db.Column(DateTime, nullable=True)  # When it was validated
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses and serialization"""
+        return {
+            'id': self.id,
+            'source_url': self.source_url,
+            'source_type': self.source_type,
+            'page_title': self.page_title,
+            'subject': self.subject,
+            'verb': self.verb,
+            'object': self.object,
+            'original_text': self.original_text,
+            'extraction_confidence': self.extraction_confidence,
+            'svo_confidence': self.svo_confidence,
+            'genus': self.genus,
+            'species': self.species,
+            'orchid_type': self.orchid_type,
+            'care_category': self.care_category,
+            'care_subcategory': self.care_subcategory,
+            'seasonal_relevance': self.seasonal_relevance,
+            'processing_status': self.processing_status,
+            'batch_id': self.batch_id,
+            'nlp_metadata': self.nlp_metadata,
+            'extraction_metadata': self.extraction_metadata,
+            'quality_metrics': self.quality_metrics,
+            'orchid_record_id': self.orchid_record_id,
+            'related_svo_ids': self.related_svo_ids,
+            'ingestion_source': self.ingestion_source,
+            'is_featured': self.is_featured,
+            'view_count': self.view_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'extracted_at': self.extracted_at.isoformat() if self.extracted_at else None,
+            'validated_at': self.validated_at.isoformat() if self.validated_at else None
+        }
+    
+    def get_full_svo_text(self):
+        """Get formatted SVO triple as readable text"""
+        return f"{self.subject} {self.verb} {self.object}"
+    
+    def get_orchid_name(self):
+        """Extract orchid name from subject"""
+        if self.genus and self.species:
+            return f"{self.genus} {self.species}"
+        return self.subject
+    
+    def is_high_confidence(self, threshold=0.7):
+        """Check if extraction meets high confidence threshold"""
+        return (self.extraction_confidence >= threshold and 
+                self.svo_confidence >= threshold)
+    
+    def validate_svo_quality(self):
+        """Validate SVO data quality based on defined thresholds"""
+        issues = []
+        
+        if not self.subject or len(self.subject.strip()) < 3:
+            issues.append("Subject too short or empty")
+            
+        if not self.verb or len(self.verb.strip()) < 2:
+            issues.append("Verb too short or empty")
+            
+        if not self.object or len(self.object.strip()) < 5:
+            issues.append("Object too short or empty")
+            
+        if self.extraction_confidence < 0.3:
+            issues.append("Extraction confidence too low")
+            
+        if len(self.original_text) > 1000:
+            issues.append("Original text too long")
+            
+        if len(self.original_text) < 20:
+            issues.append("Original text too short")
+            
+        return len(issues) == 0, issues
+    
+    @classmethod
+    def get_by_source_type(cls, source_type, limit=100):
+        """Get SVO records by source type"""
+        return cls.query.filter(cls.source_type == source_type).limit(limit).all()
+    
+    @classmethod
+    def get_by_genus(cls, genus, limit=100):
+        """Get SVO records by genus"""
+        return cls.query.filter(cls.genus == genus).limit(limit).all()
+    
+    @classmethod
+    def get_high_confidence_records(cls, threshold=0.7, limit=100):
+        """Get high confidence SVO records"""
+        return cls.query.filter(
+            cls.extraction_confidence >= threshold,
+            cls.svo_confidence >= threshold
+        ).limit(limit).all()
+    
+    def __repr__(self):
+        return f'<SVOExtractedData {self.id}: {self.subject} {self.verb} {self.object[:30]}...>'

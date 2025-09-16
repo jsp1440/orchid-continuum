@@ -204,3 +204,9 @@ try:
     print("AI Collection Manager system initialized")
 except Exception as e:
     print(f"AI Collection Manager initialization error: {e}")
+
+try:
+    import breeder_pro_routes  # Import Breeder Pro+ admin routes
+    print("🌸 Breeder Pro+ Orchestrator web interface initialized")
+except Exception as e:
+    print(f"Breeder Pro+ Orchestrator initialization error: {e}")

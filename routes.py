@@ -88,6 +88,9 @@ ORCHID_THEMES = {
 }
 from philosophy_quiz_service import philosophy_quiz_service
 
+# Import and register report generation blueprint (moved to after logger initialization)
+# This will be registered after logger is defined
+
 def get_orchids_by_theme(theme_keywords):
     """Helper function to get orchids matching theme keywords"""
     query = db.session.query(OrchidRecord).filter(
@@ -117,6 +120,16 @@ def get_orchids_by_theme(theme_keywords):
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
+
+# Import and register report generation blueprint
+try:
+    from report_routes import report_bp
+    app.register_blueprint(report_bp)
+    logger.info("📊 Report generation system registered successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Report generation system not available: {e}")
+except Exception as e:
+    logger.error(f"❌ Error registering report generation system: {e}")
 
 # CRITICAL: Import real-time integrity monitoring
 try:
