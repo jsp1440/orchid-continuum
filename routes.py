@@ -9385,6 +9385,14 @@ try:
 except ImportError as e:
     logger.warning(f"Guided Care Form not available: {e}")
 
+# Register Orchid Care Widget Package
+try:
+    from orchid_care_widget_package import register_widget_package_routes
+    register_widget_package_routes(app)
+    logger.info("🎨 Orchid Care Widget Package registered successfully")
+except ImportError as e:
+    logger.warning(f"Widget Package not available: {e}")
+
 # =============================================================================
 # NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
 # =============================================================================
