@@ -8,11 +8,17 @@ import json
 import random
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
-import openai
 from models import OrchidRecord
 
-# Initialize OpenAI client
-openai.api_key = os.environ.get('OPENAI_API_KEY')
+# Initialize OpenAI client with new API
+try:
+    from openai import OpenAI
+    if os.environ.get('OPENAI_API_KEY'):
+        openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+    else:
+        openai_client = None
+except ImportError:
+    openai_client = None
 
 class OrchidBreedingAI:
     """Advanced AI system for orchid breeding analysis and recommendations"""
