@@ -179,3 +179,10 @@ try:
     print("Taxonomy Verification system initialized")
 except Exception as e:
     print(f"Taxonomy Verification initialization error: {e}")
+
+try:
+    from ai_collection_manager import collection_manager_bp
+    app.register_blueprint(collection_manager_bp)
+    print("AI Collection Manager system initialized")
+except Exception as e:
+    print(f"AI Collection Manager initialization error: {e}")
