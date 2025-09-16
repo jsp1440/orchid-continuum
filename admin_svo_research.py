@@ -794,7 +794,7 @@ def export_all_data():
                         'created_at': session.created_at.isoformat() if session.created_at else None,
                         'completed_at': session.completed_at.isoformat() if session.completed_at else None,
                         'total_svo_found': session.total_svo_found,
-                        'urls_count': len(session.urls) if session.urls else 0
+                        'urls_count': len(session.urls) if session.urls and isinstance(session.urls, list) else 0
                     })
                 
                 zip_file.writestr('sessions_summary.json', 
@@ -852,12 +852,12 @@ def get_session_status(session_id):
         'status': session.status,
         'progress_percent': session.progress_percent,
         'current_url_index': session.current_url_index,
-        'total_urls': len(session.urls) if session.urls else 0,
+        'total_urls': len(session.urls) if session.urls and isinstance(session.urls, list) else 0,
         'total_svo_found': session.total_svo_found or 0,
         'started_at': session.started_at.isoformat() if session.started_at else None,
         'completed_at': session.completed_at.isoformat() if session.completed_at else None,
         'error_message': session.error_message,
-        'failed_urls_count': len(session.failed_urls) if session.failed_urls else 0
+        'failed_urls_count': len(session.failed_urls) if session.failed_urls and isinstance(session.failed_urls, list) else 0
     }
     
     return jsonify(status_data)
