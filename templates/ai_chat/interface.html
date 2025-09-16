@@ -177,14 +177,26 @@
                 <div class="chat-container">
                     <!-- Chat Header -->
                     <div class="chat-header">
-                        <h3 class="mb-1">🌺 AI Orchid Assistant</h3>
-                        <p class="mb-0">Ask me anything about orchids - I can analyze images, provide care advice, and query your database!</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-1">🌺 AI Orchid Assistant</h3>
+                                <p class="mb-0">Ask me anything about orchids - I can analyze images, provide care advice, and query your database!</p>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="chatMode" id="generalMode" autocomplete="off" checked>
+                                <label class="btn btn-outline-light btn-sm" for="generalMode">💬 General</label>
+                                
+                                <input type="radio" class="btn-check" name="chatMode" id="careMode" autocomplete="off">
+                                <label class="btn btn-outline-light btn-sm" for="careMode">🌿 Care Helper</label>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Chat Messages -->
                     <div class="chat-messages" id="chatMessages">
                         <div class="message ai">
                             <div class="message-bubble">
+<span id="generalModeWelcome">
                                 👋 Hello! I'm your AI orchid expert powered by GPT-5. I can:
                                 <br><br>
                                 🔍 <strong>Analyze orchid images</strong> - Upload or select from your collection<br>
@@ -193,6 +205,18 @@
                                 💡 <strong>Provide advice</strong> - Growing tips, troubleshooting, breeding<br>
                                 <br>
                                 What would you like to explore today?
+                                </span>
+                                
+                                <span id="careModeWelcome" style="display: none;">
+                                🌿 Welcome to Care Helper mode! I'm specialized in orchid care and problem-solving.
+                                <br><br>
+                                🚨 <strong>Quick diagnosis</strong> - Describe symptoms and get immediate help<br>
+                                📍 <strong>Location-specific advice</strong> - Tell me where you're located for climate tips<br>
+                                🩺 <strong>Step-by-step solutions</strong> - Detailed care instructions<br>
+                                ⚡ <strong>Emergency help</strong> - Urgent orchid problems<br>
+                                <br>
+                                What's happening with your orchid? Describe the problem and I'll help you solve it!
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -219,19 +243,37 @@
                             </div>
                         </div>
                         
-                        <!-- Quick Actions -->
+                        <!-- Quick Actions - Dynamic based on mode -->
                         <div class="row mt-2">
                             <div class="col-12">
-                                <small class="text-muted">Quick actions:</small>
-                                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="quickMessage('Show me flowering orchids in my collection')">
-                                    🌸 Flowering Orchids
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm ms-1" onclick="quickMessage('What are the most common genera in my database?')">
-                                    📊 Database Stats
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm ms-1" onclick="loadOrchidSuggestions()">
-                                    🖼️ Analyze Images
-                                </button>
+                                <div id="generalModeActions">
+                                    <small class="text-muted">Quick actions:</small>
+                                    <button class="btn btn-outline-secondary btn-sm ms-2" onclick="quickMessage('Show me flowering orchids in my collection')">
+                                        🌸 Flowering Orchids
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm ms-1" onclick="quickMessage('What are the most common genera in my database?')">
+                                        📊 Database Stats
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm ms-1" onclick="loadOrchidSuggestions()">
+                                        🖼️ Analyze Images
+                                    </button>
+                                </div>
+                                
+                                <div id="careModeActions" style="display: none;">
+                                    <small class="text-muted">Common care questions:</small>
+                                    <button class="btn btn-outline-success btn-sm ms-2" onclick="quickMessage('My orchid has yellowing leaves, what should I do?')">
+                                        🍃 Yellowing Leaves
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm ms-1" onclick="quickMessage('My orchid is not blooming, how can I encourage flowers?')">
+                                        🌸 Not Blooming
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm ms-1" onclick="quickMessage('How often should I water my orchid?')">
+                                        💧 Watering Schedule
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm ms-1" onclick="quickMessage('My orchid roots look mushy, is this root rot?')">
+                                        🦠 Root Problems
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -263,7 +305,44 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             loadOrchidSuggestions();
+            
+            // Handle chat mode switching
+            document.getElementById('generalMode').addEventListener('change', function() {
+                if (this.checked) {
+                    switchToChatMode('general');
+                }
+            });
+            
+            document.getElementById('careMode').addEventListener('change', function() {
+                if (this.checked) {
+                    switchToChatMode('care');
+                }
+            });
         });
+        
+        function switchToChatMode(mode) {
+            const generalWelcome = document.getElementById('generalModeWelcome');
+            const careWelcome = document.getElementById('careModeWelcome');
+            const generalActions = document.getElementById('generalModeActions');
+            const careActions = document.getElementById('careModeActions');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (mode === 'care') {
+                // Switch to care mode
+                generalWelcome.style.display = 'none';
+                careWelcome.style.display = 'inline';
+                generalActions.style.display = 'none';
+                careActions.style.display = 'block';
+                messageInput.placeholder = "Describe your orchid problem (e.g., 'My Phalaenopsis has yellow leaves in Los Angeles')...";
+            } else {
+                // Switch to general mode
+                generalWelcome.style.display = 'inline';
+                careWelcome.style.display = 'none';
+                generalActions.style.display = 'block';
+                careActions.style.display = 'none';
+                messageInput.placeholder = "Ask about orchids, request image analysis, or query your data...";
+            }
+        }
         
         function handleEnterKey(event) {
             if (event.key === 'Enter') {
@@ -289,11 +368,18 @@
             // Show typing indicator
             showTypingIndicator();
             
-            // Send to AI
+            // Determine current mode
+            const careMode = document.getElementById('careMode').checked;
+            const messageData = {
+                message: message,
+                mode: careMode ? 'care' : 'general'
+            };
+            
+            // Send to AI with mode information
             fetch('/ai-chat/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: message})
+                body: JSON.stringify(messageData)
             })
             .then(response => response.json())
             .then(data => {

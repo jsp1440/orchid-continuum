@@ -281,15 +281,34 @@ def ai_chat_interface():
 
 @ai_chat_bp.route('/chat', methods=['POST'])
 def handle_chat():
-    """Handle chat messages from user"""
+    """Handle chat messages from user with care mode support"""
     try:
         data = request.get_json()
         user_message = data.get('message', '')
+        mode = data.get('mode', 'general')  # 'general' or 'care'
         
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
         
-        # Process chat with AI
+        # Handle care mode with specialized care advisor
+        if mode == 'care':
+            try:
+                from care_helper_widget import SimpleCareAdvisor
+                care_advisor = SimpleCareAdvisor()
+                advice_result = care_advisor.get_care_advice(user_message)
+                
+                if advice_result['success']:
+                    return jsonify({
+                        'success': True,
+                        'response': advice_result['advice']
+                    })
+                else:
+                    # Fall back to general mode if care advisor fails
+                    pass
+            except Exception as e:
+                logger.warning(f"Care mode failed, falling back to general: {e}")
+        
+        # Process chat with AI (general mode)
         response = orchid_ai.chat_with_data(user_message)
         
         return jsonify(response)
