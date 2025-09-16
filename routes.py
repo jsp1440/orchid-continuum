@@ -9393,6 +9393,14 @@ try:
 except ImportError as e:
     logger.warning(f"Widget Package not available: {e}")
 
+# Register AI Collection Manager
+try:
+    from ai_collection_manager import register_collection_manager_routes
+    register_collection_manager_routes(app)
+    logger.info("🤖 AI Collection Manager registered successfully")
+except ImportError as e:
+    logger.warning(f"AI Collection Manager not available: {e}")
+
 # =============================================================================
 # NEW HUB ROUTES FOR WIDGET CONSOLIDATION SYSTEM
 # =============================================================================
