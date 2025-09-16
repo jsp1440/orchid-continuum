@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>AI Collection Manager - Orchid Continuum</title>
+    <meta name="description" content="Intelligent orchid collection management with AI-powered insights and recommendations">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .collection-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .recommendation-card {
+            border-left: 4px solid #28a745;
+            background: #f8f9fa;
+            margin-bottom: 1rem;
+        }
+        .recommendation-card.high-priority {
+            border-left-color: #dc3545;
+        }
+        .recommendation-card.medium-priority {
+            border-left-color: #ffc107;
+        }
+        .plant-group {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .plant-group-header {
+            background: #e9ecef;
+            padding: 1rem;
+            font-weight: bold;
+        }
+        .plant-list {
+            padding: 0.5rem;
+        }
+        .plant-item {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 15px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+        }
+        .trend-chart {
+            height: 300px;
+            margin: 1rem 0;
+        }
+        .quick-actions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .fab {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        .fab:hover {
+            background: #5a67d8;
+            transform: scale(1.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<!-- Collection Header -->
+<div class="collection-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 mb-2">
+                    <i data-feather="brain" class="me-3"></i>
+                    AI Collection Manager
+                </h1>
+                <p class="lead mb-0">
+                    🤖 Intelligent collection tracking with holistic AI recommendations
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-light" onclick="addPlant()">
+                        <i data-feather="plus" class="me-2"></i>Add Plant
+                    </button>
+                    <button class="btn btn-light" onclick="logCareActivity()">
+                        <i data-feather="droplet" class="me-2"></i>Log Care
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Content -->
+<div class="container">
+    <!-- Collection Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analysis.collection_summary.total_plants }}</div>
+                <div class="text-muted">Total Plants</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analysis.health_trends.overall_health_score }}%</div>
+                <div class="text-muted">Health Score</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analysis.collection_summary.blooming_rate }}%</div>
+                <div class="text-muted">Blooming Rate</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="stat-number">{{ analysis.care_patterns.care_consistency_score }}</div>
+                <div class="text-muted">Care Consistency</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Notice for Empty Collection -->
+    {% if analysis.collection_summary.total_plants == 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <h4>🌱 Start Your AI-Tracked Collection</h4>
+                <p class="mb-3">Add plants to your collection to unlock AI insights, trend analysis, and personalized recommendations!</p>
+                <button class="btn btn-primary me-2" onclick="loadDemoData()">
+                    <i data-feather="zap" class="me-2"></i>Load Demo Collection
+                </button>
+                <button class="btn btn-outline-primary" onclick="addPlant()">
+                    <i data-feather="plus" class="me-2"></i>Add Your First Plant
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- AI Recommendations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="brain" class="me-2"></i>
+                        AI Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recommendations %}
+                        {% for rec in recommendations %}
+                        <div class="recommendation-card {{ rec.priority }}-priority card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title">
+                                        {% if rec.priority == 'high' %}🔴{% elif rec.priority == 'medium' %}🟡{% else %}🟢{% endif %}
+                                        {{ rec.title }}
+                                    </h6>
+                                    <p class="card-text">{{ rec.description }}</p>
+                                    {% if rec.reasoning %}
+                                    <small class="text-muted">
+                                        <strong>AI Analysis:</strong> {{ rec.reasoning }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-success" onclick="implementRecommendation({{ rec.id }})">
+                                        Implement
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="dismissRecommendation({{ rec.id }})">
+                                        Dismiss
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i data-feather="check-circle" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <h5 class="mt-3">Great work! No urgent recommendations right now.</h5>
+                            <p>Your collection appears to be well-managed. Keep up the excellent care!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plant Groupings and Seasonal Guide -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="grid" class="me-2"></i>
+                        Smart Plant Groups
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis.grouping_suggestions %}
+                        {% for group in analysis.grouping_suggestions %}
+                        <div class="plant-group">
+                            <div class="plant-group-header">
+                                {{ group.group_name }}
+                                <small class="text-muted">({{ group.plants|length }} plants)</small>
+                            </div>
+                            <div class="plant-list">
+                                {% for plant in group.plants %}
+                                <span class="plant-item">{{ plant.name }}</span>
+                                {% endfor %}
+                            </div>
+                            <div class="px-3 pb-2">
+                                <small class="text-muted">{{ group.reasoning }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <p>Add more plants to see intelligent grouping suggestions!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seasonal Recommendations -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="sun" class="me-2"></i>
+                        Seasonal Care Guide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6>Current Season: {{ analysis.seasonal_recommendations.current_season.title() }}</h6>
+                    </div>
+                    
+                    {% for activity, advice in analysis.seasonal_recommendations.recommendations.items() %}
+                    <div class="mb-3">
+                        <strong>{{ activity.title() }}:</strong><br>
+                        <span class="text-muted">{{ advice }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Trends and Risk Assessment -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Collection Health Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="healthTrendChart" class="trend-chart"></canvas>
+                    
+                    {% if analysis.health_trends.common_problems %}
+                    <div class="mt-3">
+                        <h6>Common Issues:</h6>
+                        {% for problem, count in analysis.health_trends.common_problems.items() %}
+                        <span class="badge bg-warning me-2">{{ problem }} ({{ count }})</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        Risk Assessment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis.risk_assessments %}
+                        {% for risk in analysis.risk_assessments %}
+                        <div class="alert alert-{{ 'danger' if risk.severity == 'high' else 'warning' if risk.severity == 'medium' else 'info' }}">
+                            <h6>{{ risk.description }}</h6>
+                            <small>{{ risk.recommendation }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-success">
+                            <i data-feather="shield-check" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No risks detected!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Opportunities -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>
+                        Optimization Opportunities
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis.optimization_opportunities %}
+                        <div class="row">
+                            {% for opt in analysis.optimization_opportunities %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ opt.title }}</h6>
+                                        <p class="card-text">{{ opt.description }}</p>
+                                        <div class="mb-2">
+                                            <small class="text-success">
+                                                <strong>Benefit:</strong> {{ opt.potential_benefit }}
+                                            </small>
+                                        </div>
+                                        <small class="text-muted">{{ opt.implementation }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <p>Your collection is already well-optimized! Keep up the great work.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="quick-actions">
+    <div class="btn-group-vertical">
+        <button class="fab" onclick="addPlant()" title="Add Plant">
+            <i data-feather="plus"></i>
+        </button>
+        <button class="fab mt-2" onclick="logCareActivity()" title="Log Care Activity">
+            <i data-feather="droplet"></i>
+        </button>
+        <button class="fab mt-2" onclick="generateReport()" title="Generate Report">
+            <i data-feather="file-text"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    // Initialize Feather icons
+    feather.replace();
+    
+    // Health trend chart
+    const ctx = document.getElementById('healthTrendChart').getContext('2d');
+    const healthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['30 days ago', '24 days', '18 days', '12 days', '6 days', 'Today'],
+            datasets: [{
+                label: 'Collection Health Score',
+                data: [85, 87, 82, 89, 91, {{ analysis.health_trends.overall_health_score }}],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Demo data loader
+    function loadDemoData() {
+        if (confirm('This will add sample plants to demonstrate AI features. Continue?')) {
+            fetch('/collection/api/load_demo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error loading demo data: ' + data.error);
+                }
+            });
+        }
+    }
+    
+    // Function implementations
+    function addPlant() {
+        // Would open add plant modal
+        alert('Add plant functionality would open here');
+    }
+    
+    function logCareActivity() {
+        // Would open care logging modal
+        alert('Care logging functionality would open here');
+    }
+    
+    function generateReport() {
+        // Would generate and download collection report
+        alert('Report generation would happen here');
+    }
+    
+    function implementRecommendation(recId) {
+        fetch(`/collection/api/recommendations/${recId}/implement`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error implementing recommendation');
+            }
+        });
+    }
+    
+    function dismissRecommendation(recId) {
+        fetch(`/collection/api/recommendations/${recId}/dismiss`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error dismissing recommendation');
+            }
+        });
+    }
+</script>
+{% endblock %}
