@@ -1,0 +1,363 @@
+# orchid_continuum_master.py
+import os, time, json
+from io import BytesIO
+from urllib.parse import urljoin, urlparse, unquote
+from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
+from PIL import Image
+import pandas as pd
+from tqdm import tqdm
+
+# Google & OpenAI
+import gspread
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+import openai
+
+# Web UI
+from flask import Flask, render_template_string, request
+
+# ----------------- CONFIG -----------------
+SERVICE_ACCOUNT_FILE = 'service_account.json'
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+GOOGLE_DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'YOUR_DRIVE_FOLDER_ID')
+GOOGLE_SHEET_NAME = os.environ.get('GOOGLE_SHEET_NAME', 'OrchidContinuumDB')
+
+SVO_BASE = 'https://sunsetvalleyorchids.com/htm'
+GENERA = ["Sarcochilus","Cattleya","Paphiopedilum","Dendrobium","Zygopetalum","Cymbidium"]
+YEARS = list(range(2013, 2020))
+MAX_PAGES = 8
+REQUEST_SLEEP = 0.6
+BATCH_SIZE_AI = 10
+IMAGE_SAVE_FOLDER = "SVO_Images"
+os.makedirs(IMAGE_SAVE_FOLDER, exist_ok=True)
+
+# OpenAI
+if not OPENAI_API_KEY:
+    raise Exception("Set OPENAI_API_KEY as an env var.")
+openai.api_key = OPENAI_API_KEY
+
+# Google auth
+SCOPES = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/spreadsheets']
+creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+gspread_client = gspread.authorize(creds)
+drive_service = build('drive','v3', credentials=creds)
+
+# Open or create sheet
+try:
+    sh = gspread_client.open(GOOGLE_SHEET_NAME)
+except gspread.SpreadsheetNotFound:
+    sh = gspread_client.create(GOOGLE_SHEET_NAME)
+sheet = sh.sheet1
+
+# Ensure header row
+HEADERS = ["Genus","Year","PageURL","HybridID","HybridName","Parentage","BreederNotes","ImagePaths","ScrapeStatus","ImageStatus","AIStatus","TraitSummary","LastUpdated"]
+if sheet.row_count == 0 or sheet.row_values(1) != HEADERS:
+    sheet.clear()
+    sheet.append_row(HEADERS)
+
+# ----------------- HELPERS -----------------
+def append_row_safe(row):
+    for _ in range(5):
+        try:
+            sheet.append_row(row)
+            return True
+        except Exception as e:
+            print("Sheet append error:", e)
+            time.sleep(2)
+    return False
+
+def upload_bytes_to_drive(file_bytes, filename, mime='image/jpeg', parent_folder_id=GOOGLE_DRIVE_FOLDER_ID):
+    media = MediaIoBaseUpload(BytesIO(file_bytes), mimetype=mime, resumable=True)
+    file_metadata = {'name': filename, 'parents': [parent_folder_id]}
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    return f"https://drive.google.com/uc?id={file['id']}"
+
+def normalize_filename(hybrid_id, src_url):
+    parsed = urlparse(src_url)
+    base = unquote(os.path.basename(parsed.path)) or 'image.jpg'
+    return f"{hybrid_id}_{base}"
+
+# ----------------- SCRAPER (dynamic) -----------------
+def discover_genus_pages(genus):
+    candidates = [
+        f"{SVO_BASE}/offerings_{genus.lower()}.html",
+        f"{SVO_BASE}/offerings_{genus.lower()}s.html",
+        f"{SVO_BASE}/photo_textlist.php?toptext={genus}%20Photos",
+        f"{SVO_BASE}/htm/offerings_{genus.lower()}.html"
+    ]
+    valid=[]
+    for url in candidates:
+        try:
+            r = requests.get(url, timeout=12)
+            if r.status_code==200 and len(r.text)>400:
+                valid.append(url)
+        except:
+            pass
+    return valid
+
+def dynamic_parse_entries(soup, page_url):
+    results=[]
+    # first, scan tables
+    for table in soup.find_all("table"):
+        rows = table.find_all("tr")
+        for tr in rows:
+            text = ' '.join(td.get_text(" ", strip=True) for td in tr.find_all(["td","th"]))
+            imgs = [urljoin(page_url, img.get("src")) for img in tr.find_all("img") if img.get("src")]
+            if text.strip() and (imgs or " x " in text.lower() or "Sarc." in text or "Hybrid" in text):
+                rec = {"name": None, "parentage": None, "notes": None, "images": imgs}
+                # heuristics
+                if imgs:
+                    rec['notes'] = text
+                    # attempt to detect parentage substring with 'x'
+                    if ' x ' in text.lower():
+                        rec['parentage']=text[text.lower().find(' x ')-60:text.lower().find(' x ')+60]
+                else:
+                    rec['notes'] = text
+                # try to set name from bold or first token
+                b = tr.find("b")
+                if b: rec['name']=b.get_text(strip=True)
+                results.append(rec)
+    # fallback: images
+    if not results:
+        for img in soup.find_all("img"):
+            src = img.get("src")
+            if not src: continue
+            url = urljoin(page_url, src)
+            p = img.find_parent(["p","div","td","li"])
+            note = p.get_text(" ", strip=True) if p else ""
+            results.append({"name": None,"parentage":None,"notes":note,"images":[url]})
+    return results
+
+def scrape_all_svo(genus_list=GENERA, years=YEARS, max_pages=MAX_PAGES):
+    total=0
+    for genus in genus_list:
+        pages = discover_genus_pages(genus)
+        if not pages:
+            print(f"No pages detected for {genus}, skipping.")
+            continue
+        for landing in pages:
+            for page_num in range(1, max_pages+1):
+                page_url = f"{landing}&page={page_num}" if '?' in landing else f"{landing}?page={page_num}"
+                try:
+                    r = requests.get(page_url, timeout=15)
+                    if r.status_code!=200 or len(r.text)<300:
+                        break
+                    soup = BeautifulSoup(r.text, 'html.parser')
+                    entries = dynamic_parse_entries(soup, page_url)
+                    if not entries:
+                        break
+                    for ent in entries:
+                        total +=1
+                        hybrid_id = f"{genus[:3].upper()}_{total}"
+                        row = [genus, '', page_url, hybrid_id, ent.get("name",""), ent.get("parentage",""), ent.get("notes",""), "", "scraped", "", "pending_ai", "", datetime.utcnow().isoformat()]
+                        append_row_safe(row)
+                        # download images and upload to Drive
+                        image_paths=[]
+                        for img_src in ent.get("images",[]):
+                            try:
+                                time.sleep(REQUEST_SLEEP)
+                                ir = requests.get(img_src, timeout=15)
+                                if ir.status_code==200 and len(ir.content)>800:
+                                    # ensure jpeg
+                                    try:
+                                        im = Image.open(BytesIO(ir.content)).convert('RGB')
+                                        with BytesIO() as out:
+                                            im.save(out, format='JPEG', quality=85)
+                                            data = out.getvalue()
+                                    except Exception:
+                                        data = ir.content
+                                    fname = normalize_filename(hybrid_id, img_src)
+                                    drive_url = upload_bytes_to_drive(data, fname)
+                                    image_paths.append(drive_url)
+                            except Exception as e:
+                                print("img error", e)
+                        # update row with images
+                        image_paths_str = ", ".join(image_paths)
+                        row = [genus, '', page_url, hybrid_id, ent.get("name",""), ent.get("parentage",""), ent.get("notes",""), image_paths_str, "scraped", ("images_downloaded" if image_paths else "no_images"), "pending_ai", "", datetime.utcnow().isoformat()]
+                        append_row_safe(row)
+                    time.sleep(REQUEST_SLEEP)
+                except Exception as e:
+                    print("page fetch error", e)
+                    break
+    print("Scrape finished, total entries:", total)
+    return total
+
+# ----------------- AI Trait Extraction -----------------
+def call_gpt_for_traits(image_urls, breeder_notes=""):
+    prompt = (
+        "You are a botanical orchid specialist. For the following image URLs, produce a JSON array where each element "
+        "corresponds to an image and contains: primary_color (string), secondary_color (string or null), pattern (one of: none, spots, blotch, speckles, streaks, mosaic), "
+        "labellum_description (short string), petal_shape (round/ovate/oblong/starry/pointed), petal_overlap (none/partial/overlapping), "
+        "estimated_diameter_mm (number or null), inflorescence (spike/cluster/pendant/other), plant_habit (compact/arching/upright), mutations (list), confidence (0-1). "
+        "Also include a short summary comparing observed traits to breeder notes provided."
+    )
+    prompt += "\n\nBreeder notes: " + (breeder_notes or "None") + "\n\nImage URLs:\n" + "\n".join(image_urls)
+    try:
+        resp = openai.ChatCompletion.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=1200, temperature=0.0)
+        text = resp['choices'][0]['message']['content']
+        # try to extract JSON
+        try:
+            return json.loads(text)
+        except:
+            # if not pure JSON, return wrapped
+            return {"raw": text}
+    except Exception as e:
+        print("OpenAI error:", e)
+        return {"error": str(e)}
+
+def run_ai_on_pending(batch_size=BATCH_SIZE_AI):
+    records = sheet.get_all_records()
+    processed=0
+    for i,rec in enumerate(records, start=2):
+        ai_status = rec.get("AIStatus","").lower()
+        images = rec.get("ImagePaths","")
+        if ai_status.startswith("pending") and images:
+            urls = [u.strip() for u in images.split(",") if u.strip()]
+            result = call_gpt_for_traits(urls, breeder_notes=rec.get("BreederNotes",""))
+            trait_summary = json.dumps(result, ensure_ascii=False)
+            try:
+                sheet.update_cell(i, HEADERS.index("TraitSummary")+1, trait_summary)
+                sheet.update_cell(i, HEADERS.index("AIStatus")+1, "ai_complete")
+                processed += 1
+            except Exception as e:
+                print("sheet update ai error", e)
+            if processed % batch_size == 0:
+                time.sleep(2)
+    print("AI pass complete, processed:", processed)
+    return processed
+
+# ----------------- INHERITANCE & POPULATION ANALYSIS -----------------
+def run_population_inheritance_analysis(limit=200):
+    records = sheet.get_all_records()
+    data=[]
+    for rec in records:
+        if rec.get("Parentage") and rec.get("TraitSummary"):
+            try:
+                traits = json.loads(rec["TraitSummary"])
+            except:
+                traits = {"raw": rec["TraitSummary"]}
+            data.append({"parentage": rec["Parentage"], "traits": traits, "name": rec.get("HybridName")})
+    sample = data[:limit]
+    prompt = "You are a plant geneticist. Given hybrid parentage and observed trait JSON, analyze inheritance patterns across these records. Produce a JSON summary listing candidate traits, evidence_count, suggested inheritance_model (dominant/recessive/co-dominant/complex), and recommended tests.\n\nRecords:\n"
+    for rec in sample:
+        prompt += f"Parentage: {rec['parentage']}\nTraits: {json.dumps(rec['traits'])}\n\n"
+    try:
+        resp = openai.ChatCompletion.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=1500, temperature=0.0)
+        analysis = resp['choices'][0]['message']['content']
+    except Exception as e:
+        analysis = f"AI error: {e}"
+    # write to Drive
+    name = f"inheritance_report_{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}.txt"
+    file = drive_service.files().create(body={"name":name,"parents":[GOOGLE_DRIVE_FOLDER_ID]}, media_body=MediaIoBaseUpload(BytesIO(analysis.encode('utf-8')), mimetype='text/plain'), fields='id').execute()
+    url = f"https://drive.google.com/uc?id={file['id']}"
+    return {"text": analysis, "url": url}
+
+# ----------------- VOCABULARY STANDARDIZATION -----------------
+def build_flower_vocabulary(sample_terms=None):
+    sample = sample_terms or ["yellow", "gold", "salmon", "red", "pink", "spotted", "blotch", "peloric","starry","flat","full-shaped"]
+    prompt = ("Create a JSON mapping of common floral description variants to a standardized canonical term and a short botanical definition, compatible with EOL style. "
+              "Return only JSON.\n\nSample terms: " + ", ".join(sample))
+    try:
+        resp = openai.ChatCompletion.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=800, temperature=0.0)
+        jtext = resp['choices'][0]['message']['content']
+        try:
+            return json.loads(jtext)
+        except:
+            # attempt to find JSON in text
+            import re
+            m = re.search(r'(\{.*\})', jtext, re.S)
+            if m:
+                return json.loads(m.group(1))
+            return {"raw": jtext}
+    except Exception as e:
+        print("vocab ai error", e)
+        return {"error": str(e)}
+
+# ----------------- AGGREGATE STATISTICS -----------------
+def aggregate_and_correlate():
+    records = sheet.get_all_records()
+    rows=[]
+    for rec in records:
+        try:
+            traits = json.loads(rec.get("TraitSummary","{}"))
+        except:
+            traits = {}
+        row = {"HybridName": rec.get("HybridName",""), "Genus": rec.get("Genus","")}
+        # common fields pick
+        if isinstance(traits, dict):
+            for k in ["primary_color","pattern","petal_shape","inflorescence","plant_habit"]:
+                row[k] = traits.get(k)
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    csv_name = f"aggregated_traits_{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}.csv"
+    df.to_csv(csv_name, index=False)
+    # upload CSV
+    with open(csv_name,'rb') as f:
+        media = MediaIoBaseUpload(f, mimetype='text/csv', resumable=True)
+        file = drive_service.files().create(body={"name":csv_name,"parents":[GOOGLE_DRIVE_FOLDER_ID]}, media_body=media, fields='id').execute()
+        csv_url = f"https://drive.google.com/uc?id={file['id']}"
+    # ask AI for interpretive summary
+    prompt = f"I have aggregated orchid trait CSV at {csv_url}. Provide a short interpretive summary of correlations and suggested follow-up tests."
+    try:
+        resp = openai.ChatCompletion.create(model="gpt-4o", messages=[{"role":"user","content":prompt}], max_tokens=800, temperature=0.0)
+        summary = resp['choices'][0]['message']['content']
+    except Exception as e:
+        summary = f"AI error: {e}"
+    # upload summary
+    name = f"aggregate_summary_{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}.txt"
+    file = drive_service.files().create(body={"name":name,"parents":[GOOGLE_DRIVE_FOLDER_ID]}, media_body=MediaIoBaseUpload(BytesIO(summary.encode('utf-8')), mimetype='text/plain'), fields='id').execute()
+    return {"csv_url": csv_url, "summary": summary, "summary_url": f"https://drive.google.com/uc?id={file['id']}"}
+
+# ----------------- FLASK DASHBOARD -----------------
+app = Flask(__name__)
+DASH_HTML = """
+<!doctype html>
+<title>Orchid Continuum Control</title>
+<h1>Orchid Continuum - Master Control</h1>
+<p>Sheet: {{sheet}}</p>
+<form action="/scrape" method="post"><button type="submit">Run Full Scrape (discover + download images)</button></form>
+<form action="/ai" method="post"><button type="submit">Run AI on Pending Hybrids</button></form>
+<form action="/inherit" method="post"><button type="submit">Run Inheritance Population Analysis</button></form>
+<form action="/aggregate" method="post"><button type="submit">Run Aggregate Correlation & Summary</button></form>
+<form action="/vocab" method="post"><button type="submit">Build Standard Floral Vocabulary</button></form>
+<p>Check Google Sheet for row-level progress flags (ScrapeStatus/ImageStatus/AIStatus).</p>
+"""
+
+@app.route('/')
+def index():
+    return render_template_string(DASH_HTML, sheet=GOOGLE_SHEET_NAME)
+
+@app.route('/scrape', methods=['POST'])
+def scrape_route():
+    total = scrape_all_svo()
+    return f"Scrape complete. Found approx {total} entries. Check sheet."
+
+@app.route('/ai', methods=['POST'])
+def ai_route():
+    count = run_ai_on_pending()
+    return f"AI pass complete, processed: {count}."
+
+@app.route('/inherit', methods=['POST'])
+def inherit_route():
+    res = run_population_inheritance_analysis()
+    return f"Inheritance analysis complete: {res.get('url')}"
+
+@app.route('/aggregate', methods=['POST'])
+def aggregate_route():
+    res = aggregate_and_correlate()
+    return f"Aggregate CSV: {res.get('csv_url')}. Summary uploaded."
+
+@app.route('/vocab', methods=['POST'])
+def vocab_route():
+    v = build_flower_vocabulary()
+    # write vocab JSON to Drive
+    name=f"flower_vocabulary_{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}.json"
+    file = drive_service.files().create(body={"name":name,"parents":[GOOGLE_DRIVE_FOLDER_ID]}, media_body=MediaIoBaseUpload(BytesIO(json.dumps(v,ensure_ascii=False).encode('utf-8')), mimetype='application/json'), fields='id').execute()
+    url=f"https://drive.google.com/uc?id={file['id']}"
+    return f"Vocabulary created and uploaded: {url}"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=3000)
