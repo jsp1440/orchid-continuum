@@ -11,6 +11,7 @@ with the existing high-performance SVO extraction system.
 import json
 import os
 import logging
+import csv
 from pathlib import Path
 from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
@@ -67,6 +68,91 @@ class OrchidGlossaryLoader:
             
         except Exception as e:
             logger.error(f"Error loading glossary: {str(e)}")
+            return False
+    
+    def load_glossary_csv(self, csv_path: str, force_reload: bool = False) -> bool:
+        """
+        Load the botanical glossary from CSV file with robust validation.
+        
+        Args:
+            csv_path: Path to CSV file
+            force_reload: Force reload even if already loaded
+            
+        Returns:
+            bool: True if loaded successfully with ≥50 terms, False otherwise
+        """
+        if self.loaded and not force_reload:
+            return True
+            
+        try:
+            if not os.path.exists(csv_path):
+                logger.error(f"CSV glossary file not found: {csv_path}")
+                return False
+                
+            # Parse CSV and convert to expected JSON structure
+            terms = {}
+            term_count = 0
+            
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                for row in reader:
+                    term_name = row.get('Term', '').strip()
+                    if not term_name:
+                        continue
+                        
+                    # Parse synonyms (handle various formats)
+                    synonyms_str = row.get('Synonyms', '')
+                    synonyms = []
+                    if synonyms_str and synonyms_str.lower() not in ['none', 'n/a', '']:
+                        # Split by common delimiters
+                        synonyms = [s.strip() for s in re.split(r'[;,|]', synonyms_str) if s.strip()]
+                    
+                    # Parse AI_Derivable (handle boolean conversion)
+                    ai_derivable_str = row.get('AI_Derivable', 'False').strip()
+                    ai_derivable = ai_derivable_str.lower() in ['true', '1', 'yes']
+                    
+                    # Build term data structure
+                    terms[term_name] = {
+                        'category': row.get('Category', '').strip(),
+                        'definition': row.get('Definition', '').strip(),
+                        'synonyms': synonyms,
+                        'search_variants': synonyms,  # Use synonyms as search variants
+                        'standard_source': row.get('Standard Source', '').strip(),
+                        'ai_derivable': ai_derivable,
+                        'measurement_unit': row.get('Measurement Unit', '').strip()
+                    }
+                    
+                    term_count += 1
+            
+            # Validation: require at least 50 terms
+            if term_count < 50:
+                logger.error(f"CSV validation failed: only {term_count} terms found, minimum 50 required")
+                return False
+            
+            # Create expected JSON structure
+            self._glossary_data = {
+                'metadata': {
+                    'source': 'CSV import',
+                    'version': '1.0',
+                    'term_count': term_count,
+                    'source_file': csv_path
+                },
+                'terms': terms
+            }
+            
+            # Build optimized lookup structures
+            self._build_lookup_caches()
+            
+            self.loaded = True
+            logger.info(f"✅ Successfully loaded {term_count} botanical terms from CSV")
+            logger.info(f"📊 Categories: {len(set(t.get('category', '') for t in terms.values() if t.get('category')))}")
+            logger.info(f"🔬 AI derivable terms: {sum(1 for t in terms.values() if t.get('ai_derivable', False))}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error loading CSV glossary: {str(e)}")
             return False
     
     def _build_lookup_caches(self):
