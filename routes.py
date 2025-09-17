@@ -1066,6 +1066,124 @@ def start_enhanced_collection_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/chat-search-assist', methods=['POST'])
+def search_ai_chat():
+    """AI chat assistant for advanced orchid search"""
+    try:
+        from orchid_ai import openai_client
+        
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        search_context = data.get('search_context', {})
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        # Build context-aware system prompt based on current search state
+        current_filters = []
+        if search_context.get('query'):
+            current_filters.append(f"Search Query: '{search_context['query']}'")
+        if search_context.get('genus'):
+            current_filters.append(f"Genus Filter: {search_context['genus']}")
+        if search_context.get('species'):
+            current_filters.append(f"Species Filter: {search_context['species']}")
+        if search_context.get('location'):
+            current_filters.append(f"Location Filter: {search_context['location']}")
+        if search_context.get('flowering_season'):
+            current_filters.append(f"Flowering Season: {search_context['flowering_season']}")
+        if search_context.get('growth_habit'):
+            current_filters.append(f"Growth Habit: {search_context['growth_habit']}")
+        
+        context_summary = "; ".join(current_filters) if current_filters else "No active filters"
+        
+        system_prompt = f"""You are an expert orchid botanist and search assistant for the Orchid Continuum platform's advanced search interface. You help users navigate complex biological search capabilities and provide expert botanical guidance.
+
+CURRENT SEARCH CONTEXT:
+{context_summary}
+
+YOUR CAPABILITIES:
+1. **Search Assistance**: Help refine search queries, suggest better filters, interpret search results
+2. **Orchid Identification**: Identify species from descriptions, help with taxonomic classification
+3. **Biological Guidance**: Explain search filters like pollination syndromes, mycorrhizal associations, ecological niches
+4. **Research Support**: Guide users through advanced biological analysis filters, trait discovery, conservation status
+5. **Botanical Education**: Explain scientific terminology, morphological features, breeding concepts
+
+SEARCH FILTERS AVAILABLE:
+- Taxonomic: Genus, species, author, hybrid status
+- Geographic: Location, elevation, climate zones
+- Biological: Pollination, mycorrhizal relationships, ecological roles
+- Morphological: Flower characteristics, growth habits, plant size
+- Conservation: Threat status, protection level
+- AI Analysis: Computer vision insights, trait discovery, pattern recognition
+
+RESPONSE STYLE:
+- Be concise but informative (max 200 words)
+- Use botanical terminology appropriately
+- Suggest specific search actions when relevant
+- Reference current search context when applicable
+- Offer concrete next steps for research
+
+When suggesting search refinements, reference specific filter categories and values that would help the user's research goals."""
+
+        user_prompt = f"""User question: {message}
+
+Based on the current search context, provide helpful guidance for orchid research and search refinement."""
+        
+        # Call OpenAI API using GPT-5 (the newest OpenAI model released August 7, 2025)
+        # do not change this unless explicitly requested by the user
+        response = openai_client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Parse for suggested search actions
+        suggested_actions = []
+        message_lower = message.lower()
+        
+        # Detect if user is asking for specific filters
+        if 'show me' in message_lower or 'find' in message_lower:
+            if 'cattleya' in message_lower:
+                suggested_actions.append({"type": "filter", "field": "genus", "value": "Cattleya"})
+            elif 'dendrobium' in message_lower:
+                suggested_actions.append({"type": "filter", "field": "genus", "value": "Dendrobium"})
+            elif 'phalaenopsis' in message_lower:
+                suggested_actions.append({"type": "filter", "field": "genus", "value": "Phalaenopsis"})
+            elif 'oncidium' in message_lower:
+                suggested_actions.append({"type": "filter", "field": "genus", "value": "Oncidium"})
+            
+        if 'fragrant' in message_lower:
+            suggested_actions.append({"type": "search", "query": "fragrant scented perfume"})
+        if 'miniature' in message_lower or 'small' in message_lower:
+            suggested_actions.append({"type": "search", "query": "miniature dwarf compact small"})
+        if 'epiphyte' in message_lower:
+            suggested_actions.append({"type": "filter", "field": "growth_habit", "value": "epiphytic"})
+        if 'terrestrial' in message_lower:
+            suggested_actions.append({"type": "filter", "field": "growth_habit", "value": "terrestrial"})
+        
+        logger.info(f"🔍 Search AI Chat: {message[:50]}... -> {len(ai_response)} chars")
+        
+        return jsonify({
+            'success': True,
+            'response': ai_response,
+            'suggested_actions': suggested_actions,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Search AI chat error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'fallback_response': 'I apologize, but I\'m having trouble processing your search question right now. Please try rephrasing your query or contact support if the issue persists.'
+        }), 500
+
 @app.route('/partner/api/send-to-ai', methods=['POST'])
 def gary_ai_chat():
     """Real AI chat endpoint for Gary's messaging system"""
