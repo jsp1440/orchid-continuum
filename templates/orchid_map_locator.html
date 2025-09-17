@@ -1,0 +1,744 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Orchid Map Locator - Orchid Continuum{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+
+<!-- Marker Cluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<style>
+    #orchidMap {
+        height: 600px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .map-controls {
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .filter-chip {
+        display: inline-block;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 5px 12px;
+        margin: 3px;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-chip:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+    
+    .filter-chip.active {
+        background: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+    
+    .map-legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        line-height: 1.5;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        border-radius: 8px;
+    }
+    
+    .orchid-popup {
+        max-width: 300px;
+    }
+    
+    .orchid-popup img {
+        width: 100%;
+        max-height: 150px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    
+    .popup-title {
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+    
+    .popup-detail {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin: 2px 0;
+    }
+    
+    .view-orchid-btn {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 0.8em;
+        display: inline-block;
+        margin-top: 5px;
+    }
+    
+    .view-orchid-btn:hover {
+        background: #218838;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="map" class="me-2"></i>Interactive Orchid Map Locator
+            </h1>
+            <p class="lead text-muted">Explore orchid distributions worldwide with our interactive mapping system</p>
+        </div>
+    </div>
+    
+    <!-- Statistics Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-card">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h4 id="totalOrchids">0</h4>
+                        <small>Total Orchids</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 id="visibleOrchids">0</h4>
+                        <small>Visible on Map</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 id="uniqueGenera">0</h4>
+                        <small>Unique Genera</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 id="dataSourcesCount">0</h4>
+                        <small>Data Sources</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="map-controls">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="mb-3"><i data-feather="filter" class="me-2"></i>Filter Orchids</h6>
+                        
+                        <!-- Search Box -->
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i data-feather="search"></i></span>
+                                <input type="text" class="form-control" id="mapSearch" 
+                                       placeholder="Search orchids to display on map...">
+                                <button class="btn btn-primary" onclick="searchOrchidsOnMap()">
+                                    <i data-feather="search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Filters -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Quick Filters:</label><br>
+                            <span class="filter-chip active" data-filter="all" onclick="toggleFilter(this)">All Orchids</span>
+                            <span class="filter-chip" data-filter="species" onclick="toggleFilter(this)">Species Only</span>
+                            <span class="filter-chip" data-filter="hybrids" onclick="toggleFilter(this)">Hybrids Only</span>
+                            <span class="filter-chip" data-filter="flowering" onclick="toggleFilter(this)">Currently Flowering</span>
+                            <span class="filter-chip" data-filter="featured" onclick="toggleFilter(this)">Featured</span>
+                            <span class="filter-chip" data-filter="rare" onclick="toggleFilter(this)">Rare/Endangered</span>
+                        </div>
+                        
+                        <!-- Genus Filter -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Genus:</label><br>
+                            <span class="filter-chip" data-genus="Cattleya" onclick="toggleGenusFilter(this)">Cattleya</span>
+                            <span class="filter-chip" data-genus="Phalaenopsis" onclick="toggleGenusFilter(this)">Phalaenopsis</span>
+                            <span class="filter-chip" data-genus="Dendrobium" onclick="toggleGenusFilter(this)">Dendrobium</span>
+                            <span class="filter-chip" data-genus="Oncidium" onclick="toggleGenusFilter(this)">Oncidium</span>
+                            <span class="filter-chip" data-genus="Paphiopedilum" onclick="toggleGenusFilter(this)">Paphiopedilum</span>
+                            <span class="filter-chip" data-genus="Cymbidium" onclick="toggleGenusFilter(this)">Cymbidium</span>
+                        </div>
+                        
+                        <!-- Region Filter -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Regions:</label><br>
+                            <span class="filter-chip" data-region="North America" onclick="toggleRegionFilter(this)">North America</span>
+                            <span class="filter-chip" data-region="South America" onclick="toggleRegionFilter(this)">South America</span>
+                            <span class="filter-chip" data-region="Southeast Asia" onclick="toggleRegionFilter(this)">Southeast Asia</span>
+                            <span class="filter-chip" data-region="Australia" onclick="toggleRegionFilter(this)">Australia</span>
+                            <span class="filter-chip" data-region="Europe" onclick="toggleRegionFilter(this)">Europe</span>
+                            <span class="filter-chip" data-region="Africa" onclick="toggleRegionFilter(this)">Africa</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6 class="mb-3"><i data-feather="layers" class="me-2"></i>Data Layers</h6>
+                        
+                        <!-- Layer Controls -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="localDbLayer" checked onchange="toggleLayer('localDb')">
+                            <label class="form-check-label" for="localDbLayer">
+                                <span class="legend-color" style="background-color: #28a745;"></span>
+                                Local Database
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="gbifLayer" onchange="toggleLayer('gbif')">
+                            <label class="form-check-label" for="gbifLayer">
+                                <span class="legend-color" style="background-color: #007bff;"></span>
+                                GBIF Occurrences
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="inaturalistLayer" onchange="toggleLayer('inaturalist')">
+                            <label class="form-check-label" for="inaturalistLayer">
+                                <span class="legend-color" style="background-color: #6f42c1;"></span>
+                                iNaturalist
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="userSubmissionsLayer" onchange="toggleLayer('submissions')">
+                            <label class="form-check-label" for="userSubmissionsLayer">
+                                <span class="legend-color" style="background-color: #fd7e14;"></span>
+                                User Submissions
+                            </label>
+                        </div>
+                        
+                        <!-- Map Actions -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="resetMapView()">
+                                <i data-feather="globe" class="me-1"></i>Reset View
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="exportMapData()">
+                                <i data-feather="download" class="me-1"></i>Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="position-relative">
+                <div id="orchidMap"></div>
+                <div id="mapLoading" class="loading-overlay">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="mt-2">Loading orchid data...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Panel -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="list" class="me-2"></i>Orchids Currently Visible on Map
+                        <span class="badge bg-primary ms-2" id="visibleCount">0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="mapResults" class="row">
+                        <div class="col-12 text-center text-muted">
+                            <p>Loading orchid data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<!-- Marker Cluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+// Global variables
+let orchidMap;
+let markersCluster;
+let currentOrchidData = [];
+let activeFilters = {
+    type: 'all',
+    genus: [],
+    region: [],
+    search: ''
+};
+let dataLayers = {
+    localDb: true,
+    gbif: false,
+    inaturalist: false,
+    submissions: false
+};
+
+// Initialize the map
+function initializeMap() {
+    console.log('🗺️ Initializing Interactive Orchid Map Locator');
+    
+    // Create map centered on world view
+    orchidMap = L.map('orchidMap').setView([20.0, 0.0], 2);
+    
+    // Add tile layers
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18
+    });
+    
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 18
+    });
+    
+    // Add base layers control
+    const baseLayers = {
+        "Street Map": osmLayer,
+        "Satellite": satelliteLayer
+    };
+    
+    // Add default layer
+    osmLayer.addTo(orchidMap);
+    
+    // Initialize marker cluster group
+    markersCluster = L.markerClusterGroup({
+        chunkedLoading: true,
+        chunkProgress: updateLoadingProgress
+    });
+    
+    orchidMap.addLayer(markersCluster);
+    
+    // Add layer control
+    L.control.layers(baseLayers).addTo(orchidMap);
+    
+    // Add scale control
+    L.control.scale().addTo(orchidMap);
+    
+    // Load initial orchid data
+    loadOrchidData();
+}
+
+// Load orchid data from API
+async function loadOrchidData() {
+    try {
+        console.log('📡 Loading orchid data for map...');
+        
+        const response = await fetch('/api/orchid-map-data');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        currentOrchidData = data.orchids || [];
+        
+        console.log(`📊 Loaded ${currentOrchidData.length} orchids for mapping`);
+        
+        // Update statistics
+        updateStatistics();
+        
+        // Apply current filters and update map
+        applyFiltersAndUpdateMap();
+        
+        // Hide loading overlay
+        document.getElementById('mapLoading').style.display = 'none';
+        
+    } catch (error) {
+        console.error('❌ Error loading orchid data:', error);
+        document.getElementById('mapLoading').innerHTML = `
+            <div class="text-center">
+                <div class="text-danger">
+                    <i data-feather="alert-circle" class="me-2"></i>
+                    Error loading orchid data. Please try again.
+                </div>
+                <button class="btn btn-primary mt-2" onclick="loadOrchidData()">
+                    <i data-feather="refresh-cw" class="me-1"></i>Retry
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Update statistics display
+function updateStatistics() {
+    const totalOrchids = currentOrchidData.length;
+    const uniqueGenera = new Set(currentOrchidData.map(o => o.genus || 'Unknown')).size;
+    const dataSources = new Set(currentOrchidData.map(o => o.ingestion_source || 'Unknown')).size;
+    
+    document.getElementById('totalOrchids').textContent = totalOrchids;
+    document.getElementById('uniqueGenera').textContent = uniqueGenera;
+    document.getElementById('dataSourcesCount').textContent = dataSources;
+}
+
+// Apply filters and update map
+function applyFiltersAndUpdateMap() {
+    // Filter orchid data based on active filters
+    let filteredData = currentOrchidData.filter(orchid => {
+        // Type filter
+        if (activeFilters.type === 'species' && (orchid.is_hybrid || orchid.scientific_name?.includes(' × '))) {
+            return false;
+        }
+        if (activeFilters.type === 'hybrids' && !orchid.is_hybrid && !orchid.scientific_name?.includes(' × ')) {
+            return false;
+        }
+        if (activeFilters.type === 'flowering' && !orchid.is_flowering) {
+            return false;
+        }
+        if (activeFilters.type === 'featured' && !orchid.is_featured) {
+            return false;
+        }
+        if (activeFilters.type === 'rare' && !orchid.conservation_status) {
+            return false;
+        }
+        
+        // Genus filter
+        if (activeFilters.genus.length > 0 && !activeFilters.genus.includes(orchid.genus)) {
+            return false;
+        }
+        
+        // Region filter
+        if (activeFilters.region.length > 0 && !activeFilters.region.includes(orchid.region)) {
+            return false;
+        }
+        
+        // Search filter
+        if (activeFilters.search) {
+            const searchLower = activeFilters.search.toLowerCase();
+            const searchableText = [
+                orchid.scientific_name,
+                orchid.common_names,
+                orchid.genus,
+                orchid.species,
+                orchid.display_name
+            ].join(' ').toLowerCase();
+            
+            if (!searchableText.includes(searchLower)) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    // Only show orchids with coordinates
+    filteredData = filteredData.filter(orchid => 
+        orchid.decimal_latitude !== null && 
+        orchid.decimal_longitude !== null
+    );
+    
+    console.log(`🔍 Filtered to ${filteredData.length} orchids for map display`);
+    
+    // Update visible count
+    document.getElementById('visibleOrchids').textContent = filteredData.length;
+    document.getElementById('visibleCount').textContent = filteredData.length;
+    
+    // Clear existing markers
+    markersCluster.clearLayers();
+    
+    // Add filtered markers to map
+    addOrchidMarkers(filteredData);
+    
+    // Update results panel
+    updateResultsPanel(filteredData);
+}
+
+// Add orchid markers to map
+function addOrchidMarkers(orchids) {
+    orchids.forEach(orchid => {
+        if (orchid.decimal_latitude && orchid.decimal_longitude) {
+            // Determine marker color based on data source
+            let markerColor = '#28a745'; // Default green for local DB
+            if (orchid.ingestion_source === 'GBIF') markerColor = '#007bff';
+            else if (orchid.ingestion_source === 'iNaturalist') markerColor = '#6f42c1';
+            else if (orchid.ingestion_source === 'User Upload') markerColor = '#fd7e14';
+            
+            // Create custom icon
+            const customIcon = L.divIcon({
+                className: 'custom-orchid-marker',
+                html: `<div style="background-color: ${markerColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            
+            // Create marker
+            const marker = L.marker([orchid.decimal_latitude, orchid.decimal_longitude], {
+                icon: customIcon
+            });
+            
+            // Create popup content
+            const popupContent = createOrchidPopup(orchid);
+            marker.bindPopup(popupContent, {maxWidth: 300});
+            
+            // Add to cluster
+            markersCluster.addLayer(marker);
+        }
+    });
+}
+
+// Create popup content for orchid
+function createOrchidPopup(orchid) {
+    const imageUrl = orchid.google_drive_id 
+        ? `/api/drive-image-proxy/${orchid.google_drive_id}`
+        : orchid.image_url || '/static/images/orchid_placeholder.png';
+    
+    return `
+        <div class="orchid-popup">
+            <img src="${imageUrl}" alt="${orchid.display_name || orchid.scientific_name}" 
+                 onerror="this.src='/static/images/orchid_placeholder.png'">
+            <div class="popup-title">${orchid.display_name || orchid.scientific_name || 'Unknown Orchid'}</div>
+            <div class="popup-detail"><strong>Genus:</strong> ${orchid.genus || 'Unknown'}</div>
+            <div class="popup-detail"><strong>Region:</strong> ${orchid.region || 'Unknown'}</div>
+            <div class="popup-detail"><strong>Source:</strong> ${orchid.ingestion_source || 'Unknown'}</div>
+            ${orchid.conservation_status ? `<div class="popup-detail"><strong>Status:</strong> ${orchid.conservation_status}</div>` : ''}
+            <a href="/orchid/${orchid.id}" class="view-orchid-btn" target="_blank">
+                <i data-feather="external-link" style="width: 12px; height: 12px;"></i> View Details
+            </a>
+        </div>
+    `;
+}
+
+// Update results panel
+function updateResultsPanel(orchids) {
+    const resultsContainer = document.getElementById('mapResults');
+    
+    if (orchids.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="col-12 text-center text-muted">
+                <p><i data-feather="search" class="me-2"></i>No orchids match your current filters</p>
+                <button class="btn btn-outline-primary" onclick="clearAllFilters()">Clear Filters</button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Show first 12 results as cards
+    const displayOrchids = orchids.slice(0, 12);
+    const cardsHtml = displayOrchids.map(orchid => {
+        const imageUrl = orchid.google_drive_id 
+            ? `/api/drive-image-proxy/${orchid.google_drive_id}`
+            : orchid.image_url || '/static/images/orchid_placeholder.png';
+        
+        return `
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100">
+                    <img src="${imageUrl}" class="card-img-top" style="height: 150px; object-fit: cover;"
+                         alt="${orchid.display_name || orchid.scientific_name}"
+                         onerror="this.src='/static/images/orchid_placeholder.png'">
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1" style="font-size: 0.9em;">
+                            ${orchid.display_name || orchid.scientific_name || 'Unknown Orchid'}
+                        </h6>
+                        <p class="card-text small text-muted mb-1">
+                            <strong>${orchid.genus || 'Unknown'}</strong><br>
+                            ${orchid.region || 'Unknown region'}
+                        </p>
+                        <a href="/orchid/${orchid.id}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    resultsContainer.innerHTML = cardsHtml;
+    
+    // Add "show more" if there are more results
+    if (orchids.length > 12) {
+        resultsContainer.innerHTML += `
+            <div class="col-12 text-center mt-3">
+                <p class="text-muted">Showing 12 of ${orchids.length} results</p>
+                <a href="/search?coordinates_only=true" class="btn btn-primary">
+                    View All in Search Results
+                </a>
+            </div>
+        `;
+    }
+    
+    // Re-initialize Feather icons for new content
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+// Filter functions
+function toggleFilter(element) {
+    // Remove active from all filter chips in the same group
+    element.parentNode.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    
+    // Add active to clicked chip
+    element.classList.add('active');
+    
+    // Update active filter
+    activeFilters.type = element.dataset.filter;
+    
+    // Apply filters
+    applyFiltersAndUpdateMap();
+}
+
+function toggleGenusFilter(element) {
+    const genus = element.dataset.genus;
+    
+    if (element.classList.contains('active')) {
+        // Remove filter
+        element.classList.remove('active');
+        activeFilters.genus = activeFilters.genus.filter(g => g !== genus);
+    } else {
+        // Add filter
+        element.classList.add('active');
+        activeFilters.genus.push(genus);
+    }
+    
+    applyFiltersAndUpdateMap();
+}
+
+function toggleRegionFilter(element) {
+    const region = element.dataset.region;
+    
+    if (element.classList.contains('active')) {
+        // Remove filter
+        element.classList.remove('active');
+        activeFilters.region = activeFilters.region.filter(r => r !== region);
+    } else {
+        // Add filter
+        element.classList.add('active');
+        activeFilters.region.push(region);
+    }
+    
+    applyFiltersAndUpdateMap();
+}
+
+function searchOrchidsOnMap() {
+    const searchValue = document.getElementById('mapSearch').value.trim();
+    activeFilters.search = searchValue;
+    applyFiltersAndUpdateMap();
+}
+
+function clearAllFilters() {
+    // Reset filters
+    activeFilters = {
+        type: 'all',
+        genus: [],
+        region: [],
+        search: ''
+    };
+    
+    // Reset UI
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    document.querySelector('[data-filter="all"]').classList.add('active');
+    document.getElementById('mapSearch').value = '';
+    
+    // Apply filters
+    applyFiltersAndUpdateMap();
+}
+
+function toggleLayer(layerType) {
+    dataLayers[layerType] = !dataLayers[layerType];
+    // TODO: Implement different data source layers
+    console.log(`🔄 Toggled ${layerType} layer:`, dataLayers[layerType]);
+}
+
+function resetMapView() {
+    orchidMap.setView([20.0, 0.0], 2);
+}
+
+function exportMapData() {
+    // TODO: Implement data export functionality
+    alert('Export functionality coming soon!');
+}
+
+function updateLoadingProgress(processed, total, elapsed, layersArray) {
+    if (processed === total) {
+        console.log(`✅ Loaded ${total} orchid markers on map`);
+    }
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Orchid Map Locator page loaded');
+    initializeMap();
+});
+
+// Handle map search on Enter key
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('mapSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchOrchidsOnMap();
+        }
+    });
+});
+</script>
+{% endblock %}

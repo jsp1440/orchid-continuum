@@ -71,8 +71,11 @@ except ImportError:
     repair_system = None
 # DISABLED: from comprehensive_diagnostic_system import start_diagnostic_monitoring, get_diagnostic_status
 from eol_integration import EOLIntegrator
+from external_databases.gbif_integration import GBIFIntegrator
 from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
+from orchid_nursery_directory import get_nursery_directory, register_nursery_api_routes
+from orchid_society_directory import get_society_directory, register_society_api_routes
 from orchid_genetics_laboratory import register_genetics_laboratory
 from citizen_science_platform import citizen_science_bp
 from quantum_care_routes import register_quantum_care_routes
@@ -565,6 +568,131 @@ def orchid_genera():
             'success': False,
             'error': str(e),
             'genera': []
+        }), 500
+
+@app.route('/api/image-counts')
+def orchid_image_counts():
+    """Get image counts by genus and type (species/hybrids) for search interface"""
+    try:
+        # Count images by genus - only count orchids that have images
+        genus_counts_result = db.session.query(
+            OrchidRecord.genus,
+            func.count(OrchidRecord.id).label('count')
+        ).filter(
+            and_(
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.genus != '',
+                OrchidRecord.genus != 'Unknown',
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).group_by(OrchidRecord.genus).all()
+        
+        # Convert to dictionary
+        genus_counts = {genus: count for genus, count in genus_counts_result if genus}
+        
+        # Count total images
+        total_with_images = sum(genus_counts.values())
+        
+        # Count by type (species vs hybrids) - with images only
+        species_count = db.session.query(OrchidRecord).filter(
+            and_(
+                or_(OrchidRecord.is_species == True, 
+                    OrchidRecord.scientific_name.like('% %'),  # Species typically have 2 words
+                    OrchidRecord.scientific_name.notlike('%×%')),  # Not hybrid symbol
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).count()
+        
+        hybrid_count = db.session.query(OrchidRecord).filter(
+            and_(
+                or_(OrchidRecord.is_hybrid == True,
+                    OrchidRecord.scientific_name.like('%×%'),  # Contains hybrid symbol
+                    OrchidRecord.grex_name.isnot(None)),  # Has grex name
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).count()
+        
+        # Count primary hybrids (F1 crosses between species)
+        primary_hybrid_count = db.session.query(OrchidRecord).filter(
+            and_(
+                or_(OrchidRecord.is_hybrid == True,
+                    OrchidRecord.scientific_name.like('%×%')),
+                OrchidRecord.generation == 1,
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).count()
+        
+        # Count currently flowering (if we have bloom time data)
+        flowering_count = db.session.query(OrchidRecord).filter(
+            and_(
+                OrchidRecord.bloom_time.isnot(None),
+                OrchidRecord.bloom_time != '',
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).count()
+        
+        # Count featured orchids with images
+        featured_count = db.session.query(OrchidRecord).filter(
+            and_(
+                OrchidRecord.is_featured == True,
+                or_(
+                    OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_filename.isnot(None),
+                    OrchidRecord.image_url.isnot(None)
+                )
+            )
+        ).count()
+        
+        # Count top genera with most images (for Quick Actions)
+        top_genera = sorted(genus_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+        logger.info(f"📊 Image counts: {total_with_images} total, {len(genus_counts)} genera with images")
+        
+        return jsonify({
+            'success': True,
+            'genus_counts': genus_counts,
+            'type_counts': {
+                'species': species_count,
+                'hybrids': hybrid_count,
+                'primary_hybrids': primary_hybrid_count
+            },
+            'special_counts': {
+                'flowering': flowering_count,
+                'featured': featured_count
+            },
+            'top_genera': dict(top_genera),
+            'total_with_images': total_with_images,
+            'last_updated': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error loading orchid image counts: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'genus_counts': {},
+            'type_counts': {},
+            'total_with_images': 0
         }), 500
 
 @app.route('/api/orchid-ecosystem-data')
@@ -9675,6 +9803,233 @@ def api_search():
             'pagination': {'page': 1, 'per_page': per_page, 'total': 0, 'pages': 0}
         }), 500
 
+@app.route('/api/search-external-databases')
+def api_search_external_databases():
+    """
+    API endpoint for searching external databases (EOL and GBIF)
+    Provides comprehensive orchid data from global biodiversity databases
+    """
+    try:
+        # Get search parameters
+        query = request.args.get('query', '').strip()
+        databases = request.args.getlist('databases') or ['EOL', 'GBIF']  # Default to both
+        limit = min(request.args.get('limit', 20, type=int), 50)  # Reasonable limit for external APIs
+        offset = request.args.get('offset', 0, type=int)
+        
+        if not query:
+            return jsonify({
+                'success': False,
+                'error': 'Query parameter is required',
+                'results': {}
+            }), 400
+        
+        logger.info(f"🔍 External database search: '{query}' in {databases}")
+        
+        results = {
+            'query': query,
+            'databases_searched': databases,
+            'timestamp': datetime.now().isoformat(),
+            'local_matches': [],
+            'external_results': {},
+            'summary': {
+                'total_external_results': 0,
+                'total_local_matches': 0,
+                'databases_with_results': [],
+                'search_duration_ms': 0
+            }
+        }
+        
+        start_time = time.time()
+        
+        # Search local database first for cross-referencing
+        try:
+            local_query = OrchidRecord.query.filter(
+                or_(
+                    OrchidRecord.scientific_name.ilike(f'%{query}%'),
+                    OrchidRecord.display_name.ilike(f'%{query}%'),
+                    OrchidRecord.genus.ilike(f'%{query}%'),
+                    OrchidRecord.common_names.ilike(f'%{query}%')
+                )
+            ).limit(10)
+            
+            local_matches = []
+            for orchid in local_query.all():
+                local_matches.append({
+                    'id': orchid.id,
+                    'scientific_name': orchid.scientific_name,
+                    'display_name': orchid.display_name,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'common_names': orchid.common_names,
+                    'region': orchid.region,
+                    'image_url': f'/api/drive-photo/{orchid.google_drive_id}' if orchid.google_drive_id else '/static/images/orchid_placeholder.svg',
+                    'has_eol_data': bool(orchid.eol_page_id),
+                    'has_gbif_data': bool(orchid.gbif_occurrence_key or orchid.gbif_species_key)
+                })
+            
+            results['local_matches'] = local_matches
+            results['summary']['total_local_matches'] = len(local_matches)
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Local search failed: {e}")
+        
+        # Search EOL if requested
+        if 'EOL' in databases:
+            try:
+                eol_integrator = EOLIntegrator()
+                eol_search_result = eol_integrator.search_eol_species(query)
+                
+                if eol_search_result:
+                    # Get detailed page data
+                    eol_page_data = eol_integrator.get_eol_page_data(str(eol_search_result.get('id', '')))
+                    
+                    if eol_page_data:
+                        eol_traits = eol_integrator.extract_trait_data(eol_page_data)
+                        
+                        eol_result = {
+                            'source': 'Encyclopedia of Life (EOL)',
+                            'source_url': f"https://eol.org/pages/{eol_search_result.get('id')}",
+                            'page_id': eol_search_result.get('id'),
+                            'scientific_name': eol_traits.get('scientific_name'),
+                            'common_names': eol_traits.get('common_names', [])[:5],  # Limit to 5
+                            'synonyms': eol_traits.get('synonyms', [])[:5],
+                            'descriptions': eol_traits.get('descriptions', [])[:2],  # Limit to 2 descriptions
+                            'images': eol_traits.get('images', [])[:3],  # Limit to 3 images
+                            'taxonomic_concepts': eol_traits.get('taxonomic_concepts', []),
+                            'last_updated': eol_traits.get('last_updated'),
+                            'citation': f"Encyclopedia of Life. Available from https://eol.org/pages/{eol_search_result.get('id')}. Accessed {datetime.now().strftime('%B %d, %Y')}."
+                        }
+                        
+                        results['external_results']['EOL'] = eol_result
+                        results['summary']['total_external_results'] += 1
+                        results['summary']['databases_with_results'].append('EOL')
+                        
+                        logger.info(f"✅ EOL data found for '{query}'")
+                    else:
+                        logger.warning(f"⚠️ EOL page data not found for '{query}'")
+                else:
+                    logger.info(f"ℹ️ No EOL results for '{query}'")
+                    
+            except Exception as e:
+                logger.error(f"❌ EOL search error: {e}")
+                results['external_results']['EOL'] = {
+                    'error': f'EOL search failed: {str(e)}',
+                    'source': 'Encyclopedia of Life (EOL)'
+                }
+        
+        # Search GBIF if requested
+        if 'GBIF' in databases:
+            try:
+                gbif_integrator = GBIFIntegrator()
+                
+                # Search for species
+                gbif_species_result = gbif_integrator.search_species(query, limit=5)
+                
+                if gbif_species_result and gbif_species_result.get('results'):
+                    # Get the first/best match
+                    best_species = gbif_species_result['results'][0]
+                    species_key = str(best_species.get('key'))
+                    
+                    # Get detailed taxonomy
+                    taxonomy = gbif_integrator.get_taxonomy(species_key)
+                    
+                    # Get occurrences with images
+                    occurrences = gbif_integrator.get_occurrences(
+                        species_key=species_key,
+                        limit=min(limit, 20),
+                        with_images=True
+                    )
+                    
+                    # Get conservation status
+                    conservation = gbif_integrator.get_conservation_status(species_key)
+                    
+                    gbif_result = {
+                        'source': 'Global Biodiversity Information Facility (GBIF)',
+                        'source_url': f"https://www.gbif.org/species/{species_key}",
+                        'species_key': species_key,
+                        'scientific_name': taxonomy.get('scientific_name') if taxonomy else best_species.get('scientificName'),
+                        'canonical_name': taxonomy.get('canonical_name') if taxonomy else best_species.get('canonicalName'),
+                        'author': taxonomy.get('author') if taxonomy else best_species.get('authorship'),
+                        'taxonomic_status': taxonomy.get('taxonomic_status') if taxonomy else best_species.get('taxonomicStatus'),
+                        'rank': taxonomy.get('rank') if taxonomy else best_species.get('rank'),
+                        'family': taxonomy.get('family') if taxonomy else best_species.get('family'),
+                        'genus': taxonomy.get('genus') if taxonomy else best_species.get('genus'),
+                        'vernacular_names': taxonomy.get('vernacular_names', [])[:5] if taxonomy else [],
+                        'synonyms': [s.get('scientificName') for s in taxonomy.get('synonyms', [])[:5]] if taxonomy else [],
+                        'occurrence_count': occurrences.get('count', 0) if occurrences else 0,
+                        'occurrences': occurrences.get('results', [])[:10] if occurrences else [],  # Limit to 10 occurrences
+                        'conservation_status': conservation,
+                        'images': [],
+                        'last_updated': taxonomy.get('last_updated') if taxonomy else datetime.now().isoformat(),
+                        'citation': f"GBIF.org ({datetime.now().year}). GBIF Occurrence Download. https://www.gbif.org/species/{species_key}. Accessed {datetime.now().strftime('%B %d, %Y')}."
+                    }
+                    
+                    # Extract images from occurrences
+                    for occurrence in gbif_result['occurrences']:
+                        occurrence_images = occurrence.get('images', [])
+                        for img in occurrence_images:
+                            if len(gbif_result['images']) < 5:  # Limit to 5 images
+                                gbif_result['images'].append({
+                                    'url': img.get('url'),
+                                    'title': img.get('title', 'GBIF Occurrence Image'),
+                                    'creator': img.get('creator'),
+                                    'license': img.get('license'),
+                                    'rights_holder': img.get('rights_holder'),
+                                    'occurrence_key': occurrence.get('gbif_key'),
+                                    'location': occurrence.get('location', {})
+                                })
+                    
+                    results['external_results']['GBIF'] = gbif_result
+                    results['summary']['total_external_results'] += 1
+                    results['summary']['databases_with_results'].append('GBIF')
+                    
+                    logger.info(f"✅ GBIF data found for '{query}' - {gbif_result['occurrence_count']} occurrences")
+                else:
+                    logger.info(f"ℹ️ No GBIF species results for '{query}'")
+                    
+            except Exception as e:
+                logger.error(f"❌ GBIF search error: {e}")
+                results['external_results']['GBIF'] = {
+                    'error': f'GBIF search failed: {str(e)}',
+                    'source': 'Global Biodiversity Information Facility (GBIF)'
+                }
+        
+        # Calculate search duration
+        search_duration = (time.time() - start_time) * 1000
+        results['summary']['search_duration_ms'] = round(search_duration, 2)
+        
+        # Add research opportunities
+        results['research_opportunities'] = []
+        if results['local_matches'] and results['external_results']:
+            results['research_opportunities'].append({
+                'type': 'data_enrichment',
+                'message': f"Found {len(results['local_matches'])} local specimens that could be enriched with external database information."
+            })
+        
+        if results['external_results'] and not results['local_matches']:
+            results['research_opportunities'].append({
+                'type': 'collection_gap',
+                'message': f"External databases have information about '{query}' but it's not in the local collection."
+            })
+        
+        success = results['summary']['total_external_results'] > 0 or results['summary']['total_local_matches'] > 0
+        
+        logger.info(f"🎯 External search completed: {results['summary']['total_external_results']} external + {results['summary']['total_local_matches']} local results in {search_duration:.1f}ms")
+        
+        return jsonify({
+            'success': success,
+            'results': results,
+            'message': f"Found data in {len(results['summary']['databases_with_results'])} external databases" if success else "No results found in external databases"
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ External database search error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'External database search failed: {str(e)}',
+            'results': {}
+        }), 500
+
 @app.route('/api/weather')
 def api_weather():
     """API endpoint for weather data"""
@@ -11224,4 +11579,181 @@ except ImportError as e:
     logger.warning(f"Enhanced systems not available: {e}")
 except Exception as e:
     logger.error(f"Error registering enhanced systems: {e}")
+
+# Interactive Map Locator Route
+@app.route('/orchid-map-locator')
+def orchid_map_locator():
+    """Interactive map interface for orchid locator with enhanced search functionality"""
+    try:
+        # Get some basic statistics for the map interface
+        total_orchids = db.session.query(OrchidRecord).count()
+        orchids_with_coordinates = db.session.query(OrchidRecord).filter(
+            OrchidRecord.decimal_latitude.isnot(None),
+            OrchidRecord.decimal_longitude.isnot(None)
+        ).count()
+        
+        # Get available genera for quick filters
+        genera = db.session.query(OrchidRecord.genus).filter(
+            OrchidRecord.genus.isnot(None),
+            OrchidRecord.genus != ''
+        ).distinct().order_by(OrchidRecord.genus).limit(50).all()
+        genera_list = [g[0] for g in genera if g[0]]
+        
+        # Get available regions
+        regions = db.session.query(OrchidRecord.region).filter(
+            OrchidRecord.region.isnot(None),
+            OrchidRecord.region != ''
+        ).distinct().order_by(OrchidRecord.region).limit(50).all()
+        regions_list = [r[0] for r in regions if r[0]]
+        
+        logger.info(f"🗺️ Orchid Map Locator: {orchids_with_coordinates}/{total_orchids} orchids with coordinates")
+        
+        return render_template('orchid_map_locator.html',
+                             total_orchids=total_orchids,
+                             orchids_with_coordinates=orchids_with_coordinates,
+                             genera=genera_list,
+                             regions=regions_list)
+    except Exception as e:
+        logger.error(f"❌ Error in orchid map locator: {e}")
+        flash('Error loading map interface', 'error')
+        return redirect(url_for('search'))
+
+# Register Nursery Directory API Routes
+try:
+    register_nursery_api_routes(app)
+    logger.info("🌱 Orchid Nursery Directory API routes registered successfully")
+except Exception as e:
+    logger.error(f"❌ Error registering nursery directory routes: {e}")
+
+# Register Society Directory API Routes  
+try:
+    register_society_api_routes(app)
+    logger.info("🏛️ Orchid Society Directory API routes registered successfully")
+except Exception as e:
+    logger.error(f"❌ Error registering society directory routes: {e}")
+
+# API endpoint for map coordinate data
+@app.route('/api/orchid-map-coordinates')
+def api_orchid_map_coordinates():
+    """Get orchid coordinates for map display with filtering"""
+    try:
+        # Get query parameters
+        genus = request.args.get('genus', '')
+        region = request.args.get('region', '')
+        source = request.args.get('source', '')
+        limit = min(int(request.args.get('limit', 1000)), 2000)
+        
+        # Build query
+        query = db.session.query(
+            OrchidRecord.id,
+            OrchidRecord.display_name,
+            OrchidRecord.scientific_name,
+            OrchidRecord.genus,
+            OrchidRecord.species,
+            OrchidRecord.decimal_latitude,
+            OrchidRecord.decimal_longitude,
+            OrchidRecord.region,
+            OrchidRecord.country,
+            OrchidRecord.image_url,
+            OrchidRecord.google_drive_id,
+            OrchidRecord.ingestion_source,
+            OrchidRecord.is_featured
+        ).filter(
+            OrchidRecord.decimal_latitude.isnot(None),
+            OrchidRecord.decimal_longitude.isnot(None)
+        )
+        
+        # Apply filters
+        if genus:
+            query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+        if region:
+            query = query.filter(OrchidRecord.region.ilike(f'%{region}%'))
+        if source:
+            query = query.filter(OrchidRecord.ingestion_source.ilike(f'%{source}%'))
+            
+        # Get results
+        orchids = query.limit(limit).all()
+        
+        # Format for map display
+        coordinates = []
+        for orchid in orchids:
+            # Get image URL
+            image_url = get_image_with_recovery(orchid)
+            
+            coordinates.append({
+                'id': orchid.id,
+                'name': orchid.display_name or orchid.scientific_name,
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'species': orchid.species,
+                'lat': float(orchid.decimal_latitude),
+                'lng': float(orchid.decimal_longitude),
+                'region': orchid.region,
+                'country': orchid.country,
+                'image_url': image_url,
+                'source': orchid.ingestion_source,
+                'is_featured': orchid.is_featured,
+                'url': url_for('view_orchid', id=orchid.id)
+            })
+        
+        logger.info(f"🗺️ Map API: Returned {len(coordinates)} orchid coordinates")
+        
+        return jsonify({
+            'success': True,
+            'coordinates': coordinates,
+            'total': len(coordinates),
+            'filters': {
+                'genus': genus,
+                'region': region,
+                'source': source,
+                'limit': limit
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error in map coordinates API: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Enhanced search export functionality
+@app.route('/api/export-search-results')
+def api_export_search_results():
+    """Export current search results for download"""
+    try:
+        # Get all current search parameters
+        query_params = dict(request.args)
+        
+        # Perform search with same parameters as main search
+        # This is a simplified version - in production you'd want to reuse the main search logic
+        search_query = db.session.query(OrchidRecord)
+        
+        # Apply basic filters (simplified)
+        if 'q' in query_params and query_params['q']:
+            search_term = query_params['q']
+            search_query = search_query.filter(
+                or_(
+                    OrchidRecord.display_name.ilike(f'%{search_term}%'),
+                    OrchidRecord.scientific_name.ilike(f'%{search_term}%'),
+                    OrchidRecord.genus.ilike(f'%{search_term}%')
+                )
+            )
+        
+        # Limit results for export
+        orchids = search_query.limit(1000).all()
+        
+        # Generate CSV content
+        csv_content = "ID,Display Name,Scientific Name,Genus,Species,Region,Country,Source\n"
+        for orchid in orchids:
+            csv_content += f"{orchid.id},{orchid.display_name or ''},{orchid.scientific_name or ''},{orchid.genus or ''},{orchid.species or ''},{orchid.region or ''},{orchid.country or ''},{orchid.ingestion_source or ''}\n"
+        
+        # Create response
+        response = make_response(csv_content)
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename=orchid_search_results_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        logger.info(f"📊 Exported {len(orchids)} orchid search results")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Error exporting search results: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
