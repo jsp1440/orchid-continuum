@@ -79,7 +79,7 @@
                     </div>
                 </div>
                 
-                <div class="row g-3 mb-4">
+                <div class="row g-3 mb-3">
                     <div class="col-6 col-md-3">
                         <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#growingFilters">
                             <i data-feather="settings" class="me-2"></i>Growing
@@ -98,6 +98,58 @@
                     <div class="col-6 col-md-3">
                         <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#systemFilters">
                             <i data-feather="database" class="me-2"></i>System
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- NEW: BIOLOGICAL ANALYSIS FILTER BUTTONS -->
+                <div class="alert alert-info mb-3">
+                    <i data-feather="zap" class="me-2"></i><strong>NEW: Biological Analysis Filters</strong>
+                    <p class="mb-0 small">Advanced biological search capabilities powered by AI analysis, trait discovery, and ecological relationships.</p>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#aiAnalysisFilters">
+                            <i data-feather="cpu" class="me-2"></i>AI Insights
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#traitDiscoveryFilters">
+                            <i data-feather="trending-up" class="me-2"></i>Traits
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#pollinatorFilters">
+                            <i data-feather="heart" class="me-2"></i>Pollinators
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mycorrhizalFilters">
+                            <i data-feather="link" class="me-2"></i>Mycorrhizal
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#ecologicalFilters">
+                            <i data-feather="globe" class="me-2"></i>Ecological
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#morphTraitFilters">
+                            <i data-feather="maximize" class="me-2"></i>Morphology+
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#behavioralFilters">
+                            <i data-feather="users" class="me-2"></i>Behavior
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#conservationPlusFilters">
+                            <i data-feather="alert-triangle" class="me-2"></i>Conservation+
                         </button>
                     </div>
                 </div>
@@ -668,6 +720,434 @@
                     </a>
                     {% endfor %}
                 </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- NEW: COMPREHENSIVE BIOLOGICAL ANALYSIS FILTER SECTIONS -->
+    {% if filter_options %}
+    <div class="container-fluid mb-4">
+        <div class="row">
+            <div class="col-12">
+                <form method="GET" id="biologicalFiltersForm" class="biological-filters">
+                    <!-- Hidden inputs to preserve existing filters -->
+                    <input type="hidden" name="q" value="{{ query or '' }}">
+                    <input type="hidden" name="genus" value="{{ genus or '' }}">
+                    <input type="hidden" name="species" value="{{ species or '' }}">
+                    
+                    <!-- 1. AI ANALYSIS FILTERS -->
+                    <div class="collapse mt-3" id="aiAnalysisFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="cpu" class="me-2"></i>AI-Generated Insights
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_ai_description" class="form-label">Has AI Description:</label>
+                                        <select class="form-select" name="has_ai_description" id="has_ai_description">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_ai_description == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_ai_description == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_confidence_min" class="form-label">Min AI Confidence:</label>
+                                        <input type="number" class="form-control" name="ai_confidence_min" id="ai_confidence_min"
+                                               placeholder="0.0" min="0" max="1" step="0.1" value="{{ ai_confidence_min }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_confidence_max" class="form-label">Max AI Confidence:</label>
+                                        <input type="number" class="form-control" name="ai_confidence_max" id="ai_confidence_max"
+                                               placeholder="1.0" min="0" max="1" step="0.1" value="{{ ai_confidence_max }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_metadata_category" class="form-label">AI Metadata Category:</label>
+                                        <select class="form-select" name="ai_metadata_category" id="ai_metadata_category">
+                                            <option value="">-- Any Category --</option>
+                                            <option value="morphology" {{ 'selected' if ai_metadata_category == 'morphology' }}>Morphological Analysis</option>
+                                            <option value="flowering" {{ 'selected' if ai_metadata_category == 'flowering' }}>Flowering Patterns</option>
+                                            <option value="habitat" {{ 'selected' if ai_metadata_category == 'habitat' }}>Habitat Analysis</option>
+                                            <option value="taxonomy" {{ 'selected' if ai_metadata_category == 'taxonomy' }}>Taxonomic Identification</option>
+                                            <option value="cultural" {{ 'selected' if ai_metadata_category == 'cultural' }}>Cultural Requirements</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. TRAIT DISCOVERY FILTERS -->
+                    <div class="collapse mt-3" id="traitDiscoveryFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="trending-up" class="me-2"></i>Trait Discovery & Inheritance
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_predicted_traits" class="form-label">Has Predicted Traits:</label>
+                                        <select class="form-select" name="has_predicted_traits" id="has_predicted_traits">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_predicted_traits == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_predicted_traits == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="has_observed_traits" class="form-label">Has Observed Traits:</label>
+                                        <select class="form-select" name="has_observed_traits" id="has_observed_traits">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_observed_traits == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_observed_traits == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="trait_inheritance_pattern" class="form-label">Inheritance Pattern:</label>
+                                        <select class="form-select" name="trait_inheritance_pattern" id="trait_inheritance_pattern">
+                                            <option value="">-- Any Pattern --</option>
+                                            <option value="dominant" {{ 'selected' if trait_inheritance_pattern == 'dominant' }}>Dominant</option>
+                                            <option value="recessive" {{ 'selected' if trait_inheritance_pattern == 'recessive' }}>Recessive</option>
+                                            <option value="codominant" {{ 'selected' if trait_inheritance_pattern == 'codominant' }}>Co-dominant</option>
+                                            <option value="polygenic" {{ 'selected' if trait_inheritance_pattern == 'polygenic' }}>Polygenic</option>
+                                            <option value="maternal" {{ 'selected' if trait_inheritance_pattern == 'maternal' }}>Maternal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="breeding_value_min" class="form-label">Min Breeding Value:</label>
+                                        <input type="number" class="form-control" name="breeding_value_min" id="breeding_value_min"
+                                               placeholder="0.0" min="0" max="1" step="0.1" value="{{ breeding_value_min }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3. POLLINATOR RELATIONSHIP FILTERS -->
+                    <div class="collapse mt-3" id="pollinatorFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="heart" class="me-2"></i>Pollinator Relationships
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="pollination_method_filter" class="form-label">Pollination Method:</label>
+                                        <select class="form-select" name="pollination_method_filter" id="pollination_method_filter">
+                                            <option value="">-- Any Method --</option>
+                                            <option value="hand_pollination" {{ 'selected' if pollination_method_filter == 'hand_pollination' }}>Hand Pollination</option>
+                                            <option value="natural" {{ 'selected' if pollination_method_filter == 'natural' }}>Natural</option>
+                                            <option value="assisted" {{ 'selected' if pollination_method_filter == 'assisted' }}>Assisted</option>
+                                            <option value="self_pollination" {{ 'selected' if pollination_method_filter == 'self_pollination' }}>Self-Pollination</option>
+                                            <option value="cross_pollination" {{ 'selected' if pollination_method_filter == 'cross_pollination' }}>Cross-Pollination</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="pollinator_type" class="form-label">Pollinator Type:</label>
+                                        <select class="form-select" name="pollinator_type" id="pollinator_type">
+                                            <option value="">-- Any Pollinator --</option>
+                                            <option value="bee" {{ 'selected' if pollinator_type == 'bee' }}>Bees</option>
+                                            <option value="fly" {{ 'selected' if pollinator_type == 'fly' }}>Flies</option>
+                                            <option value="wasp" {{ 'selected' if pollinator_type == 'wasp' }}>Wasps</option>
+                                            <option value="beetle" {{ 'selected' if pollinator_type == 'beetle' }}>Beetles</option>
+                                            <option value="butterfly" {{ 'selected' if pollinator_type == 'butterfly' }}>Butterflies</option>
+                                            <option value="moth" {{ 'selected' if pollinator_type == 'moth' }}>Moths</option>
+                                            <option value="bird" {{ 'selected' if pollinator_type == 'bird' }}>Birds</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="pollination_strategy" class="form-label">Pollination Strategy:</label>
+                                        <select class="form-select" name="pollination_strategy" id="pollination_strategy">
+                                            <option value="">-- Any Strategy --</option>
+                                            <option value="reward" {{ 'selected' if pollination_strategy == 'reward' }}>Reward-based</option>
+                                            <option value="deception" {{ 'selected' if pollination_strategy == 'deception' }}>Deception</option>
+                                            <option value="sexual_deception" {{ 'selected' if pollination_strategy == 'sexual_deception' }}>Sexual Deception</option>
+                                            <option value="food_deception" {{ 'selected' if pollination_strategy == 'food_deception' }}>Food Deception</option>
+                                            <option value="shelter_deception" {{ 'selected' if pollination_strategy == 'shelter_deception' }}>Shelter Deception</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="has_pollinator_data" class="form-label">Has Pollinator Data:</label>
+                                        <select class="form-select" name="has_pollinator_data" id="has_pollinator_data">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_pollinator_data == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_pollinator_data == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 4. MYCORRHIZAL ASSOCIATION FILTERS -->
+                    <div class="collapse mt-3" id="mycorrhizalFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="link" class="me-2"></i>Mycorrhizal Associations
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="fungal_partner_genus" class="form-label">Fungal Partner Genus:</label>
+                                        <select class="form-select" name="fungal_partner_genus" id="fungal_partner_genus">
+                                            <option value="">-- Any Fungal Genus --</option>
+                                            <option value="Rhizoctonia" {{ 'selected' if fungal_partner_genus == 'Rhizoctonia' }}>Rhizoctonia</option>
+                                            <option value="Tulasnella" {{ 'selected' if fungal_partner_genus == 'Tulasnella' }}>Tulasnella</option>
+                                            <option value="Ceratobasidium" {{ 'selected' if fungal_partner_genus == 'Ceratobasidium' }}>Ceratobasidium</option>
+                                            <option value="Sebacina" {{ 'selected' if fungal_partner_genus == 'Sebacina' }}>Sebacina</option>
+                                            <option value="Thanatephorus" {{ 'selected' if fungal_partner_genus == 'Thanatephorus' }}>Thanatephorus</option>
+                                            <option value="Waitea" {{ 'selected' if fungal_partner_genus == 'Waitea' }}>Waitea</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="symbiotic_relationship_type" class="form-label">Symbiotic Type:</label>
+                                        <select class="form-select" name="symbiotic_relationship_type" id="symbiotic_relationship_type">
+                                            <option value="">-- Any Type --</option>
+                                            <option value="mutualistic" {{ 'selected' if symbiotic_relationship_type == 'mutualistic' }}>Mutualistic</option>
+                                            <option value="parasitic" {{ 'selected' if symbiotic_relationship_type == 'parasitic' }}>Parasitic</option>
+                                            <option value="commensalistic" {{ 'selected' if symbiotic_relationship_type == 'commensalistic' }}>Commensalistic</option>
+                                            <option value="protocorm" {{ 'selected' if symbiotic_relationship_type == 'protocorm' }}>Protocorm Stage</option>
+                                            <option value="adult" {{ 'selected' if symbiotic_relationship_type == 'adult' }}>Adult Stage</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="has_mycorrhizal_data" class="form-label">Has Mycorrhizal Data:</label>
+                                        <select class="form-select" name="has_mycorrhizal_data" id="has_mycorrhizal_data">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_mycorrhizal_data == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_mycorrhizal_data == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 5. ECOLOGICAL INTERACTION FILTERS -->
+                    <div class="collapse mt-3" id="ecologicalFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="globe" class="me-2"></i>Ecological Interactions
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_companion_plants" class="form-label">Has Companion Plants:</label>
+                                        <select class="form-select" name="has_companion_plants" id="has_companion_plants">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_companion_plants == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_companion_plants == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="environmental_indicator" class="form-label">Environmental Indicator:</label>
+                                        <select class="form-select" name="environmental_indicator" id="environmental_indicator">
+                                            <option value="">-- Any Indicator --</option>
+                                            <option value="high_humidity" {{ 'selected' if environmental_indicator == 'high_humidity' }}>High Humidity</option>
+                                            <option value="low_humidity" {{ 'selected' if environmental_indicator == 'low_humidity' }}>Low Humidity</option>
+                                            <option value="cool_temperature" {{ 'selected' if environmental_indicator == 'cool_temperature' }}>Cool Temperature</option>
+                                            <option value="warm_temperature" {{ 'selected' if environmental_indicator == 'warm_temperature' }}>Warm Temperature</option>
+                                            <option value="bright_light" {{ 'selected' if environmental_indicator == 'bright_light' }}>Bright Light</option>
+                                            <option value="low_light" {{ 'selected' if environmental_indicator == 'low_light' }}>Low Light</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="habitat_complexity" class="form-label">Habitat Complexity:</label>
+                                        <select class="form-select" name="habitat_complexity" id="habitat_complexity">
+                                            <option value="">-- Any Complexity --</option>
+                                            <option value="simple" {{ 'selected' if habitat_complexity == 'simple' }}>Simple</option>
+                                            <option value="moderate" {{ 'selected' if habitat_complexity == 'moderate' }}>Moderate</option>
+                                            <option value="complex" {{ 'selected' if habitat_complexity == 'complex' }}>Complex</option>
+                                            <option value="pristine" {{ 'selected' if habitat_complexity == 'pristine' }}>Pristine</option>
+                                            <option value="disturbed" {{ 'selected' if habitat_complexity == 'disturbed' }}>Disturbed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ecosystem_role" class="form-label">Ecosystem Role:</label>
+                                        <select class="form-select" name="ecosystem_role" id="ecosystem_role">
+                                            <option value="">-- Any Role --</option>
+                                            <option value="pioneer" {{ 'selected' if ecosystem_role == 'pioneer' }}>Pioneer Species</option>
+                                            <option value="climax" {{ 'selected' if ecosystem_role == 'climax' }}>Climax Species</option>
+                                            <option value="indicator" {{ 'selected' if ecosystem_role == 'indicator' }}>Indicator Species</option>
+                                            <option value="keystone" {{ 'selected' if ecosystem_role == 'keystone' }}>Keystone Species</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 6. MORPHOLOGICAL TRAIT FILTERS -->
+                    <div class="collapse mt-3" id="morphTraitFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="maximize" class="me-2"></i>Advanced Morphological Traits
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="root_type" class="form-label">Root Type:</label>
+                                        <select class="form-select" name="root_type" id="root_type">
+                                            <option value="">-- Any Root Type --</option>
+                                            <option value="aerial" {{ 'selected' if root_type == 'aerial' }}>Aerial Roots</option>
+                                            <option value="terrestrial" {{ 'selected' if root_type == 'terrestrial' }}>Terrestrial Roots</option>
+                                            <option value="epiphytic" {{ 'selected' if root_type == 'epiphytic' }}>Epiphytic Roots</option>
+                                            <option value="velamen" {{ 'selected' if root_type == 'velamen' }}>Velamen Present</option>
+                                            <option value="mycorrhizal" {{ 'selected' if root_type == 'mycorrhizal' }}>Mycorrhizal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="maturity_stage" class="form-label">Maturity Stage:</label>
+                                        <select class="form-select" name="maturity_stage" id="maturity_stage">
+                                            <option value="">-- Any Stage --</option>
+                                            <option value="juvenile" {{ 'selected' if maturity_stage == 'juvenile' }}>Juvenile</option>
+                                            <option value="mature" {{ 'selected' if maturity_stage == 'mature' }}>Mature</option>
+                                            <option value="specimen" {{ 'selected' if maturity_stage == 'specimen' }}>Specimen Size</option>
+                                            <option value="blooming" {{ 'selected' if maturity_stage == 'blooming' }}>Blooming Size</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="flower_complexity" class="form-label">Flower Complexity:</label>
+                                        <select class="form-select" name="flower_complexity" id="flower_complexity">
+                                            <option value="">-- Any Complexity --</option>
+                                            <option value="simple" {{ 'selected' if flower_complexity == 'simple' }}>Simple</option>
+                                            <option value="complex" {{ 'selected' if flower_complexity == 'complex' }}>Complex</option>
+                                            <option value="highly_specialized" {{ 'selected' if flower_complexity == 'highly_specialized' }}>Highly Specialized</option>
+                                            <option value="resupinate" {{ 'selected' if flower_complexity == 'resupinate' }}>Resupinate</option>
+                                            <option value="non_resupinate" {{ 'selected' if flower_complexity == 'non_resupinate' }}>Non-resupinate</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="morphological_adaptation" class="form-label">Morphological Adaptation:</label>
+                                        <select class="form-select" name="morphological_adaptation" id="morphological_adaptation">
+                                            <option value="">-- Any Adaptation --</option>
+                                            <option value="drought_tolerance" {{ 'selected' if morphological_adaptation == 'drought_tolerance' }}>Drought Tolerance</option>
+                                            <option value="water_storage" {{ 'selected' if morphological_adaptation == 'water_storage' }}>Water Storage</option>
+                                            <option value="climbing" {{ 'selected' if morphological_adaptation == 'climbing' }}>Climbing Ability</option>
+                                            <option value="miniaturization" {{ 'selected' if morphological_adaptation == 'miniaturization' }}>Miniaturization</option>
+                                            <option value="gigantism" {{ 'selected' if morphological_adaptation == 'gigantism' }}>Gigantism</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 7. BEHAVIORAL MECHANISM FILTERS -->
+                    <div class="collapse mt-3" id="behavioralFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="users" class="me-2"></i>Behavioral Mechanisms
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="mimicry_type" class="form-label">Mimicry Type:</label>
+                                        <select class="form-select" name="mimicry_type" id="mimicry_type">
+                                            <option value="">-- Any Mimicry --</option>
+                                            <option value="batesian" {{ 'selected' if mimicry_type == 'batesian' }}>Batesian Mimicry</option>
+                                            <option value="mullerian" {{ 'selected' if mimicry_type == 'mullerian' }}>Müllerian Mimicry</option>
+                                            <option value="aggressive" {{ 'selected' if mimicry_type == 'aggressive' }}>Aggressive Mimicry</option>
+                                            <option value="sexual" {{ 'selected' if mimicry_type == 'sexual' }}>Sexual Mimicry</option>
+                                            <option value="floral" {{ 'selected' if mimicry_type == 'floral' }}>Floral Mimicry</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="deception_strategy" class="form-label">Deception Strategy:</label>
+                                        <select class="form-select" name="deception_strategy" id="deception_strategy">
+                                            <option value="">-- Any Strategy --</option>
+                                            <option value="pseudocopulation" {{ 'selected' if deception_strategy == 'pseudocopulation' }}>Pseudocopulation</option>
+                                            <option value="false_nectar" {{ 'selected' if deception_strategy == 'false_nectar' }}>False Nectar</option>
+                                            <option value="brood_site" {{ 'selected' if deception_strategy == 'brood_site' }}>Brood Site Mimicry</option>
+                                            <option value="food_source" {{ 'selected' if deception_strategy == 'food_source' }}>Food Source Mimicry</option>
+                                            <option value="shelter" {{ 'selected' if deception_strategy == 'shelter' }}>Shelter Mimicry</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="attraction_mechanism" class="form-label">Attraction Mechanism:</label>
+                                        <select class="form-select" name="attraction_mechanism" id="attraction_mechanism">
+                                            <option value="">-- Any Mechanism --</option>
+                                            <option value="visual" {{ 'selected' if attraction_mechanism == 'visual' }}>Visual Attraction</option>
+                                            <option value="chemical" {{ 'selected' if attraction_mechanism == 'chemical' }}>Chemical Attraction</option>
+                                            <option value="tactile" {{ 'selected' if attraction_mechanism == 'tactile' }}>Tactile Attraction</option>
+                                            <option value="thermal" {{ 'selected' if attraction_mechanism == 'thermal' }}>Thermal Attraction</option>
+                                            <option value="multimodal" {{ 'selected' if attraction_mechanism == 'multimodal' }}>Multimodal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="behavioral_adaptation" class="form-label">Behavioral Adaptation:</label>
+                                        <select class="form-select" name="behavioral_adaptation" id="behavioral_adaptation">
+                                            <option value="">-- Any Adaptation --</option>
+                                            <option value="circadian" {{ 'selected' if behavioral_adaptation == 'circadian' }}>Circadian Flowering</option>
+                                            <option value="seasonal" {{ 'selected' if behavioral_adaptation == 'seasonal' }}>Seasonal Timing</option>
+                                            <option value="trap_lining" {{ 'selected' if behavioral_adaptation == 'trap_lining' }}>Trap-lining</option>
+                                            <option value="specialized_timing" {{ 'selected' if behavioral_adaptation == 'specialized_timing' }}>Specialized Timing</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 8. CONSERVATION STATUS PLUS FILTERS -->
+                    <div class="collapse mt-3" id="conservationPlusFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="alert-triangle" class="me-2"></i>Advanced Conservation Status
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="conservation_priority" class="form-label">Conservation Priority:</label>
+                                        <select class="form-select" name="conservation_priority" id="conservation_priority">
+                                            <option value="">-- Any Priority --</option>
+                                            <option value="critical" {{ 'selected' if conservation_priority == 'critical' }}>Critical</option>
+                                            <option value="high" {{ 'selected' if conservation_priority == 'high' }}>High</option>
+                                            <option value="moderate" {{ 'selected' if conservation_priority == 'moderate' }}>Moderate</option>
+                                            <option value="low" {{ 'selected' if conservation_priority == 'low' }}>Low</option>
+                                            <option value="stable" {{ 'selected' if conservation_priority == 'stable' }}>Stable</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="rarity_indicator" class="form-label">Rarity Indicator:</label>
+                                        <select class="form-select" name="rarity_indicator" id="rarity_indicator">
+                                            <option value="">-- Any Rarity --</option>
+                                            <option value="extremely_rare" {{ 'selected' if rarity_indicator == 'extremely_rare' }}>Extremely Rare</option>
+                                            <option value="rare" {{ 'selected' if rarity_indicator == 'rare' }}>Rare</option>
+                                            <option value="uncommon" {{ 'selected' if rarity_indicator == 'uncommon' }}>Uncommon</option>
+                                            <option value="locally_rare" {{ 'selected' if rarity_indicator == 'locally_rare' }}>Locally Rare</option>
+                                            <option value="common" {{ 'selected' if rarity_indicator == 'common' }}>Common</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="threat_level" class="form-label">Threat Level:</label>
+                                        <select class="form-select" name="threat_level" id="threat_level">
+                                            <option value="">-- Any Threat --</option>
+                                            <option value="extinct" {{ 'selected' if threat_level == 'extinct' }}>Extinct</option>
+                                            <option value="critically_endangered" {{ 'selected' if threat_level == 'critically_endangered' }}>Critically Endangered</option>
+                                            <option value="endangered" {{ 'selected' if threat_level == 'endangered' }}>Endangered</option>
+                                            <option value="vulnerable" {{ 'selected' if threat_level == 'vulnerable' }}>Vulnerable</option>
+                                            <option value="near_threatened" {{ 'selected' if threat_level == 'near_threatened' }}>Near Threatened</option>
+                                            <option value="least_concern" {{ 'selected' if threat_level == 'least_concern' }}>Least Concern</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="protection_status" class="form-label">Protection Status:</label>
+                                        <select class="form-select" name="protection_status" id="protection_status">
+                                            <option value="">-- Any Status --</option>
+                                            <option value="cites_i" {{ 'selected' if protection_status == 'cites_i' }}>CITES Appendix I</option>
+                                            <option value="cites_ii" {{ 'selected' if protection_status == 'cites_ii' }}>CITES Appendix II</option>
+                                            <option value="protected" {{ 'selected' if protection_status == 'protected' }}>Legally Protected</option>
+                                            <option value="unprotected" {{ 'selected' if protection_status == 'unprotected' }}>Unprotected</option>
+                                            <option value="endemic" {{ 'selected' if protection_status == 'endemic' }}>Endemic Species</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </form>
             </div>
         </div>
     </div>

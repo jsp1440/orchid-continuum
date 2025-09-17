@@ -3507,6 +3507,55 @@ def search():
     conservation_concern = request.args.get('conservation_concern', '')
     validation_status = request.args.get('validation_status', '')
     
+    # NEW: COMPREHENSIVE BIOLOGICAL FILTERS
+    # AI Analysis filters
+    ai_confidence_min = request.args.get('ai_confidence_min', '')
+    ai_confidence_max = request.args.get('ai_confidence_max', '')
+    has_ai_description = request.args.get('has_ai_description', '')
+    ai_metadata_category = request.args.get('ai_metadata_category', '')
+    
+    # Trait Discovery filters
+    has_predicted_traits = request.args.get('has_predicted_traits', '')
+    has_observed_traits = request.args.get('has_observed_traits', '')
+    trait_inheritance_pattern = request.args.get('trait_inheritance_pattern', '')
+    breeding_value_min = request.args.get('breeding_value_min', '')
+    breeding_value_max = request.args.get('breeding_value_max', '')
+    
+    # Pollinator Relationship filters
+    pollination_method_filter = request.args.get('pollination_method_filter', '')
+    pollinator_type = request.args.get('pollinator_type', '')
+    pollination_strategy = request.args.get('pollination_strategy', '')
+    has_pollinator_data = request.args.get('has_pollinator_data', '')
+    
+    # Mycorrhizal Association filters
+    fungal_partner_genus = request.args.get('fungal_partner_genus', '')
+    symbiotic_relationship_type = request.args.get('symbiotic_relationship_type', '')
+    has_mycorrhizal_data = request.args.get('has_mycorrhizal_data', '')
+    
+    # Ecological Interaction filters
+    has_companion_plants = request.args.get('has_companion_plants', '')
+    environmental_indicator = request.args.get('environmental_indicator', '')
+    habitat_complexity = request.args.get('habitat_complexity', '')
+    ecosystem_role = request.args.get('ecosystem_role', '')
+    
+    # Morphological Trait filters
+    root_type = request.args.get('root_type', '')
+    maturity_stage = request.args.get('maturity_stage', '')
+    flower_complexity = request.args.get('flower_complexity', '')
+    morphological_adaptation = request.args.get('morphological_adaptation', '')
+    
+    # Behavioral Mechanism filters
+    mimicry_type = request.args.get('mimicry_type', '')
+    deception_strategy = request.args.get('deception_strategy', '')
+    attraction_mechanism = request.args.get('attraction_mechanism', '')
+    behavioral_adaptation = request.args.get('behavioral_adaptation', '')
+    
+    # Conservation Status filters
+    conservation_priority = request.args.get('conservation_priority', '')
+    rarity_indicator = request.args.get('rarity_indicator', '')
+    threat_level = request.args.get('threat_level', '')
+    protection_status = request.args.get('protection_status', '')
+    
     # System filters
     data_source = request.args.get('data_source', '')
     ingestion_source = request.args.get('ingestion_source', '')
@@ -3702,7 +3751,283 @@ def search():
     if validation_status:
         query = query.filter(OrchidRecord.validation_status == validation_status)
     
-    # 10. SYSTEM FILTERS
+    # 10. NEW: COMPREHENSIVE BIOLOGICAL FILTERS
+    
+    # 10.1 AI ANALYSIS FILTERS
+    if ai_confidence_min:
+        try:
+            min_confidence = float(ai_confidence_min)
+            query = query.filter(OrchidRecord.ai_confidence >= min_confidence)
+        except ValueError:
+            pass
+    
+    if ai_confidence_max:
+        try:
+            max_confidence = float(ai_confidence_max)
+            query = query.filter(OrchidRecord.ai_confidence <= max_confidence)
+        except ValueError:
+            pass
+    
+    if has_ai_description == 'yes':
+        query = query.filter(OrchidRecord.ai_description.isnot(None))
+    elif has_ai_description == 'no':
+        query = query.filter(OrchidRecord.ai_description.is_(None))
+    
+    if ai_metadata_category:
+        query = query.filter(OrchidRecord.ai_extracted_metadata.ilike(f'%{ai_metadata_category}%'))
+    
+    # 10.2 TRAIT DISCOVERY FILTERS
+    if has_predicted_traits == 'yes':
+        # Search in AI descriptions and cultural notes for trait analysis mentions
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike('%trait%'),
+            OrchidRecord.ai_description.ilike('%inheritance%'),
+            OrchidRecord.cultural_notes.ilike('%trait%')
+        ))
+    elif has_predicted_traits == 'no':
+        query = query.filter(and_(
+            or_(
+                OrchidRecord.ai_description.is_(None),
+                and_(
+                    OrchidRecord.ai_description.notlike('%trait%'),
+                    OrchidRecord.ai_description.notlike('%inheritance%')
+                )
+            ),
+            or_(
+                OrchidRecord.cultural_notes.is_(None),
+                OrchidRecord.cultural_notes.notlike('%trait%')
+            )
+        ))
+    
+    if has_observed_traits == 'yes':
+        # Search for observed characteristics and traits in descriptions
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike('%observed%'),
+            OrchidRecord.ai_description.ilike('%characteristic%'),
+            OrchidRecord.cultural_notes.ilike('%observed%'),
+            OrchidRecord.cultural_notes.ilike('%feature%')
+        ))
+    elif has_observed_traits == 'no':
+        query = query.filter(and_(
+            or_(
+                OrchidRecord.ai_description.is_(None),
+                and_(
+                    OrchidRecord.ai_description.notlike('%observed%'),
+                    OrchidRecord.ai_description.notlike('%characteristic%')
+                )
+            ),
+            or_(
+                OrchidRecord.cultural_notes.is_(None),
+                and_(
+                    OrchidRecord.cultural_notes.notlike('%observed%'),
+                    OrchidRecord.cultural_notes.notlike('%feature%')
+                )
+            )
+        ))
+    
+    if trait_inheritance_pattern:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{trait_inheritance_pattern}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{trait_inheritance_pattern}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{trait_inheritance_pattern}%')
+        ))
+    
+    # Breeding value filters using flower quality scores and AI analysis
+    if breeding_value_min or breeding_value_max:
+        # Search for breeding value indicators in AI descriptions
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike('%breeding%'),
+            OrchidRecord.ai_description.ilike('%quality%'),
+            OrchidRecord.cultural_notes.ilike('%breeding%'),
+            OrchidRecord.cultural_notes.ilike('%award%')
+        ))
+    
+    # 10.3 POLLINATOR RELATIONSHIP FILTERS
+    if pollination_method_filter:
+        query = query.filter(OrchidRecord.pollination_method.ilike(f'%{pollination_method_filter}%'))
+    
+    if pollinator_type:
+        # Search in AI descriptions and cultural notes for pollinator mentions
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{pollinator_type}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{pollinator_type}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{pollinator_type}%')
+        ))
+    
+    if pollination_strategy:
+        # Search for specific strategies in descriptions
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{pollination_strategy}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{pollination_strategy}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{pollination_strategy}%')
+        ))
+    
+    if has_pollinator_data == 'yes':
+        query = query.filter(or_(
+            OrchidRecord.pollination_method.isnot(None),
+            OrchidRecord.ai_description.ilike('%pollinator%'),
+            OrchidRecord.ai_description.ilike('%pollination%')
+        ))
+    elif has_pollinator_data == 'no':
+        query = query.filter(and_(
+            OrchidRecord.pollination_method.is_(None),
+            or_(
+                OrchidRecord.ai_description.is_(None),
+                and_(
+                    OrchidRecord.ai_description.notlike('%pollinator%'),
+                    OrchidRecord.ai_description.notlike('%pollination%')
+                )
+            )
+        ))
+    
+    # 10.4 MYCORRHIZAL ASSOCIATION FILTERS
+    if fungal_partner_genus:
+        # Search for fungal genus names in descriptions and metadata
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{fungal_partner_genus}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{fungal_partner_genus}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{fungal_partner_genus}%'),
+            OrchidRecord.companion_plants.ilike(f'%{fungal_partner_genus}%')
+        ))
+    
+    if symbiotic_relationship_type:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{symbiotic_relationship_type}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{symbiotic_relationship_type}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{symbiotic_relationship_type}%')
+        ))
+    
+    if has_mycorrhizal_data == 'yes':
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike('%mycorrhiza%'),
+            OrchidRecord.ai_description.ilike('%fungal%'),
+            OrchidRecord.ai_description.ilike('%symbiotic%'),
+            OrchidRecord.cultural_notes.ilike('%mycorrhiza%'),
+            OrchidRecord.cultural_notes.ilike('%fungal%')
+        ))
+    elif has_mycorrhizal_data == 'no':
+        query = query.filter(and_(
+            or_(
+                OrchidRecord.ai_description.is_(None),
+                and_(
+                    OrchidRecord.ai_description.notlike('%mycorrhiza%'),
+                    OrchidRecord.ai_description.notlike('%fungal%'),
+                    OrchidRecord.ai_description.notlike('%symbiotic%')
+                )
+            ),
+            or_(
+                OrchidRecord.cultural_notes.is_(None),
+                and_(
+                    OrchidRecord.cultural_notes.notlike('%mycorrhiza%'),
+                    OrchidRecord.cultural_notes.notlike('%fungal%')
+                )
+            )
+        ))
+    
+    # 10.5 ECOLOGICAL INTERACTION FILTERS
+    if has_companion_plants == 'yes':
+        query = query.filter(OrchidRecord.companion_plants.isnot(None))
+    elif has_companion_plants == 'no':
+        query = query.filter(OrchidRecord.companion_plants.is_(None))
+    
+    if environmental_indicator:
+        query = query.filter(or_(
+            OrchidRecord.humidity_indicators.ilike(f'%{environmental_indicator}%'),
+            OrchidRecord.temperature_indicators.ilike(f'%{environmental_indicator}%'),
+            OrchidRecord.light_conditions.ilike(f'%{environmental_indicator}%'),
+            OrchidRecord.mounting_evidence.ilike(f'%{environmental_indicator}%')
+        ))
+    
+    if habitat_complexity:
+        query = query.filter(or_(
+            OrchidRecord.setting_type.ilike(f'%{habitat_complexity}%'),
+            OrchidRecord.growing_environment.ilike(f'%{habitat_complexity}%'),
+            OrchidRecord.native_habitat.ilike(f'%{habitat_complexity}%')
+        ))
+    
+    if ecosystem_role:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{ecosystem_role}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{ecosystem_role}%'),
+            OrchidRecord.companion_plants.ilike(f'%{ecosystem_role}%')
+        ))
+    
+    # 10.6 MORPHOLOGICAL TRAIT FILTERS
+    if root_type:
+        query = query.filter(OrchidRecord.root_visibility.ilike(f'%{root_type}%'))
+    
+    if maturity_stage:
+        query = query.filter(OrchidRecord.plant_maturity.ilike(f'%{maturity_stage}%'))
+    
+    if flower_complexity:
+        # Search in AI descriptions for flower complexity indicators
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{flower_complexity}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{flower_complexity}%'),
+            cast(OrchidRecord.flower_measurements, String).ilike(f'%{flower_complexity}%')
+        ))
+    
+    if morphological_adaptation:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{morphological_adaptation}%'),
+            OrchidRecord.root_visibility.ilike(f'%{morphological_adaptation}%'),
+            OrchidRecord.mounting_evidence.ilike(f'%{morphological_adaptation}%'),
+            OrchidRecord.leaf_form.ilike(f'%{morphological_adaptation}%')
+        ))
+    
+    # 10.7 BEHAVIORAL MECHANISM FILTERS
+    if mimicry_type:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{mimicry_type}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{mimicry_type}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{mimicry_type}%')
+        ))
+    
+    if deception_strategy:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{deception_strategy}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{deception_strategy}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{deception_strategy}%')
+        ))
+    
+    if attraction_mechanism:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{attraction_mechanism}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{attraction_mechanism}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{attraction_mechanism}%')
+        ))
+    
+    if behavioral_adaptation:
+        query = query.filter(or_(
+            OrchidRecord.ai_description.ilike(f'%{behavioral_adaptation}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{behavioral_adaptation}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{behavioral_adaptation}%')
+        ))
+    
+    # 10.8 CONSERVATION STATUS FILTERS
+    if conservation_priority:
+        query = query.filter(OrchidRecord.conservation_status_clues.ilike(f'%{conservation_priority}%'))
+    
+    if rarity_indicator:
+        query = query.filter(or_(
+            OrchidRecord.conservation_status_clues.ilike(f'%{rarity_indicator}%'),
+            OrchidRecord.ai_description.ilike(f'%{rarity_indicator}%'),
+            OrchidRecord.cultural_notes.ilike(f'%{rarity_indicator}%')
+        ))
+    
+    if threat_level:
+        query = query.filter(or_(
+            OrchidRecord.conservation_status_clues.ilike(f'%{threat_level}%'),
+            OrchidRecord.ai_description.ilike(f'%{threat_level}%')
+        ))
+    
+    if protection_status:
+        query = query.filter(or_(
+            OrchidRecord.conservation_status_clues.ilike(f'%{protection_status}%'),
+            OrchidRecord.ai_description.ilike(f'%{protection_status}%')
+        ))
+    
+    # 11. SYSTEM FILTERS
     if data_source:
         query = query.filter(OrchidRecord.data_source == data_source)
     if ingestion_source:
@@ -3744,7 +4069,17 @@ def search():
     
     # Get results with limit
     has_filters = any([query_text, genus, species, country, region, orchid_type, flowering_status, 
-                      growth_habit, climate_preference, light_requirements, has_image, is_featured])
+                      growth_habit, climate_preference, light_requirements, has_image, is_featured,
+                      # NEW: Include biological filters in has_filters check
+                      ai_confidence_min, ai_confidence_max, has_ai_description, ai_metadata_category,
+                      has_predicted_traits, has_observed_traits, trait_inheritance_pattern, 
+                      breeding_value_min, breeding_value_max, pollination_method_filter, 
+                      pollinator_type, pollination_strategy, has_pollinator_data,
+                      fungal_partner_genus, symbiotic_relationship_type, has_mycorrhizal_data,
+                      has_companion_plants, environmental_indicator, habitat_complexity, ecosystem_role,
+                      root_type, maturity_stage, flower_complexity, morphological_adaptation,
+                      mimicry_type, deception_strategy, attraction_mechanism, behavioral_adaptation,
+                      conservation_priority, rarity_indicator, threat_level, protection_status])
     
     orchids = query.limit(results_per_page).all() if has_filters else []
     
