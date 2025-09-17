@@ -3190,3 +3190,95 @@ class LiteratureCitation(db.Model):
             'citation_count': self.citation_count,
             'created_at': self.created_at.isoformat()
         }
+
+
+# Knowledge Base System for Educational Content
+class KnowledgeBase(db.Model):
+    """Educational knowledge base entries for orchid research and learning"""
+    __tablename__ = 'knowledge_base'
+    
+    id = db.Column(Integer, primary_key=True)
+    title = db.Column(String(200), nullable=False, index=True)
+    question = db.Column(Text, nullable=True)
+    answer = db.Column(Text, nullable=True)
+    category = db.Column(String(100), nullable=False, index=True)
+    article = db.Column(Text, nullable=True)
+    
+    # Search and organization
+    keywords = db.Column(JSON, nullable=True)  # For enhanced search
+    related_genera = db.Column(JSON, nullable=True)  # Related orchid genera
+    difficulty_level = db.Column(String(20), default='intermediate')  # beginner, intermediate, advanced
+    content_type = db.Column(String(20), default='qa')  # qa, article, tutorial
+    
+    # Metadata
+    view_count = db.Column(Integer, default=0)
+    helpful_votes = db.Column(Integer, default=0)
+    last_updated = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    
+    # Optional attribution
+    author = db.Column(String(100), nullable=True)
+    source_url = db.Column(String(500), nullable=True)
+    
+    def increment_view(self):
+        """Increment view count for analytics"""
+        self.view_count += 1
+        db.session.commit()
+    
+    def add_helpful_vote(self):
+        """Add helpful vote for content quality tracking"""
+        self.helpful_votes += 1
+        db.session.commit()
+    
+    @staticmethod
+    def search_entries(query, category=None, limit=20):
+        """Search knowledge base entries by query and optionally by category"""
+        search_query = KnowledgeBase.query
+        
+        if query:
+            # Search in title, question, answer, and article
+            search_terms = f"%{query.lower()}%"
+            search_query = search_query.filter(
+                db.or_(
+                    KnowledgeBase.title.ilike(search_terms),
+                    KnowledgeBase.question.ilike(search_terms),
+                    KnowledgeBase.answer.ilike(search_terms),
+                    KnowledgeBase.article.ilike(search_terms)
+                )
+            )
+        
+        if category:
+            search_query = search_query.filter(KnowledgeBase.category == category)
+        
+        return search_query.order_by(KnowledgeBase.helpful_votes.desc(), KnowledgeBase.view_count.desc()).limit(limit).all()
+    
+    @staticmethod
+    def get_categories():
+        """Get all unique categories from knowledge base"""
+        categories = db.session.query(KnowledgeBase.category).distinct().all()
+        return [cat[0] for cat in categories]
+    
+    @staticmethod
+    def get_popular_entries(limit=10):
+        """Get most popular entries by views and votes"""
+        return KnowledgeBase.query.order_by(
+            (KnowledgeBase.helpful_votes * 2 + KnowledgeBase.view_count).desc()
+        ).limit(limit).all()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'question': self.question,
+            'answer': self.answer,
+            'category': self.category,
+            'article': self.article,
+            'difficulty_level': self.difficulty_level,
+            'content_type': self.content_type,
+            'view_count': self.view_count,
+            'helpful_votes': self.helpful_votes,
+            'author': self.author,
+            'source_url': self.source_url,
+            'created_at': self.created_at.isoformat(),
+            'last_updated': self.last_updated.isoformat()
+        }
