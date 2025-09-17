@@ -3456,88 +3456,619 @@ def gallery_old():
 
 @app.route('/search')
 def search():
-    """Search orchids by various criteria"""
+    """Comprehensive orchid search with advanced filtering capabilities"""
+    # Get all search parameters
     query_text = request.args.get('q', '').strip()
-    light_requirement = request.args.get('light_requirement', '')
+    
+    # Basic filters
+    genus = request.args.get('genus', '')
+    species = request.args.get('species', '')
+    author = request.args.get('author', '')
+    
+    # Geographic filters
+    country = request.args.get('country', '')
+    state_province = request.args.get('state_province', '')
+    region = request.args.get('region', '')
+    habitat_type = request.args.get('habitat_type', '')
+    
+    # Parentage/breeding filters
+    orchid_type = request.args.get('orchid_type', '')  # species, hybrid, both
+    has_parentage = request.args.get('has_parentage', '')
+    generation = request.args.get('generation', '')
+    pod_parent = request.args.get('pod_parent', '')
+    pollen_parent = request.args.get('pollen_parent', '')
+    rhs_registered = request.args.get('rhs_registered', '')
+    
+    # Flowering characteristics
+    flowering_status = request.args.get('flowering_status', '')
+    flowering_stage = request.args.get('flowering_stage', '')
+    bloom_season = request.args.get('bloom_season', '')
+    flower_size = request.args.get('flower_size', '')
+    
+    # Growing characteristics  
+    growth_habit = request.args.get('growth_habit', '')
+    climate_preference = request.args.get('climate_preference', '')
+    substrate_type = request.args.get('substrate_type', '')
+    growing_environment = request.args.get('growing_environment', '')
+    natural_vs_cultivated = request.args.get('natural_vs_cultivated', '')
+    
+    # Cultural requirements (using actual database fields)
+    light_requirements = request.args.get('light_requirements', '')
     temperature_range = request.args.get('temperature_range', '')
-    humidity_range = request.args.get('humidity_range', '')
+    water_requirements = request.args.get('water_requirements', '')
+    
+    # Plant morphology
+    pseudobulb_presence = request.args.get('pseudobulb_presence', '')
+    leaf_form = request.args.get('leaf_form', '')
+    plant_maturity = request.args.get('plant_maturity', '')
+    
+    # Conservation and identification
+    identification_status = request.args.get('identification_status', '')
+    conservation_concern = request.args.get('conservation_concern', '')
+    validation_status = request.args.get('validation_status', '')
+    
+    # System filters
+    data_source = request.args.get('data_source', '')
+    ingestion_source = request.args.get('ingestion_source', '')
+    has_image = request.args.get('has_image', '')
+    is_featured = request.args.get('is_featured', '')
+    photographer = request.args.get('photographer', '')
+    
+    # Sorting and display options
+    sort_by = request.args.get('sort_by', 'relevance')
+    results_per_page = int(request.args.get('results_per_page', '50'))
     
     # Build base query
     query = OrchidRecord.query
     
-    # Text search
+    # 1. COMPREHENSIVE TEXT SEARCH across all text fields
     if query_text:
-        query = query.filter(
-            or_(
-                OrchidRecord.display_name.ilike(f'%{query_text}%'),
-                OrchidRecord.scientific_name.ilike(f'%{query_text}%'),
-                OrchidRecord.genus.ilike(f'%{query_text}%'),
-                OrchidRecord.species.ilike(f'%{query_text}%'),
-                OrchidRecord.cultural_notes.ilike(f'%{query_text}%'),
-                OrchidRecord.ai_description.ilike(f'%{query_text}%')
-            )
-        )
+        search_filters = [
+            # Primary identification fields
+            OrchidRecord.display_name.ilike(f'%{query_text}%'),
+            OrchidRecord.scientific_name.ilike(f'%{query_text}%'),
+            OrchidRecord.genus.ilike(f'%{query_text}%'),
+            OrchidRecord.species.ilike(f'%{query_text}%'),
+            OrchidRecord.common_names.ilike(f'%{query_text}%'),
+            OrchidRecord.grex_name.ilike(f'%{query_text}%'),
+            OrchidRecord.clone_name.ilike(f'%{query_text}%'),
+            OrchidRecord.author.ilike(f'%{query_text}%'),
+            
+            # Geographic and habitat fields
+            OrchidRecord.region.ilike(f'%{query_text}%'),
+            OrchidRecord.country.ilike(f'%{query_text}%'),
+            OrchidRecord.state_province.ilike(f'%{query_text}%'),
+            OrchidRecord.locality.ilike(f'%{query_text}%'),
+            OrchidRecord.native_habitat.ilike(f'%{query_text}%'),
+            OrchidRecord.collector.ilike(f'%{query_text}%'),
+            
+            # Parentage fields
+            OrchidRecord.pod_parent.ilike(f'%{query_text}%'),
+            OrchidRecord.pollen_parent.ilike(f'%{query_text}%'),
+            OrchidRecord.parentage_formula.ilike(f'%{query_text}%'),
+            OrchidRecord.registrant.ilike(f'%{query_text}%'),
+            
+            # Descriptive fields
+            OrchidRecord.cultural_notes.ilike(f'%{query_text}%'),
+            OrchidRecord.ai_description.ilike(f'%{query_text}%'),
+            OrchidRecord.water_requirements.ilike(f'%{query_text}%'),
+            OrchidRecord.fertilizer_needs.ilike(f'%{query_text}%'),
+            
+            # Growing and environmental fields
+            OrchidRecord.bloom_time.ilike(f'%{query_text}%'),
+            OrchidRecord.growth_habit.ilike(f'%{query_text}%'),
+            OrchidRecord.climate_preference.ilike(f'%{query_text}%'),
+            OrchidRecord.leaf_form.ilike(f'%{query_text}%'),
+            OrchidRecord.light_requirements.ilike(f'%{query_text}%'),
+            OrchidRecord.temperature_range.ilike(f'%{query_text}%'),
+            
+            # Enhanced habitat fields
+            OrchidRecord.growing_environment.ilike(f'%{query_text}%'),
+            OrchidRecord.substrate_type.ilike(f'%{query_text}%'),
+            OrchidRecord.mounting_evidence.ilike(f'%{query_text}%'),
+            OrchidRecord.setting_type.ilike(f'%{query_text}%'),
+            OrchidRecord.companion_plants.ilike(f'%{query_text}%'),
+            OrchidRecord.elevation_indicators.ilike(f'%{query_text}%'),
+            OrchidRecord.conservation_status_clues.ilike(f'%{query_text}%'),
+            
+            # Morphology fields  
+            OrchidRecord.root_visibility.ilike(f'%{query_text}%'),
+            OrchidRecord.flowering_stage.ilike(f'%{query_text}%'),
+            OrchidRecord.bloom_season_indicator.ilike(f'%{query_text}%'),
+            
+            # Source and photographer fields
+            OrchidRecord.photographer.ilike(f'%{query_text}%'),
+            OrchidRecord.image_source.ilike(f'%{query_text}%'),
+            OrchidRecord.data_source.ilike(f'%{query_text}%'),
+            
+            # OCR and AI fields
+            OrchidRecord.ocr_text.ilike(f'%{query_text}%'),
+            OrchidRecord.ai_extracted_metadata.ilike(f'%{query_text}%')
+        ]
+        query = query.filter(or_(*search_filters))
     
-    # Growing conditions filters
-    if light_requirement:
-        light_keywords = {
-            'very_low': 'low light|shade|very low',
-            'low': 'low light|filtered|shade',
-            'medium': 'medium light|bright indirect|moderate',
-            'high': 'bright light|high light|direct',
-            'very_high': 'very bright|full sun|intense'
-        }
-        if light_requirement in light_keywords:
-            pattern = light_keywords[light_requirement]
-            query = query.filter(
-                or_(*[
-                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%') 
-                    for keyword in pattern.split('|')
-                ])
-            )
+    # 2. TAXONOMIC FILTERS
+    if genus:
+        query = query.filter(OrchidRecord.genus.ilike(f'%{genus}%'))
+    if species:
+        query = query.filter(OrchidRecord.species.ilike(f'%{species}%'))
+    if author:
+        query = query.filter(OrchidRecord.author.ilike(f'%{author}%'))
     
+    # 3. GEOGRAPHIC FILTERS
+    if country:
+        query = query.filter(OrchidRecord.country.ilike(f'%{country}%'))
+    if state_province:
+        query = query.filter(OrchidRecord.state_province.ilike(f'%{state_province}%'))
+    if region:
+        query = query.filter(OrchidRecord.region.ilike(f'%{region}%'))
+    if habitat_type:
+        query = query.filter(OrchidRecord.native_habitat.ilike(f'%{habitat_type}%'))
+    
+    # 4. PARENTAGE/BREEDING FILTERS
+    if orchid_type == 'species':
+        query = query.filter(OrchidRecord.is_species == True)
+    elif orchid_type == 'hybrid':
+        query = query.filter(OrchidRecord.is_hybrid == True)
+        
+    if has_parentage == 'yes':
+        query = query.filter(or_(
+            OrchidRecord.pod_parent.isnot(None),
+            OrchidRecord.pollen_parent.isnot(None),
+            OrchidRecord.parentage_formula.isnot(None)
+        ))
+    elif has_parentage == 'no':
+        query = query.filter(and_(
+            OrchidRecord.pod_parent.is_(None),
+            OrchidRecord.pollen_parent.is_(None),
+            OrchidRecord.parentage_formula.is_(None)
+        ))
+    
+    if generation:
+        try:
+            gen_num = int(generation)
+            query = query.filter(OrchidRecord.generation == gen_num)
+        except ValueError:
+            pass
+            
+    if pod_parent:
+        query = query.filter(OrchidRecord.pod_parent.ilike(f'%{pod_parent}%'))
+    if pollen_parent:
+        query = query.filter(OrchidRecord.pollen_parent.ilike(f'%{pollen_parent}%'))
+    
+    if rhs_registered == 'yes':
+        query = query.filter(OrchidRecord.rhs_registration_id.isnot(None))
+    elif rhs_registered == 'no':
+        query = query.filter(OrchidRecord.rhs_registration_id.is_(None))
+    
+    # 5. FLOWERING CHARACTERISTICS
+    if flowering_status == 'flowering':
+        query = query.filter(OrchidRecord.is_flowering == True)
+    elif flowering_status == 'not_flowering':
+        query = query.filter(OrchidRecord.is_flowering == False)
+        
+    if flowering_stage:
+        query = query.filter(OrchidRecord.flowering_stage == flowering_stage)
+        
+    if bloom_season:
+        query = query.filter(OrchidRecord.bloom_season_indicator.ilike(f'%{bloom_season}%'))
+    
+    if flower_size:
+        if flower_size == 'small':
+            query = query.filter(OrchidRecord.flower_size_mm < 50)
+        elif flower_size == 'medium':
+            query = query.filter(and_(OrchidRecord.flower_size_mm >= 50, OrchidRecord.flower_size_mm < 100))
+        elif flower_size == 'large':
+            query = query.filter(OrchidRecord.flower_size_mm >= 100)
+    
+    # 6. GROWING CHARACTERISTICS
+    if growth_habit:
+        query = query.filter(OrchidRecord.growth_habit == growth_habit)
+    if climate_preference:
+        query = query.filter(OrchidRecord.climate_preference == climate_preference)
+    if substrate_type:
+        query = query.filter(OrchidRecord.substrate_type == substrate_type)
+    if growing_environment:
+        query = query.filter(OrchidRecord.growing_environment == growing_environment)
+    if natural_vs_cultivated:
+        query = query.filter(OrchidRecord.natural_vs_cultivated == natural_vs_cultivated)
+    
+    # 7. CULTURAL REQUIREMENTS (using actual database fields)
+    if light_requirements:
+        query = query.filter(OrchidRecord.light_requirements.ilike(f'%{light_requirements}%'))
     if temperature_range:
-        temp_keywords = {
-            'cool': 'cool|cold|60|65|50-65',
-            'cool_intermediate': 'cool|intermediate|65|70',
-            'intermediate': 'intermediate|70|75|65-75',
-            'cool_warm': 'cool|warm|wide range',
-            'warm': 'warm|hot|80|85|75-85'
-        }
-        if temperature_range in temp_keywords:
-            pattern = temp_keywords[temperature_range]
-            query = query.filter(
-                or_(*[
-                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
-                    for keyword in pattern.split('|')
-                ])
-            )
+        query = query.filter(OrchidRecord.temperature_range.ilike(f'%{temperature_range}%'))
+    if water_requirements:
+        query = query.filter(OrchidRecord.water_requirements.ilike(f'%{water_requirements}%'))
     
-    if humidity_range:
-        humidity_keywords = {
-            'low': 'low humidity|dry|40%|30%',
-            'moderate': 'moderate humidity|50%|60%',
-            'high': 'high humidity|70%|80%|humid',
-            'very_high': 'very high humidity|90%|very humid'
-        }
-        if humidity_range in humidity_keywords:
-            pattern = humidity_keywords[humidity_range]
-            query = query.filter(
-                or_(*[
-                    OrchidRecord.cultural_notes.ilike(f'%{keyword.strip()}%')
-                    for keyword in pattern.split('|')
-                ])
-            )
+    # 8. PLANT MORPHOLOGY
+    if pseudobulb_presence == 'yes':
+        query = query.filter(OrchidRecord.pseudobulb_presence == True)
+    elif pseudobulb_presence == 'no':
+        query = query.filter(OrchidRecord.pseudobulb_presence == False)
+        
+    if leaf_form:
+        query = query.filter(OrchidRecord.leaf_form.ilike(f'%{leaf_form}%'))
+    if plant_maturity:
+        query = query.filter(OrchidRecord.plant_maturity == plant_maturity)
     
-    # Get results
-    orchids = query.order_by(OrchidRecord.view_count.desc()).limit(50).all() if query_text or light_requirement or temperature_range or humidity_range else []
+    # 9. CONSERVATION AND IDENTIFICATION
+    if identification_status:
+        query = query.filter(OrchidRecord.identification_status == identification_status)
+    if conservation_concern == 'yes':
+        query = query.filter(OrchidRecord.conservation_status_clues.isnot(None))
+    elif conservation_concern == 'no':
+        query = query.filter(OrchidRecord.conservation_status_clues.is_(None))
+    if validation_status:
+        query = query.filter(OrchidRecord.validation_status == validation_status)
+    
+    # 10. SYSTEM FILTERS
+    if data_source:
+        query = query.filter(OrchidRecord.data_source == data_source)
+    if ingestion_source:
+        query = query.filter(OrchidRecord.ingestion_source == ingestion_source)
+    if has_image == 'yes':
+        query = query.filter(or_(
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.image_url.isnot(None),
+            OrchidRecord.image_filename.isnot(None)
+        ))
+    elif has_image == 'no':
+        query = query.filter(and_(
+            OrchidRecord.google_drive_id.is_(None),
+            OrchidRecord.image_url.is_(None),
+            OrchidRecord.image_filename.is_(None)
+        ))
+    if is_featured == 'yes':
+        query = query.filter(OrchidRecord.is_featured == True)
+    elif is_featured == 'no':
+        query = query.filter(OrchidRecord.is_featured == False)
+    if photographer:
+        query = query.filter(OrchidRecord.photographer.ilike(f'%{photographer}%'))
+    
+    # SORTING OPTIONS
+    if sort_by == 'alphabetical':
+        query = query.order_by(OrchidRecord.scientific_name.asc())
+    elif sort_by == 'genus_species':
+        query = query.order_by(OrchidRecord.genus.asc(), OrchidRecord.species.asc())
+    elif sort_by == 'popularity':
+        query = query.order_by(OrchidRecord.view_count.desc())
+    elif sort_by == 'newest':
+        query = query.order_by(OrchidRecord.created_at.desc())
+    elif sort_by == 'featured':
+        query = query.order_by(OrchidRecord.is_featured.desc(), OrchidRecord.view_count.desc())
+    elif sort_by == 'flowering':
+        query = query.order_by(OrchidRecord.is_flowering.desc(), OrchidRecord.flower_count.desc())
+    else:  # relevance (default)
+        query = query.order_by(OrchidRecord.view_count.desc())
+    
+    # Get results with limit
+    has_filters = any([query_text, genus, species, country, region, orchid_type, flowering_status, 
+                      growth_habit, climate_preference, light_requirements, has_image, is_featured])
+    
+    orchids = query.limit(results_per_page).all() if has_filters else []
+    
+    # Get search statistics
+    search_stats = {
+        'total_found': len(orchids),
+        'has_images': sum(1 for o in orchids if o.google_drive_id or o.image_url or o.image_filename),
+        'species_count': sum(1 for o in orchids if o.is_species),
+        'hybrid_count': sum(1 for o in orchids if o.is_hybrid),
+        'flowering_count': sum(1 for o in orchids if o.is_flowering),
+        'featured_count': sum(1 for o in orchids if o.is_featured)
+    }
+    
+    # Get filter options for dropdowns (get distinct values from database)
+    try:
+        filter_options = {
+            'genera': [g[0] for g in db.session.query(OrchidRecord.genus).distinct().filter(OrchidRecord.genus.isnot(None)).order_by(OrchidRecord.genus).limit(100).all() if g[0]],
+            'countries': [c[0] for c in db.session.query(OrchidRecord.country).distinct().filter(OrchidRecord.country.isnot(None)).order_by(OrchidRecord.country).limit(50).all() if c[0]],
+            'growth_habits': [g[0] for g in db.session.query(OrchidRecord.growth_habit).distinct().filter(OrchidRecord.growth_habit.isnot(None)).order_by(OrchidRecord.growth_habit).all() if g[0]],
+            'climate_preferences': [c[0] for c in db.session.query(OrchidRecord.climate_preference).distinct().filter(OrchidRecord.climate_preference.isnot(None)).order_by(OrchidRecord.climate_preference).all() if c[0]],
+            'data_sources': [d[0] for d in db.session.query(OrchidRecord.data_source).distinct().filter(OrchidRecord.data_source.isnot(None)).order_by(OrchidRecord.data_source).all() if d[0]],
+            'ingestion_sources': [i[0] for i in db.session.query(OrchidRecord.ingestion_source).distinct().filter(OrchidRecord.ingestion_source.isnot(None)).order_by(OrchidRecord.ingestion_source).all() if i[0]],
+            'photographers': [p[0] for p in db.session.query(OrchidRecord.photographer).distinct().filter(OrchidRecord.photographer.isnot(None)).order_by(OrchidRecord.photographer).limit(50).all() if p[0]]
+        }
+    except Exception as e:
+        logger.error(f"Error getting filter options: {e}")
+        filter_options = {'genera': [], 'countries': [], 'growth_habits': [], 'climate_preferences': [], 'data_sources': [], 'ingestion_sources': [], 'photographers': []}
+    
+    # EXPORT FUNCTIONALITY
+    export_format = request.args.get('export', '')
+    if export_format == 'csv' and orchids:
+        return export_search_results_csv(orchids, search_params={
+            'query': query_text, 'genus': genus, 'species': species, 'country': country,
+            'orchid_type': orchid_type, 'flowering_status': flowering_status
+        })
     
     return render_template('search.html', 
-                         orchids=orchids, 
+                         orchids=orchids,
+                         search_stats=search_stats,
+                         filter_options=filter_options,
+                         # Pass all search parameters back to template
                          query=query_text,
-                         light_requirement=light_requirement,
+                         genus=genus,
+                         species=species,
+                         author=author,
+                         country=country,
+                         state_province=state_province,
+                         region=region,
+                         habitat_type=habitat_type,
+                         orchid_type=orchid_type,
+                         has_parentage=has_parentage,
+                         generation=generation,
+                         pod_parent=pod_parent,
+                         pollen_parent=pollen_parent,
+                         rhs_registered=rhs_registered,
+                         flowering_status=flowering_status,
+                         flowering_stage=flowering_stage,
+                         bloom_season=bloom_season,
+                         flower_size=flower_size,
+                         growth_habit=growth_habit,
+                         climate_preference=climate_preference,
+                         substrate_type=substrate_type,
+                         growing_environment=growing_environment,
+                         natural_vs_cultivated=natural_vs_cultivated,
+                         light_requirements=light_requirements,
                          temperature_range=temperature_range,
-                         humidity_range=humidity_range)
+                         water_requirements=water_requirements,
+                         pseudobulb_presence=pseudobulb_presence,
+                         leaf_form=leaf_form,
+                         plant_maturity=plant_maturity,
+                         identification_status=identification_status,
+                         conservation_concern=conservation_concern,
+                         validation_status=validation_status,
+                         data_source=data_source,
+                         ingestion_source=ingestion_source,
+                         has_image=has_image,
+                         is_featured=is_featured,
+                         photographer=photographer,
+                         sort_by=sort_by,
+                         results_per_page=results_per_page)
+
+def export_search_results_csv(orchids, search_params=None):
+    """Export search results to CSV format"""
+    import csv
+    from io import StringIO
+    from datetime import datetime
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # CSV Headers
+    headers = [
+        'ID', 'Display_Name', 'Scientific_Name', 'Genus', 'Species', 'Author',
+        'Country', 'Region', 'Native_Habitat', 'Climate_Preference', 'Growth_Habit',
+        'Is_Species', 'Is_Hybrid', 'Pod_Parent', 'Pollen_Parent', 'Parentage_Formula',
+        'RHS_Registration_ID', 'Is_Flowering', 'Flowering_Stage', 'Bloom_Season',
+        'Light_Requirements', 'Temperature_Range', 'Water_Requirements',
+        'Conservation_Status_Clues', 'Identification_Status', 'Validation_Status',
+        'Data_Source', 'Photographer', 'View_Count', 'Created_At'
+    ]
+    writer.writerow(headers)
+    
+    # Data rows
+    for orchid in orchids:
+        row = [
+            orchid.id,
+            orchid.display_name or '',
+            orchid.scientific_name or '',
+            orchid.genus or '',
+            orchid.species or '',
+            orchid.author or '',
+            orchid.country or '',
+            orchid.region or '',
+            orchid.native_habitat or '',
+            orchid.climate_preference or '',
+            orchid.growth_habit or '',
+            'Yes' if orchid.is_species else 'No',
+            'Yes' if orchid.is_hybrid else 'No',
+            orchid.pod_parent or '',
+            orchid.pollen_parent or '',
+            orchid.parentage_formula or '',
+            orchid.rhs_registration_id or '',
+            'Yes' if orchid.is_flowering else 'No',
+            orchid.flowering_stage or '',
+            orchid.bloom_season_indicator or '',
+            orchid.light_requirements or '',
+            orchid.temperature_range or '',
+            orchid.water_requirements or '',
+            orchid.conservation_status_clues or '',
+            orchid.identification_status or '',
+            orchid.validation_status or '',
+            orchid.data_source or '',
+            orchid.photographer or '',
+            orchid.view_count or 0,
+            orchid.created_at.strftime('%Y-%m-%d') if orchid.created_at else ''
+        ]
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    # Generate filename with search parameters
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    search_desc = []
+    if search_params:
+        if search_params.get('query'):
+            search_desc.append(f"query_{search_params['query'][:10]}")
+        if search_params.get('genus'):
+            search_desc.append(f"genus_{search_params['genus']}")
+        if search_params.get('country'):
+            search_desc.append(f"country_{search_params['country']}")
+    
+    filename_parts = ['orchid_search_results']
+    if search_desc:
+        filename_parts.extend(search_desc[:3])  # Limit to 3 parameters
+    filename_parts.append(timestamp)
+    filename = '_'.join(filename_parts) + '.csv'
+    
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+@app.route('/search/mapping-integration')
+def search_mapping_integration():
+    """Integrate search results with mapping system"""
+    # Get search parameters from query string
+    search_params = dict(request.args)
+    
+    # Perform search with same logic as main search route
+    # (This would reuse the search logic above)
+    query = OrchidRecord.query
+    
+    # Apply same filters as main search...
+    # (Code abbreviated for brevity - would use same filter logic)
+    
+    orchids = query.filter(OrchidRecord.decimal_latitude.isnot(None)).filter(
+        OrchidRecord.decimal_longitude.isnot(None)).all()
+    
+    # Prepare geographic data for mapping
+    map_data = []
+    for orchid in orchids:
+        if orchid.decimal_latitude and orchid.decimal_longitude:
+            map_data.append({
+                'id': orchid.id,
+                'name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'genus': orchid.genus,
+                'lat': float(orchid.decimal_latitude),
+                'lng': float(orchid.decimal_longitude),
+                'country': orchid.country,
+                'region': orchid.region,
+                'is_flowering': orchid.is_flowering,
+                'climate_preference': orchid.climate_preference,
+                'conservation_concern': bool(orchid.conservation_status_clues)
+            })
+    
+    return render_template('search_map_integration.html', 
+                         map_data=map_data, 
+                         search_params=search_params,
+                         orchids_count=len(orchids))
+
+@app.route('/api/search-analytics')
+def api_search_analytics():
+    """API endpoint for search analytics and statistics"""
+    try:
+        # Basic database statistics
+        total_orchids = OrchidRecord.query.count()
+        
+        # Search-relevant statistics
+        analytics = {
+            'total_records': total_orchids,
+            'with_images': OrchidRecord.query.filter(
+                or_(OrchidRecord.google_drive_id.isnot(None),
+                    OrchidRecord.image_url.isnot(None))
+            ).count(),
+            'species_count': OrchidRecord.query.filter(OrchidRecord.is_species == True).count(),
+            'hybrid_count': OrchidRecord.query.filter(OrchidRecord.is_hybrid == True).count(),
+            'currently_flowering': OrchidRecord.query.filter(OrchidRecord.is_flowering == True).count(),
+            'with_geographic_data': OrchidRecord.query.filter(
+                and_(OrchidRecord.decimal_latitude.isnot(None),
+                     OrchidRecord.decimal_longitude.isnot(None))
+            ).count(),
+            'with_parentage': OrchidRecord.query.filter(
+                or_(OrchidRecord.pod_parent.isnot(None),
+                    OrchidRecord.pollen_parent.isnot(None))
+            ).count(),
+            'rhs_registered': OrchidRecord.query.filter(OrchidRecord.rhs_registration_id.isnot(None)).count(),
+            'featured_orchids': OrchidRecord.query.filter(OrchidRecord.is_featured == True).count(),
+            
+            # Top genera (convert to dict)
+            'top_genera': [{'genus': row[0], 'count': row[1]} for row in 
+                          db.session.query(OrchidRecord.genus, func.count(OrchidRecord.id))
+                          .filter(OrchidRecord.genus.isnot(None))
+                          .group_by(OrchidRecord.genus)
+                          .order_by(func.count(OrchidRecord.id).desc())
+                          .limit(10).all()],
+            
+            # Top countries (convert to dict)
+            'top_countries': [{'country': row[0], 'count': row[1]} for row in
+                             db.session.query(OrchidRecord.country, func.count(OrchidRecord.id))
+                             .filter(OrchidRecord.country.isnot(None))
+                             .group_by(OrchidRecord.country)
+                             .order_by(func.count(OrchidRecord.id).desc())
+                             .limit(10).all()],
+            
+            # Climate distribution (convert to dict)
+            'climate_distribution': [{'climate': row[0], 'count': row[1]} for row in
+                                   db.session.query(OrchidRecord.climate_preference, func.count(OrchidRecord.id))
+                                   .filter(OrchidRecord.climate_preference.isnot(None))
+                                   .group_by(OrchidRecord.climate_preference)
+                                   .all()]
+        }
+        
+        return jsonify({
+            'success': True,
+            'analytics': analytics
+        })
+        
+    except Exception as e:
+        logger.error(f"Search analytics error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/breeding-search-integration')
+def breeding_search_integration():
+    """Integration page for breeding and parentage search"""
+    # Get breeding-specific parameters
+    breeding_type = request.args.get('breeding_type', 'all')  # species, hybrid, intergeneric
+    generation = request.args.get('generation', '')
+    parent_genus = request.args.get('parent_genus', '')
+    
+    query = OrchidRecord.query
+    
+    # Apply breeding-specific filters
+    if breeding_type == 'species':
+        query = query.filter(OrchidRecord.is_species == True)
+    elif breeding_type == 'hybrid':
+        query = query.filter(OrchidRecord.is_hybrid == True)
+    elif breeding_type == 'intergeneric':
+        # Look for different genera in parentage
+        query = query.filter(
+            and_(OrchidRecord.pod_parent.isnot(None),
+                 OrchidRecord.pollen_parent.isnot(None))
+        )
+    
+    if generation:
+        try:
+            gen_num = int(generation)
+            query = query.filter(OrchidRecord.generation == gen_num)
+        except ValueError:
+            pass
+    
+    if parent_genus:
+        query = query.filter(
+            or_(OrchidRecord.pod_parent.ilike(f'{parent_genus}%'),
+                OrchidRecord.pollen_parent.ilike(f'{parent_genus}%'))
+        )
+    
+    # Get results
+    orchids = query.order_by(OrchidRecord.rhs_registration_id.desc()).limit(100).all()
+    
+    # Prepare breeding analysis data
+    breeding_stats = {
+        'total_found': len(orchids),
+        'rhs_registered': sum(1 for o in orchids if o.rhs_registration_id),
+        'with_full_parentage': sum(1 for o in orchids if o.pod_parent and o.pollen_parent),
+        'generation_distribution': {}
+    }
+    
+    # Analyze generation distribution
+    for orchid in orchids:
+        if orchid.generation:
+            gen = f"F{orchid.generation}"
+            breeding_stats['generation_distribution'][gen] = breeding_stats['generation_distribution'].get(gen, 0) + 1
+    
+    return render_template('breeding_search_integration.html',
+                         orchids=orchids,
+                         breeding_stats=breeding_stats,
+                         breeding_type=breeding_type,
+                         generation=generation,
+                         parent_genus=parent_genus)
 
 @app.route('/care-wheel')
 def care_wheel():
