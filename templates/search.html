@@ -1734,6 +1734,328 @@ function openImageGallery(orchidId, imageSrc, orchidName) {
     });
 }
 
+<!-- AI Chat Interface -->
+<!-- Floating Chat Toggle Button -->
+<div id="chatToggle" class="chat-toggle-btn" title="Open AI Search Assistant">
+    <i data-feather="message-circle" class="chat-icon"></i>
+    <span class="chat-badge">AI</span>
+</div>
+
+<!-- Chat Window -->
+<div id="aiChatWindow" class="ai-chat-window">
+    <div class="chat-header">
+        <div class="chat-title">
+            <i data-feather="cpu" class="me-2"></i>
+            <span>AI Search Assistant</span>
+        </div>
+        <button id="closeChat" class="btn-close chat-close" aria-label="Close chat">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+    
+    <div id="chatMessages" class="chat-messages">
+        <!-- Messages will be dynamically added here -->
+    </div>
+    
+    <div class="chat-input-area">
+        <div class="input-group">
+            <textarea id="chatInput" class="form-control chat-input" 
+                      placeholder="Ask about orchids, search tips, or botanical questions..." 
+                      rows="2" maxlength="500"></textarea>
+            <button id="sendMessage" class="btn btn-primary chat-send-btn" type="button">
+                <i data-feather="send"></i>
+            </button>
+        </div>
+        <div class="chat-hints">
+            <small class="text-muted">
+                💡 Try: "Find fragrant orchids" • "What are epiphytes?" • "Show me Cattleyas"
+            </small>
+        </div>
+    </div>
+</div>
+
+<style>
+/* AI Chat Styling */
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    z-index: 1050;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.chat-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+}
+
+.chat-toggle-btn .chat-icon {
+    color: white;
+    width: 24px;
+    height: 24px;
+}
+
+.chat-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    border: 2px solid white;
+}
+
+.ai-chat-window {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 380px;
+    height: 500px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    z-index: 1055;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #212529, #343a40);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #495057;
+}
+
+.chat-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.chat-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chat-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    max-height: 350px;
+    scroll-behavior: smooth;
+}
+
+.chat-message {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.assistant-message {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.user-message .message-content {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 6px;
+}
+
+.assistant-message .message-content {
+    background: white;
+    color: #333;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 6px;
+}
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 11px;
+    opacity: 0.7;
+    text-align: right;
+}
+
+.user-message .message-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.assistant-message .message-time {
+    color: #6c757d;
+}
+
+.typing-dots {
+    display: flex;
+    align-items: center;
+    space-between: 4px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background: #6c757d;
+    border-radius: 50%;
+    margin-right: 4px;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+    30% { transform: scale(1.2); opacity: 1; }
+}
+
+.chat-input-area {
+    padding: 16px;
+    border-top: 1px solid #e9ecef;
+    background: white;
+    border-radius: 0 0 16px 16px;
+}
+
+.chat-input {
+    border-radius: 20px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+    resize: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.chat-send-btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    align-self: flex-end;
+}
+
+.chat-hints {
+    margin-top: 8px;
+    padding: 0 4px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .ai-chat-window {
+        width: 90vw;
+        right: 5vw;
+        bottom: 20px;
+        height: 70vh;
+    }
+    
+    .chat-toggle-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .chat-toggle-btn .chat-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Dark theme compatibility */
+@media (prefers-color-scheme: dark) {
+    .ai-chat-window {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .chat-messages {
+        background: #1a202c;
+    }
+    
+    .assistant-message .message-content {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .chat-input-area {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .chat-input {
+        background: #1a202c;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .chat-hints {
+        color: #a0aec0 !important;
+    }
+}
+</style>
+
 // Auto-submit on some filter changes for better UX
 document.addEventListener('DOMContentLoaded', function() {
     const autoSubmitSelects = ['genus', 'country', 'orchid_type', 'flowering_status', 'sort_by'];
@@ -1773,7 +2095,184 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize feather icons
     feather.replace();
+    
+    // Initialize AI Chat
+    initializeSearchAIChat();
 });
+
+// AI Search Chat Functionality
+function initializeSearchAIChat() {
+    let chatHistory = [];
+    let isChatOpen = false;
+    
+    // Create chat elements
+    createChatElements();
+    
+    // Event listeners
+    document.getElementById('chatToggle').addEventListener('click', toggleChat);
+    document.getElementById('sendMessage').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    document.getElementById('closeChat').addEventListener('click', toggleChat);
+    
+    function createChatElements() {
+        // Chat elements are created in HTML template - just initialize
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatToggle = document.getElementById('chatToggle');
+        
+        // Initially hidden
+        chatWindow.style.display = 'none';
+    }
+    
+    function toggleChat() {
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatToggle = document.getElementById('chatToggle');
+        
+        isChatOpen = !isChatOpen;
+        
+        if (isChatOpen) {
+            chatWindow.style.display = 'block';
+            chatToggle.style.display = 'none';
+            
+            // Welcome message if first time opening
+            if (chatHistory.length === 0) {
+                addMessage('assistant', "👋 Hi! I'm your AI search assistant. I can help you refine your search, identify orchids, explain biological features, and guide your botanical research. What would you like to know?");
+            }
+        } else {
+            chatWindow.style.display = 'none';
+            chatToggle.style.display = 'block';
+        }
+    }
+    
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Add user message to chat
+        addMessage('user', message);
+        input.value = '';
+        
+        // Show loading indicator
+        showTypingIndicator();
+        
+        // Get current search context
+        const searchContext = getCurrentSearchContext();
+        
+        // Send to AI
+        fetch('/api/chat-search-assist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                search_context: searchContext
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            
+            if (data.success) {
+                addMessage('assistant', data.response);
+                
+                // Apply suggested actions if any
+                if (data.suggested_actions && data.suggested_actions.length > 0) {
+                    applySuggestedActions(data.suggested_actions);
+                }
+            } else {
+                addMessage('assistant', data.fallback_response || 'Sorry, I\'m having trouble right now. Please try again.');
+            }
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            console.error('Chat error:', error);
+            addMessage('assistant', 'I apologize, but I\'m experiencing technical difficulties. Please try again in a moment.');
+        });
+    }
+    
+    function addMessage(sender, text) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}-message`;
+        
+        const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-text">${text}</div>
+                <div class="message-time">${timestamp}</div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        chatHistory.push({sender, text, timestamp});
+    }
+    
+    function showTypingIndicator() {
+        const messagesContainer = document.getElementById('chatMessages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'chat-message assistant-message typing';
+        typingDiv.innerHTML = `
+            <div class="message-content">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+    
+    function getCurrentSearchContext() {
+        // Extract current search filters from the form
+        const form = document.getElementById('searchForm');
+        const formData = new FormData(form);
+        const context = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (value && value.trim()) {
+                context[key] = value.trim();
+            }
+        }
+        
+        return context;
+    }
+    
+    function applySuggestedActions(actions) {
+        actions.forEach(action => {
+            if (action.type === 'filter') {
+                const field = document.getElementById(action.field);
+                if (field) {
+                    field.value = action.value;
+                    addMessage('assistant', `🎯 I've applied the ${action.field} filter: ${action.value}. Click Search to update results.`);
+                }
+            } else if (action.type === 'search') {
+                const searchField = document.querySelector('input[name="q"]');
+                if (searchField) {
+                    searchField.value = action.query;
+                    addMessage('assistant', `🔍 I've updated your search query to: "${action.query}". Click Search to find results.`);
+                }
+            }
+        });
+    }
+}
 </script>
 
 {% endblock %}

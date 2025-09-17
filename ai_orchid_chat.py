@@ -127,13 +127,16 @@ Provide detailed, scientific observations while being practical for orchid care.
             
             # Parse the JSON response
             try:
-                structured_analysis = json.loads(analysis_text)
+                if analysis_text:
+                    structured_analysis = json.loads(analysis_text)
+                else:
+                    structured_analysis = {"raw_analysis": "Empty response"}
             except json.JSONDecodeError:
                 # Fallback to text analysis if JSON parsing fails
                 structured_analysis = {"raw_analysis": analysis_text}
             
             # Log the analysis
-            logger.info(f"🤖 AI analyzed orchid image: {len(analysis_text)} chars, structured: {bool('species_identification' in structured_analysis)}")
+            logger.info(f"🤖 AI analyzed orchid image: {len(analysis_text or '')} chars, structured: {bool('species_identification' in structured_analysis)}")
             
             return {
                 'success': True,
