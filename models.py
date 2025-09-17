@@ -2834,3 +2834,359 @@ class SeasonalInteraction(db.Model):
     
     def __repr__(self):
         return f'<SeasonalInteraction {self.orchid_id}-{self.pollinator_id} month:{self.interaction_month}>'
+
+
+# =============================================================================
+# COMPREHENSIVE MEMBER COLLECTION MODELS
+# =============================================================================
+
+class MemberCollection(db.Model):
+    """
+    Enhanced member collection management with external database integration
+    """
+    __tablename__ = 'member_collections'
+    
+    id = db.Column(Integer, primary_key=True)
+    user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    orchid_record_id = db.Column(Integer, db.ForeignKey('orchid_record.id'), nullable=False)
+    
+    # Collection metadata
+    acquisition_date = db.Column(DateTime, nullable=True)
+    acquisition_source = db.Column(String(200), nullable=True)  # nursery, trade, wild collection, etc.
+    acquisition_cost = db.Column(Float, nullable=True)
+    current_location = db.Column(String(100), nullable=True)  # greenhouse, windowsill, etc.
+    
+    # Growing conditions and care
+    growing_medium = db.Column(String(100), nullable=True)
+    pot_size = db.Column(String(50), nullable=True)
+    light_conditions = db.Column(String(100), nullable=True)
+    watering_schedule = db.Column(String(100), nullable=True)
+    fertilizer_routine = db.Column(Text, nullable=True)
+    
+    # Collection status
+    collection_status = db.Column(String(50), default='active')  # active, dormant, flowering, problematic, deceased
+    health_status = db.Column(String(50), default='healthy')  # healthy, stressed, diseased, recovering
+    flowering_status = db.Column(Boolean, default=False)
+    last_repotted = db.Column(DateTime, nullable=True)
+    
+    # Personal notes and observations
+    personal_notes = db.Column(Text, nullable=True)
+    care_observations = db.Column(Text, nullable=True)
+    breeding_notes = db.Column(Text, nullable=True)
+    research_interests = db.Column(JSON, nullable=True)  # List of research topics
+    
+    # External database integration status
+    eol_data_updated = db.Column(DateTime, nullable=True)
+    gbif_data_updated = db.Column(DateTime, nullable=True)
+    ecological_data_complete = db.Column(Boolean, default=False)
+    literature_citations_count = db.Column(Integer, default=0)
+    
+    # Research and collaboration
+    available_for_research = db.Column(Boolean, default=False)
+    sharing_permissions = db.Column(String(50), default='private')  # private, members, public
+    collaboration_interests = db.Column(JSON, nullable=True)  # List of collaboration types
+    
+    # Analytics and tracking
+    photo_count = db.Column(Integer, default=0)
+    measurement_records = db.Column(Integer, default=0)
+    care_log_entries = db.Column(Integer, default=0)
+    research_publications = db.Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='member_collections')
+    orchid_record = db.relationship('OrchidRecord', backref='member_collections')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'orchid_record_id': self.orchid_record_id,
+            'acquisition_date': self.acquisition_date.isoformat() if self.acquisition_date else None,
+            'acquisition_source': self.acquisition_source,
+            'current_location': self.current_location,
+            'collection_status': self.collection_status,
+            'health_status': self.health_status,
+            'flowering_status': self.flowering_status,
+            'personal_notes': self.personal_notes,
+            'available_for_research': self.available_for_research,
+            'photo_count': self.photo_count,
+            'created_at': self.created_at.isoformat(),
+            'orchid': self.orchid_record.to_dict() if self.orchid_record else None
+        }
+    
+    def get_research_opportunities(self):
+        """Identify research opportunities for this collection item"""
+        opportunities = []
+        
+        # Check for missing external database data
+        if not self.eol_data_updated:
+            opportunities.append({
+                'type': 'external_database',
+                'source': 'EOL',
+                'description': 'Enrich with Encyclopedia of Life data',
+                'priority': 'medium'
+            })
+        
+        if not self.gbif_data_updated:
+            opportunities.append({
+                'type': 'external_database', 
+                'source': 'GBIF',
+                'description': 'Add global occurrence records',
+                'priority': 'medium'
+            })
+        
+        # Check for missing ecological data
+        if not self.ecological_data_complete:
+            opportunities.append({
+                'type': 'ecological',
+                'description': 'Map pollinator relationships',
+                'priority': 'high'
+            })
+        
+        # Check for documentation opportunities
+        if self.photo_count < 3:
+            opportunities.append({
+                'type': 'documentation',
+                'description': 'Add more photos (flowers, habit, details)',
+                'priority': 'high'
+            })
+        
+        if not self.care_observations:
+            opportunities.append({
+                'type': 'documentation',
+                'description': 'Document care observations and growth patterns',
+                'priority': 'medium'
+            })
+        
+        return opportunities
+
+
+class ExternalDatabaseCache(db.Model):
+    """
+    Cache for external database queries to improve performance
+    """
+    __tablename__ = 'external_database_cache'
+    
+    id = db.Column(Integer, primary_key=True)
+    
+    # Query identification
+    database_source = db.Column(String(50), nullable=False, index=True)  # 'eol', 'gbif', 'bold'
+    query_type = db.Column(String(50), nullable=False)  # 'species_search', 'occurrence', 'traits'
+    query_key = db.Column(String(200), nullable=False, index=True)  # scientific name or identifier
+    
+    # Cache data
+    response_data = db.Column(JSON, nullable=False)
+    response_status = db.Column(String(20), default='success')  # success, error, partial
+    query_metadata = db.Column(JSON, nullable=True)  # query parameters, result count, etc.
+    
+    # Cache management
+    cache_created = db.Column(DateTime, default=datetime.utcnow)
+    cache_expires = db.Column(DateTime, nullable=False)
+    access_count = db.Column(Integer, default=0)
+    last_accessed = db.Column(DateTime, default=datetime.utcnow)
+    
+    @classmethod
+    def get_cached_result(cls, database_source, query_type, query_key):
+        """Get cached result if available and not expired"""
+        cache_entry = cls.query.filter(
+            cls.database_source == database_source,
+            cls.query_type == query_type,
+            cls.query_key == query_key,
+            cls.cache_expires > datetime.utcnow()
+        ).first()
+        
+        if cache_entry:
+            cache_entry.access_count += 1
+            cache_entry.last_accessed = datetime.utcnow()
+            db.session.commit()
+            return cache_entry.response_data
+        
+        return None
+    
+    @classmethod
+    def cache_result(cls, database_source, query_type, query_key, response_data, expires_hours=24):
+        """Cache a database query result"""
+        # Remove existing cache entry
+        cls.query.filter(
+            cls.database_source == database_source,
+            cls.query_type == query_type,
+            cls.query_key == query_key
+        ).delete()
+        
+        # Create new cache entry
+        cache_entry = cls(
+            database_source=database_source,
+            query_type=query_type,
+            query_key=query_key,
+            response_data=response_data,
+            cache_expires=datetime.utcnow() + timedelta(hours=expires_hours)
+        )
+        
+        db.session.add(cache_entry)
+        db.session.commit()
+        
+        return cache_entry
+
+
+class ResearchCollaboration(db.Model):
+    """
+    Track research collaborations and data sharing between members
+    """
+    __tablename__ = 'research_collaborations'
+    
+    id = db.Column(Integer, primary_key=True)
+    
+    # Collaboration participants
+    initiator_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    collaborator_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=False)
+    
+    # Collaboration details
+    collaboration_type = db.Column(String(50), nullable=False)  # 'data_sharing', 'joint_research', 'breeding_program'
+    research_focus = db.Column(String(200), nullable=False)
+    shared_orchids = db.Column(JSON, nullable=True)  # List of orchid IDs being shared
+    
+    # Status and permissions
+    status = db.Column(String(20), default='proposed')  # proposed, active, completed, cancelled
+    data_sharing_level = db.Column(String(50), default='basic')  # basic, detailed, full_access
+    can_publish = db.Column(Boolean, default=False)
+    attribution_requirements = db.Column(Text, nullable=True)
+    
+    # Research outputs
+    shared_publications = db.Column(JSON, nullable=True)  # List of publication DOIs
+    shared_datasets = db.Column(JSON, nullable=True)  # List of dataset identifiers
+    collaboration_notes = db.Column(Text, nullable=True)
+    
+    # Timestamps
+    proposed_at = db.Column(DateTime, default=datetime.utcnow)
+    accepted_at = db.Column(DateTime, nullable=True)
+    completed_at = db.Column(DateTime, nullable=True)
+    
+    # Relationships
+    initiator = db.relationship('User', foreign_keys=[initiator_user_id], backref='initiated_collaborations')
+    collaborator = db.relationship('User', foreign_keys=[collaborator_user_id], backref='received_collaborations')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'collaboration_type': self.collaboration_type,
+            'research_focus': self.research_focus,
+            'status': self.status,
+            'data_sharing_level': self.data_sharing_level,
+            'proposed_at': self.proposed_at.isoformat(),
+            'initiator': {
+                'id': self.initiator.id,
+                'username': self.initiator.username
+            } if self.initiator else None,
+            'collaborator': {
+                'id': self.collaborator.id,
+                'username': self.collaborator.username
+            } if self.collaborator else None
+        }
+
+
+class LiteratureCitation(db.Model):
+    """
+    Academic literature citations for orchid research
+    """
+    __tablename__ = 'literature_citations'
+    
+    id = db.Column(Integer, primary_key=True)
+    
+    # Citation metadata
+    title = db.Column(String(500), nullable=False)
+    authors = db.Column(Text, nullable=False)  # JSON string of author list
+    journal = db.Column(String(200), nullable=True)
+    publication_year = db.Column(Integer, nullable=True)
+    volume = db.Column(String(50), nullable=True)
+    issue = db.Column(String(50), nullable=True)
+    pages = db.Column(String(100), nullable=True)
+    
+    # Digital identifiers
+    doi = db.Column(String(200), nullable=True, index=True)
+    pmid = db.Column(String(20), nullable=True)
+    isbn = db.Column(String(20), nullable=True)
+    url = db.Column(String(500), nullable=True)
+    
+    # Orchid relevance
+    relevant_genera = db.Column(JSON, nullable=True)  # List of genus names
+    relevant_species = db.Column(JSON, nullable=True)  # List of species names
+    research_topics = db.Column(JSON, nullable=True)  # List of research keywords
+    conservation_relevance = db.Column(Boolean, default=False)
+    
+    # Access and availability
+    open_access = db.Column(Boolean, default=False)
+    pdf_available = db.Column(Boolean, default=False)
+    local_pdf_path = db.Column(String(500), nullable=True)
+    
+    # User interactions
+    added_by_user_id = db.Column(String, db.ForeignKey('users.id'), nullable=True)
+    member_collections_cited = db.Column(JSON, nullable=True)  # List of member collection IDs
+    citation_count = db.Column(Integer, default=0)
+    
+    # Quality and verification
+    peer_reviewed = db.Column(Boolean, default=True)
+    quality_score = db.Column(Float, nullable=True)  # 0-1 relevance score
+    verification_status = db.Column(String(20), default='unverified')
+    
+    # Timestamps
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    added_by = db.relationship('User', backref='added_literature')
+    
+    def generate_bibtex(self):
+        """Generate BibTeX citation format"""
+        # Clean title and create citation key
+        clean_title = ''.join(c for c in self.title if c.isalnum() or c.isspace())
+        citation_key = f"{self.authors.split(',')[0].split()[-1].lower()}{self.publication_year or 'nd'}{clean_title.split()[0].lower()}"
+        
+        # Parse authors
+        try:
+            authors_list = json.loads(self.authors) if isinstance(self.authors, str) else self.authors
+            authors_str = ' and '.join(authors_list) if isinstance(authors_list, list) else str(self.authors)
+        except:
+            authors_str = str(self.authors)
+        
+        # Generate BibTeX entry
+        bibtex = f"@article{{{citation_key},\n"
+        bibtex += f"  title={{{self.title}}},\n"
+        bibtex += f"  author={{{authors_str}}},\n"
+        
+        if self.journal:
+            bibtex += f"  journal={{{self.journal}}},\n"
+        if self.publication_year:
+            bibtex += f"  year={{{self.publication_year}}},\n"
+        if self.volume:
+            bibtex += f"  volume={{{self.volume}}},\n"
+        if self.issue:
+            bibtex += f"  number={{{self.issue}}},\n"
+        if self.pages:
+            bibtex += f"  pages={{{self.pages}}},\n"
+        if self.doi:
+            bibtex += f"  doi={{{self.doi}}},\n"
+        if self.url:
+            bibtex += f"  url={{{self.url}}},\n"
+        
+        bibtex += "}\n"
+        return bibtex
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'authors': self.authors,
+            'journal': self.journal,
+            'publication_year': self.publication_year,
+            'doi': self.doi,
+            'relevant_genera': self.relevant_genera,
+            'relevant_species': self.relevant_species,
+            'research_topics': self.research_topics,
+            'open_access': self.open_access,
+            'citation_count': self.citation_count,
+            'created_at': self.created_at.isoformat()
+        }

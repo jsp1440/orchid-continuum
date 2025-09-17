@@ -3,7 +3,12 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
-                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration, BugReport)
+                   User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration, BugReport,
+                   MemberCollection, ExternalDatabaseCache, ResearchCollaboration, LiteratureCitation, Pollinator, AdvancedOrchidPollinatorRelationship)
+from eol_integration import EOLIntegrator
+from external_databases.gbif_integration import GBIFIntegrator
+from orchid_nursery_directory import get_nursery_directory
+from orchid_society_directory import get_society_directory
 from image_recovery_system import get_image_with_recovery, get_image_recovery_stats
 from photo_failsafe_system import get_photos_guaranteed
 from orchid_ai import analyze_orchid_image, get_weather_based_care_advice, extract_metadata_from_text
@@ -11755,5 +11760,482 @@ def api_export_search_results():
         
     except Exception as e:
         logger.error(f"❌ Error exporting search results: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# COMPREHENSIVE MEMBERS COLLECTION AREA
+# =============================================================================
+
+@app.route('/members-collection')
+@login_required
+def members_collection():
+    """
+    Comprehensive Members Collection Area - Professional research hub
+    Integrates external databases, ecological relationships, and literature tools
+    """
+    try:
+        # Get user's collection data
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        
+        # Get member statistics
+        collection_stats = {
+            'total_orchids': len(user_collections),
+            'flowering_count': sum(1 for c in user_collections if c.flowering_status),
+            'genera_count': len(set(c.orchid_record.genus for c in user_collections if c.orchid_record and c.orchid_record.genus)),
+            'species_count': len(set(f"{c.orchid_record.genus} {c.orchid_record.species}" for c in user_collections if c.orchid_record and c.orchid_record.genus and c.orchid_record.species)),
+            'research_ready': sum(1 for c in user_collections if c.available_for_research),
+            'needs_attention': sum(1 for c in user_collections if c.health_status in ['stressed', 'diseased']),
+            'photo_coverage': sum(c.photo_count for c in user_collections),
+        }
+        
+        # Get research opportunities across all collection items
+        research_opportunities = []
+        for collection in user_collections:
+            opportunities = collection.get_research_opportunities()
+            for opp in opportunities:
+                opp['orchid_name'] = collection.orchid_record.display_name if collection.orchid_record else 'Unknown'
+                opp['collection_id'] = collection.id
+            research_opportunities.extend(opportunities)
+        
+        # Get external database integration status
+        external_db_status = {
+            'eol_updated': sum(1 for c in user_collections if c.eol_data_updated),
+            'gbif_updated': sum(1 for c in user_collections if c.gbif_data_updated),
+            'ecological_complete': sum(1 for c in user_collections if c.ecological_data_complete),
+            'literature_citations': sum(c.literature_citations_count for c in user_collections)
+        }
+        
+        # Get recent additions
+        recent_additions = MemberCollection.query.filter_by(user_id=current_user.id)\
+            .order_by(MemberCollection.created_at.desc()).limit(5).all()
+        
+        # Get collaboration opportunities (other members with overlapping genera)
+        user_genera = set(c.orchid_record.genus for c in user_collections if c.orchid_record and c.orchid_record.genus)
+        potential_collaborators = []
+        if user_genera:
+            other_collections = MemberCollection.query\
+                .filter(MemberCollection.user_id != current_user.id)\
+                .filter(MemberCollection.available_for_research == True)\
+                .join(OrchidRecord)\
+                .filter(OrchidRecord.genus.in_(user_genera))\
+                .limit(10).all()
+            
+            collaborator_dict = {}
+            for collection in other_collections:
+                user_id = collection.user_id
+                if user_id not in collaborator_dict:
+                    collaborator_dict[user_id] = {
+                        'user': collection.user,
+                        'shared_genera': set(),
+                        'collection_count': 0
+                    }
+                collaborator_dict[user_id]['shared_genera'].add(collection.orchid_record.genus)
+                collaborator_dict[user_id]['collection_count'] += 1
+            
+            potential_collaborators = [
+                {
+                    'user': data['user'],
+                    'shared_genera': list(data['shared_genera']),
+                    'collection_count': data['collection_count']
+                }
+                for data in collaborator_dict.values()
+            ]
+        
+        # Get nursery recommendations based on collection gaps
+        nursery_recommendations = get_nursery_directory()[:5]  # Top 5 nurseries
+        
+        # Get society recommendations
+        society_recommendations = get_society_directory()[:3]  # Top 3 societies
+        
+        logger.info(f"🌺 Members Collection loaded for user {current_user.id}: {collection_stats['total_orchids']} orchids")
+        
+        return render_template('members_collection.html',
+                             user_collections=user_collections,
+                             collection_stats=collection_stats,
+                             research_opportunities=research_opportunities,
+                             external_db_status=external_db_status,
+                             recent_additions=recent_additions,
+                             potential_collaborators=potential_collaborators,
+                             nursery_recommendations=nursery_recommendations,
+                             society_recommendations=society_recommendations)
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading members collection: {e}")
+        flash('Error loading collection data. Please try again.', 'error')
+        return redirect(url_for('index'))
+
+
+@app.route('/api/member-collection-stats')
+@login_required
+def api_member_collection_stats():
+    """API endpoint for member collection analytics and insights"""
+    try:
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        
+        # Generate detailed analytics
+        analytics = {
+            'total_orchids': len(user_collections),
+            'collection_health': {
+                'healthy': sum(1 for c in user_collections if c.health_status == 'healthy'),
+                'stressed': sum(1 for c in user_collections if c.health_status == 'stressed'),
+                'diseased': sum(1 for c in user_collections if c.health_status == 'diseased'),
+                'recovering': sum(1 for c in user_collections if c.health_status == 'recovering')
+            },
+            'flowering_status': {
+                'currently_flowering': sum(1 for c in user_collections if c.flowering_status),
+                'not_flowering': sum(1 for c in user_collections if not c.flowering_status)
+            },
+            'acquisition_sources': {},
+            'genera_distribution': {},
+            'monthly_acquisitions': {},
+            'care_complexity': {
+                'beginner': 0,
+                'intermediate': 0,
+                'advanced': 0
+            }
+        }
+        
+        # Process collection data for analytics
+        for collection in user_collections:
+            # Acquisition sources
+            source = collection.acquisition_source or 'Unknown'
+            analytics['acquisition_sources'][source] = analytics['acquisition_sources'].get(source, 0) + 1
+            
+            # Genera distribution
+            if collection.orchid_record and collection.orchid_record.genus:
+                genus = collection.orchid_record.genus
+                analytics['genera_distribution'][genus] = analytics['genera_distribution'].get(genus, 0) + 1
+            
+            # Monthly acquisitions
+            if collection.acquisition_date:
+                month_key = collection.acquisition_date.strftime('%Y-%m')
+                analytics['monthly_acquisitions'][month_key] = analytics['monthly_acquisitions'].get(month_key, 0) + 1
+        
+        # Calculate research potential
+        analytics['research_potential'] = {
+            'ready_for_research': sum(1 for c in user_collections if c.available_for_research),
+            'missing_eol_data': sum(1 for c in user_collections if not c.eol_data_updated),
+            'missing_gbif_data': sum(1 for c in user_collections if not c.gbif_data_updated),
+            'incomplete_ecological': sum(1 for c in user_collections if not c.ecological_data_complete),
+            'needs_photos': sum(1 for c in user_collections if c.photo_count < 3)
+        }
+        
+        return jsonify({
+            'success': True,
+            'analytics': analytics,
+            'last_updated': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating collection stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/member-research-opportunities')
+@login_required
+def api_member_research_opportunities():
+    """API endpoint for research opportunities and collaboration suggestions"""
+    try:
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        
+        all_opportunities = []
+        for collection in user_collections:
+            opportunities = collection.get_research_opportunities()
+            for opp in opportunities:
+                opp.update({
+                    'collection_id': collection.id,
+                    'orchid_name': collection.orchid_record.display_name if collection.orchid_record else 'Unknown',
+                    'genus': collection.orchid_record.genus if collection.orchid_record else None,
+                    'species': collection.orchid_record.species if collection.orchid_record else None
+                })
+            all_opportunities.extend(opportunities)
+        
+        # Categorize opportunities by priority and type
+        categorized = {
+            'high_priority': [opp for opp in all_opportunities if opp.get('priority') == 'high'],
+            'medium_priority': [opp for opp in all_opportunities if opp.get('priority') == 'medium'],
+            'external_database': [opp for opp in all_opportunities if opp.get('type') == 'external_database'],
+            'documentation': [opp for opp in all_opportunities if opp.get('type') == 'documentation'],
+            'ecological': [opp for opp in all_opportunities if opp.get('type') == 'ecological']
+        }
+        
+        # Get collaboration suggestions
+        user_genera = set(c.orchid_record.genus for c in user_collections if c.orchid_record and c.orchid_record.genus)
+        collaboration_suggestions = []
+        
+        if user_genera:
+            # Find active research collaborations
+            existing_collaborations = ResearchCollaboration.query.filter(
+                or_(
+                    ResearchCollaboration.initiator_user_id == current_user.id,
+                    ResearchCollaboration.collaborator_user_id == current_user.id
+                )
+            ).filter(ResearchCollaboration.status == 'active').all()
+            
+            collaboration_suggestions = [collab.to_dict() for collab in existing_collaborations]
+        
+        return jsonify({
+            'success': True,
+            'opportunities': categorized,
+            'collaboration_suggestions': collaboration_suggestions,
+            'summary': {
+                'total_opportunities': len(all_opportunities),
+                'high_priority': len(categorized['high_priority']),
+                'active_collaborations': len(collaboration_suggestions)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating research opportunities: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/member-ecological-network')
+@login_required
+def api_member_ecological_network():
+    """API endpoint for ecological relationships and pollinator networks"""
+    try:
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        user_orchid_ids = [c.orchid_record_id for c in user_collections if c.orchid_record_id]
+        
+        if not user_orchid_ids:
+            return jsonify({
+                'success': True,
+                'network': {'nodes': [], 'edges': []},
+                'summary': {'total_relationships': 0, 'unique_pollinators': 0}
+            })
+        
+        # Get pollinator relationships for user's orchids
+        pollinator_relationships = AdvancedOrchidPollinatorRelationship.query\
+            .filter(AdvancedOrchidPollinatorRelationship.orchid_id.in_(user_orchid_ids)).all()
+        
+        # Build network graph data
+        nodes = []
+        edges = []
+        pollinator_ids = set()
+        
+        # Add orchid nodes
+        for collection in user_collections:
+            if collection.orchid_record:
+                nodes.append({
+                    'id': f"orchid_{collection.orchid_record.id}",
+                    'type': 'orchid',
+                    'name': collection.orchid_record.display_name,
+                    'genus': collection.orchid_record.genus,
+                    'species': collection.orchid_record.species,
+                    'flowering_status': collection.flowering_status,
+                    'health_status': collection.health_status
+                })
+        
+        # Add pollinator relationships
+        for relationship in pollinator_relationships:
+            if relationship.pollinator:
+                pollinator_id = f"pollinator_{relationship.pollinator.id}"
+                pollinator_ids.add(pollinator_id)
+                
+                # Add pollinator node if not already added
+                if not any(node['id'] == pollinator_id for node in nodes):
+                    nodes.append({
+                        'id': pollinator_id,
+                        'type': 'pollinator',
+                        'name': relationship.pollinator.common_name or relationship.pollinator.scientific_name,
+                        'scientific_name': relationship.pollinator.scientific_name,
+                        'pollinator_type': relationship.pollinator.pollinator_type.value if relationship.pollinator.pollinator_type else 'unknown'
+                    })
+                
+                # Add edge
+                edges.append({
+                    'source': f"orchid_{relationship.orchid_id}",
+                    'target': pollinator_id,
+                    'relationship_type': relationship.relationship_type.value if relationship.relationship_type else 'unknown',
+                    'effectiveness_score': relationship.effectiveness_score or 0.5,
+                    'observation_frequency': relationship.observation_frequency or 0
+                })
+        
+        # Generate ecosystem insights
+        insights = {
+            'total_relationships': len(pollinator_relationships),
+            'unique_pollinators': len(pollinator_ids),
+            'relationship_types': {},
+            'pollinator_types': {},
+            'conservation_status': {}
+        }
+        
+        for relationship in pollinator_relationships:
+            rel_type = relationship.relationship_type.value if relationship.relationship_type else 'unknown'
+            insights['relationship_types'][rel_type] = insights['relationship_types'].get(rel_type, 0) + 1
+            
+            if relationship.pollinator:
+                poll_type = relationship.pollinator.pollinator_type.value if relationship.pollinator.pollinator_type else 'unknown'
+                insights['pollinator_types'][poll_type] = insights['pollinator_types'].get(poll_type, 0) + 1
+        
+        return jsonify({
+            'success': True,
+            'network': {
+                'nodes': nodes,
+                'edges': edges
+            },
+            'insights': insights,
+            'summary': {
+                'total_relationships': insights['total_relationships'],
+                'unique_pollinators': insights['unique_pollinators'],
+                'network_complexity': len(edges) / max(len(nodes), 1)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating ecological network: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/member-literature-export')
+@login_required
+def api_member_literature_export():
+    """API endpoint for academic citation and BibTeX generation"""
+    try:
+        format_type = request.args.get('format', 'bibtex')  # bibtex, csv, json
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        
+        # Get relevant literature citations
+        user_genera = [c.orchid_record.genus for c in user_collections if c.orchid_record and c.orchid_record.genus]
+        user_species = [f"{c.orchid_record.genus} {c.orchid_record.species}" 
+                       for c in user_collections 
+                       if c.orchid_record and c.orchid_record.genus and c.orchid_record.species]
+        
+        relevant_citations = []
+        if user_genera:
+            citations = LiteratureCitation.query.filter(
+                or_(
+                    LiteratureCitation.relevant_genera.op('?')(user_genera),
+                    LiteratureCitation.relevant_species.op('?')(user_species)
+                )
+            ).all()
+            relevant_citations = citations
+        
+        if format_type == 'bibtex':
+            # Generate BibTeX format
+            bibtex_content = f"% BibTeX Export for {current_user.first_name or 'Member'} Collection\n"
+            bibtex_content += f"% Generated on {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC\n"
+            bibtex_content += f"% Total orchids: {len(user_collections)}\n\n"
+            
+            for citation in relevant_citations:
+                bibtex_content += citation.generate_bibtex() + "\n"
+            
+            response = make_response(bibtex_content)
+            response.headers['Content-Type'] = 'text/plain'
+            response.headers['Content-Disposition'] = f'attachment; filename=member_collection_bibliography_{datetime.now().strftime("%Y%m%d")}.bib'
+            return response
+            
+        elif format_type == 'csv':
+            # Generate CSV format
+            csv_content = "Title,Authors,Journal,Year,DOI,Relevant Genera,Relevant Species\n"
+            for citation in relevant_citations:
+                csv_content += f'"{citation.title}","{citation.authors}","{citation.journal or ""}","{citation.publication_year or ""}","{citation.doi or ""}","{"; ".join(citation.relevant_genera or [])}","{"; ".join(citation.relevant_species or [])}"\n'
+            
+            response = make_response(csv_content)
+            response.headers['Content-Type'] = 'text/csv'
+            response.headers['Content-Disposition'] = f'attachment; filename=member_collection_literature_{datetime.now().strftime("%Y%m%d")}.csv'
+            return response
+            
+        else:  # JSON format
+            citations_data = [citation.to_dict() for citation in relevant_citations]
+            collection_data = [collection.to_dict() for collection in user_collections]
+            
+            export_data = {
+                'export_info': {
+                    'generated_at': datetime.utcnow().isoformat(),
+                    'user_id': current_user.id,
+                    'total_orchids': len(user_collections),
+                    'total_citations': len(relevant_citations)
+                },
+                'collection': collection_data,
+                'literature': citations_data
+            }
+            
+            return jsonify(export_data)
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating literature export: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/member-external-search')
+@login_required
+def api_member_external_search():
+    """API endpoint for external database searches (EOL/GBIF)"""
+    try:
+        query = request.args.get('q', '').strip()
+        database = request.args.get('db', 'both')  # 'eol', 'gbif', 'both'
+        
+        if not query:
+            return jsonify({'success': False, 'error': 'Search query required'}), 400
+        
+        results = {}
+        
+        # Check cache first
+        if database in ['eol', 'both']:
+            cached_eol = ExternalDatabaseCache.get_cached_result('eol', 'species_search', query)
+            if cached_eol:
+                results['eol'] = cached_eol
+            else:
+                # Perform EOL search
+                eol_integrator = EOLIntegrator()
+                eol_result = eol_integrator.search_eol_species(query)
+                if eol_result:
+                    results['eol'] = eol_result
+                    # Cache the result
+                    ExternalDatabaseCache.cache_result('eol', 'species_search', query, eol_result)
+        
+        if database in ['gbif', 'both']:
+            cached_gbif = ExternalDatabaseCache.get_cached_result('gbif', 'species_search', query)
+            if cached_gbif:
+                results['gbif'] = cached_gbif
+            else:
+                # Perform GBIF search
+                gbif_integrator = GBIFIntegrator()
+                gbif_result = gbif_integrator.search_species(query)
+                if gbif_result:
+                    results['gbif'] = gbif_result
+                    # Cache the result
+                    ExternalDatabaseCache.cache_result('gbif', 'species_search', query, gbif_result)
+        
+        # Add enrichment suggestions for user's collection
+        enrichment_suggestions = []
+        user_collections = MemberCollection.query.filter_by(user_id=current_user.id).all()
+        
+        for collection in user_collections:
+            if (collection.orchid_record and 
+                collection.orchid_record.scientific_name and 
+                query.lower() in collection.orchid_record.scientific_name.lower()):
+                
+                suggestions = []
+                if not collection.eol_data_updated:
+                    suggestions.append('Add EOL data')
+                if not collection.gbif_data_updated:
+                    suggestions.append('Add GBIF occurrences')
+                if not collection.ecological_data_complete:
+                    suggestions.append('Map ecological relationships')
+                
+                if suggestions:
+                    enrichment_suggestions.append({
+                        'collection_id': collection.id,
+                        'orchid_name': collection.orchid_record.display_name,
+                        'suggestions': suggestions
+                    })
+        
+        return jsonify({
+            'success': True,
+            'query': query,
+            'results': results,
+            'enrichment_suggestions': enrichment_suggestions,
+            'cache_status': {
+                'eol_cached': 'eol' in results and cached_eol is not None,
+                'gbif_cached': 'gbif' in results and cached_gbif is not None
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error performing external search: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 

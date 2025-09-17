@@ -35,8 +35,8 @@ class OrchidSociety:
     email: Optional[str] = None
     contact_person: str = ""
     society_type: str = "Local"  # National, Regional, Local, Specialty
-    affiliation: List[str] = None
-    specialty_focus: List[str] = None
+    affiliation: Optional[List[str]] = None
+    specialty_focus: Optional[List[str]] = None
     description: str = ""
     established_year: Optional[int] = None
     membership_size: str = "Small"  # Small (<50), Medium (50-200), Large (200-500), Very Large (500+)
@@ -46,7 +46,7 @@ class OrchidSociety:
     annual_show: bool = False
     show_schedule: str = ""
     membership_fees: str = ""
-    benefits: List[str] = None
+    benefits: Optional[List[str]] = None
     newsletter: bool = False
     newsletter_name: str = ""
     judging_program: bool = False
@@ -55,13 +55,13 @@ class OrchidSociety:
     plant_sales: bool = False
     guest_speakers: bool = False
     field_trips: bool = False
-    social_media: Dict[str, str] = None
-    languages: List[str] = None
+    social_media: Optional[Dict[str, str]] = None
+    languages: Optional[List[str]] = None
     beginner_friendly: bool = True
-    awards_given: List[str] = None
-    notable_members: List[str] = None
-    founding_members: List[str] = None
-    special_programs: List[str] = None
+    awards_given: Optional[List[str]] = None
+    notable_members: Optional[List[str]] = None
+    founding_members: Optional[List[str]] = None
+    special_programs: Optional[List[str]] = None
     notes: str = ""
     last_updated: str = ""
     
@@ -605,8 +605,8 @@ class OrchidSocietyDirectory:
                          specialty: str = "",
                          affiliation: str = "",
                          membership_size: str = "",
-                         beginner_friendly: bool = None,
-                         has_annual_show: bool = None,
+                         beginner_friendly: Optional[bool] = None,
+                         has_annual_show: Optional[bool] = None,
                          limit: int = 50) -> List[Dict[str, Any]]:
         """
         Search societies with multiple filters
