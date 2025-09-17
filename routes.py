@@ -12239,3 +12239,253 @@ def api_member_external_search():
         logger.error(f"❌ Error performing external search: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# =============================================================================
+# KNOWLEDGE BASE ROUTES - Educational Learning System
+# =============================================================================
+
+@app.route('/knowledge-base')
+def knowledge_base():
+    """Main knowledge base page with search and categories"""
+    try:
+        from models import KnowledgeBase
+        
+        # Get search parameters
+        search_query = request.args.get('q', '').strip()
+        category_filter = request.args.get('category', '').strip()
+        difficulty_filter = request.args.get('difficulty', '').strip()
+        content_type_filter = request.args.get('type', '').strip()
+        
+        # Build query
+        query = KnowledgeBase.query
+        
+        # Apply filters
+        if search_query:
+            query = query.filter(
+                or_(
+                    KnowledgeBase.title.ilike(f'%{search_query}%'),
+                    KnowledgeBase.question.ilike(f'%{search_query}%'),
+                    KnowledgeBase.answer.ilike(f'%{search_query}%'),
+                    KnowledgeBase.article.ilike(f'%{search_query}%'),
+                    KnowledgeBase.category.ilike(f'%{search_query}%')
+                )
+            )
+        
+        if category_filter:
+            query = query.filter(KnowledgeBase.category == category_filter)
+        
+        if difficulty_filter:
+            query = query.filter(KnowledgeBase.difficulty_level == difficulty_filter)
+            
+        if content_type_filter:
+            query = query.filter(KnowledgeBase.content_type == content_type_filter)
+        
+        # Get results
+        entries = query.order_by(KnowledgeBase.title).all()
+        
+        # Get all categories for filter dropdown
+        categories = db.session.query(KnowledgeBase.category).distinct().order_by(KnowledgeBase.category).all()
+        categories = [cat[0] for cat in categories]
+        
+        # Get statistics
+        stats = {
+            'total_entries': KnowledgeBase.query.count(),
+            'categories': len(categories),
+            'difficulty_counts': {
+                'beginner': KnowledgeBase.query.filter_by(difficulty_level='beginner').count(),
+                'intermediate': KnowledgeBase.query.filter_by(difficulty_level='intermediate').count(),
+                'advanced': KnowledgeBase.query.filter_by(difficulty_level='advanced').count()
+            },
+            'content_types': {
+                'qa': KnowledgeBase.query.filter_by(content_type='qa').count(),
+                'article': KnowledgeBase.query.filter_by(content_type='article').count()
+            }
+        }
+        
+        return render_template('knowledge_base.html', 
+                             entries=entries,
+                             categories=categories,
+                             stats=stats,
+                             search_query=search_query,
+                             category_filter=category_filter,
+                             difficulty_filter=difficulty_filter,
+                             content_type_filter=content_type_filter)
+        
+    except Exception as e:
+        logger.error(f"Error loading knowledge base: {str(e)}")
+        flash('Error loading knowledge base content', 'error')
+        # Provide safe default stats to prevent template errors
+        safe_stats = {
+            'total_entries': 0,
+            'categories': 0,
+            'difficulty_counts': {
+                'beginner': 0,
+                'intermediate': 0,
+                'advanced': 0
+            },
+            'content_types': {
+                'qa': 0,
+                'article': 0
+            }
+        }
+        return render_template('knowledge_base.html', entries=[], categories=[], stats=safe_stats)
+
+@app.route('/api/knowledge-base/search')
+def api_knowledge_base_search():
+    """API endpoint for knowledge base search with JSON response"""
+    try:
+        from models import KnowledgeBase
+        
+        # Get parameters
+        query_text = request.args.get('q', '').strip()
+        category = request.args.get('category', '')
+        difficulty = request.args.get('difficulty', '')
+        limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 results
+        
+        # Build query
+        query = KnowledgeBase.query
+        
+        if query_text:
+            query = query.filter(
+                or_(
+                    KnowledgeBase.title.ilike(f'%{query_text}%'),
+                    KnowledgeBase.question.ilike(f'%{query_text}%'),
+                    KnowledgeBase.answer.ilike(f'%{query_text}%'),
+                    KnowledgeBase.category.ilike(f'%{query_text}%')
+                )
+            )
+        
+        if category:
+            query = query.filter(KnowledgeBase.category == category)
+            
+        if difficulty:
+            query = query.filter(KnowledgeBase.difficulty_level == difficulty)
+        
+        # Get results
+        entries = query.limit(limit).all()
+        
+        # Format response
+        results = []
+        for entry in entries:
+            results.append({
+                'id': entry.id,
+                'title': entry.title,
+                'question': entry.question,
+                'answer': entry.answer[:200] + '...' if entry.answer and len(entry.answer) > 200 else entry.answer,
+                'category': entry.category,
+                'difficulty_level': entry.difficulty_level,
+                'content_type': entry.content_type,
+                'keywords': entry.keywords,
+                'related_genera': entry.related_genera
+            })
+        
+        return jsonify({
+            'success': True,
+            'count': len(results),
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in knowledge base search API: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Search failed',
+            'count': 0,
+            'results': []
+        }), 500
+
+@app.route('/api/knowledge-base/categories')
+def api_knowledge_base_categories():
+    """Get all knowledge base categories with counts"""
+    try:
+        from models import KnowledgeBase
+        
+        # Get category counts
+        category_data = db.session.query(
+            KnowledgeBase.category,
+            func.count(KnowledgeBase.id).label('count')
+        ).group_by(KnowledgeBase.category).order_by(KnowledgeBase.category).all()
+        
+        categories = []
+        for category, count in category_data:
+            categories.append({
+                'name': category,
+                'count': count,
+                'slug': category.lower().replace(' ', '-').replace('&', 'and')
+            })
+        
+        return jsonify({
+            'success': True,
+            'categories': categories,
+            'total_categories': len(categories)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting knowledge base categories: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load categories',
+            'categories': []
+        }), 500
+
+@app.route('/knowledge-base/entry/<int:entry_id>')
+def knowledge_base_entry(entry_id):
+    """Individual knowledge base entry page"""
+    try:
+        from models import KnowledgeBase
+        
+        entry = KnowledgeBase.query.get_or_404(entry_id)
+        
+        # Get related entries (same category, different content)
+        related_entries = KnowledgeBase.query.filter(
+            KnowledgeBase.category == entry.category,
+            KnowledgeBase.id != entry.id
+        ).limit(3).all()
+        
+        return render_template('knowledge_base_entry.html', 
+                             entry=entry,
+                             related_entries=related_entries)
+        
+    except Exception as e:
+        logger.error(f"Error loading knowledge base entry {entry_id}: {str(e)}")
+        flash('Knowledge base entry not found', 'error')
+        return redirect(url_for('knowledge_base'))
+
+@app.route('/api/knowledge-base/popular')
+def api_knowledge_base_popular():
+    """Get popular knowledge base entries (by category diversity)"""
+    try:
+        from models import KnowledgeBase
+        
+        # Get one entry from each category for diversity
+        popular_entries = []
+        categories = db.session.query(KnowledgeBase.category).distinct().all()
+        
+        for category_tuple in categories[:10]:  # Limit to 10 categories
+            category = category_tuple[0]
+            entry = KnowledgeBase.query.filter_by(category=category).first()
+            if entry:
+                popular_entries.append({
+                    'id': entry.id,
+                    'title': entry.title,
+                    'category': entry.category,
+                    'difficulty_level': entry.difficulty_level,
+                    'content_type': entry.content_type,
+                    'preview': entry.answer[:150] + '...' if entry.answer and len(entry.answer) > 150 else entry.answer
+                })
+        
+        return jsonify({
+            'success': True,
+            'entries': popular_entries,
+            'count': len(popular_entries)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting popular knowledge base entries: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load popular entries',
+            'entries': []
+        }), 500
+
+logger.info("🧠 Knowledge Base routes registered successfully")
+
