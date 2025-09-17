@@ -79,6 +79,7 @@ from eol_integration import EOLIntegrator
 from external_databases.gbif_integration import GBIFIntegrator
 from bug_report_system import bug_report_bp
 from gary_photo_demo import gary_demo as gary_demo_bp
+from drive_importer import drive_import_bp
 from orchid_nursery_directory import get_nursery_directory, register_nursery_api_routes
 from orchid_society_directory import get_society_directory, register_society_api_routes
 from orchid_genetics_laboratory import register_genetics_laboratory
@@ -1980,6 +1981,9 @@ app.register_blueprint(enhanced_mapping_bp)
 
 # Register Citizen Science Platform
 app.register_blueprint(citizen_science_bp)
+
+# Register Google Drive Import System
+app.register_blueprint(drive_import_bp)
 
 # Register Mycorrhizal Research Platform
 from mycorrhizal_research_system import mycorrhizal_bp
