@@ -1,8 +1,9 @@
 from app import db
 from datetime import datetime, timedelta
-from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, JSON, Enum
+from sqlalchemy import String, Text, Integer, Float, Boolean, DateTime, JSON, Enum, and_, or_
 from sqlalchemy.sql import operators
 from flask_login import UserMixin
+from typing import List, Optional, Any
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 import enum
@@ -968,8 +969,9 @@ class PasswordResetToken(db.Model):
     @staticmethod
     def cleanup_expired_tokens():
         """Remove expired tokens from database"""
+        now = datetime.utcnow()
         expired = PasswordResetToken.query.filter(
-            PasswordResetToken.expires_at < datetime.utcnow()
+            PasswordResetToken.expires_at < now
         ).all()
         
         for token in expired:
