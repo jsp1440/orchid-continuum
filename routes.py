@@ -3781,10 +3781,75 @@ def search():
             'orchid_type': orchid_type, 'flowering_status': flowering_status
         })
     
+    # ENHANCED MAPPING INTEGRATION
+    # Get coordinate data for search results to enable map displays
+    orchid_coordinates = []
+    regional_distribution = {}
+    
+    try:
+        from simplified_orchid_mapping import simplified_mapper
+        
+        # Get coordinates for orchids with precise location data
+        for orchid in orchids:
+            if orchid.decimal_latitude and orchid.decimal_longitude:
+                orchid_coordinates.append({
+                    'id': orchid.id,
+                    'lat': float(orchid.decimal_latitude),
+                    'lng': float(orchid.decimal_longitude),
+                    'name': orchid.display_name or orchid.scientific_name or f"Orchid {orchid.id}",
+                    'genus': orchid.genus or 'Unknown',
+                    'species': orchid.species or 'Unknown',
+                    'location': orchid.locality or orchid.country or 'Unknown location',
+                    'image': orchid.google_drive_id if orchid.google_drive_id else None,
+                    'region': orchid.region or 'Unknown region'
+                })
+        
+        # Get regional distribution data for results
+        for orchid in orchids:
+            region = orchid.region or 'Unknown'
+            if region not in regional_distribution:
+                regional_distribution[region] = {
+                    'count': 0,
+                    'genera': set(),
+                    'species': set(),
+                    'flowering': 0
+                }
+            regional_distribution[region]['count'] += 1
+            if orchid.genus:
+                regional_distribution[region]['genera'].add(orchid.genus)
+            if orchid.scientific_name:
+                regional_distribution[region]['species'].add(orchid.scientific_name)
+            if orchid.is_flowering:
+                regional_distribution[region]['flowering'] += 1
+        
+        # Convert sets to counts for JSON serialization
+        for region_data in regional_distribution.values():
+            region_data['genera'] = len(region_data['genera'])
+            region_data['species'] = len(region_data['species'])
+        
+        # Get mapping statistics
+        mapping_stats = {
+            'total_with_coordinates': len(orchid_coordinates),
+            'total_regions': len(regional_distribution),
+            'coordinate_coverage': (len(orchid_coordinates) / len(orchids) * 100) if orchids else 0
+        }
+        
+        logger.info(f"🗺️ Search mapping integration: {len(orchid_coordinates)} coordinates, {len(regional_distribution)} regions")
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating mapping data for search: {e}")
+        orchid_coordinates = []
+        regional_distribution = {}
+        mapping_stats = {'total_with_coordinates': 0, 'total_regions': 0, 'coordinate_coverage': 0}
+
     return render_template('search.html', 
                          orchids=orchids,
                          search_stats=search_stats,
                          filter_options=filter_options,
+                         # ENHANCED MAPPING DATA
+                         orchid_coordinates=orchid_coordinates,
+                         regional_distribution=regional_distribution,
+                         mapping_stats=mapping_stats,
                          # Pass all search parameters back to template
                          query=query_text,
                          genus=genus,

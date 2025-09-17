@@ -524,6 +524,155 @@
         </div>
     </div>
     
+    <!-- ENHANCED MAPPING INTEGRATION PANEL -->
+    {% if search_stats.total_found > 0 and (orchid_coordinates or regional_distribution) %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #00d4aa, #007ba7);">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white">
+                    <i data-feather="map" class="me-2"></i>Geographic Distribution of Search Results
+                </h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="toggleMapView('regional')" id="regional-btn">
+                        <i data-feather="pie-chart" class="me-1"></i>Regional
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="toggleMapView('coordinates')" id="coordinates-btn">
+                        <i data-feather="navigation" class="me-1"></i>Coordinates
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="openGlobeView()">
+                        <i data-feather="globe" class="me-1"></i>3D Globe
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Mapping Statistics -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-primary me-2">{{ mapping_stats.total_with_coordinates }}</div>
+                        <span class="text-muted">With Precise Coordinates</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-success me-2">{{ mapping_stats.total_regions }}</div>
+                        <span class="text-muted">Different Regions</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-info me-2">{{ "%.1f"|format(mapping_stats.coordinate_coverage) }}%</div>
+                        <span class="text-muted">Coordinate Coverage</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regional Distribution View -->
+            <div id="regional-view" class="mapping-view">
+                {% if regional_distribution %}
+                <h6 class="text-primary mb-3">Regional Distribution</h6>
+                <div class="row">
+                    {% for region, data in regional_distribution.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title text-truncate">{{ region }}</h6>
+                                <div class="small text-muted">
+                                    <div><strong>{{ data.count }}</strong> orchids</div>
+                                    <div>{{ data.genera }} genera</div>
+                                    <div>{{ data.species }} species</div>
+                                    {% if data.flowering > 0 %}
+                                    <div class="text-warning">{{ data.flowering }} flowering</div>
+                                    {% endif %}
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="filterByRegion('{{ region }}')">
+                                    <i data-feather="filter" class="me-1"></i>Filter to {{ region }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-feather="info" class="me-2"></i>
+                    No regional distribution data available for current search results.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Coordinate-based Map View -->
+            <div id="coordinates-view" class="mapping-view" style="display: none;">
+                {% if orchid_coordinates %}
+                <h6 class="text-primary mb-3">Precise Coordinate Locations</h6>
+                <!-- Interactive Map Container -->
+                <div id="search-map" style="height: 400px; border-radius: 8px;" class="border"></div>
+                
+                <!-- Coordinate List -->
+                <div class="mt-3">
+                    <h6 class="text-secondary">Orchids with Coordinates ({{ orchid_coordinates|length }})</h6>
+                    <div class="row">
+                        {% for coord in orchid_coordinates[:8] %}
+                        <div class="col-md-6 col-lg-3 mb-2">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body p-2">
+                                    <div class="small">
+                                        <strong class="text-truncate d-block">{{ coord.name }}</strong>
+                                        <div class="text-muted">{{ coord.location }}</div>
+                                        <div class="text-info">{{ coord.genus }}</div>
+                                        <button class="btn btn-outline-primary btn-sm mt-1" onclick="focusOnOrchid({{ coord.lat }}, {{ coord.lng }})">
+                                            <i data-feather="crosshair" class="me-1"></i>View
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if orchid_coordinates|length > 8 %}
+                    <div class="text-center mt-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showAllCoordinates()">
+                            <i data-feather="eye" class="me-1"></i>Show All {{ orchid_coordinates|length }} Locations
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-feather="map-pin" class="me-2"></i>
+                    No precise coordinate data available for current search results. 
+                    Try searching for orchids with location information.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Quick Geographic Filters -->
+            <div class="border-top pt-3 mt-3">
+                <h6 class="text-secondary mb-2">Quick Geographic Filters</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for country in filter_options.countries[:8] %}
+                    <a href="{{ url_for('search', 
+                        q=query or '', 
+                        genus=genus or '', 
+                        species=species or '', 
+                        author=author or '',
+                        orchid_type=orchid_type or '',
+                        flowering_status=flowering_status or '',
+                        growth_habit=growth_habit or '',
+                        climate_preference=climate_preference or '',
+                        has_image=has_image or '',
+                        is_featured=is_featured or '',
+                        country=country) }}" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="map-pin" class="me-1"></i>{{ country }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- SEARCH RESULTS -->
     {% if orchids is defined and (query or genus or species or country or region or orchid_type or flowering_status or growth_habit or climate_preference or has_image or is_featured) %}
         <!-- Results Header with Enhanced Statistics -->
@@ -542,8 +691,8 @@
                         <a href="#" class="btn btn-outline-primary btn-sm" onclick="exportResults()">
                             <i data-feather="download" class="me-1"></i>Export
                         </a>
-                        <a href="{{ url_for('mapping_system') }}?search_filters=true" class="btn btn-outline-success btn-sm">
-                            <i data-feather="map" class="me-1"></i>View on Map
+                        <a href="{{ url_for('space_earth_globe') }}?search_filters=true" class="btn btn-outline-success btn-sm">
+                            <i data-feather="map" class="me-1"></i>View on Globe
                         </a>
                         {% endif %}
                     </div>
@@ -579,9 +728,24 @@
                             <div class="col-4">
                                 {% if orchid.google_drive_id or orchid.image_url or orchid.image_filename %}
                                     {% set image_url = '/api/drive-photo/' + orchid.google_drive_id if orchid.google_drive_id else orchid.image_url %}
-                                    <img src="{{ image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
-                                         style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;"
-                                         onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';">
+                                    <div class="position-relative h-100 w-100" style="cursor: pointer;">
+                                        <img src="{{ image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
+                                             style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;"
+                                             onclick="openImageGallery({{ orchid.id }}, '{{ image_url }}', '{{ orchid.display_name|e }}')"
+                                             onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';">
+                                        <div class="position-absolute top-0 end-0 m-1">
+                                            <span class="badge bg-dark bg-opacity-75">
+                                                <i data-feather="zoom-in" style="width: 12px; height: 12px;"></i>
+                                            </span>
+                                        </div>
+                                        {% if orchid.decimal_latitude and orchid.decimal_longitude %}
+                                        <div class="position-absolute bottom-0 start-0 m-1">
+                                            <span class="badge bg-primary bg-opacity-75" title="Has coordinate data">
+                                                <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 {% else %}
                                     <div class="h-100 w-100 bg-light d-flex align-items-center justify-content-center"
                                          style="border-radius: 0.375rem 0 0 0.375rem;">
@@ -708,7 +872,18 @@
                                 <p class="mb-3">Search popular orchid genera</p>
                                 <div class="d-flex flex-wrap gap-1 justify-content-center">
                                     {% for genus in filter_options.genera[:6] %}
-                                    <a href="{{ url_for('search', genus=genus) }}" class="btn btn-light btn-sm">{{ genus }}</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        genus=genus) }}" class="btn btn-light btn-sm">{{ genus }}</a>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -723,7 +898,18 @@
                                 <p class="mb-3">Find orchids by origin</p>
                                 <div class="d-flex flex-wrap gap-1 justify-content-center">
                                     {% for country in filter_options.countries[:6] %}
-                                    <a href="{{ url_for('search', country=country) }}" class="btn btn-light btn-sm">{{ country }}</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        country=country) }}" class="btn btn-light btn-sm">{{ country }}</a>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -737,9 +923,43 @@
                                 <h5>Species vs Hybrids</h5>
                                 <p class="mb-3">Browse by type</p>
                                 <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                    <a href="{{ url_for('search', orchid_type='species') }}" class="btn btn-light btn-sm">Species Only</a>
-                                    <a href="{{ url_for('search', orchid_type='hybrid') }}" class="btn btn-light btn-sm">Hybrids Only</a>
-                                    <a href="{{ url_for('search', rhs_registered='yes') }}" class="btn btn-light btn-sm">RHS Registered</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        orchid_type='species') }}" class="btn btn-light btn-sm">Species Only</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        orchid_type='hybrid') }}" class="btn btn-light btn-sm">Hybrids Only</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        rhs_registered='yes') }}" class="btn btn-light btn-sm">RHS Registered</a>
                                 </div>
                             </div>
                         </div>
@@ -752,9 +972,42 @@
                                 <h5>Special Features</h5>
                                 <p class="mb-3">Featured & flowering</p>
                                 <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                    <a href="{{ url_for('search', flowering_status='flowering') }}" class="btn btn-dark btn-sm">Currently Flowering</a>
-                                    <a href="{{ url_for('search', is_featured='yes') }}" class="btn btn-dark btn-sm">Featured</a>
-                                    <a href="{{ url_for('search', has_image='yes') }}" class="btn btn-dark btn-sm">With Images</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        flowering_status='flowering') }}" class="btn btn-dark btn-sm">Currently Flowering</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured='yes') }}" class="btn btn-dark btn-sm">Featured</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        is_featured=is_featured or '',
+                                        has_image='yes') }}" class="btn btn-dark btn-sm">With Images</a>
                                 </div>
                             </div>
                         </div>
@@ -827,6 +1080,180 @@ function exportResults() {
     window.open('/search?' + params.toString(), '_blank');
 }
 
+// Enhanced Mapping Integration Functions
+let searchMap = null;
+let currentMapMarkers = [];
+
+// Toggle between regional and coordinate map views
+function toggleMapView(viewType) {
+    const regionalView = document.getElementById('regional-view');
+    const coordinatesView = document.getElementById('coordinates-view');
+    const regionalBtn = document.getElementById('regional-btn');
+    const coordinatesBtn = document.getElementById('coordinates-btn');
+    
+    // Reset button states
+    regionalBtn.classList.remove('active');
+    coordinatesBtn.classList.remove('active');
+    
+    if (viewType === 'regional') {
+        regionalView.style.display = 'block';
+        coordinatesView.style.display = 'none';
+        regionalBtn.classList.add('active');
+    } else if (viewType === 'coordinates') {
+        regionalView.style.display = 'none';
+        coordinatesView.style.display = 'block';
+        coordinatesBtn.classList.add('active');
+        
+        // Initialize coordinate map if not already done
+        initializeCoordinateMap();
+    }
+    
+    feather.replace();
+}
+
+// Initialize interactive coordinate map
+function initializeCoordinateMap() {
+    if (searchMap || !window.L) {
+        return; // Map already exists or Leaflet not loaded
+    }
+    
+    const mapContainer = document.getElementById('search-map');
+    if (!mapContainer) return;
+    
+    // Initialize map
+    searchMap = L.map('search-map').setView([20, 0], 2);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(searchMap);
+    
+    // Add orchid coordinates if available
+    {% if orchid_coordinates %}
+    const orchidCoordinates = {{ orchid_coordinates|tojson }};
+    
+    orchidCoordinates.forEach(coord => {
+        const marker = L.marker([coord.lat, coord.lng])
+            .addTo(searchMap)
+            .bindPopup(`
+                <div class="p-2">
+                    <h6 class="mb-1">${coord.name}</h6>
+                    <div class="small text-muted">
+                        <div><strong>Genus:</strong> ${coord.genus}</div>
+                        <div><strong>Location:</strong> ${coord.location}</div>
+                        <div><strong>Region:</strong> ${coord.region}</div>
+                    </div>
+                    <a href="/orchid/${coord.id}" class="btn btn-sm btn-primary mt-2">View Details</a>
+                </div>
+            `);
+        
+        currentMapMarkers.push(marker);
+    });
+    
+    // Fit map to show all markers
+    if (currentMapMarkers.length > 0) {
+        const group = new L.featureGroup(currentMapMarkers);
+        searchMap.fitBounds(group.getBounds().pad(0.1));
+    }
+    {% endif %}
+}
+
+// Focus map on specific orchid coordinates
+function focusOnOrchid(lat, lng) {
+    if (searchMap) {
+        searchMap.setView([lat, lng], 8);
+        
+        // Find and open popup for this coordinate
+        currentMapMarkers.forEach(marker => {
+            const pos = marker.getLatLng();
+            if (Math.abs(pos.lat - lat) < 0.001 && Math.abs(pos.lng - lng) < 0.001) {
+                marker.openPopup();
+            }
+        });
+    }
+}
+
+// Show all coordinates in expanded view
+function showAllCoordinates() {
+    toggleMapView('coordinates');
+    if (searchMap && currentMapMarkers.length > 0) {
+        const group = new L.featureGroup(currentMapMarkers);
+        searchMap.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Filter search results by region
+function filterByRegion(region) {
+    const form = document.getElementById('searchForm');
+    const regionInput = form.querySelector('input[name="region"]');
+    
+    if (regionInput) {
+        regionInput.value = region;
+    } else {
+        // Create hidden input for region filter
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'region';
+        hiddenInput.value = region;
+        form.appendChild(hiddenInput);
+    }
+    
+    form.submit();
+}
+
+// Open 3D Globe view with current search filters
+function openGlobeView() {
+    const form = document.getElementById('searchForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    // Build URL with search parameters for 3D globe
+    let globeUrl = '/space-earth-globe';
+    
+    // Add genus filter if specified
+    const genus = params.get('genus');
+    if (genus && genus !== '') {
+        globeUrl += '?genus=' + encodeURIComponent(genus);
+    }
+    
+    // Open 3D globe in new window/tab
+    window.open(globeUrl, '_blank', 'width=1200,height=800');
+}
+
+// Enhanced image gallery viewing
+function openImageGallery(orchidId, imageSrc, orchidName) {
+    // Create modal for full-size image viewing
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'imageGalleryModal';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${orchidName}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="${imageSrc}" class="img-fluid" alt="${orchidName}" style="max-height: 70vh;">
+                </div>
+                <div class="modal-footer">
+                    <a href="/orchid/${orchidId}" class="btn btn-primary">View Full Details</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Clean up modal after hiding
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
 // Auto-submit on some filter changes for better UX
 document.addEventListener('DOMContentLoaded', function() {
     const autoSubmitSelects = ['genus', 'country', 'orchid_type', 'flowering_status', 'sort_by'];
@@ -842,6 +1269,27 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // Initialize mapping functionality
+    {% if search_stats.total_found > 0 and (orchid_coordinates or regional_distribution) %}
+    // Set default map view to regional
+    toggleMapView('regional');
+    
+    // Load Leaflet CSS and JS for coordinate maps
+    if (!window.L) {
+        const leafletCSS = document.createElement('link');
+        leafletCSS.rel = 'stylesheet';
+        leafletCSS.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+        document.head.appendChild(leafletCSS);
+        
+        const leafletJS = document.createElement('script');
+        leafletJS.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+        leafletJS.onload = function() {
+            console.log('🗺️ Leaflet loaded for search maps');
+        };
+        document.head.appendChild(leafletJS);
+    }
+    {% endif %}
     
     // Initialize feather icons
     feather.replace();
