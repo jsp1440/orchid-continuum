@@ -606,12 +606,17 @@ def search_species():
     for gbif_id, record in ECOSYSTEM_DATA.items():
         taxon = record.get('taxon', {})
         sci_name = taxon.get('acceptedScientificName', '').lower()
-        genus = taxon.get('genus', '').lower() if 'genus' in record.get('distribution', {}).get('sampleOccurrences', [{}])[0] else ''
+        
+        # Extract genus from scientific name (first word)
+        genus = ''
+        if sci_name:
+            genus_part = sci_name.split(' ')[0] if ' ' in sci_name else sci_name
+            genus = genus_part.lower()
         
         if query in sci_name or query in genus:
             results.append({
                 'gbifID': gbif_id,
-                'taxonKey': taxon.get('acceptedTaxonKey', ''),
+                'taxonKey': gbif_id,  # Use gbifID as taxonKey since our API uses gbifID
                 'scientificName': taxon.get('acceptedScientificName', ''),
                 'genus': genus,
                 'rank': taxon.get('taxonRank', '')
