@@ -51,12 +51,19 @@ class AIOrchidIdentifier:
     """
     
     def __init__(self):
-        # Initialize OpenAI client
+        # Initialize OpenAI client with graceful degradation
         self.openai_key = os.environ.get('OPENAI_API_KEY')
-        if not self.openai_key:
-            raise ValueError("OPENAI_API_KEY environment variable must be set")
+        self.client = None
         
-        self.client = OpenAI(api_key=self.openai_key)
+        if self.openai_key:
+            try:
+                self.client = OpenAI(api_key=self.openai_key)
+                logger.info("✅ OpenAI client initialized successfully for orchid identification")
+            except Exception as e:
+                logger.warning(f"⚠️ OpenAI client initialization failed: {e}")
+                self.client = None
+        else:
+            logger.warning("⚠️ OPENAI_API_KEY not set - AI orchid identification will have limited functionality")
         
         # Orchid identification prompt with professional botanical expertise
         self.orchid_expert_prompt = """
@@ -170,6 +177,29 @@ class AIOrchidIdentifier:
         """
         try:
             logger.info(f"🔍 Analyzing orchid image: {image_path}")
+            
+            # Check if OpenAI client is available
+            if not self.client:
+                logger.warning("⚠️ OpenAI client not available - returning graceful degradation response")
+                return {
+                    "ai_identification": {
+                        "primary_identification": {
+                            "genus": "Unknown",
+                            "species": "Unknown",
+                            "full_name": "AI identification unavailable",
+                            "confidence": 0
+                        },
+                        "analysis_notes": {
+                            "error": "OPENAI_API_KEY not configured",
+                            "limitation": "AI vision analysis unavailable"
+                        }
+                    },
+                    "database_matches": self._cross_reference_database({}),
+                    "analysis_timestamp": datetime.now().isoformat(),
+                    "image_analyzed": image_path,
+                    "confidence_score": 0,
+                    "api_key_available": False
+                }
             
             # Encode image for OpenAI Vision API
             encoded_image = self._encode_image(image_path)
