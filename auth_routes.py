@@ -21,8 +21,11 @@ login_manager.login_message_category = 'info'
 # Create auth blueprint
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-# Admin password from environment variable
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')  # Change this!
+# Admin password from environment variable (no insecure fallback)
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+if not ADMIN_PASSWORD:
+    import logging
+    logging.warning("⚠️ ADMIN_PASSWORD environment variable not set - admin login disabled for security")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -40,9 +43,9 @@ def login():
             flash('Please provide both email and password.', 'error')
             return render_template('auth/login.html')
         
-        # Admin login
+        # Admin login - only if ADMIN_PASSWORD is properly configured
         if is_admin_login:
-            if email == 'admin' and password == ADMIN_PASSWORD:
+            if ADMIN_PASSWORD and email == 'admin' and password == ADMIN_PASSWORD:
                 # Create or get admin user
                 admin_user = User.query.filter_by(email='admin@orchidcontinuum.com').first()
                 if not admin_user:
