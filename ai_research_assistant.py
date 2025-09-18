@@ -83,7 +83,10 @@ class AIResearchAssistant:
                 max_tokens=2000
             )
             
-            insights = self._parse_ai_response(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if not content:
+                raise Exception("Empty response from AI model")
+            insights = self._parse_ai_response(content)
             
             # Log the analysis
             logger.info(f"🔬 AI generated {len(insights)} research insights from {analysis_type} analysis")
@@ -137,7 +140,10 @@ class AIResearchAssistant:
                 max_tokens=2500
             )
             
-            experiments = self._parse_experiment_suggestions(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if not content:
+                raise Exception("Empty response from AI model")
+            experiments = self._parse_experiment_suggestions(content)
             logger.info(f"🧪 AI suggested {len(experiments)} experiments for goal: {research_goal}")
             
             return experiments
@@ -176,7 +182,10 @@ class AIResearchAssistant:
                 max_tokens=1500
             )
             
-            insight = self._parse_statistical_interpretation(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if not content:
+                raise Exception("Empty response from AI model")
+            insight = self._parse_statistical_interpretation(content)
             logger.info("📊 AI interpreted statistical results")
             
             return insight

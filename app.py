@@ -219,6 +219,13 @@ except Exception as e:
     print(f"SVO Analysis initialization error: {e}")
 
 try:
+    from orchid_ai_research_hub import research_hub_bp
+    app.register_blueprint(research_hub_bp)
+    print("🤖 OrchidAI Research Hub initialized with unified AI capabilities")
+except Exception as e:
+    print(f"OrchidAI Research Hub initialization error: {e}")
+
+try:
     import trefle_admin_routes  # Import Trefle admin routes (direct app routes)
     print("🌿 Trefle Ecosystem Enrichment admin interface initialized")
 except Exception as e:

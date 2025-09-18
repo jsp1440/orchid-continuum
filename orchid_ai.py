@@ -32,7 +32,7 @@ def extract_exif_metadata(image_path):
     """
     try:
         image = Image.open(image_path)
-        exif_data = image._getexif()
+        exif_data = image.getexif()
         
         if not exif_data:
             return {}
@@ -192,7 +192,10 @@ Analyze carefully and be specific. If you cannot determine something, mark as "u
         )
         
         # Parse the response
-        result = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        result = json.loads(content)
         
         # Ensure required fields have defaults
         defaults = {
@@ -534,7 +537,10 @@ Be conservative but recognize that Baker's geographic expertise applies broadly 
             max_tokens=600
         )
         
-        extrapolated_data = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        extrapolated_data = json.loads(content)
         extrapolated_data['extrapolated'] = True
         extrapolated_data['source_count'] = len(cultural_insights)
         extrapolated_data['confidence_level'] = calculate_extrapolation_confidence(target_orchid, cultural_insights)
@@ -610,7 +616,10 @@ Provide actionable advice that can be used for weather-based growing recommendat
             max_tokens=800
         )
         
-        return json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        return json.loads(content)
         
     except Exception as e:
         logger.error(f"Error analyzing Baker culture data: {str(e)}")
@@ -665,7 +674,10 @@ Be specific and practical. Limit to 2-3 key recommendations."""
             max_tokens=300
         )
         
-        return response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        return content.strip()
         
     except Exception as e:
         logger.error(f"Error generating weather-based care advice: {str(e)}")
@@ -703,7 +715,10 @@ Return as JSON object."""
             max_tokens=1000
         )
         
-        result = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        result = json.loads(content)
         return result
         
     except Exception as e:
@@ -747,7 +762,10 @@ def classify_orchid_validity(image_path):
             max_tokens=300
         )
         
-        result = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if not content:
+            raise Exception("Empty response from AI model")
+        result = json.loads(content)
         return result
         
     except Exception as e:

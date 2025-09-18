@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 # Initialize OpenAI with GPT-5 (the newest OpenAI model released August 7, 2025)
 # do not change this unless explicitly requested by the user
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY environment variable must be set")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 ai_chat_bp = Blueprint('ai_chat', __name__, url_prefix='/ai-chat')
