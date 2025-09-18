@@ -1,6 +1,6 @@
 """
-Trefle Batch Enrichment Service for Orchid Ecosystem Data
-Processes existing orchid records in batches to enrich them with Trefle botanical data
+GBIF Ecosystem Batch Enrichment Service for Orchid Ecosystem Data
+Processes existing orchid records in batches to enrich them with GBIF ecosystem data
 """
 
 import json
@@ -13,15 +13,15 @@ from difflib import SequenceMatcher
 from sqlalchemy import and_, or_, func
 from app import db
 from models import OrchidRecord, TrefleEnrichmentTracker
-from trefle_botanical_service import TrefleBotanicalService
+from gbif_botanical_service import GBIFBotanicalService
 
 logger = logging.getLogger(__name__)
 
 class TrefleBatchEnrichmentService:
-    """Service for batch enrichment of orchid records with Trefle ecosystem data"""
+    """Service for batch enrichment of orchid records with GBIF ecosystem data"""
     
     def __init__(self):
-        self.trefle_service = TrefleBotanicalService()
+        self.trefle_service = GBIFBotanicalService()
         self.current_session = None
         self.logger = logging.getLogger(__name__)
         
