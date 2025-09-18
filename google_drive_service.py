@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Google Drive API configuration
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SCOPES = ['https://www.googleapis.com/auth/drive.readonly', 'https://www.googleapis.com/auth/drive.file']
 SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE')
 DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID')
 
@@ -164,6 +164,8 @@ def get_folder_contents(folder_id: str) -> List[Dict[str, Any]]:
         
         # Search for files in the specified folder
         query = f"'{folder_id}' in parents and trashed=false"
+        logger.info(f"🔍 Searching folder {folder_id} with query: {query}")
+        
         results = service.files().list(
             q=query,
             fields="files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink, thumbnailLink)",
