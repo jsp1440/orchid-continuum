@@ -510,13 +510,21 @@ class MovieVote(db.Model):
     __table_args__ = (db.Index('idx_movie_votes', 'movie_key', 'phalaenopsis_rating'),)
 
 class OAuth(db.Model):
-    """OAuth tokens for authentication"""
+    """OAuth tokens for authentication - Compatible with Replit Auth"""
     id = db.Column(Integer, primary_key=True)
     user_id = db.Column(String, db.ForeignKey('users.id'))
     browser_session_key = db.Column(String, nullable=False)
     provider = db.Column(String, nullable=False)
     token = db.Column(Text, nullable=True)
     user = db.relationship('User')
+    
+    # Unique constraint for Replit Auth compatibility
+    __table_args__ = (db.UniqueConstraint(
+        'user_id',
+        'browser_session_key', 
+        'provider',
+        name='uq_user_browser_session_key_provider',
+    ),)
 
 # Orchid Database Models
 class OrchidTaxonomy(db.Model):
