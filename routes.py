@@ -5267,6 +5267,71 @@ def admin_drive_import():
     """Admin Google Drive import interface"""
     return render_template('admin/drive_import.html')
 
+@app.route('/api/drive-import/preview-folder', methods=['POST'])
+def api_preview_drive_folder():
+    """Preview contents of a Google Drive folder"""
+    try:
+        from google_drive_service import get_folder_contents
+        from drive_importer import extract_folder_id_from_url
+        
+        data = request.get_json()
+        folder_url = data.get('folder_url', '')
+        
+        # Extract folder ID from URL
+        folder_id = extract_folder_id_from_url(folder_url)
+        if not folder_id:
+            return jsonify({'error': 'Invalid Google Drive folder URL'}), 400
+        
+        # Get folder contents
+        files = get_folder_contents(folder_id)
+        
+        return jsonify({
+            'success': True,
+            'folder_id': folder_id,
+            'file_count': len(files),
+            'files': files[:20],  # Preview first 20 files
+            'total_files': len(files)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error previewing folder: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/drive-import/import-folder', methods=['POST'])
+def api_import_drive_folder():
+    """Import orchid images from a Google Drive folder"""
+    try:
+        from google_drive_service import batch_import_from_drive_folder
+        from drive_importer import extract_folder_id_from_url
+        
+        data = request.get_json()
+        folder_url = data.get('folder_url', '')
+        limit = int(data.get('limit', 50))
+        auto_process = data.get('auto_process', True)
+        
+        # Extract folder ID from URL
+        folder_id = extract_folder_id_from_url(folder_url)
+        if not folder_id:
+            return jsonify({'error': 'Invalid Google Drive folder URL'}), 400
+        
+        # Perform batch import
+        import_result = batch_import_from_drive_folder(folder_id, limit)
+        
+        if not import_result.get('success'):
+            return jsonify({'error': import_result.get('error', 'Import failed')}), 500
+        
+        return jsonify({
+            'success': True,
+            'imported_count': import_result.get('imported_count', 0),
+            'skipped_count': import_result.get('skipped_count', 0),
+            'error_count': import_result.get('error_count', 0),
+            'details': import_result.get('details', [])
+        })
+        
+    except Exception as e:
+        logger.error(f"Error importing folder: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scrape/<source>')
 def trigger_scrape(source):
     """Trigger scraping for a specific source"""
