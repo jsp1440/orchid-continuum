@@ -5262,6 +5262,11 @@ def admin():
         logger.error(f"Admin page error: {e}")
         return render_template('error.html', error="Admin dashboard temporarily unavailable", details=str(e)), 500
 
+@app.route('/admin/drive-import')
+def admin_drive_import():
+    """Admin Google Drive import interface"""
+    return render_template('admin/drive_import.html')
+
 @app.route('/api/scrape/<source>')
 def trigger_scrape(source):
     """Trigger scraping for a specific source"""
