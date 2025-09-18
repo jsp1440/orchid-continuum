@@ -66,12 +66,23 @@ with app.app_context():
     except Exception as e:
         logging.error(f"Database creation error: {e}")
     
-    # Import and register auth blueprint after db initialization
+    # Import and register auth blueprints after db initialization
     try:
         from auth_routes import auth_bp
         app.register_blueprint(auth_bp, url_prefix='/auth')
     except ImportError as e:
         logging.warning(f"Auth routes not available: {e}")
+    
+    # Register Replit Auth blueprint
+    try:
+        from replit_auth import make_replit_blueprint
+        replit_bp = make_replit_blueprint()
+        app.register_blueprint(replit_bp, url_prefix="/auth")
+        logging.info("✅ Replit Auth initialized successfully")
+    except ImportError as e:
+        logging.warning(f"⚠️ Replit Auth not available: {e}")
+    except Exception as e:
+        logging.warning(f"⚠️ Replit Auth initialization error: {e}")
     
     # Initialize judging standards
     try:
