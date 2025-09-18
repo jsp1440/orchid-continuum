@@ -62,9 +62,9 @@ with app.app_context():
     # Initialize database
     try:
         db.create_all()
-        print("Database tables created successfully")
+        logging.info("Database tables created successfully")
     except Exception as e:
-        print(f"Database creation error: {e}")
+        logging.error(f"Database creation error: {e}")
     
     # Import and register auth blueprint after db initialization
     try:

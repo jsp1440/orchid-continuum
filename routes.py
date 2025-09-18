@@ -87,6 +87,13 @@ from citizen_science_platform import citizen_science_bp
 from quantum_care_routes import register_quantum_care_routes
 from widget_error_handler import widget_error_handler, safe_json_parse, safe_get_user_favorites, validate_feather_icon
 
+# Trefle Botanical Service will be imported after logger initialization
+get_trefle_service = None
+search_orchid_ecosystem_data = None
+enrich_orchid_with_trefle_data = None
+get_trefle_service_status = None
+batch_enrich_orchids_with_trefle = None
+
 # Create themed orchids system
 ORCHID_THEMES = {
     'fragrant': {'name': 'Fragrant Orchids', 'keywords': ['fragrant', 'scented', 'perfume', 'vanilla', 'citrus', 'sweet']},
@@ -130,6 +137,21 @@ def get_orchids_by_theme(theme_keywords):
 
 # Initialize logger first
 logger = logging.getLogger(__name__)
+
+# Import Trefle Botanical Service for Ecosystem Explorer (after logger initialization)
+try:
+    from trefle_botanical_service import (
+        get_trefle_service, search_orchid_ecosystem_data, enrich_orchid_with_trefle_data,
+        get_trefle_service_status, batch_enrich_orchids_with_trefle
+    )
+    logger.info("✅ Trefle Botanical Service imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Trefle Botanical Service not available: {e}")
+    get_trefle_service = None
+    search_orchid_ecosystem_data = None
+    enrich_orchid_with_trefle_data = None
+    get_trefle_service_status = None
+    batch_enrich_orchids_with_trefle = None
 
 # Import and register report generation blueprint
 try:
@@ -5141,7 +5163,7 @@ def orchid_detail(id):
                 orchid.view_count += 1
             db.session.commit()
         except Exception as e:
-            print(f"Warning: Could not update view count: {e}")
+            logger.warning(f"Could not update view count: {e}")
             db.session.rollback()
         
         # Get related orchids with error handling
@@ -5154,7 +5176,7 @@ def orchid_detail(id):
                     OrchidRecord.google_drive_id.isnot(None)
                 ).limit(4).all()
         except Exception as e:
-            print(f"Warning: Could not load related orchids: {e}")
+            logger.warning(f"Could not load related orchids: {e}")
         
         # Get comprehensive care data from multiple sources
         care_data = None
@@ -5180,7 +5202,7 @@ def orchid_detail(id):
                 )
                 
         except Exception as e:
-            print(f"Warning: Could not load care data for {orchid.genus}: {e}")
+            logger.warning(f"Could not load care data for {orchid.genus}: {e}")
         
         # Get habitat and geographic insights
         habitat_info = {
@@ -5202,7 +5224,7 @@ def orchid_detail(id):
                              cultural_recommendations=cultural_recommendations)
         
     except Exception as e:
-        print(f"Error loading orchid detail for ID {id}: {e}")
+        logger.error(f"Error loading orchid detail for ID {id}: {e}")
         flash(f"Error loading orchid details: {str(e)}", 'error')
         return redirect(url_for('gallery'))
 
@@ -12760,4 +12782,326 @@ def validate_file_id_linking():
         return 0
 
 logger.info("🌺 FCOS Import System routes registered successfully")
+
+# ==============================================================================
+# Trefle Botanical API Integration Routes - Ecosystem Explorer Widget
+# ==============================================================================
+
+@app.route('/api/trefle/status')
+def trefle_service_status():
+    """Get current status of the Trefle Botanical Service"""
+    try:
+        if get_trefle_service_status is None:
+            return jsonify({
+                'enabled': False,
+                'error': 'Trefle service not available',
+                'api_key_configured': False
+            }), 503
+        
+        status = get_trefle_service_status()
+        logger.info("📊 Trefle service status requested")
+        return jsonify(status)
+        
+    except Exception as e:
+        logger.error(f"Error getting Trefle service status: {str(e)}")
+        return jsonify({
+            'enabled': False,
+            'error': str(e),
+            'api_key_configured': False
+        }), 500
+
+@app.route('/api/trefle/search')
+def trefle_search_orchid():
+    """Search for orchid ecosystem data by scientific name"""
+    try:
+        scientific_name = request.args.get('scientific_name', '').strip()
+        if not scientific_name:
+            return jsonify({
+                'success': False,
+                'error': 'scientific_name parameter is required'
+            }), 400
+        
+        if search_orchid_ecosystem_data is None:
+            return jsonify({
+                'success': False,
+                'error': 'Trefle service not available',
+                'enabled': False
+            }), 503
+        
+        logger.info(f"🔍 Searching Trefle for: {scientific_name}")
+        ecosystem_data = search_orchid_ecosystem_data(scientific_name)
+        
+        # Check for rate limit response
+        if isinstance(ecosystem_data, dict) and ecosystem_data.get('rate_limit_exceeded'):
+            return jsonify({
+                'success': False,
+                'error': ecosystem_data.get('error', 'Rate limit exceeded'),
+                'retry_after': ecosystem_data.get('retry_after', 60)
+            }), 429
+        
+        if ecosystem_data:
+            return jsonify({
+                'success': True,
+                'found': True,
+                'scientific_name': scientific_name,
+                'ecosystem_data': ecosystem_data,
+                'source': 'trefle.io'
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'found': False,
+                'scientific_name': scientific_name,
+                'message': f'No ecosystem data found for {scientific_name}',
+                'source': 'trefle.io'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error searching Trefle for {scientific_name}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'scientific_name': scientific_name
+        }), 500
+
+@app.route('/api/trefle/enrich/<int:orchid_id>', methods=['POST'])
+@login_required
+def trefle_enrich_orchid(orchid_id):
+    """Enrich a specific orchid record with Trefle ecosystem data"""
+    # Admin role check for database modification
+    if not current_user.is_admin:
+        return jsonify({
+            'success': False,
+            'error': 'Admin access required for Trefle data enrichment'
+        }), 403
+    
+    try:
+        if enrich_orchid_with_trefle_data is None:
+            return jsonify({
+                'success': False,
+                'error': 'Trefle service not available'
+            }), 503
+        
+        # Get the orchid record first for validation
+        orchid = OrchidRecord.query.get(orchid_id)
+        if not orchid:
+            return jsonify({
+                'success': False,
+                'error': f'Orchid record {orchid_id} not found'
+            }), 404
+        
+        # Validate required OrchidRecord fields
+        if not hasattr(orchid, 'scientific_name') or not orchid.scientific_name:
+            return jsonify({
+                'success': False,
+                'error': 'Orchid record missing required scientific_name field'
+            }), 400
+        
+        display_name = getattr(orchid, 'display_name', f'Orchid {orchid_id}')
+        logger.info(f"🌿 Enriching orchid {orchid_id} ({display_name}) with Trefle data")
+        
+        success = enrich_orchid_with_trefle_data(orchid_id)
+        
+        if success:
+            # Refresh the orchid record to get updated data
+            db.session.refresh(orchid)
+            
+            return jsonify({
+                'success': True,
+                'orchid_id': orchid_id,
+                'orchid_name': orchid.display_name,
+                'message': f'Successfully enriched {orchid.display_name} with ecosystem data',
+                'enriched_fields': {
+                    'native_habitat': bool(orchid.native_habitat),
+                    'habitat_research': bool(orchid.habitat_research),
+                    'climate_preference': orchid.climate_preference
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'orchid_id': orchid_id,
+                'orchid_name': orchid.display_name,
+                'error': 'Failed to enrich orchid with ecosystem data'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error enriching orchid {orchid_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'orchid_id': orchid_id,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trefle/batch-enrich', methods=['POST'])
+@login_required
+def trefle_batch_enrich():
+    """Batch enrich multiple orchid records with Trefle ecosystem data"""
+    # Admin role check for database modification
+    if not current_user.is_admin:
+        return jsonify({
+            'success': False,
+            'error': 'Admin access required for Trefle batch enrichment'
+        }), 403
+    
+    try:
+        if batch_enrich_orchids_with_trefle is None:
+            return jsonify({
+                'success': False,
+                'error': 'Trefle service not available'
+            }), 503
+        
+        # Get parameters from request
+        data = request.get_json() or {}
+        limit = min(data.get('limit', 25), 100)  # Cap at 100 for safety
+        
+        logger.info(f"🚀 Starting Trefle batch enrichment: limit={limit}")
+        
+        results = batch_enrich_orchids_with_trefle(limit=limit)
+        
+        # Check for rate limit in batch results
+        if 'error' in results and 'retry_after' in results:
+            return jsonify({
+                'success': False,
+                'error': results['error'],
+                'retry_after': results['retry_after'],
+                'partial_results': results
+            }), 429
+        
+        # Add rate limiting info
+        if get_trefle_service:
+            service = get_trefle_service()
+            results['rate_limit_status'] = f"{len(service.request_history)}/{service.RATE_LIMIT_CALLS} requests used"
+        
+        logger.info(f"✅ Batch enrichment completed: {results.get('successful_enrichments', 0)}/{results.get('total_processed', 0)} successful")
+        
+        return jsonify({
+            'success': True,
+            'batch_results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in batch enrichment: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trefle/orchid/<int:orchid_id>/ecosystem')
+def trefle_orchid_ecosystem_data(orchid_id):
+    """Get ecosystem data for a specific orchid (from database or fresh from Trefle)"""
+    try:
+        orchid = OrchidRecord.query.get(orchid_id)
+        if not orchid:
+            return jsonify({
+                'success': False,
+                'error': f'Orchid {orchid_id} not found'
+            }), 404
+        
+        # Check if orchid already has Trefle data in habitat_research
+        existing_data = None
+        if orchid.habitat_research:
+            try:
+                habitat_data = orchid.habitat_research if isinstance(orchid.habitat_research, dict) else json.loads(orchid.habitat_research)
+                existing_data = habitat_data.get('trefle_ecosystem_data')
+            except:
+                pass
+        
+        if existing_data:
+            logger.info(f"📊 Returning cached Trefle data for orchid {orchid_id}")
+            return jsonify({
+                'success': True,
+                'orchid_id': orchid_id,
+                'orchid_name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'has_existing_data': True,
+                'ecosystem_data': existing_data,
+                'source': 'database_cache'
+            })
+        else:
+            # Try to get fresh data from Trefle
+            if get_trefle_service is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'Trefle service not available and no cached data found'
+                }), 503
+            
+            logger.info(f"🔍 Fetching fresh Trefle data for orchid {orchid_id}")
+            service = get_trefle_service()
+            ecosystem_data = service.get_ecosystem_habitat_data(orchid)
+            
+            return jsonify({
+                'success': True,
+                'orchid_id': orchid_id,
+                'orchid_name': orchid.display_name,
+                'scientific_name': orchid.scientific_name,
+                'has_existing_data': False,
+                'ecosystem_data': ecosystem_data,
+                'source': 'trefle_api_live'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error getting ecosystem data for orchid {orchid_id}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'orchid_id': orchid_id,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/trefle/ecosystems/summary')
+def trefle_ecosystem_summary():
+    """Get summary statistics of orchids with Trefle ecosystem data"""
+    try:
+        # Count orchids with Trefle data
+        orchids_with_trefle = OrchidRecord.query.filter(
+            OrchidRecord.habitat_research.contains('"trefle_ecosystem_data"')
+        ).count()
+        
+        total_orchids = OrchidRecord.query.count()
+        
+        # Get sample of enriched orchids
+        sample_orchids = OrchidRecord.query.filter(
+            OrchidRecord.habitat_research.contains('"trefle_ecosystem_data"')
+        ).limit(10).all()
+        
+        sample_data = []
+        for orchid in sample_orchids:
+            try:
+                habitat_data = orchid.habitat_research if isinstance(orchid.habitat_research, dict) else json.loads(orchid.habitat_research)
+                trefle_data = habitat_data.get('trefle_ecosystem_data', {})
+                sample_data.append({
+                    'id': orchid.id,
+                    'name': orchid.display_name,
+                    'scientific_name': orchid.scientific_name,
+                    'has_trefle_data': bool(trefle_data),
+                    'trefle_id': trefle_data.get('trefle_id'),
+                    'family_name': trefle_data.get('family_name')
+                })
+            except:
+                continue
+        
+        # Get service status
+        service_status = {}
+        if get_trefle_service_status:
+            service_status = get_trefle_service_status()
+        
+        return jsonify({
+            'success': True,
+            'summary': {
+                'total_orchids': total_orchids,
+                'orchids_with_trefle_data': orchids_with_trefle,
+                'enrichment_percentage': round((orchids_with_trefle / total_orchids * 100) if total_orchids > 0 else 0, 2),
+                'sample_enriched_orchids': sample_data
+            },
+            'service_status': service_status
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting Trefle ecosystem summary: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+logger.info("🌿 Trefle Botanical API Integration routes registered successfully")
 
