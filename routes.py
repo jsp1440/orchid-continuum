@@ -12563,3 +12563,201 @@ def api_knowledge_base_popular():
 
 logger.info("🧠 Knowledge Base routes registered successfully")
 
+# =====================================================
+# FIVE CITIES ORCHID SOCIETY IMPORT SYSTEM
+# =====================================================
+
+@app.route('/admin/fcos-import')
+def admin_fcos_import():
+    """Five Cities Orchid Society data import dashboard"""
+    try:
+        # Get current database stats
+        total_orchids = OrchidRecord.query.count()
+        fcos_orchids = OrchidRecord.query.filter_by(ingestion_source='google_sheets_import').count()
+        
+        # Check Google Drive connectivity
+        from google_drive_service import get_drive_service, get_folder_contents
+        drive_status = "connected" if get_drive_service() else "disconnected"
+        
+        stats = {
+            'total_orchids': total_orchids,
+            'fcos_orchids': fcos_orchids,
+            'drive_status': drive_status,
+            'target_records': 1337,
+            'target_images': 875
+        }
+        
+        return render_template('admin/fcos_import.html', stats=stats)
+        
+    except Exception as e:
+        logger.error(f"Error loading FCOS import dashboard: {e}")
+        flash('Error loading import dashboard', 'error')
+        return redirect(url_for('admin_orchid_approval'))
+
+@app.route('/api/fcos-import/test', methods=['POST'])
+def api_fcos_import_test():
+    """Run test import of 10 FCOS records"""
+    try:
+        from google_sheets_importer import GoogleSheetsImporter
+        
+        # Use the known FCOS sheet ID
+        sheet_id = '1103vQ_D00Qio5W7PllFeRaFoFAzr7jd8ivOo79sdfgs'
+        importer = GoogleSheetsImporter(sheet_id)
+        
+        logger.info("🧪 Starting FCOS test import (10 records)")
+        
+        # Run import with limit of 10 records
+        result = importer.import_all_records(max_records=10)
+        
+        # Validate File ID linking for imported records
+        if result['success'] and result['imported'] > 0:
+            linked_count = validate_file_id_linking()
+            result['linked_images'] = linked_count
+            
+        logger.info(f"✅ FCOS test import completed: {result}")
+        
+        return jsonify({
+            'success': True,
+            'message': f"Test import completed: {result['imported']} imported, {result['skipped']} skipped",
+            'imported': result['imported'],
+            'skipped': result['skipped'], 
+            'errors': result['errors'],
+            'linked_images': result.get('linked_images', 0),
+            'total_in_database': result['total_in_database']
+        })
+        
+    except Exception as e:
+        logger.error(f"FCOS test import failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/fcos-import/full', methods=['POST'])
+def api_fcos_import_full():
+    """Run full import of all FCOS records"""
+    try:
+        from google_sheets_importer import GoogleSheetsImporter
+        
+        sheet_id = '1103vQ_D00Qio5W7PllFeRaFoFAzr7jd8ivOo79sdfgs'
+        importer = GoogleSheetsImporter(sheet_id)
+        
+        logger.info("🚀 Starting FCOS full import (all 1,337 records)")
+        
+        # Run full import
+        result = importer.import_all_records()
+        
+        # Validate File ID linking for all FCOS records
+        if result['success']:
+            linked_count = validate_file_id_linking()
+            result['linked_images'] = linked_count
+            
+        logger.info(f"✅ FCOS full import completed: {result}")
+        
+        return jsonify({
+            'success': True,
+            'message': f"Full import completed: {result['imported']} imported, {result['skipped']} skipped",
+            'imported': result['imported'],
+            'skipped': result['skipped'],
+            'errors': result['errors'], 
+            'linked_images': result.get('linked_images', 0),
+            'total_in_database': result['total_in_database']
+        })
+        
+    except Exception as e:
+        logger.error(f"FCOS full import failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/fcos-import/validate-linking')
+def api_fcos_validate_linking():
+    """Validate File ID linking between sheets and Google Drive"""
+    try:
+        linked_count = validate_file_id_linking()
+        
+        # Get drive folder stats
+        from google_drive_service import get_folder_contents
+        folder_id = '1YqIWmIfaXSy_0_bAbvSG8EMQjAuNq0lj'
+        drive_files = get_folder_contents(folder_id)
+        
+        # Get FCOS records with File IDs
+        fcos_records = OrchidRecord.query.filter(
+            OrchidRecord.ingestion_source == 'google_sheets_import',
+            OrchidRecord.google_drive_id.isnot(None)
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'linked_records': linked_count,
+            'fcos_records_with_file_ids': fcos_records,
+            'drive_images_available': len(drive_files),
+            'linking_percentage': round((linked_count / max(fcos_records, 1)) * 100, 1)
+        })
+        
+    except Exception as e:
+        logger.error(f"File ID validation failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/fcos-import/preview')
+def api_fcos_import_preview():
+    """Preview FCOS data without importing"""
+    try:
+        from google_sheets_importer import GoogleSheetsImporter
+        
+        sheet_id = '1103vQ_D00Qio5W7PllFeRaFoFAzr7jd8ivOo79sdfgs'
+        importer = GoogleSheetsImporter(sheet_id)
+        
+        # Fetch first 5 rows for preview
+        rows = importer.fetch_sheet_data()[:5]
+        
+        return jsonify({
+            'success': True,
+            'preview_rows': rows,
+            'total_rows': len(importer.fetch_sheet_data()),
+            'columns': list(rows[0].keys()) if rows else []
+        })
+        
+    except Exception as e:
+        logger.error(f"FCOS preview failed: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def validate_file_id_linking():
+    """Helper function to validate File ID linking"""
+    try:
+        from google_drive_service import get_folder_contents
+        
+        # Get FCOS records with File IDs
+        fcos_records = OrchidRecord.query.filter(
+            OrchidRecord.ingestion_source == 'google_sheets_import',
+            OrchidRecord.google_drive_id.isnot(None)
+        ).all()
+        
+        # Get drive folder contents
+        folder_id = '1YqIWmIfaXSy_0_bAbvSG8EMQjAuNq0lj'
+        drive_files = get_folder_contents(folder_id)
+        drive_file_ids = [f['id'] for f in drive_files]
+        
+        linked_count = 0
+        for record in fcos_records:
+            if record.google_drive_id in drive_file_ids:
+                linked_count += 1
+            else:
+                logger.warning(f"Missing drive image for File ID: {record.google_drive_id} (Orchid: {record.display_name})")
+        
+        logger.info(f"📎 File ID validation: {linked_count}/{len(fcos_records)} records have valid image links")
+        return linked_count
+        
+    except Exception as e:
+        logger.error(f"File ID validation error: {e}")
+        return 0
+
+logger.info("🌺 FCOS Import System routes registered successfully")
+
