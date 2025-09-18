@@ -1,6 +1,6 @@
 """
 Administrative System for Ultimate Database Control
-Password: jsp191516
+Secure administrative access with environment-based authentication
 """
 import os
 import json
@@ -19,8 +19,14 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
-# Admin password hash (jsp191516)
-ADMIN_PASSWORD_HASH = generate_password_hash("jsp191516")
+# Admin password hash from environment variable - fail closed if not set
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+if not ADMIN_PASSWORD:
+    logger.critical("🚨 ADMIN_PASSWORD environment variable not set. Admin access disabled for security.")
+    ADMIN_PASSWORD_HASH = None
+else:
+    ADMIN_PASSWORD_HASH = generate_password_hash(ADMIN_PASSWORD)
+    logger.info("✅ Admin authentication properly configured")
 
 def admin_required(f):
     """Decorator to require admin authentication"""
@@ -34,6 +40,11 @@ def admin_required(f):
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     """Admin login page"""
+    # Check if admin access is disabled due to missing environment variable
+    if ADMIN_PASSWORD_HASH is None:
+        flash('Administrative access is disabled. Contact system administrator.', 'error')
+        return render_template('admin_login.html', admin_disabled=True)
+    
     if request.method == 'POST':
         password = request.form.get('password')
         
@@ -549,8 +560,8 @@ def get_database_size():
             try:
                 count_result = db.session.execute(text(f"SELECT COUNT(*) FROM `{table_name}`"))
                 row_count = count_result.scalar()
-                tables[table_name] = row_count
-                total_rows += row_count
+                tables[table_name] = row_count if row_count is not None else 0
+                total_rows += tables[table_name]
             except Exception as table_error:
                 logger.warning(f"Could not count rows in table {table_name}: {table_error}")
                 tables[table_name] = 0

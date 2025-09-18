@@ -152,6 +152,17 @@ class TrefleBotanicalService:
             # Make API request
             data = self._make_api_request(self.PLANTS_ENDPOINT, params)
             
+            # Check for rate limit response first
+            if data and data.get('rate_limit_exceeded'):
+                # Propagate rate limit status instead of treating as "no results"
+                logger.warning(f"🚫 Rate limit exceeded for: {clean_name}")
+                return {
+                    'status': 'rate_limited',
+                    'retry_after': data.get('retry_after'),
+                    'error': data.get('error'),
+                    'scientific_name': clean_name
+                }
+            
             if not data or not data.get('data'):
                 logger.info(f"❌ No Trefle results found for: {clean_name}")
                 return None
