@@ -54,6 +54,7 @@ import logging
 import requests
 import re
 import time
+import uuid
 from datetime import datetime, timedelta
 from sqlalchemy import or_, func, and_, cast, String
 from io import BytesIO
@@ -13147,4 +13148,841 @@ def trefle_ecosystem_summary():
         }), 500
 
 logger.info("🌿 GBIF Ecosystem API Integration routes registered successfully")
+
+# ==============================
+# AI RESEARCH API ENDPOINTS
+# ==============================
+# Import OrchidAIResearchHub service
+try:
+    from orchid_ai_research_hub import (
+        OrchidAIResearchHub, QueryIntentType, ResearchQuery, ResearchResponse,
+        ConfidenceLevel, get_research_hub
+    )
+    AI_RESEARCH_AVAILABLE = True
+    logger.info("🤖 OrchidAI Research Hub imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ OrchidAI Research Hub not available: {e}")
+    AI_RESEARCH_AVAILABLE = False
+    
+    # Create fallback stubs for missing AI symbols
+    from enum import Enum
+    from dataclasses import dataclass
+    from typing import Dict, List, Optional, Any
+    
+    class QueryIntentType(Enum):
+        SPECIES_IDENTIFICATION = "species_identification"
+        CULTIVATION_ADVICE = "cultivation_advice"
+        RESEARCH_DISCOVERY = "research_discovery"
+        CITATION_GENERATION = "citation_generation"
+        DATABASE_QUERY = "database_query"
+        IMAGE_ANALYSIS = "image_analysis"
+        ECOSYSTEM_ANALYSIS = "ecosystem_analysis"
+        COMPARATIVE_ANALYSIS = "comparative_analysis"
+    
+    class ConfidenceLevel(Enum):
+        VERY_HIGH = "very_high"
+        HIGH = "high"
+        MEDIUM = "medium"
+        LOW = "low"
+        VERY_LOW = "very_low"
+    
+    @dataclass
+    class ResearchQuery:
+        query_id: str
+        intent: QueryIntentType
+        query_text: str
+        user_id: Optional[str] = None
+        image_data: Optional[Dict] = None
+        context_filters: Optional[Dict] = None
+        session_id: Optional[str] = None
+        timestamp: Optional[Any] = None
+    
+    @dataclass
+    class ResearchResponse:
+        query_id: str
+        response_type: str
+        primary_result: Dict[str, Any]
+        confidence_score: float
+        confidence_level: ConfidenceLevel
+        supporting_evidence: List[Dict[str, Any]]
+        alternative_suggestions: List[Dict[str, Any]]
+        source_citations: List[Dict[str, Any]]
+        research_trail: List[str]
+        session_context: Dict[str, Any]
+        processing_time: float
+        ai_models_used: List[str]
+        database_records_referenced: int
+    
+    def get_research_hub():
+        """Fallback function when research hub is not available"""
+        return None
+
+# Import CSRF for API exemption
+try:
+    from flask_wtf.csrf import exempt
+    CSRF_AVAILABLE = True
+except ImportError:
+    CSRF_AVAILABLE = False
+    def exempt(f):
+        return f
+
+@app.route('/api/ai-research/query', methods=['POST'])
+@exempt
+def ai_research_query():
+    """
+    Main research query endpoint for AI-powered orchid research
+    Supports all query types with intelligent routing and context management
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        data = request.get_json()
+        
+        if not data or 'query' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Query text is required',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Validate and sanitize input
+        query_text = str(data['query']).strip()
+        if len(query_text) < 3:
+            return jsonify({
+                'success': False,
+                'error': 'Query must be at least 3 characters long',
+                'error_type': 'validation_error'
+            }), 400
+        
+        if len(query_text) > 2000:
+            return jsonify({
+                'success': False,
+                'error': 'Query must be less than 2000 characters',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Extract query parameters
+        query_type = data.get('type', 'general')
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        context = data.get('context', {})
+        attachments = data.get('attachments', [])
+        
+        # Map query type to intent
+        intent_mapping = {
+            'identification': QueryIntentType.SPECIES_IDENTIFICATION,
+            'cultivation': QueryIntentType.CULTIVATION_ADVICE,
+            'research': QueryIntentType.RESEARCH_DISCOVERY,
+            'citations': QueryIntentType.CITATION_GENERATION,
+            'images': QueryIntentType.IMAGE_ANALYSIS,
+            'ecosystem': QueryIntentType.ECOSYSTEM_ANALYSIS,
+            'comparison': QueryIntentType.COMPARATIVE_ANALYSIS
+        }
+        intent = intent_mapping.get(query_type, QueryIntentType.DATABASE_QUERY)
+        
+        # Process image attachments if provided
+        image_data = None
+        if attachments:
+            for attachment in attachments:
+                if isinstance(attachment, dict) and 'image_data' in attachment:
+                    image_data = attachment
+                    break
+        
+        # Create research query
+        research_query = ResearchQuery(
+            query_id=str(uuid.uuid4()),
+            intent=intent,
+            query_text=query_text,
+            user_id=session.get('user_id'),
+            image_data=image_data,
+            context_filters=context,
+            session_id=session_id,
+            timestamp=datetime.now()
+        )
+        
+        # Process query through research hub
+        research_hub = get_research_hub()
+        response = research_hub.process_research_query(research_query)
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        
+        # Format response according to API specification
+        api_response = {
+            'success': True,
+            'query_analysis': {
+                'intent': response.response_type,
+                'confidence': response.confidence_score,
+                'query_id': response.query_id
+            },
+            'ai_response': {
+                'summary': response.primary_result.get('summary', ''),
+                'detailed_answer': response.primary_result.get('detailed_answer', response.primary_result.get('analysis', '')),
+                'confidence_score': response.confidence_level.value
+            },
+            'data_sources': {
+                'orchid_records': response.supporting_evidence,
+                'gbif_data': response.primary_result.get('gbif_data', {}),
+                'literature': response.source_citations
+            },
+            'session_context': {
+                'session_id': session_id,
+                'conversation_length': len(response.session_context.get('query_history', []))
+            },
+            'processing_time': round(processing_time, 2),
+            'research_trail': response.research_trail,
+            'alternative_suggestions': response.alternative_suggestions,
+            'ai_models_used': response.ai_models_used,
+            'database_records_referenced': response.database_records_referenced
+        }
+        
+        logger.info(f"🔬 AI Research query processed: {intent.value} (confidence: {response.confidence_score:.2f})")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"AI Research query error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'processing_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/identify', methods=['POST'])
+@exempt
+def ai_research_identify():
+    """
+    Specialized species identification endpoint with image analysis support
+    Optimized for orchid species identification using AI vision and database matching
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Handle both text descriptions and image uploads
+        query_text = data.get('query', data.get('description', ''))
+        image_data = data.get('image_data') or data.get('image')
+        
+        if not query_text and not image_data:
+            return jsonify({
+                'success': False,
+                'error': 'Either query text or image data is required for identification',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Default query for identification if only image provided
+        if not query_text and image_data:
+            query_text = "Please identify this orchid species from the provided image."
+        
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        
+        # Create identification-specific query
+        research_query = ResearchQuery(
+            query_id=str(uuid.uuid4()),
+            intent=QueryIntentType.SPECIES_IDENTIFICATION,
+            query_text=query_text,
+            user_id=session.get('user_id'),
+            image_data=image_data,
+            context_filters=data.get('context', {}),
+            session_id=session_id,
+            timestamp=datetime.now()
+        )
+        
+        # Process through research hub
+        research_hub = get_research_hub()
+        response = research_hub.process_research_query(research_query)
+        
+        # Format identification-specific response
+        api_response = {
+            'success': True,
+            'identification': {
+                'primary_candidate': response.primary_result.get('primary_identification', {}),
+                'alternatives': response.alternative_suggestions[:5],  # Top 5 alternatives
+                'confidence_level': response.confidence_level.value,
+                'confidence_score': response.confidence_score
+            },
+            'database_matches': response.supporting_evidence,
+            'analysis_details': {
+                'image_analysis': response.primary_result.get('image_analysis', {}),
+                'morphological_features': response.primary_result.get('morphological_features', {}),
+                'distinguishing_characteristics': response.primary_result.get('distinguishing_characteristics', [])
+            },
+            'session_context': {
+                'session_id': session_id,
+                'identification_history': response.session_context.get('identification_history', [])
+            },
+            'processing_time': round(time.time() - start_time, 2),
+            'source_citations': response.source_citations,
+            'research_trail': response.research_trail
+        }
+        
+        logger.info(f"🔍 Species identification processed (confidence: {response.confidence_score:.2f})")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Species identification error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'identification_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/cultivation-advice', methods=['POST'])
+@exempt
+def ai_research_cultivation_advice():
+    """
+    Specialized cultivation advice endpoint with climate matching and Baker culture integration
+    Provides comprehensive growing recommendations based on species and environmental factors
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        data = request.get_json() or {}
+        
+        query_text = data.get('query', '')
+        orchid_species = data.get('species', '')
+        location = data.get('location', '')
+        experience_level = data.get('experience_level', 'intermediate')
+        growing_environment = data.get('environment', 'indoor')
+        
+        if not query_text and not orchid_species:
+            return jsonify({
+                'success': False,
+                'error': 'Either query text or orchid species is required for cultivation advice',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Enhance query with context if orchid species provided
+        if orchid_species and not query_text:
+            query_text = f"What are the optimal growing conditions and care requirements for {orchid_species}?"
+        elif orchid_species:
+            query_text += f" Specifically for {orchid_species}."
+        
+        # Add environmental context to query
+        context_additions = []
+        if location:
+            context_additions.append(f"growing in {location}")
+        if experience_level != 'intermediate':
+            context_additions.append(f"for a {experience_level} grower")
+        if growing_environment != 'indoor':
+            context_additions.append(f"in a {growing_environment} environment")
+        
+        if context_additions:
+            query_text += f" Consider {', '.join(context_additions)}."
+        
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        
+        # Create cultivation-specific query
+        research_query = ResearchQuery(
+            query_id=str(uuid.uuid4()),
+            intent=QueryIntentType.CULTIVATION_ADVICE,
+            query_text=query_text,
+            user_id=session.get('user_id'),
+            image_data=data.get('image_data'),
+            context_filters={
+                'species': orchid_species,
+                'location': location,
+                'experience_level': experience_level,
+                'environment': growing_environment
+            },
+            session_id=session_id,
+            timestamp=datetime.now()
+        )
+        
+        # Process through research hub
+        research_hub = get_research_hub()
+        response = research_hub.process_research_query(research_query)
+        
+        # Format cultivation-specific response
+        api_response = {
+            'success': True,
+            'cultivation_advice': {
+                'summary': response.primary_result.get('summary', ''),
+                'detailed_recommendations': response.primary_result.get('recommendations', {}),
+                'care_schedule': response.primary_result.get('care_schedule', {}),
+                'environmental_requirements': response.primary_result.get('environmental_requirements', {}),
+                'common_problems': response.primary_result.get('common_problems', []),
+                'seasonal_care': response.primary_result.get('seasonal_care', {})
+            },
+            'baker_culture_sheets': response.primary_result.get('baker_culture_data', []),
+            'climate_matching': response.primary_result.get('climate_analysis', {}),
+            'experience_level_tips': response.primary_result.get('level_specific_tips', {}),
+            'supporting_evidence': response.supporting_evidence,
+            'session_context': {
+                'session_id': session_id,
+                'cultivation_history': response.session_context.get('cultivation_queries', [])
+            },
+            'processing_time': round(time.time() - start_time, 2),
+            'confidence_score': response.confidence_score,
+            'source_citations': response.source_citations
+        }
+        
+        logger.info(f"🌱 Cultivation advice processed for: {orchid_species or 'general'}")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Cultivation advice error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'cultivation_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/research-insights', methods=['POST'])
+@exempt
+def ai_research_insights():
+    """
+    Academic research queries endpoint for taxonomic patterns and conservation insights
+    Provides research-grade analysis for scientific and academic purposes
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        data = request.get_json() or {}
+        
+        query_text = data.get('query', '')
+        research_type = data.get('research_type', 'general')
+        taxonomic_focus = data.get('taxonomic_focus', '')
+        geographic_scope = data.get('geographic_scope', '')
+        time_period = data.get('time_period', '')
+        
+        if not query_text:
+            return jsonify({
+                'success': False,
+                'error': 'Research query text is required',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Validate research type
+        valid_research_types = [
+            'general', 'taxonomic', 'conservation', 'ecological', 
+            'evolutionary', 'biogeographic', 'phenological'
+        ]
+        if research_type not in valid_research_types:
+            research_type = 'general'
+        
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        
+        # Create research-specific query
+        research_query = ResearchQuery(
+            query_id=str(uuid.uuid4()),
+            intent=QueryIntentType.RESEARCH_DISCOVERY,
+            query_text=query_text,
+            user_id=session.get('user_id'),
+            image_data=data.get('image_data'),
+            context_filters={
+                'research_type': research_type,
+                'taxonomic_focus': taxonomic_focus,
+                'geographic_scope': geographic_scope,
+                'time_period': time_period
+            },
+            session_id=session_id,
+            timestamp=datetime.now()
+        )
+        
+        # Process through research hub
+        research_hub = get_research_hub()
+        response = research_hub.process_research_query(research_query)
+        
+        # Format research-specific response
+        api_response = {
+            'success': True,
+            'research_insights': {
+                'summary': response.primary_result.get('summary', ''),
+                'key_findings': response.primary_result.get('key_findings', []),
+                'taxonomic_patterns': response.primary_result.get('taxonomic_patterns', {}),
+                'conservation_status': response.primary_result.get('conservation_status', {}),
+                'ecological_relationships': response.primary_result.get('ecological_relationships', {}),
+                'research_gaps': response.primary_result.get('research_gaps', []),
+                'methodology_suggestions': response.primary_result.get('methodology_suggestions', [])
+            },
+            'data_analysis': {
+                'database_coverage': response.database_records_referenced,
+                'geographic_distribution': response.primary_result.get('geographic_analysis', {}),
+                'temporal_trends': response.primary_result.get('temporal_trends', {}),
+                'statistical_summary': response.primary_result.get('statistics', {})
+            },
+            'supporting_evidence': response.supporting_evidence,
+            'literature_review': response.source_citations,
+            'session_context': {
+                'session_id': session_id,
+                'research_history': response.session_context.get('research_queries', [])
+            },
+            'processing_time': round(time.time() - start_time, 2),
+            'confidence_assessment': {
+                'overall_confidence': response.confidence_score,
+                'data_quality': response.primary_result.get('data_quality', 'unknown'),
+                'research_reliability': response.confidence_level.value
+            }
+        }
+        
+        logger.info(f"🔬 Research insights processed: {research_type}")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Research insights error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'research_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/citations', methods=['POST'])
+@exempt
+def ai_research_citations():
+    """
+    Citation generation endpoint with academic formatting support
+    Generates properly formatted citations in multiple academic styles
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        data = request.get_json() or {}
+        
+        query_text = data.get('query', '')
+        citation_style = data.get('style', 'APA').upper()
+        source_types = data.get('source_types', ['journal', 'database', 'book'])
+        include_doi = data.get('include_doi', True)
+        max_citations = data.get('max_citations', 20)
+        
+        if not query_text:
+            return jsonify({
+                'success': False,
+                'error': 'Citation query text is required',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Validate citation style
+        valid_styles = ['APA', 'MLA', 'CHICAGO', 'VANCOUVER', 'IEEE']
+        if citation_style not in valid_styles:
+            citation_style = 'APA'
+        
+        # Validate max citations limit
+        if max_citations > 50:
+            max_citations = 50
+        elif max_citations < 1:
+            max_citations = 10
+        
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        
+        # Create citation-specific query
+        research_query = ResearchQuery(
+            query_id=str(uuid.uuid4()),
+            intent=QueryIntentType.CITATION_GENERATION,
+            query_text=query_text,
+            user_id=session.get('user_id'),
+            image_data=None,
+            context_filters={
+                'citation_style': citation_style,
+                'source_types': source_types,
+                'include_doi': include_doi,
+                'max_citations': max_citations
+            },
+            session_id=session_id,
+            timestamp=datetime.now()
+        )
+        
+        # Process through research hub
+        research_hub = get_research_hub()
+        response = research_hub.process_research_query(research_query)
+        
+        # Format citation-specific response
+        api_response = {
+            'success': True,
+            'citations': {
+                'formatted_citations': response.source_citations,
+                'citation_style': citation_style,
+                'total_found': len(response.source_citations),
+                'bibliography': response.primary_result.get('bibliography', []),
+                'in_text_citations': response.primary_result.get('in_text_citations', [])
+            },
+            'source_analysis': {
+                'source_types_found': response.primary_result.get('source_types', {}),
+                'publication_years': response.primary_result.get('publication_years', {}),
+                'author_analysis': response.primary_result.get('author_analysis', {}),
+                'journal_distribution': response.primary_result.get('journal_distribution', {})
+            },
+            'quality_assessment': {
+                'peer_reviewed_count': response.primary_result.get('peer_reviewed_count', 0),
+                'impact_factor_analysis': response.primary_result.get('impact_analysis', {}),
+                'citation_completeness': response.primary_result.get('completeness_score', 0),
+                'doi_coverage': response.primary_result.get('doi_coverage', 0)
+            },
+            'session_context': {
+                'session_id': session_id,
+                'citation_history': response.session_context.get('citation_queries', [])
+            },
+            'processing_time': round(time.time() - start_time, 2),
+            'research_trail': response.research_trail
+        }
+        
+        logger.info(f"📚 Citations generated: {len(response.source_citations)} in {citation_style} style")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Citation generation error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'citation_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/session/<session_id>/context', methods=['GET'])
+def ai_research_session_context(session_id):
+    """
+    Session context management endpoint for conversation continuity
+    Retrieves and manages multi-turn conversation context
+    """
+    start_time = time.time()
+    
+    if not AI_RESEARCH_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'AI Research Hub not available',
+            'error_type': 'service_unavailable'
+        }), 503
+    
+    try:
+        if not session_id or len(session_id) < 10:
+            return jsonify({
+                'success': False,
+                'error': 'Valid session ID is required',
+                'error_type': 'validation_error'
+            }), 400
+        
+        # Get session context from research hub
+        research_hub = get_research_hub()
+        context = research_hub._get_session_context(session_id)
+        
+        if not context:
+            return jsonify({
+                'success': False,
+                'error': 'Session not found or expired',
+                'error_type': 'session_not_found'
+            }), 404
+        
+        # Format session context response
+        api_response = {
+            'success': True,
+            'session_context': {
+                'session_id': session_id,
+                'created_at': context.get('created_at').isoformat() if context.get('created_at') else None,
+                'last_activity': context.get('last_activity').isoformat() if context.get('last_activity') else None,
+                'total_queries': context.get('total_queries', 0),
+                'query_types': context.get('query_types', {}),
+                'conversation_summary': context.get('conversation_summary', ''),
+                'research_focus': context.get('research_focus', []),
+                'active_topics': context.get('active_topics', [])
+            },
+            'query_history': [
+                {
+                    'query_id': q.get('query_id'),
+                    'intent': q.get('intent'),
+                    'timestamp': q.get('timestamp').isoformat() if q.get('timestamp') else None,
+                    'confidence': q.get('confidence'),
+                    'summary': q.get('summary', '')[:100] + '...' if len(q.get('summary', '')) > 100 else q.get('summary', '')
+                }
+                for q in context.get('query_history', [])[-10:]  # Last 10 queries
+            ],
+            'session_analytics': {
+                'average_confidence': context.get('average_confidence', 0),
+                'most_frequent_intent': context.get('most_frequent_intent', ''),
+                'session_duration_minutes': context.get('session_duration_minutes', 0),
+                'research_productivity_score': context.get('research_productivity_score', 0)
+            },
+            'processing_time': round(time.time() - start_time, 2)
+        }
+        
+        logger.info(f"📋 Session context retrieved: {session_id}")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Session context error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': 'session_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+@app.route('/api/ai-research/capabilities', methods=['GET'])
+def ai_research_capabilities():
+    """
+    Research capabilities and system status endpoint
+    Provides information about available features and system health
+    """
+    start_time = time.time()
+    
+    try:
+        if not AI_RESEARCH_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'status': 'unavailable',
+                'error': 'AI Research Hub not available',
+                'capabilities': {
+                    'query_types': [],
+                    'ai_models': [],
+                    'integrations': {},
+                    'database_records': 0
+                }
+            }), 503
+        
+        # Get system status and capabilities
+        research_hub = get_research_hub()
+        
+        # Check database connectivity
+        try:
+            orchid_count = OrchidRecord.query.count()
+            taxonomy_count = OrchidTaxonomy.query.count()
+            database_healthy = True
+        except Exception as e:
+            logger.warning(f"Database health check failed: {e}")
+            orchid_count = 0
+            taxonomy_count = 0
+            database_healthy = False
+        
+        # Check AI model availability
+        ai_models = ['gpt-4o']
+        try:
+            from orchid_ai_research_hub import anthropic_client
+            if anthropic_client:
+                ai_models.append('claude-sonnet-4')
+        except:
+            pass
+        
+        # System capabilities
+        api_response = {
+            'success': True,
+            'status': 'operational',
+            'capabilities': {
+                'query_types': [
+                    {
+                        'type': 'identification',
+                        'name': 'Species Identification',
+                        'description': 'AI-powered orchid species identification from images and descriptions',
+                        'supports_images': True,
+                        'endpoint': '/api/ai-research/identify'
+                    },
+                    {
+                        'type': 'cultivation',
+                        'name': 'Cultivation Advice', 
+                        'description': 'Comprehensive growing recommendations and care guidance',
+                        'supports_images': False,
+                        'endpoint': '/api/ai-research/cultivation-advice'
+                    },
+                    {
+                        'type': 'research',
+                        'name': 'Research Insights',
+                        'description': 'Academic research analysis and taxonomic patterns',
+                        'supports_images': False,
+                        'endpoint': '/api/ai-research/research-insights'
+                    },
+                    {
+                        'type': 'citations',
+                        'name': 'Citation Generation',
+                        'description': 'Academic citation formatting in multiple styles',
+                        'supports_images': False,
+                        'endpoint': '/api/ai-research/citations'
+                    },
+                    {
+                        'type': 'general',
+                        'name': 'General Research',
+                        'description': 'Multi-purpose research queries with intelligent routing',
+                        'supports_images': True,
+                        'endpoint': '/api/ai-research/query'
+                    }
+                ],
+                'ai_models': ai_models,
+                'database_records': {
+                    'orchid_records': orchid_count,
+                    'taxonomy_entries': taxonomy_count,
+                    'last_updated': datetime.now().isoformat(),
+                    'database_healthy': database_healthy
+                },
+                'integrations': {
+                    'gbif_ecosystem': True,
+                    'baker_culture_sheets': True,
+                    'image_analysis': True,
+                    'species_identification': True,
+                    'weather_data': True,
+                    'geographic_mapping': True
+                },
+                'supported_formats': {
+                    'input_images': ['jpg', 'jpeg', 'png', 'webp'],
+                    'citation_styles': ['APA', 'MLA', 'Chicago', 'Vancouver', 'IEEE'],
+                    'research_types': ['taxonomic', 'conservation', 'ecological', 'evolutionary']
+                }
+            },
+            'usage_limits': {
+                'max_query_length': 2000,
+                'max_citations': 50,
+                'session_timeout_hours': 24,
+                'max_image_size_mb': 10
+            },
+            'version': '1.0.0',
+            'last_updated': datetime.now().isoformat(),
+            'processing_time': round(time.time() - start_time, 2)
+        }
+        
+        logger.info("🚀 AI Research capabilities provided")
+        return jsonify(api_response), 200
+        
+    except Exception as e:
+        logger.error(f"Capabilities endpoint error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'status': 'error',
+            'error': str(e),
+            'error_type': 'capabilities_error',
+            'processing_time': round(time.time() - start_time, 2)
+        }), 500
+
+# Register the research hub blueprint if it exists
+try:
+    from orchid_ai_research_hub import research_hub_bp
+    app.register_blueprint(research_hub_bp, url_prefix='/ai-research-hub')
+    logger.info("🔗 OrchidAI Research Hub blueprint registered at /ai-research-hub")
+except ImportError:
+    logger.warning("⚠️ OrchidAI Research Hub blueprint not available for registration")
+
+logger.info("🤖 AI Research API endpoints registered successfully at /api/ai-research/*")
 

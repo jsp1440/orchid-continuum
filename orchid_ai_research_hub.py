@@ -29,7 +29,7 @@ from flask import Blueprint, request, jsonify, session
 from app import app, db
 
 # Import existing AI modules
-from orchid_ai import analyze_orchid_image, extract_exif_metadata, get_weather_based_care_advice
+from orchid_ai import analyze_orchid_image, extract_metadata_from_text, get_weather_based_care_advice
 from ai_orchid_identification import AIOrchidIdentifier
 from ai_orchid_chat import OrchidAI
 from ai_research_assistant import AIResearchAssistant
@@ -50,10 +50,16 @@ logger = logging.getLogger(__name__)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable must be set")
-
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# Make API key optional with graceful degradation
+openai_client = None
+if OPENAI_API_KEY:
+    try:
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        logger.info("✅ OpenAI client initialized successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ OpenAI client initialization failed: {e}")
+else:
+    logger.warning("⚠️ OPENAI_API_KEY not set - AI Research Hub will have limited functionality")
 
 # Initialize Anthropic client if available
 anthropic_client = None
@@ -283,7 +289,7 @@ class OrchidAIResearchHub:
                 database_matches = []
                 if genus:
                     matches = OrchidRecord.query.filter(
-                        OrchidRecord.genus.ilike(f'%{genus}%')
+                        OrchidRecord.scientific_name.ilike(f'{genus}%')
                     ).limit(10).all()
                     database_records = len(matches)
                     database_matches = [self._serialize_orchid_record(record) for record in matches]
@@ -343,8 +349,7 @@ class OrchidAIResearchHub:
                     records = OrchidRecord.query.filter(
                         db.or_(
                             OrchidRecord.display_name.ilike(f'%{name}%'),
-                            OrchidRecord.scientific_name.ilike(f'%{name}%'),
-                            OrchidRecord.genus.ilike(f'%{name}%')
+                            OrchidRecord.scientific_name.ilike(f'%{name}%')
                         )
                     ).limit(5).all()
                     
@@ -445,8 +450,7 @@ class OrchidAIResearchHub:
                 records = OrchidRecord.query.filter(
                     db.or_(
                         OrchidRecord.display_name.ilike(f'%{entity}%'),
-                        OrchidRecord.scientific_name.ilike(f'%{entity}%'),
-                        OrchidRecord.genus.ilike(f'%{entity}%')
+                        OrchidRecord.scientific_name.ilike(f'%{entity}%')
                     )
                 ).limit(10).all()
                 relevant_records.extend(records)
@@ -494,14 +498,14 @@ class OrchidAIResearchHub:
             
             # Comprehensive image analysis using existing modules
             orchid_analysis = analyze_orchid_image(image_path)
-            exif_data = extract_exif_metadata(image_path)
+            exif_data = extract_metadata_from_text(str(orchid_analysis))  # Extract metadata from analysis result
             
             # Get database context if genus identified
             genus = orchid_analysis.get('genus')
             database_matches = []
             if genus:
                 matches = OrchidRecord.query.filter(
-                    OrchidRecord.genus.ilike(f'%{genus}%')
+                    OrchidRecord.scientific_name.ilike(f'{genus}%')
                 ).limit(15).all()
                 database_records = len(matches)
                 database_matches = [self._serialize_orchid_record(record) for record in matches]
@@ -696,8 +700,6 @@ class OrchidAIResearchHub:
                     db.or_(
                         OrchidRecord.display_name.ilike(f'%{term}%'),
                         OrchidRecord.scientific_name.ilike(f'%{term}%'),
-                        OrchidRecord.genus.ilike(f'%{term}%'),
-                        OrchidRecord.species.ilike(f'%{term}%'),
                         OrchidRecord.common_names.ilike(f'%{term}%'),
                         OrchidRecord.region.ilike(f'%{term}%'),
                         OrchidRecord.native_habitat.ilike(f'%{term}%')
@@ -715,12 +717,20 @@ class OrchidAIResearchHub:
     def _serialize_orchid_record(self, record: OrchidRecord) -> Dict[str, Any]:
         """Convert OrchidRecord to serializable dictionary"""
         
+        # Extract genus and species from scientific name for backward compatibility
+        genus = None
+        species = None
+        if record.scientific_name:
+            parts = record.scientific_name.split(' ', 1)
+            genus = parts[0] if len(parts) > 0 else None
+            species = parts[1] if len(parts) > 1 else None
+        
         return {
             'id': record.id,
             'display_name': record.display_name,
             'scientific_name': record.scientific_name,
-            'genus': record.genus,
-            'species': record.species,
+            'genus': genus,
+            'species': species,
             'common_names': record.common_names,
             'region': record.region,
             'native_habitat': record.native_habitat,
