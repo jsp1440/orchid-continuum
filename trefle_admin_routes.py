@@ -1,6 +1,6 @@
 """
-Trefle Ecosystem Enrichment Admin Routes
-Administrative interface for managing Trefle API batch enrichment
+GBIF Ecosystem Enrichment Admin Routes
+Administrative interface for managing GBIF ecosystem data batch enrichment
 """
 
 import os
@@ -40,7 +40,7 @@ def admin_required(f):
         )
         
         if not is_admin:
-            flash('Admin privileges required to access Trefle enrichment features', 'error')
+            flash('Admin privileges required to access GBIF ecosystem enrichment features', 'error')
             return redirect(url_for('index'))
         
         return f(*args, **kwargs)
@@ -49,7 +49,7 @@ def admin_required(f):
 @app.route('/admin/trefle-enrichment')
 @admin_required
 def admin_trefle_enrichment():
-    """Main Trefle enrichment admin page"""
+    """Main GBIF ecosystem enrichment admin page"""
     try:
         # Get overall statistics
         stats = get_enrichment_statistics()
@@ -69,14 +69,14 @@ def admin_trefle_enrichment():
                              active_session=active_session.to_dict() if active_session else None)
     
     except Exception as e:
-        logger.error(f"Error loading Trefle enrichment admin: {str(e)}")
+        logger.error(f"Error loading GBIF ecosystem enrichment admin: {str(e)}")
         flash(f"Error loading enrichment dashboard: {str(e)}", 'error')
         return redirect(url_for('admin'))
 
 @app.route('/admin/trefle-enrichment/create-session', methods=['POST'])
 @admin_required  
 def create_trefle_enrichment_session():
-    """Create a new Trefle enrichment session"""
+    """Create a new GBIF ecosystem enrichment session"""
     try:
         session_name = request.form.get('session_name', f'Enrichment {datetime.now().strftime("%Y-%m-%d %H:%M")}')
         priority_fcos = bool(request.form.get('priority_fcos'))
@@ -96,7 +96,7 @@ def create_trefle_enrichment_session():
         )
         
         flash(f'Enrichment session "{session_name}" created successfully! Session ID: {session_id}', 'success')
-        logger.info(f"✅ Created Trefle enrichment session: {session_name} (ID: {session_id})")
+        logger.info(f"✅ Created GBIF ecosystem enrichment session: {session_name} (ID: {session_id})")
         
         return redirect(url_for('admin_trefle_enrichment'))
         
@@ -108,7 +108,7 @@ def create_trefle_enrichment_session():
 @app.route('/admin/trefle-enrichment/start-processing/<session_id>')
 @admin_required
 def start_trefle_processing(session_id):
-    """Start processing a Trefle enrichment session"""
+    """Start processing a GBIF ecosystem enrichment session"""
     try:
         # Get session status
         session_status = get_enrichment_session_status(session_id)
@@ -323,29 +323,29 @@ def cancel_trefle_session(session_id):
 def test_trefle_connection():
     """Test Trefle API connection"""
     try:
-        from trefle_botanical_service import TrefleBotanicalService
+        from gbif_botanical_service import GBIFBotanicalService
         
-        service = TrefleBotanicalService()
+        service = GBIFBotanicalService()
         if not service.enabled:
-            flash('Trefle API is not configured. Please set TREFLE_API_KEY environment variable.', 'error')
+            flash('GBIF ecosystem service is ready - no API key required.', 'success')
             return redirect(url_for('admin_trefle_enrichment'))
         
         # Test with a common orchid genus
         test_result = service.search_plant_by_scientific_name('Phalaenopsis')
         
         if test_result and not test_result.get('rate_limit_exceeded'):
-            flash('✅ Trefle API connection successful!', 'success')
-            logger.info("✅ Trefle API connection test successful")
+            flash('✅ GBIF API connection successful!', 'success')
+            logger.info("✅ GBIF API connection test successful")
         elif test_result and test_result.get('rate_limit_exceeded'):
-            flash(f'⚠️ Trefle API connection successful but rate limited: {test_result.get("error")}', 'warning')
+            flash(f'⚠️ GBIF API connection successful but rate limited: {test_result.get("error")}', 'warning')
         else:
-            flash('❌ Trefle API connection failed', 'error')
+            flash('❌ GBIF API connection failed', 'error')
         
         return redirect(url_for('admin_trefle_enrichment'))
         
     except Exception as e:
-        logger.error(f"Error testing Trefle connection: {str(e)}")
-        flash(f"Error testing Trefle connection: {str(e)}", 'error')
+        logger.error(f"Error testing GBIF connection: {str(e)}")
+        flash(f"Error testing GBIF connection: {str(e)}", 'error')
         return redirect(url_for('admin_trefle_enrichment'))
 
 def register_trefle_admin_routes():

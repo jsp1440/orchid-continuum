@@ -87,8 +87,9 @@ from citizen_science_platform import citizen_science_bp
 from quantum_care_routes import register_quantum_care_routes
 from widget_error_handler import widget_error_handler, safe_json_parse, safe_get_user_favorites, validate_feather_icon
 
-# Trefle Botanical Service imports
-from trefle_botanical_service import TrefleBotanicalService
+# GBIF Botanical Service imports (replacing Trefle)
+from gbif_botanical_service import GBIFBotanicalService
+# Trefle batch enrichment service temporarily kept for admin routes compatibility
 from trefle_batch_enrichment_service import (
     trefle_batch_service,
     create_enrichment_session,
@@ -97,7 +98,7 @@ from trefle_batch_enrichment_service import (
     process_enrichment_batch,
     get_enrichment_statistics
 )
-import trefle_admin_routes  # Register Trefle admin routes
+import trefle_admin_routes  # Register Trefle admin routes (will be updated later)
 
 # Create themed orchids system
 ORCHID_THEMES = {
@@ -143,15 +144,22 @@ def get_orchids_by_theme(theme_keywords):
 # Initialize logger first
 logger = logging.getLogger(__name__)
 
-# Import Trefle Botanical Service for Ecosystem Explorer (after logger initialization)
+# Import GBIF Botanical Service for Ecosystem Explorer (after logger initialization)
 try:
-    from trefle_botanical_service import (
-        get_trefle_service, search_orchid_ecosystem_data, enrich_orchid_with_trefle_data,
-        get_trefle_service_status, batch_enrich_orchids_with_trefle
+    from gbif_botanical_service import (
+        get_gbif_service, search_orchid_ecosystem_data, enrich_orchid_with_gbif_data,
+        get_gbif_service_status, batch_enrich_orchids_with_gbif
     )
-    logger.info("✅ Trefle Botanical Service imported successfully")
+    logger.info("✅ GBIF Botanical Service imported successfully")
+    
+    # Maintain backward compatibility with existing route function names
+    get_trefle_service = get_gbif_service
+    enrich_orchid_with_trefle_data = enrich_orchid_with_gbif_data
+    get_trefle_service_status = get_gbif_service_status
+    batch_enrich_orchids_with_trefle = batch_enrich_orchids_with_gbif
+    
 except ImportError as e:
-    logger.warning(f"⚠️ Trefle Botanical Service not available: {e}")
+    logger.warning(f"⚠️ GBIF Botanical Service not available: {e}")
     get_trefle_service = None
     search_orchid_ecosystem_data = None
     enrich_orchid_with_trefle_data = None
@@ -12804,26 +12812,27 @@ def validate_file_id_linking():
 logger.info("🌺 FCOS Import System routes registered successfully")
 
 # ==============================================================================
-# Trefle Botanical API Integration Routes - Ecosystem Explorer Widget
+# GBIF Ecosystem API Integration Routes - Ecosystem Explorer Widget
+# (Maintaining /api/trefle/ endpoints for widget compatibility)
 # ==============================================================================
 
 @app.route('/api/trefle/status')
 def trefle_service_status():
-    """Get current status of the Trefle Botanical Service"""
+    """Get current status of the GBIF Botanical Service (maintaining /api/trefle/ for widget compatibility)"""
     try:
         if get_trefle_service_status is None:
             return jsonify({
                 'enabled': False,
-                'error': 'Trefle service not available',
+                'error': 'GBIF ecosystem service not available',
                 'api_key_configured': False
             }), 503
         
         status = get_trefle_service_status()
-        logger.info("📊 Trefle service status requested")
+        logger.info("📊 GBIF ecosystem service status requested")
         return jsonify(status)
         
     except Exception as e:
-        logger.error(f"Error getting Trefle service status: {str(e)}")
+        logger.error(f"Error getting GBIF ecosystem service status: {str(e)}")
         return jsonify({
             'enabled': False,
             'error': str(e),
@@ -12832,7 +12841,7 @@ def trefle_service_status():
 
 @app.route('/api/trefle/search')
 def trefle_search_orchid():
-    """Search for orchid ecosystem data by scientific name"""
+    """Search for orchid ecosystem data by scientific name using GBIF (maintaining /api/trefle/ for widget compatibility)"""
     try:
         scientific_name = request.args.get('scientific_name', '').strip()
         if not scientific_name:
@@ -12844,11 +12853,11 @@ def trefle_search_orchid():
         if search_orchid_ecosystem_data is None:
             return jsonify({
                 'success': False,
-                'error': 'Trefle service not available',
+                'error': 'GBIF ecosystem service not available',
                 'enabled': False
             }), 503
         
-        logger.info(f"🔍 Searching Trefle for: {scientific_name}")
+        logger.info(f"🔍 Searching GBIF ecosystem data for: {scientific_name}")
         ecosystem_data = search_orchid_ecosystem_data(scientific_name)
         
         # Check for rate limit response
@@ -12865,7 +12874,7 @@ def trefle_search_orchid():
                 'found': True,
                 'scientific_name': scientific_name,
                 'ecosystem_data': ecosystem_data,
-                'source': 'trefle.io'
+                'source': 'gbif_ecosystem'
             })
         else:
             return jsonify({
@@ -12873,11 +12882,11 @@ def trefle_search_orchid():
                 'found': False,
                 'scientific_name': scientific_name,
                 'message': f'No ecosystem data found for {scientific_name}',
-                'source': 'trefle.io'
+                'source': 'gbif_ecosystem'
             })
             
     except Exception as e:
-        logger.error(f"Error searching Trefle for {scientific_name}: {str(e)}")
+        logger.error(f"Error searching GBIF ecosystem for {scientific_name}: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
@@ -12918,7 +12927,7 @@ def trefle_enrich_orchid(orchid_id):
             }), 400
         
         display_name = getattr(orchid, 'display_name', f'Orchid {orchid_id}')
-        logger.info(f"🌿 Enriching orchid {orchid_id} ({display_name}) with Trefle data")
+        logger.info(f"🌿 Enriching orchid {orchid_id} ({display_name}) with GBIF ecosystem data")
         
         enrichment_result = enrich_orchid_with_trefle_data(orchid_id)
         
@@ -12987,7 +12996,7 @@ def trefle_batch_enrich():
         data = request.get_json() or {}
         limit = min(data.get('limit', 25), 100)  # Cap at 100 for safety
         
-        logger.info(f"🚀 Starting Trefle batch enrichment: limit={limit}")
+        logger.info(f"🚀 Starting GBIF ecosystem batch enrichment: limit={limit}")
         
         results = batch_enrich_orchids_with_trefle(limit=limit)
         
@@ -13032,17 +13041,17 @@ def trefle_orchid_ecosystem_data(orchid_id):
                 'error': f'Orchid {orchid_id} not found'
             }), 404
         
-        # Check if orchid already has Trefle data in habitat_research
+        # Check if orchid already has GBIF ecosystem data in habitat_research
         existing_data = None
         if orchid.habitat_research:
             try:
                 habitat_data = orchid.habitat_research if isinstance(orchid.habitat_research, dict) else json.loads(orchid.habitat_research)
-                existing_data = habitat_data.get('trefle_ecosystem_data')
+                existing_data = habitat_data.get('ecosystem_data') or habitat_data.get('trefle_ecosystem_data')
             except:
                 pass
         
         if existing_data:
-            logger.info(f"📊 Returning cached Trefle data for orchid {orchid_id}")
+            logger.info(f"📊 Returning cached ecosystem data for orchid {orchid_id}")
             return jsonify({
                 'success': True,
                 'orchid_id': orchid_id,
@@ -13053,14 +13062,14 @@ def trefle_orchid_ecosystem_data(orchid_id):
                 'source': 'database_cache'
             })
         else:
-            # Try to get fresh data from Trefle
+            # Try to get fresh data from GBIF
             if get_trefle_service is None:
                 return jsonify({
                     'success': False,
-                    'error': 'Trefle service not available and no cached data found'
+                    'error': 'GBIF ecosystem service not available and no cached data found'
                 }), 503
             
-            logger.info(f"🔍 Fetching fresh Trefle data for orchid {orchid_id}")
+            logger.info(f"🔍 Fetching fresh GBIF ecosystem data for orchid {orchid_id}")
             service = get_trefle_service()
             ecosystem_data = service.get_ecosystem_habitat_data(orchid)
             
@@ -13071,7 +13080,7 @@ def trefle_orchid_ecosystem_data(orchid_id):
                 'scientific_name': orchid.scientific_name,
                 'has_existing_data': False,
                 'ecosystem_data': ecosystem_data,
-                'source': 'trefle_api_live'
+                'source': 'gbif_ecosystem_live'
             })
             
     except Exception as e:
@@ -13137,5 +13146,5 @@ def trefle_ecosystem_summary():
             'error': str(e)
         }), 500
 
-logger.info("🌿 Trefle Botanical API Integration routes registered successfully")
+logger.info("🌿 GBIF Ecosystem API Integration routes registered successfully")
 
