@@ -34,7 +34,8 @@ class OrchidWidgetSystem:
             'orchid_explorer_pro': 'Orchid Explorer Pro - Geographic & Climate Suite',
             'discovery_center': 'Discovery Center - Search, Browse & Identify Hub',
             'learning_games': 'Learning Games - Multi-Game Educational Suite',
-            'research_hub': 'Research Hub - Analysis & Citation Tools'
+            'research_hub': 'Research Hub - Analysis & Citation Tools',
+            'ecosystem_explorer': 'Ecosystem Explorer - Plant Species Lookup & Habitat Data'
         }
     
     def get_widget_data(self, widget_type: str, **kwargs):
@@ -69,6 +70,8 @@ class OrchidWidgetSystem:
             return self._get_learning_games_data(**kwargs)
         elif widget_type == 'research_hub':
             return self._get_research_hub_data(**kwargs)
+        elif widget_type == 'ecosystem_explorer':
+            return self._get_ecosystem_explorer_data(**kwargs)
         else:
             return {'error': 'Unknown widget type'}
     
@@ -604,6 +607,46 @@ class OrchidWidgetSystem:
             'analysis_data': {'specimens': 247, 'diversity_index': 3.47},
             'export_options': ['CSV', 'JSON', 'PDF', 'LaTeX']
         }
+
+    def _get_ecosystem_explorer_data(self, **kwargs):
+        """Get data for ecosystem explorer widget"""
+        try:
+            total_orchids = OrchidRecord.query.count()
+            
+            # Get sample orchids with diverse genera for suggestions
+            sample_orchids = OrchidRecord.query.filter(
+                OrchidRecord.scientific_name.isnot(None),
+                OrchidRecord.validation_status != 'rejected'
+            ).distinct(OrchidRecord.genus).limit(20).all()
+            
+            # Build suggested species list
+            suggestions = []
+            for orchid in sample_orchids:
+                if orchid.scientific_name:
+                    suggestions.append({
+                        'id': orchid.id,
+                        'scientific_name': orchid.scientific_name,
+                        'display_name': orchid.display_name,
+                        'genus': orchid.genus,
+                        'species': orchid.species
+                    })
+            
+            return {
+                'title': 'Ecosystem Explorer - Botanical Research & Habitat Analysis',
+                'orchid_count': total_orchids,
+                'suggested_species': suggestions,
+                'trefle_enabled': True,  # This will be determined by the Trefle service
+                'widget_id': kwargs.get('widget_id', 'ecosystem-explorer'),
+                'search_examples': [
+                    'Phalaenopsis amabilis',
+                    'Dendrobium nobile', 
+                    'Cattleya labiata',
+                    'Vanda coerulea',
+                    'Oncidium flexuosum'
+                ]
+            }
+        except Exception as e:
+            return {'error': f"Error getting ecosystem explorer data: {str(e)}"}
 
 # Initialize widget system
 widget_system = OrchidWidgetSystem()

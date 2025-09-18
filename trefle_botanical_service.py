@@ -254,6 +254,10 @@ class TrefleBotanicalService:
             for name in names_to_try:
                 plant_data = self.search_plant_by_scientific_name(name)
                 if plant_data:
+                    # Check if this is a rate limit response
+                    if isinstance(plant_data, dict) and plant_data.get('rate_limit_exceeded'):
+                        logger.warning(f"Rate limit hit while searching for orchid {orchid_record.id}")
+                        return plant_data  # Return rate limit info to caller
                     break
             
             if not plant_data:
@@ -466,6 +470,12 @@ class TrefleBotanicalService:
             
             # Get ecosystem data
             ecosystem_data = self.get_ecosystem_habitat_data(orchid)
+            
+            # Check for rate limit response
+            if isinstance(ecosystem_data, dict) and ecosystem_data.get('rate_limit_exceeded'):
+                logger.warning(f"Rate limit hit for orchid {orchid_id} - data not persisted")
+                return {'rate_limit_exceeded': True, 'retry_after': ecosystem_data.get('retry_after', 60)}
+            
             if not ecosystem_data:
                 logger.info(f"No ecosystem data available for orchid {orchid_id}")
                 return False
@@ -556,7 +566,17 @@ class TrefleBotanicalService:
             
             for orchid in orchids_to_process:
                 try:
-                    if self.enrich_orchid_with_ecosystem_data(orchid.id):
+                    enrichment_result = self.enrich_orchid_with_ecosystem_data(orchid.id)
+                    
+                    # Check for rate limit response
+                    if isinstance(enrichment_result, dict) and enrichment_result.get('rate_limit_exceeded'):
+                        logger.warning(f"Rate limit hit during batch processing at orchid {orchid.id}")
+                        results['error'] = 'Rate limit exceeded during batch processing'
+                        results['retry_after'] = enrichment_result.get('retry_after', 60)
+                        results['completed_at'] = datetime.utcnow().isoformat()
+                        return results  # Return early with rate limit info
+                    
+                    if enrichment_result:
                         results['successful_enrichments'] += 1
                         results['orchid_ids_processed'].append(orchid.id)
                         logger.info(f"✅ Enriched orchid {orchid.id}: {orchid.display_name}")

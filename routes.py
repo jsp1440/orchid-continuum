@@ -9781,6 +9781,21 @@ def climate_widget():
         logger.error(f"Error loading climate widget: {e}")
         return jsonify({'error': 'Climate widget temporarily unavailable'}), 500
 
+@app.route('/widgets/ecosystem-explorer')
+def ecosystem_explorer_widget():
+    """Ecosystem Explorer widget page"""
+    try:
+        from widget_system import widget_system
+        
+        # Get widget data from the widget system
+        widget_data = widget_system.get_widget_data('ecosystem_explorer')
+        
+        logger.info("🌿 Loading Ecosystem Explorer widget")
+        return render_template('widgets/ecosystem_explorer_widget.html', widget_data=widget_data)
+    except Exception as e:
+        logger.error(f"Error loading ecosystem explorer widget: {e}")
+        return jsonify({'error': 'Ecosystem Explorer widget temporarily unavailable'}), 500
+
 @app.route('/widgets/climate-data')
 def climate_data_widget():
     """API endpoint for climate widget data"""
@@ -12900,9 +12915,21 @@ def trefle_enrich_orchid(orchid_id):
         display_name = getattr(orchid, 'display_name', f'Orchid {orchid_id}')
         logger.info(f"🌿 Enriching orchid {orchid_id} ({display_name}) with Trefle data")
         
-        success = enrich_orchid_with_trefle_data(orchid_id)
+        enrichment_result = enrich_orchid_with_trefle_data(orchid_id)
         
-        if success:
+        # Check for rate limit response
+        if isinstance(enrichment_result, dict) and enrichment_result.get('rate_limit_exceeded'):
+            logger.warning(f"Rate limit exceeded for orchid {orchid_id}")
+            response = jsonify({
+                'success': False,
+                'error': enrichment_result.get('error', 'Rate limit exceeded'),
+                'orchid_id': orchid_id,
+                'orchid_name': display_name
+            })
+            response.headers['Retry-After'] = str(enrichment_result.get('retry_after', 60))
+            return response, 429
+        
+        if enrichment_result:
             # Refresh the orchid record to get updated data
             db.session.refresh(orchid)
             
@@ -12921,7 +12948,7 @@ def trefle_enrich_orchid(orchid_id):
             return jsonify({
                 'success': False,
                 'orchid_id': orchid_id,
-                'orchid_name': orchid.display_name,
+                'orchid_name': display_name,
                 'error': 'Failed to enrich orchid with ecosystem data'
             }), 500
             
@@ -12959,14 +12986,16 @@ def trefle_batch_enrich():
         
         results = batch_enrich_orchids_with_trefle(limit=limit)
         
-        # Check for rate limit in batch results
+        # Check for rate limit in batch results  
         if 'error' in results and 'retry_after' in results:
-            return jsonify({
+            logger.warning(f"Batch enrichment hit rate limit after processing {results.get('total_processed', 0)} orchids")
+            response = jsonify({
                 'success': False,
                 'error': results['error'],
-                'retry_after': results['retry_after'],
                 'partial_results': results
-            }), 429
+            })
+            response.headers['Retry-After'] = str(results.get('retry_after', 60))
+            return response, 429
         
         # Add rate limiting info
         if get_trefle_service:
