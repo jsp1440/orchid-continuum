@@ -36,11 +36,18 @@ from ai_research_assistant import AIResearchAssistant
 from orchid_ecosystem_integrator import OrchidEcosystemIntegrator
 
 # Import database models
-from models import OrchidRecord, OrchidTaxonomy
+from models import (OrchidRecord, OrchidTaxonomy, AdvancedOrchidPollinatorRelationship, 
+                   LiteratureCitation, ResearchCollaboration, MemberCollection, 
+                   ExternalDatabaseCache)
 
 # OpenAI and Anthropic clients
 from openai import OpenAI
 import anthropic
+
+# Fuzzy matching and similarity
+from fuzzywuzzy import fuzz, process
+from Levenshtein import distance as levenshtein_distance
+import jellyfish
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -126,6 +133,8 @@ class OrchidAIResearchHub:
     def __init__(self):
         """Initialize the research hub with all AI subsystems"""
         self.session_contexts = {}  # In-memory session storage
+        self.fuzzy_match_cache = {}  # Cache for fuzzy matching results
+        self.species_similarity_matrix = {}  # Pre-computed similarity scores
         
         # Initialize existing AI modules
         self.orchid_identifier = AIOrchidIdentifier()
@@ -140,7 +149,175 @@ class OrchidAIResearchHub:
         except Exception as e:
             logger.warning(f"GBIF foundation layer loading failed: {e}")
         
+        # Initialize enhanced database integration components
+        self._init_enhanced_database_services()
+        
         logger.info("🤖 OrchidAI Research Hub initialized successfully")
+    
+    def _init_enhanced_database_services(self):
+        """Initialize enhanced database integration services"""
+        try:
+            # Pre-compute genus index for faster taxonomic searches
+            self._precompute_genus_index()
+            
+            # Pre-compute similarity matrix for related species
+            self._precompute_similarity_matrix()
+            
+            # Initialize FCOS collection cache
+            self._init_fcos_collection_cache()
+            
+            # Initialize research collaboration index
+            self._init_research_collaboration_index()
+            
+            logger.info("✅ Enhanced database services initialized")
+            logger.info(f"📊 Database status: {OrchidRecord.query.count()} orchid records available")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Enhanced database services initialization failed: {e}")
+    
+    def _precompute_genus_index(self):
+        """Pre-compute genus index for faster taxonomic searches"""
+        try:
+            # Get all genera with counts
+            genera = db.session.query(
+                OrchidRecord.genus, 
+                db.func.count(OrchidRecord.id).label('count')
+            ).filter(
+                OrchidRecord.genus.isnot(None)
+            ).group_by(OrchidRecord.genus).all()
+            
+            self.genus_index = {}
+            self.genus_species_count = {}
+            
+            for genus, count in genera:
+                if genus:
+                    self.genus_index[genus.lower()] = genus
+                    self.genus_species_count[genus] = count
+            
+            logger.info(f"📚 Genus index created: {len(self.genus_index)} genera")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Genus index creation failed: {e}")
+            self.genus_index = {}
+            self.genus_species_count = {}
+    
+    def _precompute_similarity_matrix(self):
+        """Pre-compute similarity scores for related species"""
+        try:
+            # Get top 20 most common genera for similarity pre-computation
+            top_genera = db.session.query(
+                OrchidRecord.genus, 
+                db.func.count(OrchidRecord.id).label('count')
+            ).filter(
+                OrchidRecord.genus.isnot(None)
+            ).group_by(OrchidRecord.genus).order_by(
+                db.func.count(OrchidRecord.id).desc()
+            ).limit(20).all()
+            
+            self.species_similarity_matrix = {}
+            
+            for genus_name, count in top_genera:
+                if genus_name and count > 3:  # Only compute for genera with multiple species
+                    species_in_genus = db.session.query(
+                        OrchidRecord.scientific_name
+                    ).filter(
+                        OrchidRecord.genus == genus_name,
+                        OrchidRecord.scientific_name.isnot(None)
+                    ).distinct().limit(30).all()  # Limit to avoid memory issues
+                    
+                    species_names = [sp[0] for sp in species_in_genus if sp[0]]
+                    if len(species_names) > 1:
+                        genus_similarities = {}
+                        for i, sp1 in enumerate(species_names):
+                            for sp2 in species_names[i+1:]:
+                                similarity = fuzz.ratio(sp1, sp2)
+                                if similarity > 65:  # Only store significant similarities
+                                    genus_similarities[f"{sp1}||{sp2}"] = similarity
+                        
+                        if genus_similarities:
+                            self.species_similarity_matrix[genus_name] = genus_similarities
+            
+            logger.info(f"🔗 Species similarity matrix created: {len(self.species_similarity_matrix)} genera")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Similarity matrix creation failed: {e}")
+            self.species_similarity_matrix = {}
+    
+    def _init_fcos_collection_cache(self):
+        """Initialize FCOS collection data cache"""
+        try:
+            # Cache FCOS member collection data
+            fcos_collections = MemberCollection.query.filter(
+                MemberCollection.collection_name.ilike('%fcos%')
+            ).limit(100).all()
+            
+            self.fcos_collection_cache = {}
+            for collection in fcos_collections:
+                if collection.orchid_record_id:
+                    self.fcos_collection_cache[collection.orchid_record_id] = {
+                        'collection_name': collection.collection_name,
+                        'member_id': collection.member_id,
+                        'growing_conditions': collection.growing_conditions,
+                        'success_notes': collection.success_notes,
+                        'cultivation_tips': collection.cultivation_tips,
+                        'image_urls': collection.image_urls
+                    }
+            
+            logger.info(f"🌺 FCOS collection cache initialized: {len(self.fcos_collection_cache)} records")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ FCOS collection cache initialization failed: {e}")
+            self.fcos_collection_cache = {}
+    
+    def _init_research_collaboration_index(self):
+        """Initialize research collaboration index for academic queries"""
+        try:
+            # Index research collaborations and literature citations
+            collaborations = ResearchCollaboration.query.filter(
+                ResearchCollaboration.collaboration_status == 'active'
+            ).limit(50).all()
+            
+            citations = LiteratureCitation.query.filter(
+                LiteratureCitation.doi.isnot(None)
+            ).limit(100).all()
+            
+            self.research_collaboration_index = {}
+            self.literature_citation_index = {}
+            
+            # Index collaborations by orchid species
+            for collab in collaborations:
+                species_key = collab.target_species or 'general'
+                if species_key not in self.research_collaboration_index:
+                    self.research_collaboration_index[species_key] = []
+                self.research_collaboration_index[species_key].append({
+                    'id': collab.id,
+                    'institution': collab.collaborating_institution,
+                    'research_focus': collab.research_focus,
+                    'contact_person': collab.contact_person
+                })
+            
+            # Index literature by orchid mentions
+            for citation in citations:
+                if citation.orchid_species_mentioned:
+                    species_list = json.loads(citation.orchid_species_mentioned) if isinstance(citation.orchid_species_mentioned, str) else [citation.orchid_species_mentioned]
+                    for species in species_list:
+                        if species not in self.literature_citation_index:
+                            self.literature_citation_index[species] = []
+                        self.literature_citation_index[species].append({
+                            'id': citation.id,
+                            'title': citation.title,
+                            'authors': citation.authors,
+                            'doi': citation.doi,
+                            'publication_year': citation.publication_year
+                        })
+            
+            logger.info(f"🔬 Research collaboration index: {len(self.research_collaboration_index)} species")
+            logger.info(f"📚 Literature citation index: {len(self.literature_citation_index)} species")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Research index initialization failed: {e}")
+            self.research_collaboration_index = {}
+            self.literature_citation_index = {}
 
     def process_research_query(self, query: ResearchQuery) -> ResearchResponse:
         """
@@ -682,7 +859,674 @@ class OrchidAIResearchHub:
             logger.error(f"Database query processing error: {e}")
             return self._generate_error_response(str(e))
 
-    # Helper methods for database operations
+    # Enhanced database integration methods
+    def get_comprehensive_orchid_data(self, query_text: str, include_fcos: bool = True, 
+                                     include_research: bool = True) -> Dict[str, Any]:
+        \"\"\"Get comprehensive orchid data with FCOS collection and research integration\"\"\"
+        
+        logger.info(f"🔍 Comprehensive data request: '{query_text}'")
+        
+        try:
+            # 1. Enhanced database search with fuzzy matching
+            search_results = self._search_orchid_database_comprehensive(query_text, limit=25)
+            
+            # 2. Add FCOS collection data
+            if include_fcos:
+                search_results = self._enrich_with_fcos_collection_data(search_results)
+            
+            # 3. Add research collaboration and literature data
+            if include_research:
+                search_results = self._enrich_with_research_data(search_results, query_text)
+            
+            # 4. Enhanced GBIF ecosystem integration
+            search_results = self._enrich_with_enhanced_gbif_data(search_results)
+            
+            # 5. Add confidence scoring and source attribution
+            search_results = self._add_confidence_scoring(search_results, query_text)
+            
+            return {
+                'orchid_records': search_results,
+                'total_found': len(search_results),
+                'data_sources': self._get_data_sources_summary(search_results),
+                'search_strategy': self._explain_comprehensive_search_strategy(query_text),
+                'confidence_distribution': self._analyze_confidence_distribution(search_results)
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Comprehensive data error: {e}")
+            return {'error': str(e), 'orchid_records': []}
+    
+    def _search_orchid_database_comprehensive(self, query_text: str, limit: int = 25) -> List[Dict[str, Any]]:
+        \"\"\"Comprehensive intelligent search with fuzzy matching and taxonomic hierarchy\"\"\"
+        
+        results = []
+        
+        try:
+            # 1. Exact matches (highest priority)
+            exact_results = self._exact_database_search(query_text, limit//3)
+            
+            # 2. Fuzzy matches for misspellings
+            fuzzy_results = self._fuzzy_database_search_enhanced(query_text, limit//3)
+            
+            # 3. Taxonomic hierarchy search
+            taxonomy_results = self._taxonomic_hierarchy_search_enhanced(query_text, limit//3)
+            
+            # 4. Combine and deduplicate
+            all_results = exact_results + fuzzy_results + taxonomy_results
+            seen_ids = set()
+            
+            for result in all_results:
+                if result['id'] not in seen_ids:
+                    seen_ids.add(result['id'])
+                    results.append(result)
+                    if len(results) >= limit:
+                        break
+            
+            # 5. Score and rank results
+            results = self._score_and_rank_results_enhanced(results, query_text)
+            
+            logger.info(f"✅ Comprehensive search: {len(results)} unique results")
+            
+        except Exception as e:
+            logger.error(f"❌ Comprehensive search error: {e}")
+        
+        return results[:limit]
+    
+    def _enrich_with_fcos_collection_data(self, orchid_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        \"\"\"Enrich orchid records with FCOS collection member experiences\"\"\"
+        
+        try:
+            for record in orchid_records:
+                orchid_id = record.get('id')
+                
+                # Check FCOS collection cache
+                if orchid_id in self.fcos_collection_cache:
+                    fcos_data = self.fcos_collection_cache[orchid_id]
+                    record['fcos_collection'] = {
+                        'member_cultivation': fcos_data,
+                        'has_member_experience': True,
+                        'growing_success_notes': fcos_data.get('success_notes'),
+                        'member_cultivation_tips': fcos_data.get('cultivation_tips'),
+                        'google_drive_images': fcos_data.get('image_urls')
+                    }
+                
+                # Look for additional FCOS records by scientific name matching
+                if record.get('scientific_name'):
+                    additional_fcos = MemberCollection.query.filter(
+                        db.or_(
+                            MemberCollection.orchid_scientific_name.ilike(f\"%{record['scientific_name']}%\"),
+                            MemberCollection.collection_notes.ilike(f\"%{record['scientific_name']}%\")
+                        )
+                    ).limit(3).all()
+                    
+                    if additional_fcos:
+                        if 'fcos_collection' not in record:
+                            record['fcos_collection'] = {'member_cultivation': [], 'has_member_experience': False}
+                        
+                        for fcos_record in additional_fcos:
+                            record['fcos_collection']['member_cultivation'].append({
+                                'member_id': fcos_record.member_id,
+                                'collection_name': fcos_record.collection_name,
+                                'growing_conditions': fcos_record.growing_conditions,
+                                'success_notes': fcos_record.success_notes,
+                                'image_urls': fcos_record.image_urls
+                            })
+                        
+                        record['fcos_collection']['has_member_experience'] = True
+            
+            logger.info(f\"📋 FCOS enrichment: {sum(1 for r in orchid_records if r.get('fcos_collection', {}).get('has_member_experience'))} records enriched\")
+            
+        except Exception as e:
+            logger.error(f\"❌ FCOS enrichment error: {e}\")
+        
+        return orchid_records
+    
+    def _enrich_with_research_data(self, orchid_records: List[Dict[str, Any]], query_text: str) -> List[Dict[str, Any]]:
+        \"\"\"Enrich with research collaborations and literature citations\"\"\"
+        
+        try:
+            for record in orchid_records:
+                scientific_name = record.get('scientific_name', '')
+                genus = record.get('genus', '')
+                
+                # Research collaborations
+                research_collabs = []
+                for species_key in [scientific_name, genus, 'general']:
+                    if species_key in self.research_collaboration_index:
+                        research_collabs.extend(self.research_collaboration_index[species_key])
+                
+                # Literature citations
+                literature_refs = []
+                for species_key in [scientific_name, genus]:
+                    if species_key in self.literature_citation_index:
+                        literature_refs.extend(self.literature_citation_index[species_key])
+                
+                if research_collabs or literature_refs:
+                    record['research_data'] = {
+                        'active_collaborations': research_collabs[:3],  # Top 3 collaborations
+                        'literature_citations': literature_refs[:5],   # Top 5 citations
+                        'research_significance': record.get('research_significance', 'Standard'),
+                        'has_academic_interest': len(research_collabs) > 0 or len(literature_refs) > 0
+                    }
+            
+            enriched_count = sum(1 for r in orchid_records if r.get('research_data', {}).get('has_academic_interest'))
+            logger.info(f\"🔬 Research enrichment: {enriched_count} records with academic data\")
+            
+        except Exception as e:
+            logger.error(f\"❌ Research enrichment error: {e}\")
+        
+        return orchid_records
+    
+    def _enrich_with_enhanced_gbif_data(self, orchid_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        \"\"\"Enhanced GBIF integration with occurrence data and conservation status\"\"\"
+        
+        try:
+            for record in orchid_records:
+                gbif_key = record.get('gbif_species_key')
+                scientific_name = record.get('scientific_name')
+                
+                if gbif_key or scientific_name:
+                    # Get enhanced GBIF data through ecosystem integrator
+                    try:
+                        if scientific_name:
+                            # Get occurrence data
+                            occurrence_data = self.ecosystem_integrator.fetch_gbif_occurrences(scientific_name, limit=10)
+                            
+                            # Get conservation status
+                            conservation_status = self.ecosystem_integrator.get_conservation_status(scientific_name)
+                            
+                            # Get pollinator relationships
+                            pollinator_relationships = AdvancedOrchidPollinatorRelationship.query.filter(
+                                AdvancedOrchidPollinatorRelationship.orchid_species.ilike(f'%{scientific_name}%')
+                            ).limit(5).all()
+                            
+                            record['enhanced_gbif'] = {
+                                'occurrence_count': len(occurrence_data) if occurrence_data else 0,
+                                'occurrence_data': occurrence_data[:5] if occurrence_data else [],
+                                'conservation_status': conservation_status,
+                                'pollinator_relationships': [
+                                    {
+                                        'pollinator_species': rel.pollinator_species,
+                                        'interaction_type': rel.interaction_type,
+                                        'relationship_strength': rel.relationship_strength,
+                                        'seasonal_timing': rel.seasonal_timing
+                                    } for rel in pollinator_relationships
+                                ],
+                                'has_ecological_data': len(pollinator_relationships) > 0 or (occurrence_data and len(occurrence_data) > 0)
+                            }
+                    
+                    except Exception as gbif_error:
+                        logger.warning(f\"⚠️ GBIF enrichment failed for {scientific_name}: {gbif_error}\")
+                        record['enhanced_gbif'] = {'error': 'GBIF data unavailable', 'has_ecological_data': False}
+            
+            enriched_count = sum(1 for r in orchid_records if r.get('enhanced_gbif', {}).get('has_ecological_data'))
+            logger.info(f\"🌍 GBIF enrichment: {enriched_count} records with ecological data\")
+            
+        except Exception as e:
+            logger.error(f\"❌ Enhanced GBIF integration error: {e}\")
+        
+        return orchid_records
+    
+    def _add_confidence_scoring(self, orchid_records: List[Dict[str, Any]], query_text: str) -> List[Dict[str, Any]]:
+        \"\"\"Add intelligent confidence scoring based on data completeness and verification\"\"\"
+        
+        try:
+            for record in orchid_records:
+                confidence_factors = {
+                    'data_completeness': 0,
+                    'external_verification': 0,
+                    'member_validation': 0,
+                    'research_backing': 0,
+                    'query_relevance': 0
+                }
+                
+                # Data completeness scoring (40% of confidence)
+                required_fields = ['scientific_name', 'genus', 'species', 'region', 'native_habitat']
+                optional_fields = ['common_names', 'cultural_notes', 'image_url', 'bloom_time', 'growth_habit']
+                
+                completeness_score = 0
+                for field in required_fields:
+                    if record.get(field):
+                        completeness_score += 0.6 / len(required_fields)
+                
+                for field in optional_fields:
+                    if record.get(field):
+                        completeness_score += 0.4 / len(optional_fields)
+                
+                confidence_factors['data_completeness'] = min(completeness_score, 0.4)
+                
+                # External verification (25% of confidence)
+                if record.get('taxonomy_info', {}).get('verification_status') == 'verified':
+                    confidence_factors['external_verification'] += 0.15
+                if record.get('gbif_species_key'):
+                    confidence_factors['external_verification'] += 0.1
+                
+                # Member validation (15% of confidence)
+                if record.get('fcos_collection', {}).get('has_member_experience'):
+                    confidence_factors['member_validation'] = 0.15
+                
+                # Research backing (10% of confidence)
+                if record.get('research_data', {}).get('has_academic_interest'):
+                    confidence_factors['research_backing'] = 0.1
+                
+                # Query relevance (10% of confidence)
+                relevance_score = record.get('relevance_score', 0)
+                confidence_factors['query_relevance'] = min(relevance_score * 0.1, 0.1)
+                
+                # Calculate total confidence
+                total_confidence = sum(confidence_factors.values())
+                
+                record['ai_confidence'] = {
+                    'overall_score': round(total_confidence, 3),
+                    'confidence_factors': confidence_factors,
+                    'confidence_level': self._determine_confidence_level(total_confidence),
+                    'data_sources': self._identify_data_sources(record)
+                }
+            
+            logger.info(f\"⭐ Confidence scoring: {len(orchid_records)} records scored\")
+            
+        except Exception as e:
+            logger.error(f\"❌ Confidence scoring error: {e}\")
+        
+        return orchid_records
+    
+    def _fuzzy_database_search_enhanced(self, query_text: str, limit: int) -> List[Dict[str, Any]]:
+        \"\"\"Enhanced fuzzy matching with better performance and accuracy\"\"\"
+        
+        try:
+            # Get all orchid names for fuzzy matching (optimized query)
+            orchid_names = db.session.query(
+                OrchidRecord.id,
+                OrchidRecord.scientific_name,
+                OrchidRecord.display_name,
+                OrchidRecord.genus
+            ).filter(
+                db.or_(
+                    OrchidRecord.scientific_name.isnot(None),
+                    OrchidRecord.display_name.isnot(None),
+                    OrchidRecord.genus.isnot(None)
+                )
+            ).limit(500).all()  # Limit for performance
+            
+            # Build name candidates for fuzzy matching
+            name_candidates = []
+            for record in orchid_names:
+                if record.scientific_name:
+                    name_candidates.append((record.scientific_name, record.id, 'scientific'))
+                if record.display_name and record.display_name != record.scientific_name:
+                    name_candidates.append((record.display_name, record.id, 'display'))
+                if record.genus:
+                    name_candidates.append((record.genus, record.id, 'genus'))
+            
+            # Fuzzy match using multiple algorithms
+            query_terms = [term.strip() for term in query_text.split() if len(term.strip()) > 2]
+            fuzzy_matches = []
+            
+            for term in query_terms:
+                # Use fuzzywuzzy for standard matching
+                matches = process.extractBests(
+                    term, 
+                    [name for name, _, _ in name_candidates], 
+                    score_cutoff=65, 
+                    limit=15
+                )
+                
+                for match_name, score in matches:
+                    matching_records = [(orchid_id, name_type) for name, orchid_id, name_type in name_candidates if name == match_name]
+                    for orchid_id, name_type in matching_records:
+                        fuzzy_matches.append((orchid_id, score, name_type, match_name, term))
+            
+            # Get unique high-scoring matches
+            unique_matches = {}
+            for orchid_id, score, name_type, match_name, original_term in fuzzy_matches:
+                if orchid_id not in unique_matches or unique_matches[orchid_id]['score'] < score:
+                    unique_matches[orchid_id] = {
+                        'score': score,
+                        'name_type': name_type,
+                        'matched_name': match_name,
+                        'original_term': original_term
+                    }
+            
+            # Get top matches and fetch full records
+            top_matches = sorted(unique_matches.items(), key=lambda x: x[1]['score'], reverse=True)[:limit]
+            orchid_ids = [match[0] for match in top_matches]
+            
+            results = []
+            if orchid_ids:
+                records = OrchidRecord.query.filter(OrchidRecord.id.in_(orchid_ids)).all()
+                for record in records:
+                    serialized = self._serialize_orchid_record_enhanced(record)
+                    if record.id in unique_matches:
+                        match_info = unique_matches[record.id]
+                        serialized['fuzzy_match_score'] = match_info['score']
+                        serialized['matched_field'] = match_info['name_type']
+                        serialized['matched_name'] = match_info['matched_name']
+                        serialized['original_query_term'] = match_info['original_term']
+                    results.append(serialized)
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f\"Enhanced fuzzy search error: {e}\")
+            return []
+    
+    def _taxonomic_hierarchy_search_enhanced(self, query_text: str, limit: int) -> List[Dict[str, Any]]:
+        \"\"\"Enhanced taxonomic hierarchy search with better matching\"\"\"
+        
+        try:
+            results = []
+            terms = [term.capitalize().strip() for term in query_text.split() if len(term.strip()) > 2]
+            
+            for term in terms:
+                # Search in genus index first (pre-computed)
+                genus_matches = []
+                for genus_key, genus_name in self.genus_index.items():
+                    if term.lower() in genus_key or genus_key.startswith(term.lower()):
+                        genus_matches.append(genus_name)
+                
+                # Search OrchidTaxonomy for more comprehensive matches
+                taxonomy_records = OrchidTaxonomy.query.filter(
+                    db.or_(
+                        OrchidTaxonomy.genus.ilike(f'{term}%'),
+                        OrchidTaxonomy.scientific_name.ilike(f'{term}%'),
+                        OrchidTaxonomy.family.ilike(f'%{term}%'),
+                        OrchidTaxonomy.subfamily.ilike(f'%{term}%')
+                    )
+                ).limit(10).all()
+                
+                # Get related OrchidRecords through taxonomy
+                for tax_record in taxonomy_records:
+                    orchid_records = OrchidRecord.query.filter(
+                        OrchidRecord.taxonomy_id == tax_record.id
+                    ).limit(3).all()
+                    
+                    for record in orchid_records:
+                        serialized = self._serialize_orchid_record_enhanced(record)
+                        serialized['taxonomy_match'] = {
+                            'taxonomy_id': tax_record.id,
+                            'family': tax_record.family,
+                            'subfamily': tax_record.subfamily,
+                            'gbif_key': tax_record.gbif_key,
+                            'verification_status': tax_record.external_verification_status,
+                            'matched_level': 'species' if tax_record.scientific_name else 'genus'
+                        }
+                        results.append(serialized)
+                        
+                        if len(results) >= limit:
+                            return results[:limit]
+                
+                # Direct genus search in OrchidRecord for additional matches
+                for genus_name in genus_matches:
+                    genus_records = OrchidRecord.query.filter(
+                        OrchidRecord.genus == genus_name
+                    ).limit(5).all()
+                    
+                    for record in genus_records:
+                        serialized = self._serialize_orchid_record_enhanced(record)
+                        serialized['genus_match'] = {
+                            'matched_genus': genus_name,
+                            'species_count_in_genus': self.genus_species_count.get(genus_name, 1),
+                            'matched_level': 'genus'
+                        }
+                        results.append(serialized)
+                        
+                        if len(results) >= limit:
+                            return results[:limit]
+            
+            return results[:limit]
+            
+        except Exception as e:
+            logger.error(f\"Enhanced taxonomic search error: {e}\")
+            return []
+    
+    def _score_and_rank_results_enhanced(self, results: List[Dict[str, Any]], query_text: str) -> List[Dict[str, Any]]:
+        \"\"\"Enhanced scoring with multiple relevance factors\"\"\"
+        
+        try:
+            query_lower = query_text.lower()
+            query_terms = [term.strip().lower() for term in query_text.split() if len(term.strip()) > 2]
+            
+            for result in results:
+                score = 0.0
+                scoring_details = {}
+                
+                # 1. Fuzzy match scoring (25%)
+                if 'fuzzy_match_score' in result:
+                    fuzzy_score = result['fuzzy_match_score'] / 100.0 * 0.25
+                    score += fuzzy_score
+                    scoring_details['fuzzy_match'] = fuzzy_score
+                
+                # 2. Exact match bonuses (30%)
+                exact_match_score = 0
+                scientific_name = result.get('scientific_name', '').lower()
+                display_name = result.get('display_name', '').lower()
+                genus = result.get('genus', '').lower()
+                
+                # Perfect matches get highest scores
+                if query_lower == scientific_name:
+                    exact_match_score += 0.30
+                elif query_lower == display_name:
+                    exact_match_score += 0.25
+                elif query_lower == genus:
+                    exact_match_score += 0.20
+                else:
+                    # Partial matches
+                    for term in query_terms:
+                        if term in scientific_name:
+                            exact_match_score += 0.05
+                        if term in display_name:
+                            exact_match_score += 0.03
+                        if term in genus:
+                            exact_match_score += 0.02
+                
+                score += min(exact_match_score, 0.30)
+                scoring_details['exact_match'] = min(exact_match_score, 0.30)
+                
+                # 3. Data completeness (20%)
+                completeness_score = 0
+                required_fields = ['scientific_name', 'genus', 'species', 'region', 'native_habitat']
+                bonus_fields = ['common_names', 'cultural_notes', 'image_url', 'bloom_time', 'growth_habit', 'ai_description']
+                
+                for field in required_fields:
+                    if result.get(field):
+                        completeness_score += 0.12 / len(required_fields)
+                
+                for field in bonus_fields:
+                    if result.get(field):
+                        completeness_score += 0.08 / len(bonus_fields)
+                
+                score += min(completeness_score, 0.20)
+                scoring_details['completeness'] = min(completeness_score, 0.20)
+                
+                # 4. External verification (15%)
+                verification_score = 0
+                if result.get('taxonomy_match', {}).get('verification_status') == 'verified':
+                    verification_score += 0.08
+                if result.get('gbif_species_key'):
+                    verification_score += 0.04
+                if result.get('enhanced_gbif', {}).get('has_ecological_data'):
+                    verification_score += 0.03
+                
+                score += min(verification_score, 0.15)
+                scoring_details['verification'] = min(verification_score, 0.15)
+                
+                # 5. Community and research value (10%)
+                community_score = 0
+                if result.get('fcos_collection', {}).get('has_member_experience'):
+                    community_score += 0.05
+                if result.get('research_data', {}).get('has_academic_interest'):
+                    community_score += 0.05
+                
+                score += min(community_score, 0.10)
+                scoring_details['community'] = min(community_score, 0.10)
+                
+                # Store detailed scoring
+                result['relevance_score'] = round(score, 4)
+                result['scoring_details'] = scoring_details
+                result['ranking_factors'] = {
+                    'has_fuzzy_match': 'fuzzy_match_score' in result,
+                    'has_exact_match': exact_match_score > 0,
+                    'data_complete': completeness_score > 0.15,
+                    'externally_verified': verification_score > 0.05,
+                    'community_validated': community_score > 0
+                }
+            
+            # Sort by relevance score
+            return sorted(results, key=lambda x: x.get('relevance_score', 0), reverse=True)
+            
+        except Exception as e:
+            logger.error(f\"Enhanced scoring error: {e}\")
+            return results
+    
+    def _get_data_sources_summary(self, orchid_records: List[Dict[str, Any]]) -> Dict[str, Any]:
+        \"\"\"Analyze and summarize data sources used in results\"\"\"
+        
+        try:
+            sources_summary = {
+                'primary_database': 0,
+                'gbif_integration': 0,
+                'fcos_collection': 0,
+                'research_literature': 0,
+                'taxonomy_verification': 0,
+                'ai_enhanced': 0
+            }
+            
+            for record in orchid_records:
+                sources_summary['primary_database'] += 1
+                
+                if record.get('enhanced_gbif', {}).get('has_ecological_data'):
+                    sources_summary['gbif_integration'] += 1
+                
+                if record.get('fcos_collection', {}).get('has_member_experience'):
+                    sources_summary['fcos_collection'] += 1
+                
+                if record.get('research_data', {}).get('has_academic_interest'):
+                    sources_summary['research_literature'] += 1
+                
+                if record.get('taxonomy_match', {}).get('verification_status') == 'verified':
+                    sources_summary['taxonomy_verification'] += 1
+                
+                if record.get('ai_description') or record.get('ai_confidence'):
+                    sources_summary['ai_enhanced'] += 1
+            
+            return sources_summary
+            
+        except Exception as e:
+            logger.error(f\"Data sources summary error: {e}\")
+            return {}
+    
+    def _explain_comprehensive_search_strategy(self, query_text: str) -> Dict[str, Any]:
+        \"\"\"Explain the search strategy used for transparency\"\"\"
+        
+        try:
+            strategy = {
+                'query_analysis': {
+                    'original_query': query_text,
+                    'query_length': len(query_text),
+                    'terms_extracted': len([t for t in query_text.split() if len(t.strip()) > 2]),
+                    'likely_scientific_name': bool(len(query_text.split()) >= 2 and query_text[0].isupper())
+                },
+                'search_methods_used': [
+                    'Exact string matching across multiple fields',
+                    'Fuzzy matching with Levenshtein distance',
+                    'Taxonomic hierarchy traversal',
+                    'Synonym and common name lookup',
+                    'GBIF ecosystem data integration',
+                    'FCOS member collection matching'
+                ],
+                'ranking_factors': [
+                    'Query relevance and exact matches (30%)',
+                    'Fuzzy match confidence scores (25%)',
+                    'Data completeness and quality (20%)',
+                    'External database verification (15%)',
+                    'Community validation and research backing (10%)'
+                ],
+                'data_enrichment': [
+                    'GBIF occurrence and conservation data',
+                    'FCOS member cultivation experiences',
+                    'Academic literature and research citations',
+                    'Taxonomic verification and synonyms',
+                    'AI-generated descriptions and analysis'
+                ]
+            }
+            
+            return strategy
+            
+        except Exception as e:
+            logger.error(f\"Search strategy explanation error: {e}\")
+            return {'error': 'Strategy explanation unavailable'}
+    
+    def _analyze_confidence_distribution(self, orchid_records: List[Dict[str, Any]]) -> Dict[str, Any]:
+        \"\"\"Analyze confidence score distribution across results\"\"\"
+        
+        try:
+            if not orchid_records:
+                return {'error': 'No records to analyze'}
+            
+            confidence_scores = [r.get('ai_confidence', {}).get('overall_score', 0) for r in orchid_records]
+            confidence_scores = [score for score in confidence_scores if score > 0]
+            
+            if not confidence_scores:
+                return {'error': 'No confidence scores available'}
+            
+            distribution = {
+                'total_records': len(orchid_records),
+                'records_with_confidence': len(confidence_scores),
+                'average_confidence': round(sum(confidence_scores) / len(confidence_scores), 3),
+                'min_confidence': round(min(confidence_scores), 3),
+                'max_confidence': round(max(confidence_scores), 3),
+                'confidence_levels': {
+                    'very_high': len([s for s in confidence_scores if s >= 0.9]),
+                    'high': len([s for s in confidence_scores if 0.7 <= s < 0.9]),
+                    'medium': len([s for s in confidence_scores if 0.5 <= s < 0.7]),
+                    'low': len([s for s in confidence_scores if s < 0.5])
+                }
+            }
+            
+            return distribution
+            
+        except Exception as e:
+            logger.error(f\"Confidence distribution analysis error: {e}\")
+            return {'error': 'Analysis unavailable'}
+    
+    def _identify_data_sources(self, record: Dict[str, Any]) -> List[str]:
+        \"\"\"Identify all data sources contributing to a record\"\"\"
+        
+        try:
+            sources = ['OrchidRecord Database']  # Primary source
+            
+            if record.get('taxonomy_match'):
+                sources.append('OrchidTaxonomy')
+            
+            if record.get('enhanced_gbif', {}).get('has_ecological_data'):
+                sources.append('GBIF Occurrence Data')
+                sources.append('Global Biodiversity Information Facility')
+            
+            if record.get('fcos_collection', {}).get('has_member_experience'):
+                sources.append('Five Cities Orchid Society Collection')
+                sources.append('Member Cultivation Data')
+            
+            if record.get('research_data', {}).get('has_academic_interest'):
+                sources.append('Academic Literature Citations')
+                sources.append('Research Collaboration Network')
+            
+            if record.get('ai_description'):
+                sources.append('AI-Generated Analysis')
+            
+            if record.get('google_drive_id'):
+                sources.append('Google Drive Images')
+            
+            data_source = record.get('data_source', '')
+            if 'baker' in data_source.lower():
+                sources.append('Baker Culture Sheets')
+            elif 'gbif' in data_source.lower():
+                sources.append('GBIF Original Data')
+            
+            return list(set(sources))  # Remove duplicates
+            
+        except Exception as e:
+            logger.error(f\"Data source identification error: {e}\")
+            return ['OrchidRecord Database']
     def _search_orchid_database(self, query_text: str) -> List[Dict[str, Any]]:
         """Intelligent search across OrchidRecord database"""
         
