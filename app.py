@@ -217,3 +217,9 @@ try:
     print("🔍 SVO Analysis web interface initialized")
 except Exception as e:
     print(f"SVO Analysis initialization error: {e}")
+
+try:
+    import trefle_admin_routes  # Import Trefle admin routes (direct app routes)
+    print("🌿 Trefle Ecosystem Enrichment admin interface initialized")
+except Exception as e:
+    print(f"Trefle admin routes initialization error: {e}")

@@ -87,12 +87,17 @@ from citizen_science_platform import citizen_science_bp
 from quantum_care_routes import register_quantum_care_routes
 from widget_error_handler import widget_error_handler, safe_json_parse, safe_get_user_favorites, validate_feather_icon
 
-# Trefle Botanical Service will be imported after logger initialization
-get_trefle_service = None
-search_orchid_ecosystem_data = None
-enrich_orchid_with_trefle_data = None
-get_trefle_service_status = None
-batch_enrich_orchids_with_trefle = None
+# Trefle Botanical Service imports
+from trefle_botanical_service import TrefleBotanicalService
+from trefle_batch_enrichment_service import (
+    trefle_batch_service,
+    create_enrichment_session,
+    get_enrichment_session_status,
+    list_enrichment_sessions,
+    process_enrichment_batch,
+    get_enrichment_statistics
+)
+import trefle_admin_routes  # Register Trefle admin routes
 
 # Create themed orchids system
 ORCHID_THEMES = {

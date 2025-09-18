@@ -314,6 +314,65 @@ class ContestEntry(db.Model):
             'winner_position': self.winner_position,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
         }
+
+class TrefleEnrichmentTracker(db.Model):
+    """Track Trefle enrichment progress and status"""
+    __tablename__ = 'trefle_enrichment_tracker'
+    
+    id = db.Column(Integer, primary_key=True)
+    session_id = db.Column(String(50), nullable=False, index=True)
+    session_name = db.Column(String(200), nullable=False)
+    
+    # Progress tracking
+    total_records = db.Column(Integer, default=0)
+    processed_records = db.Column(Integer, default=0)
+    enriched_records = db.Column(Integer, default=0)
+    failed_records = db.Column(Integer, default=0)
+    skipped_records = db.Column(Integer, default=0)
+    
+    # Processing details
+    current_batch_size = db.Column(Integer, default=50)
+    priority_fcos_only = db.Column(Boolean, default=False)
+    force_update_existing = db.Column(Boolean, default=False)
+    
+    # Status and timing
+    status = db.Column(String(20), default='pending')  # pending, running, paused, completed, failed
+    started_at = db.Column(DateTime, nullable=True)
+    completed_at = db.Column(DateTime, nullable=True)
+    last_api_call = db.Column(DateTime, nullable=True)
+    
+    # Rate limiting info
+    api_calls_made = db.Column(Integer, default=0)
+    rate_limit_hits = db.Column(Integer, default=0)
+    estimated_completion = db.Column(DateTime, nullable=True)
+    
+    # Error tracking
+    error_message = db.Column(Text, nullable=True)
+    last_processed_id = db.Column(Integer, nullable=True)
+    failed_orchid_ids = db.Column(JSON, nullable=True)
+    
+    created_at = db.Column(DateTime, default=datetime.utcnow)
+    updated_at = db.Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'session_name': self.session_name,
+            'total_records': self.total_records,
+            'processed_records': self.processed_records,
+            'enriched_records': self.enriched_records,
+            'failed_records': self.failed_records,
+            'skipped_records': self.skipped_records,
+            'progress_percent': round((self.processed_records / self.total_records * 100) if self.total_records > 0 else 0, 2),
+            'status': self.status,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'api_calls_made': self.api_calls_made,
+            'rate_limit_hits': self.rate_limit_hits,
+            'estimated_completion': self.estimated_completion.isoformat() if self.estimated_completion else None,
+            'error_message': self.error_message
+        }
     
     @staticmethod
     def get_current_contest_period():
