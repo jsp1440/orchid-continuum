@@ -11258,6 +11258,35 @@ def ai_tools_bundle():
     """AI Tools Bundle - Breeding, identification, and analysis"""
     return render_template('ai_tools_bundle.html')
 
+@app.route('/ai-research-assistant')
+def ai_research_assistant():
+    """AI Research Assistant - Advanced orchid research interface with species identification, cultivation guidance, and academic citations"""
+    try:
+        # Get available AI research capabilities
+        capabilities = {
+            'identification': True,
+            'cultivation': True,
+            'research': True,
+            'citations': True,
+            'session_management': True,
+            'image_upload': True
+        }
+        
+        # Initialize session if needed
+        if 'ai_research_session' not in session:
+            session['ai_research_session'] = {
+                'started': datetime.now().isoformat(),
+                'query_count': 0
+            }
+        
+        return render_template('ai_research_assistant.html', 
+                             capabilities=capabilities,
+                             session_info=session.get('ai_research_session'))
+    except Exception as e:
+        logger.error(f"Error loading AI Research Assistant: {e}")
+        return render_template('error.html', 
+                             error_message="AI Research Assistant temporarily unavailable. Please try again later."), 500
+
 @app.route('/collection')
 def my_collection_hub():
     """My Collection Hub - Photo management, editing, and publishing"""
