@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐛 Bug Reports - AI Agent Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+        }
+        
+        .status-open { border-left: 5px solid #e74c3c; }
+        .status-in_progress { border-left: 5px solid #f39c12; }
+        .status-fixed { border-left: 5px solid #27ae60; }
+        .status-closed { border-left: 5px solid #95a5a6; }
+        
+        .bug-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .bug-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .priority-urgent { background: rgba(231, 76, 60, 0.2); }
+        .priority-high { background: rgba(243, 156, 18, 0.2); }
+        .priority-medium { background: rgba(52, 152, 219, 0.2); }
+        .priority-low { background: rgba(149, 165, 166, 0.2); }
+        
+        .btn-fix {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-fix:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+            color: white;
+        }
+        
+        .stats-card {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Auto-refresh indicator -->
+    <div class="auto-refresh">
+        <i data-feather="refresh-cw" id="refreshIcon"></i>
+        <span id="refreshTimer">Auto-refresh: 30s</span>
+    </div>
+
+    <div class="container-fluid py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center">
+                    <i data-feather="shield"></i> AI Agent Bug Dashboard
+                    <small class="text-muted d-block">Beta Testing - Direct Fix System</small>
+                </h1>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h3 id="totalBugs">{{ reports|length }}</h3>
+                    <p>Total Reports</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h3 id="openBugs">{{ reports|selectattr('status', 'equalto', 'open')|list|length }}</h3>
+                    <p>Open Issues</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h3 id="fixedBugs">{{ reports|selectattr('status', 'equalto', 'fixed')|list|length }}</h3>
+                    <p>Fixed Today</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <h3 id="avgFixTime">2.3 min</h3>
+                    <p>Avg Fix Time</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bug Reports List -->
+        <div class="dashboard-card p-4">
+            <h2 class="mb-4">
+                <i data-feather="list"></i> Active Bug Reports
+                <button class="btn btn-outline-light btn-sm float-end" onclick="location.reload()">
+                    <i data-feather="refresh-cw"></i> Refresh
+                </button>
+            </h2>
+            
+            <div id="bugReportsList">
+                {% for report in reports %}
+                <div class="bug-item status-{{ report.status }} p-3 mb-3 rounded" data-id="{{ report.id }}">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-1">
+                                {% if report.item_type == 'movie' %}🎬
+                                {% elif report.item_type == 'widget' %}🌐
+                                {% elif report.item_type == 'photo' %}📸
+                                {% elif report.item_type == 'game' %}🎮
+                                {% elif report.item_type == 'search' %}🔍
+                                {% else %}📋{% endif %}
+                                {{ report.item_name }}
+                                <span class="badge bg-{{ 'danger' if report.status == 'open' else ('warning' if report.status == 'in_progress' else 'success') }}">
+                                    {{ report.status.replace('_', ' ').title() }}
+                                </span>
+                            </h5>
+                            <p class="mb-1 text-light">
+                                <strong>Issue:</strong> {{ report.issue_type.replace('_', ' ').title() }}
+                            </p>
+                            <p class="mb-1 text-light opacity-75">
+                                {{ report.description[:100] }}{% if report.description|length > 100 %}...{% endif %}
+                            </p>
+                            <small class="text-muted">
+                                <i data-feather="clock"></i> {{ report.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                {% if report.user_email %}| <i data-feather="mail"></i> {{ report.user_email }}{% endif %}
+                                | <i data-feather="tag"></i> ID: {{ report.item_id }}
+                            </small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if report.status == 'open' %}
+                                <button class="btn btn-fix" onclick="markAsFixed({{ report.id }})">
+                                    <i data-feather="check"></i> Mark as Fixed
+                                </button>
+                            {% elif report.status == 'fixed' %}
+                                <span class="text-success">
+                                    <i data-feather="check-circle"></i> Fixed
+                                    {% if report.fixed_at %}
+                                        <br><small>{{ report.fixed_at.strftime('%I:%M %p') }}</small>
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not reports %}
+                <div class="text-center py-5">
+                    <i data-feather="smile" size="48"></i>
+                    <h3 class="mt-3">No Bug Reports Yet</h3>
+                    <p class="text-muted">All systems running smoothly! 🚀</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="/report-bug" class="btn btn-outline-light me-3">
+                    <i data-feather="plus"></i> Test Bug Report Form
+                </a>
+                <a href="/admin" class="btn btn-outline-light me-3">
+                    <i data-feather="settings"></i> Admin Dashboard
+                </a>
+                <a href="/" class="btn btn-outline-light">
+                    <i data-feather="home"></i> Back to Site
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+        
+        function markAsFixed(reportId) {
+            if (confirm('Mark this bug report as fixed?')) {
+                fetch(`/api/mark-fixed/${reportId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error marking as fixed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error marking as fixed');
+                });
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        let refreshTimer = 30;
+        setInterval(() => {
+            refreshTimer--;
+            document.getElementById('refreshTimer').textContent = `Auto-refresh: ${refreshTimer}s`;
+            
+            if (refreshTimer <= 0) {
+                location.reload();
+            }
+        }, 1000);
+        
+        // Animate refresh icon
+        setInterval(() => {
+            document.getElementById('refreshIcon').style.transform = 'rotate(360deg)';
+            setTimeout(() => {
+                document.getElementById('refreshIcon').style.transform = 'rotate(0deg)';
+            }, 300);
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 FCOS Orchid Trivia</title>
+    <style>
+        :root {
+            --primary-purple: #9b59b6;
+            --secondary-green: #7a9c59;
+            --accent-blue: #3498db;
+            --accent-orange: #e67e22;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #2c3e50;
+            --success-green: #27ae60;
+            --error-red: #e74c3c;
+            --warning-orange: #f39c12;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-purple), var(--accent-blue));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '🧠💡📚';
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .game-controls {
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--light-bg), #e9ecef);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            border: 2px solid var(--secondary-green);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(122, 156, 89, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-purple);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid var(--secondary-green);
+            border-radius: 20px;
+            background: white;
+            color: var(--secondary-green);
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn.active {
+            background: var(--secondary-green);
+            color: white;
+        }
+
+        .difficulty-btn.easy { border-color: #27ae60; color: #27ae60; }
+        .difficulty-btn.easy.active { background: #27ae60; }
+
+        .difficulty-btn.medium { border-color: #f39c12; color: #f39c12; }
+        .difficulty-btn.medium.active { background: #f39c12; }
+
+        .difficulty-btn.hard { border-color: #e74c3c; color: #e74c3c; }
+        .difficulty-btn.hard.active { background: #e74c3c; }
+
+        .difficulty-btn.expert { border-color: #8e44ad; color: #8e44ad; }
+        .difficulty-btn.expert.active { background: #8e44ad; }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--accent-orange), #d35400);
+            color: white;
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 118, 34, 0.4);
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, var(--accent-blue), #2980b9);
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .game-area {
+            padding: 2rem;
+            min-height: 400px;
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            border: 3px solid var(--primary-purple);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 25px rgba(155, 89, 182, 0.15);
+            position: relative;
+        }
+
+        .question-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .difficulty-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .difficulty-badge.easy { background: #d5f4e6; color: #27ae60; }
+        .difficulty-badge.medium { background: #fff3cd; color: #856404; }
+        .difficulty-badge.hard { background: #f8d7da; color: #721c24; }
+        .difficulty-badge.expert { background: #e2e3f0; color: #383d41; }
+
+        .points-badge {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #8b4513;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-weight: bold;
+            border: 2px solid #daa520;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+        }
+
+        .question-image {
+            max-width: 300px;
+            width: 100%;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .options-container {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .option-btn {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            border: 3px solid var(--secondary-green);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .option-btn:hover {
+            background: linear-gradient(135deg, #e8f5e8, #d4edda);
+            transform: translateX(5px);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(135deg, #d5f4e6, #a2f2d2);
+            border-color: #27ae60;
+            color: #155724;
+        }
+
+        .option-btn.incorrect {
+            background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+            border-color: #e74c3c;
+            color: #721c24;
+        }
+
+        .option-btn.selected {
+            background: linear-gradient(135deg, #cce5ff, #99d6ff);
+            border-color: var(--accent-blue);
+            transform: translateX(5px);
+        }
+
+        .timer-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .timer-progress {
+            height: 100%;
+            background: linear-gradient(135deg, var(--success-green), #2ecc71);
+            border-radius: 3px;
+            transition: width 1s linear;
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .result-section.correct {
+            background: linear-gradient(135deg, #d5f4e6, #a2f2d2);
+            border: 2px solid #27ae60;
+        }
+
+        .result-section.incorrect {
+            background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+            border: 2px solid #e74c3c;
+        }
+
+        .result-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .explanation {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 1rem 0;
+            font-style: italic;
+        }
+
+        .achievement-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #8b4513;
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+            border: 2px solid #daa520;
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+            max-width: 300px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .leaderboard {
+            background: linear-gradient(135deg, var(--light-bg), #e9ecef);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .leaderboard h3 {
+            color: var(--primary-purple);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid var(--secondary-green);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-rank {
+            font-weight: bold;
+            color: var(--primary-purple);
+            font-size: 1.2rem;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .status-message.waiting {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: var(--warning-orange);
+            border: 2px solid #f39c12;
+        }
+
+        .status-message.info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            color: var(--accent-blue);
+            border: 2px solid #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats-display {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .question-text {
+                font-size: 1.1rem;
+            }
+            
+            .option-btn {
+                font-size: 1rem;
+            }
+            
+            .achievement-popup {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 FCOS Orchid Trivia</h1>
+            <p>Challenge your orchid knowledge and earn achievements!</p>
+        </div>
+
+        <div class="game-controls">
+            <div class="stats-display">
+                <div class="stat-card">
+                    <span class="stat-value" id="totalPoints">0</span>
+                    <span class="stat-label">Total Points</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="currentStreak">0</span>
+                    <span class="stat-label">Current Streak</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="accuracy">0%</span>
+                    <span class="stat-label">Accuracy</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="achievements">0</span>
+                    <span class="stat-label">Achievements</span>
+                </div>
+            </div>
+
+            <div class="difficulty-selector">
+                <button class="difficulty-btn easy active" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn medium" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn hard" data-difficulty="hard">Hard</button>
+                <button class="difficulty-btn expert" data-difficulty="expert">Expert</button>
+                <button class="difficulty-btn" data-difficulty="mixed">Mixed</button>
+            </div>
+
+            <div class="control-buttons">
+                <button id="newQuestionBtn" class="primary-btn">🌸 New Question</button>
+                <button id="dailyChallengeBtn" class="secondary-btn">⭐ Daily Challenge</button>
+                <button id="leaderboardBtn" class="secondary-btn">🏆 Leaderboard</button>
+                <button id="resetStatsBtn" class="secondary-btn">🔄 Reset Stats</button>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="status-message waiting" id="statusMessage">
+                🎮 Select a difficulty and click "New Question" to start your orchid knowledge journey!
+            </div>
+
+            <div id="questionContainer" style="display: none;">
+                <div class="question-card">
+                    <div class="question-meta">
+                        <div>
+                            <span class="difficulty-badge" id="questionDifficulty">Easy</span>
+                            <span id="questionCategory" style="margin-left: 1rem; color: #6c757d;"></span>
+                        </div>
+                        <span class="points-badge" id="questionPoints">+10 pts</span>
+                    </div>
+
+                    <div class="timer-bar">
+                        <div class="timer-progress" id="timerProgress"></div>
+                    </div>
+
+                    <div class="question-text" id="questionText"></div>
+                    
+                    <img id="questionImage" class="question-image" style="display: none;" alt="Question illustration">
+
+                    <div class="options-container" id="optionsContainer"></div>
+                </div>
+            </div>
+
+            <div id="resultSection" class="result-section" style="display: none;">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="explanation" id="resultExplanation"></div>
+                <div id="pointsEarned" style="font-size: 1.3rem; margin: 1rem 0;"></div>
+                <button id="nextQuestionBtn" class="primary-btn">➡️ Next Question</button>
+            </div>
+
+            <div id="leaderboardSection" class="leaderboard" style="display: none;">
+                <h3>🏆 Top Trivia Masters</h3>
+                <div id="leaderboardList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class OrchidTrivia {
+            constructor() {
+                this.currentQuestion = null;
+                this.selectedDifficulty = 'easy';
+                this.selectedOption = null;
+                this.questionStartTime = null;
+                this.timerInterval = null;
+                this.timeLimit = 30; // 30 seconds per question
+                
+                this.initializeEventListeners();
+                this.loadStats();
+            }
+
+            initializeEventListeners() {
+                // Difficulty selection
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.selectedDifficulty = e.target.dataset.difficulty;
+                    });
+                });
+
+                // Control buttons
+                document.getElementById('newQuestionBtn').addEventListener('click', () => this.loadNewQuestion());
+                document.getElementById('dailyChallengeBtn').addEventListener('click', () => this.startDailyChallenge());
+                document.getElementById('leaderboardBtn').addEventListener('click', () => this.showLeaderboard());
+                document.getElementById('resetStatsBtn').addEventListener('click', () => this.resetStats());
+                document.getElementById('nextQuestionBtn').addEventListener('click', () => this.loadNewQuestion());
+            }
+
+            async loadNewQuestion() {
+                try {
+                    document.getElementById('questionContainer').style.display = 'none';
+                    document.getElementById('resultSection').style.display = 'none';
+                    document.getElementById('leaderboardSection').style.display = 'none';
+                    
+                    this.showStatus('🔄 Loading new question...', 'info');
+
+                    const response = await fetch('/widgets/orchid-trivia/get-question', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ difficulty: this.selectedDifficulty })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.currentQuestion = data.question;
+                        this.displayQuestion();
+                        this.startTimer();
+                    } else {
+                        this.showStatus('❌ Failed to load question: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('❌ Network error: ' + error.message, 'error');
+                }
+            }
+
+            displayQuestion() {
+                const question = this.currentQuestion;
+                
+                // Update question display
+                document.getElementById('questionDifficulty').textContent = question.difficulty.toUpperCase();
+                document.getElementById('questionDifficulty').className = `difficulty-badge ${question.difficulty}`;
+                document.getElementById('questionCategory').textContent = question.category;
+                document.getElementById('questionPoints').textContent = `+${question.points} pts`;
+                document.getElementById('questionText').textContent = question.question;
+
+                // Handle question image
+                const imageElement = document.getElementById('questionImage');
+                if (question.image) {
+                    imageElement.src = question.image;
+                    imageElement.style.display = 'block';
+                } else {
+                    imageElement.style.display = 'none';
+                }
+
+                // Create option buttons
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer.innerHTML = '';
+                
+                question.options.forEach((option, index) => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = 'option-btn';
+                    optionBtn.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                    optionBtn.addEventListener('click', () => this.selectOption(index, optionBtn));
+                    optionsContainer.appendChild(optionBtn);
+                });
+
+                // Show question container
+                document.getElementById('questionContainer').style.display = 'block';
+                document.getElementById('statusMessage').style.display = 'none';
+                
+                this.selectedOption = null;
+                this.questionStartTime = Date.now();
+            }
+
+            selectOption(optionIndex, buttonElement) {
+                if (this.selectedOption !== null) return; // Already answered
+
+                this.selectedOption = optionIndex;
+                
+                // Mark selected option
+                buttonElement.classList.add('selected');
+                
+                // Disable all options
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.style.pointerEvents = 'none';
+                });
+
+                // Stop timer and submit answer
+                this.stopTimer();
+                this.submitAnswer();
+            }
+
+            async submitAnswer() {
+                const timeTaken = (Date.now() - this.questionStartTime) / 1000;
+                
+                try {
+                    const response = await fetch('/widgets/orchid-trivia/submit-answer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            selected_option: this.selectedOption,
+                            time_taken: timeTaken
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showResult(data);
+                        this.updateStats(data.stats);
+                        this.showAchievements(data.new_achievements);
+                    } else {
+                        this.showStatus('❌ Error submitting answer: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    this.showStatus('❌ Network error: ' + error.message, 'error');
+                }
+            }
+
+            showResult(resultData) {
+                const resultSection = document.getElementById('resultSection');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultExplanation = document.getElementById('resultExplanation');
+                const pointsEarned = document.getElementById('pointsEarned');
+
+                // Highlight correct/incorrect options
+                const optionBtns = document.querySelectorAll('.option-btn');
+                optionBtns.forEach((btn, index) => {
+                    if (index === this.selectedOption) {
+                        btn.classList.add(resultData.is_correct ? 'correct' : 'incorrect');
+                    }
+                    if (index === this.currentQuestion.options.indexOf(resultData.correct_answer)) {
+                        btn.classList.add('correct');
+                    }
+                });
+
+                // Show result
+                if (resultData.is_correct) {
+                    resultTitle.textContent = '🎉 Correct!';
+                    resultSection.className = 'result-section correct';
+                } else {
+                    resultTitle.textContent = '❌ Incorrect';
+                    resultSection.className = 'result-section incorrect';
+                }
+
+                resultExplanation.textContent = resultData.explanation;
+                
+                let pointsText = `+${resultData.points_earned} points`;
+                if (resultData.time_bonus > 0) {
+                    pointsText += ` (including +${resultData.time_bonus} speed bonus!)`;
+                }
+                if (resultData.achievement_points > 0) {
+                    pointsText += ` + ${resultData.achievement_points} achievement points!`;
+                }
+                pointsEarned.textContent = pointsText;
+
+                resultSection.style.display = 'block';
+            }
+
+            showAchievements(achievements) {
+                achievements.forEach(achievement => {
+                    const popup = document.createElement('div');
+                    popup.className = 'achievement-popup';
+                    popup.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">
+                            ${achievement.icon} Achievement Unlocked!
+                        </div>
+                        <div>${achievement.name}</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                            +${achievement.points} points
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(popup);
+                    
+                    setTimeout(() => {
+                        popup.remove();
+                    }, 4000);
+                });
+            }
+
+            startTimer() {
+                const progressBar = document.getElementById('timerProgress');
+                let timeLeft = this.timeLimit;
+                
+                progressBar.style.width = '100%';
+                
+                this.timerInterval = setInterval(() => {
+                    timeLeft -= 0.1;
+                    const percentage = (timeLeft / this.timeLimit) * 100;
+                    progressBar.style.width = percentage + '%';
+                    
+                    if (percentage < 25) {
+                        progressBar.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+                    } else if (percentage < 50) {
+                        progressBar.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                    }
+                    
+                    if (timeLeft <= 0) {
+                        this.timeUp();
+                    }
+                }, 100);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            timeUp() {
+                this.stopTimer();
+                if (this.selectedOption === null) {
+                    // Auto-submit with no selection
+                    this.selectedOption = -1; // Invalid option
+                    this.submitAnswer();
+                }
+            }
+
+            updateStats(stats) {
+                document.getElementById('totalPoints').textContent = stats.total_points;
+                document.getElementById('currentStreak').textContent = stats.current_streak;
+                document.getElementById('accuracy').textContent = stats.accuracy + '%';
+                document.getElementById('achievements').textContent = stats.achievement_count || 0;
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/widgets/orchid-trivia/get-stats');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.updateStats(data.stats);
+                    }
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            async showLeaderboard() {
+                try {
+                    const response = await fetch('/widgets/orchid-trivia/leaderboard');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const leaderboardList = document.getElementById('leaderboardList');
+                        leaderboardList.innerHTML = '';
+                        
+                        data.leaderboard.forEach((entry, index) => {
+                            const entryElement = document.createElement('div');
+                            entryElement.className = 'leaderboard-entry';
+                            entryElement.innerHTML = `
+                                <span class="leaderboard-rank">#${index + 1}</span>
+                                <span>${entry.name}</span>
+                                <span>${entry.points} pts (${entry.accuracy}%)</span>
+                            `;
+                            leaderboardList.appendChild(entryElement);
+                        });
+                        
+                        document.getElementById('leaderboardSection').style.display = 'block';
+                        document.getElementById('questionContainer').style.display = 'none';
+                        document.getElementById('resultSection').style.display = 'none';
+                    }
+                } catch (error) {
+                    this.showStatus('❌ Error loading leaderboard: ' + error.message, 'error');
+                }
+            }
+
+            async resetStats() {
+                if (confirm('Are you sure you want to reset all your trivia statistics? This cannot be undone.')) {
+                    try {
+                        const response = await fetch('/widgets/orchid-trivia/reset-stats', {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.updateStats({
+                                total_points: 0,
+                                current_streak: 0,
+                                accuracy: 0,
+                                achievement_count: 0
+                            });
+                            this.showStatus('✅ Statistics reset successfully!', 'info');
+                        }
+                    } catch (error) {
+                        this.showStatus('❌ Error resetting stats: ' + error.message, 'error');
+                    }
+                }
+            }
+
+            async startDailyChallenge() {
+                try {
+                    const response = await fetch('/widgets/orchid-trivia/daily-challenge');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showStatus(`⭐ Daily Challenge loaded! ${data.questions} questions with ${data.bonus_multiplier}x points!`, 'info');
+                        // TODO: Implement daily challenge flow
+                    }
+                } catch (error) {
+                    this.showStatus('❌ Error loading daily challenge: ' + error.message, 'error');
+                }
+            }
+
+            showStatus(message, type) {
+                const statusElement = document.getElementById('statusMessage');
+                statusElement.textContent = message;
+                statusElement.className = `status-message ${type}`;
+                statusElement.style.display = 'block';
+            }
+        }
+
+        // Initialize the trivia game
+        const trivia = new OrchidTrivia();
+    </script>
+</body>
+</html>

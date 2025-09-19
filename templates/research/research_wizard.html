@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Wizard - Scientific Method Learning</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .research-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .stage-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .workflow-nav {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .stage-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .stage-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .stage-dot.active {
+            background: #667eea;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+        }
+        
+        .stage-dot.completed {
+            background: #27ae60;
+        }
+        
+        .content-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .literature-search-panel {
+            background: rgba(66, 153, 225, 0.1);
+            border: 1px solid rgba(66, 153, 225, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .paper-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .paper-title {
+            color: #4fd1c7;
+            font-weight: 600;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        
+        .paper-authors {
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .paper-journal {
+            color: #68d391;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+        
+        .paper-abstract {
+            color: #e2e8f0;
+            font-size: 0.9em;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        
+        .paper-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            background: rgba(66, 153, 225, 0.6);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(66, 153, 225, 0.8);
+        }
+        
+        .cite-btn { background: rgba(245, 101, 101, 0.6); }
+        .cite-btn:hover { background: rgba(245, 101, 101, 0.8); }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+        }
+        
+        .wizard-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .wizard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .wizard-btn:disabled {
+            background: rgba(108, 117, 125, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .citation-modal .modal-content {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+        }
+        
+        .citation-output {
+            background: rgba(45, 55, 72, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="research-container">
+        <!-- Stage Header -->
+        <div class="stage-header">
+            <h1 id="stage-title">🔬 Research Wizard</h1>
+            <p id="stage-description" class="lead mb-0">Follow the scientific method step by step</p>
+        </div>
+        
+        <!-- Workflow Navigation -->
+        <div class="workflow-nav">
+            <div class="stage-indicator" id="stage-indicators">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="stage-actions">
+                <button class="wizard-btn" onclick="showMethodOverview()">
+                    <i data-feather="book-open"></i>Method Overview
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content Panel -->
+        <div class="content-panel" id="main-content">
+            <!-- Content populated by JavaScript based on current stage -->
+        </div>
+        
+        <!-- Literature Search Integration Panel -->
+        <div class="literature-search-panel" id="literature-panel" style="display: none;">
+            <h4><i data-feather="book"></i> Literature Search</h4>
+            <p class="mb-3">Search academic databases to find relevant research for your study.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i data-feather="search" style="width: 18px; height: 18px;"></i>
+                        </span>
+                        <input type="text" class="form-control" id="lit-search-query" 
+                               placeholder="Enter research topic (e.g., 'Phalaenopsis pollination mechanisms')">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" id="lit-result-limit" 
+                           placeholder="Limit" value="10" min="5" max="25">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="searchLiterature()">
+                        <span id="search-btn-text">Search</span>
+                        <div class="loading-spinner" id="search-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="search-results" id="literature-results"></div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <button class="wizard-btn" onclick="previousStage()" id="prev-btn">
+                <i data-feather="arrow-left"></i>Previous
+            </button>
+            
+            <div class="center-actions">
+                <a href="/research/scientific-method" class="wizard-btn me-3" style="text-decoration: none;">
+                    <i data-feather="home"></i>Method Home
+                </a>
+                <button class="wizard-btn me-3" onclick="saveProgress()">
+                    <i data-feather="save"></i>Save Progress
+                </button>
+            </div>
+            
+            <button class="wizard-btn" onclick="nextStage()" id="next-btn">
+                Next<i data-feather="arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Citation Modal -->
+    <div class="modal fade citation-modal" id="citationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-light">
+                        <i data-feather="bookmark" class="me-2"></i>Generate Citation
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Citation Format:</label>
+                        <select class="form-select" id="citation-format" onchange="updateCitation()">
+                            <option value="apa">APA Style (7th Edition)</option>
+                            <option value="mla">MLA Style (9th Edition)</option>
+                            <option value="bibtex">BibTeX Format</option>
+                        </select>
+                    </div>
+                    <div class="citation-output" id="citation-output"></div>
+                    <div class="text-end mt-3">
+                        <button class="btn btn-primary" onclick="copyCitation()">
+                            <i data-feather="copy" class="me-1"></i>Copy Citation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Research Wizard State Management
+        let currentStage = 0;
+        let currentPaper = null;
+        let searchResults = [];
+        let researchProgress = {};
+        
+        const stages = [
+            {
+                id: 'observation',
+                title: 'Make Observations',
+                description: 'Use your senses to gather information about orchids',
+                icon: 'eye',
+                color: '#3498db',
+                showLiterature: false
+            },
+            {
+                id: 'question',
+                title: 'Ask Questions',
+                description: 'Formulate specific, testable questions',
+                icon: 'help-circle',
+                color: '#e74c3c',
+                showLiterature: false
+            },
+            {
+                id: 'hypothesis',
+                title: 'Form Hypothesis',
+                description: 'Create a testable prediction - research existing literature first',
+                icon: 'lightbulb',
+                color: '#f39c12',
+                showLiterature: true
+            },
+            {
+                id: 'experiment',
+                title: 'Design Experiment',
+                description: 'Plan how to test your hypothesis',
+                icon: 'flask',
+                color: '#9b59b6',
+                showLiterature: false
+            },
+            {
+                id: 'data',
+                title: 'Collect Data',
+                description: 'Gather data from the orchid database',
+                icon: 'database',
+                color: '#1abc9c',
+                showLiterature: false
+            },
+            {
+                id: 'analysis',
+                title: 'Analyze Results',
+                description: 'Use statistical methods to find patterns',
+                icon: 'bar-chart-2',
+                color: '#34495e',
+                showLiterature: false
+            },
+            {
+                id: 'conclusion',
+                title: 'Draw Conclusions',
+                description: 'Interpret results and test hypothesis',
+                icon: 'check-circle',
+                color: '#27ae60',
+                showLiterature: false
+            },
+            {
+                id: 'communicate',
+                title: 'Share Results',
+                description: 'Write and publish findings with proper citations',
+                icon: 'share-2',
+                color: '#2c3e50',
+                showLiterature: true
+            }
+        ];
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // Get stage from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const requestedStage = urlParams.get('stage');
+            
+            if (requestedStage) {
+                const stageIndex = stages.findIndex(s => s.id === requestedStage);
+                if (stageIndex !== -1) {
+                    currentStage = stageIndex;
+                }
+            }
+            
+            // Load any saved progress
+            loadSavedProgress();
+            
+            // Initialize the wizard
+            updateStageDisplay();
+            renderStageIndicators();
+            
+            console.log('🔬 Research Wizard initialized');
+        });
+        
+        function renderStageIndicators() {
+            const container = document.getElementById('stage-indicators');
+            let html = '';
+            
+            stages.forEach((stage, index) => {
+                const isActive = index === currentStage;
+                const isCompleted = researchProgress[stage.id]?.completed || false;
+                
+                let dotClass = 'stage-dot';
+                if (isCompleted) dotClass += ' completed';
+                else if (isActive) dotClass += ' active';
+                
+                html += `
+                    <div class="${dotClass}" onclick="goToStage(${index})" title="${stage.title}">
+                        ${index + 1}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updateStageDisplay() {
+            const stage = stages[currentStage];
+            
+            // Update header
+            document.getElementById('stage-title').innerHTML = `${stage.icon === 'eye' ? '👁️' : 
+                stage.icon === 'help-circle' ? '❓' : 
+                stage.icon === 'lightbulb' ? '💡' : 
+                stage.icon === 'flask' ? '🧪' : 
+                stage.icon === 'database' ? '📊' : 
+                stage.icon === 'bar-chart-2' ? '📈' : 
+                stage.icon === 'check-circle' ? '✅' : '📝'} ${stage.title}`;
+            document.getElementById('stage-description').textContent = stage.description;
+            
+            // Update main content
+            renderStageContent(stage);
+            
+            // Show/hide literature search panel
+            const literaturePanel = document.getElementById('literature-panel');
+            if (stage.showLiterature) {
+                literaturePanel.style.display = 'block';
+                setupLiteratureSearch(stage.id);
+            } else {
+                literaturePanel.style.display = 'none';
+            }
+            
+            // Update navigation buttons
+            document.getElementById('prev-btn').disabled = currentStage === 0;
+            document.getElementById('next-btn').disabled = currentStage === stages.length - 1;
+            
+            renderStageIndicators();
+        }
+        
+        function renderStageContent(stage) {
+            const content = document.getElementById('main-content');
+            
+            switch(stage.id) {
+                case 'observation':
+                    content.innerHTML = `
+                        <h3>📋 Making Scientific Observations</h3>
+                        <p>Good observations are the foundation of science. Look at orchid images and record what you see.</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>What to observe:</h5>
+                                <ul>
+                                    <li>Flower shape, size, and color</li>
+                                    <li>Number of petals and sepals</li>
+                                    <li>Leaf characteristics</li>
+                                    <li>Growth patterns</li>
+                                    <li>Habitat information</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Recording observations:</h5>
+                                <textarea class="form-control" rows="8" id="observations-text" 
+                                          placeholder="Record your observations here...">${researchProgress.observation?.notes || ''}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button class="btn btn-primary" onclick="viewOrchidGallery()">
+                                <i data-feather="image"></i> View Orchid Gallery
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'question':
+                    content.innerHTML = `
+                        <h3>❓ Asking Research Questions</h3>
+                        <p>Transform your observations into testable research questions.</p>
+                        
+                        <div class="mb-4">
+                            <h5>Good research questions are:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>✅ Specific and focused</li>
+                                        <li>✅ Testable with available data</li>
+                                        <li>✅ Measurable</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul>
+                                        <li>❌ Too broad or vague</li>
+                                        <li>❌ Opinion-based</li>
+                                        <li>❌ Impossible to test</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Your Research Question:</label>
+                            <textarea class="form-control" rows="3" id="research-question" 
+                                      placeholder="Example: How does latitude affect the flowering time of orchids along the 35th parallel?">${researchProgress.question?.text || ''}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h6>🌍 Geographic Questions</h6>
+                                        <small>How do orchids differ between regions?</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h6>🌸 Morphological Questions</h6>
+                                        <small>How do physical traits vary?</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h6>🕒 Temporal Questions</h6>
+                                        <small>How do patterns change over time?</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'hypothesis':
+                    content.innerHTML = `
+                        <h3>💡 Forming Your Hypothesis</h3>
+                        <p>Based on your research question and background literature, create a testable prediction.</p>
+                        
+                        <div class="alert alert-info">
+                            <strong>📚 Research First!</strong> Before forming your hypothesis, search the literature below to understand what other scientists have discovered about your topic.
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Your Hypothesis:</label>
+                            <textarea class="form-control" rows="4" id="hypothesis-text" 
+                                      placeholder="If... then... because... Example: If orchids are located at higher latitudes, then they will bloom later in the year because cooler temperatures delay flowering.">${researchProgress.hypothesis?.text || ''}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Independent Variable:</h5>
+                                <input type="text" class="form-control" id="independent-var" 
+                                       placeholder="What you're changing/testing" value="${researchProgress.hypothesis?.independentVar || ''}">
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Dependent Variable:</h5>
+                                <input type="text" class="form-control" id="dependent-var" 
+                                       placeholder="What you're measuring" value="${researchProgress.hypothesis?.dependentVar || ''}">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'communicate':
+                    content.innerHTML = `
+                        <h3>📝 Sharing Your Results</h3>
+                        <p>Write up your findings and create proper citations for the literature that informed your research.</p>
+                        
+                        <div class="alert alert-warning">
+                            <strong>📖 Citations Required!</strong> Use the literature search below to find papers to cite in your research paper.
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Research Summary:</h5>
+                            <textarea class="form-control" rows="6" id="research-summary" 
+                                      placeholder="Summarize your research question, hypothesis, methods, results, and conclusions...">${researchProgress.communicate?.summary || ''}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button class="btn btn-success w-100 mb-3" onclick="generateResearchPaper()">
+                                    <i data-feather="file-text"></i> Generate Research Paper
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-info w-100 mb-3" onclick="createPresentation()">
+                                    <i data-feather="monitor"></i> Create Presentation
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    content.innerHTML = `
+                        <h3>${stage.title}</h3>
+                        <p>${stage.description}</p>
+                        <div class="alert alert-info">
+                            This stage is under development. More interactive tools coming soon!
+                        </div>
+                    `;
+            }
+            
+            feather.replace();
+        }
+        
+        function setupLiteratureSearch(stageId) {
+            // Pre-populate search based on stage and any saved research question
+            const searchQuery = document.getElementById('lit-search-query');
+            const savedQuestion = researchProgress.question?.text;
+            
+            if (stageId === 'hypothesis' && savedQuestion) {
+                // Extract key terms from research question for literature search
+                searchQuery.placeholder = `Search for: ${savedQuestion.substring(0, 50)}...`;
+            } else if (stageId === 'communicate') {
+                searchQuery.placeholder = 'Search for recent publications to cite in your paper';
+            }
+        }
+        
+        function searchLiterature() {
+            const query = document.getElementById('lit-search-query').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            const limit = parseInt(document.getElementById('lit-result-limit').value) || 10;
+            const stage = stages[currentStage].id;
+            
+            // Show loading
+            document.getElementById('search-btn-text').style.display = 'none';
+            document.getElementById('search-spinner').style.display = 'inline-block';
+            
+            // Make API call
+            fetch('/research/api/literature-search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    max_results: limit,
+                    stage: stage
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('search-btn-text').style.display = 'inline-block';
+                document.getElementById('search-spinner').style.display = 'none';
+                
+                if (data.success) {
+                    searchResults = data.results.papers;
+                    displayLiteratureResults(data.results);
+                } else {
+                    document.getElementById('literature-results').innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Search Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Literature search error:', error);
+                document.getElementById('search-btn-text').style.display = 'inline-block';
+                document.getElementById('search-spinner').style.display = 'none';
+                
+                document.getElementById('literature-results').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Search Failed:</strong> Please try again later.
+                    </div>
+                `;
+            });
+        }
+        
+        function displayLiteratureResults(results) {
+            const container = document.getElementById('literature-results');
+            
+            if (!results.papers || results.papers.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>No Results Found</strong><br>
+                        Try different search terms or broaden your query.
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="alert alert-success">
+                    <strong>Found ${results.total_results} results</strong> from ${results.search_sources.join(', ')}
+                </div>
+            `;
+            
+            results.papers.forEach((paper, index) => {
+                const abstract = paper.abstract ? (paper.abstract.length > 200 ? 
+                    paper.abstract.substring(0, 200) + '...' : paper.abstract) : 'No abstract available';
+                
+                html += `
+                    <div class="paper-item">
+                        <div class="paper-title" onclick="toggleAbstract(${index})">
+                            ${paper.title || 'Unknown Title'}
+                        </div>
+                        <div class="paper-authors">
+                            <i data-feather="users" style="width: 14px; height: 14px;"></i>
+                            ${Array.isArray(paper.authors) ? paper.authors.join(', ') : (paper.authors || 'Unknown Authors')}
+                        </div>
+                        <div class="paper-journal">
+                            <i data-feather="book" style="width: 14px; height: 14px;"></i>
+                            ${paper.journal || 'Unknown Journal'} (${paper.publication_date || 'Unknown Date'})
+                        </div>
+                        <div class="paper-abstract" id="abstract-${index}" style="display: none;">
+                            ${abstract}
+                        </div>
+                        <div class="paper-actions">
+                            <button class="action-btn cite-btn" onclick="generateCitation(${index})">
+                                <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                Cite
+                            </button>
+                            ${paper.url ? `<a href="${paper.url}" target="_blank" class="action-btn">
+                                <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                View Paper
+                            </a>` : ''}
+                            ${paper.doi ? `<a href="https://doi.org/${paper.doi}" target="_blank" class="action-btn">
+                                <i data-feather="link" style="width: 14px; height: 14px;"></i>
+                                DOI
+                            </a>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            feather.replace();
+        }
+        
+        function toggleAbstract(index) {
+            const abstract = document.getElementById(`abstract-${index}`);
+            abstract.style.display = abstract.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function generateCitation(paperIndex) {
+            currentPaper = searchResults[paperIndex];
+            const modal = new bootstrap.Modal(document.getElementById('citationModal'));
+            modal.show();
+            updateCitation();
+        }
+        
+        function updateCitation() {
+            if (!currentPaper) return;
+            
+            const format = document.getElementById('citation-format').value;
+            
+            fetch('/research/api/generate-citation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    paper: currentPaper,
+                    format: format
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('citation-output').textContent = data.citation;
+                } else {
+                    document.getElementById('citation-output').textContent = 'Citation generation failed';
+                }
+            })
+            .catch(error => {
+                console.error('Citation error:', error);
+                document.getElementById('citation-output').textContent = 'Citation generation failed';
+            });
+        }
+        
+        function copyCitation() {
+            const citation = document.getElementById('citation-output').textContent;
+            navigator.clipboard.writeText(citation).then(() => {
+                const btn = event.target.closest('button');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+                feather.replace();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    feather.replace();
+                }, 2000);
+            });
+        }
+        
+        // Navigation functions
+        function nextStage() {
+            if (currentStage < stages.length - 1) {
+                saveStageProgress();
+                currentStage++;
+                updateStageDisplay();
+            }
+        }
+        
+        function previousStage() {
+            if (currentStage > 0) {
+                saveStageProgress();
+                currentStage--;
+                updateStageDisplay();
+            }
+        }
+        
+        function goToStage(stageIndex) {
+            if (stageIndex >= 0 && stageIndex < stages.length) {
+                saveStageProgress();
+                currentStage = stageIndex;
+                updateStageDisplay();
+            }
+        }
+        
+        function saveStageProgress() {
+            const stage = stages[currentStage];
+            
+            switch(stage.id) {
+                case 'observation':
+                    const observations = document.getElementById('observations-text')?.value;
+                    if (observations) {
+                        researchProgress.observation = { notes: observations, completed: true };
+                    }
+                    break;
+                case 'question':
+                    const question = document.getElementById('research-question')?.value;
+                    if (question) {
+                        researchProgress.question = { text: question, completed: true };
+                    }
+                    break;
+                case 'hypothesis':
+                    const hypothesis = document.getElementById('hypothesis-text')?.value;
+                    const independentVar = document.getElementById('independent-var')?.value;
+                    const dependentVar = document.getElementById('dependent-var')?.value;
+                    if (hypothesis) {
+                        researchProgress.hypothesis = { 
+                            text: hypothesis, 
+                            independentVar: independentVar,
+                            dependentVar: dependentVar,
+                            completed: true 
+                        };
+                    }
+                    break;
+                case 'communicate':
+                    const summary = document.getElementById('research-summary')?.value;
+                    if (summary) {
+                        researchProgress.communicate = { summary: summary, completed: true };
+                    }
+                    break;
+            }
+        }
+        
+        function saveProgress() {
+            saveStageProgress();
+            localStorage.setItem('researchWizardProgress', JSON.stringify(researchProgress));
+            
+            const btn = event.target;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i data-feather="check"></i>Saved!';
+            feather.replace();
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                feather.replace();
+            }, 2000);
+        }
+        
+        function loadSavedProgress() {
+            const saved = localStorage.getItem('researchWizardProgress');
+            if (saved) {
+                researchProgress = JSON.parse(saved);
+            }
+        }
+        
+        function viewOrchidGallery() {
+            window.open('/gallery', '_blank');
+        }
+        
+        function showMethodOverview() {
+            window.open('/research/scientific-method', '_blank');
+        }
+        
+        function generateResearchPaper() {
+            alert('🔬 Research Paper Generator\n\nThis feature will help you create a properly formatted research paper with:\n• Title and abstract\n• Introduction with literature review\n• Methods and results\n• Discussion and conclusions\n• Proper citations\n\nComing soon!');
+        }
+        
+        function createPresentation() {
+            alert('📽️ Presentation Creator\n\nThis feature will help you create a science fair presentation with:\n• Slide templates\n• Charts and graphs\n• Visual results\n• Speaker notes\n\nComing soon!');
+        }
+    </script>
+</body>
+</html>

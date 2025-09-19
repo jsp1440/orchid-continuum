@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Orchid Analysis - Gary Yong Gee Demo</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .demo-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #3d566e 100%);
+            color: white;
+            padding: 3rem 0;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #6c757d;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(108, 117, 125, 0.1), rgba(108, 117, 125, 0.05));
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-zone:hover {
+            border-color: #007bff;
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(0, 123, 255, 0.05));
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 123, 255, 0.2);
+        }
+        
+        .upload-zone.dragover {
+            border-color: #28a745;
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(40, 167, 69, 0.1));
+        }
+        
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 9999;
+        }
+        
+        .processing-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2c3e50;
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            min-width: 400px;
+        }
+        
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            border: 8px solid rgba(255, 255, 255, 0.2);
+            border-top: 8px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-container {
+            display: none;
+            margin-top: 3rem;
+        }
+        
+        .result-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .thumbnail {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .metadata-item {
+            background: rgba(0, 123, 255, 0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .summary-stats {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .correlation-finder {
+            background: linear-gradient(135deg, #6f42c1, #e83e8c);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+        
+        .insight-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Demo Header -->
+    <div class="demo-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="upload-cloud" class="me-3" style="width: 50px; height: 50px;"></i>
+                        <div>
+                            <h1 class="display-4 fw-bold mb-2">🔬 Bulk Orchid Analysis System</h1>
+                            <p class="lead mb-0">Advanced AI metadata extraction for Gary Yong Gee's orchid collection</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="text-white-50">
+                        <p class="mb-0">Demo for Gary Yong Gee & Ralph Sawkins</p>
+                        <p class="mb-0">Advanced Orchid Continuum Capabilities</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-5">
+        <!-- Upload Interface -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4><i data-feather="info" class="me-2"></i>What This System Will Do</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li>✅ Extract EXIF metadata (date, time, location, camera info)</li>
+                                    <li>✅ AI-powered species identification</li>
+                                    <li>✅ Flowering stage analysis</li>
+                                    <li>✅ Botanical feature extraction</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li>✅ Growth habit classification</li>
+                                    <li>✅ Color and size analysis</li>
+                                    <li>✅ Correlation discovery</li>
+                                    <li>✅ Scientific analysis integration</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Upload Zone -->
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('zipFile').click()">
+                    <i data-feather="upload-cloud" style="width: 80px; height: 80px; color: #6c757d;" class="mb-3"></i>
+                    <h3>Drop ZIP File Here or Click to Browse</h3>
+                    <p class="text-muted">Upload a ZIP file containing orchid images for comprehensive AI analysis</p>
+                    <p class="small text-muted">Supported formats: JPG, PNG, TIFF, BMP</p>
+                    
+                    <input type="file" id="zipFile" accept=".zip" style="display: none;" onchange="handleFileSelection(event)">
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-lg" onclick="document.getElementById('zipFile').click()">
+                            <i data-feather="folder" class="me-2"></i>Select ZIP File
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Selected File Info -->
+                <div id="fileInfo" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <h5><i data-feather="file" class="me-2"></i>Selected File</h5>
+                        <p id="fileName" class="mb-2"></p>
+                        <p id="fileSize" class="mb-2"></p>
+                        <button class="btn btn-success" onclick="startProcessing()">
+                            <i data-feather="play" class="me-2"></i>Start AI Analysis
+                        </button>
+                        <button class="btn btn-secondary ms-2" onclick="clearSelection()">
+                            <i data-feather="x" class="me-2"></i>Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-container" id="resultsContainer">
+            <!-- Summary Statistics -->
+            <div class="summary-stats">
+                <h3 class="text-center mb-4"><i data-feather="bar-chart-2" class="me-2"></i>Analysis Summary</h3>
+                <div class="row" id="summaryStats">
+                    <!-- Stats will be populated dynamically -->
+                </div>
+            </div>
+            
+            <!-- Correlation Insights -->
+            <div class="correlation-finder">
+                <h3><i data-feather="trending-up" class="me-2"></i>Discovered Correlations & Insights</h3>
+                <div id="correlationInsights">
+                    <!-- Insights will be populated dynamically -->
+                </div>
+            </div>
+            
+            <!-- Educational Activities Integration -->
+            <div class="bg-warning text-dark p-4 rounded-3 mt-4">
+                <h4><i data-feather="graduation-cap" class="me-2"></i>Transform into Educational Activities</h4>
+                <p class="mb-3">Turn these analyzed photos into interactive learning experiences!</p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div id="educationalOptions" style="display: none;">
+                            <h6>Select Educational Activities:</h6>
+                            <div class="form-check-group">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduMatch" value="match_picture">
+                                    <label class="form-check-label" for="eduMatch">Picture Matching Game</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduName" value="match_name">
+                                    <label class="form-check-label" for="eduName">Name Matching</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduTrivia" value="trivia_cards">
+                                    <label class="form-check-label" for="eduTrivia">Trivia Cards</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduCross" value="crossword">
+                                    <label class="form-check-label" for="eduCross">Crossword</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="eduGallery" value="gallery_display">
+                                    <label class="form-check-label" for="eduGallery">Educational Gallery</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-dark btn-lg w-100" onclick="generateEducationalActivities()" id="eduGenerateBtn" disabled>
+                            <i data-feather="zap" class="me-2"></i>Generate Activities
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Gary Yong Gee Integration:</strong> Photos will be properly attributed with links to 
+                        <a href="https://orchids.yonggee.name" target="_blank" class="text-dark fw-bold">orchids.yonggee.name</a>
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Individual Results -->
+            <div class="row">
+                <div class="col-12">
+                    <h3><i data-feather="image" class="me-2"></i>Individual Image Analysis</h3>
+                    <div class="mb-3">
+                        <button class="btn btn-success me-2" onclick="exportResults('csv')">
+                            <i data-feather="download" class="me-2"></i>Export CSV
+                        </button>
+                        <button class="btn btn-info" onclick="exportResults('json')">
+                            <i data-feather="download" class="me-2"></i>Export JSON
+                        </button>
+                    </div>
+                    <div id="imageResults">
+                        <!-- Individual results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-modal">
+            <div class="progress-circle"></div>
+            <h3>Processing Orchid Images...</h3>
+            <p id="processingStatus">Initializing AI analysis...</p>
+            <p class="text-muted">This may take several minutes depending on the number of images</p>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let selectedFile = null;
+        let analysisResults = null;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            setupDragAndDrop();
+            console.log('🔬 Bulk Orchid Analysis System initialized for Gary Yong Gee demo');
+        });
+        
+        // Drag and drop functionality
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('uploadZone');
+            
+            uploadZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', function(e) {
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].name.toLowerCase().endsWith('.zip')) {
+                    handleFileSelection({ target: { files: files } });
+                } else {
+                    alert('Please drop a ZIP file containing orchid images.');
+                }
+            });
+        }
+        
+        // Handle file selection
+        function handleFileSelection(event) {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith('.zip')) {
+                selectedFile = file;
+                
+                // Show file info
+                document.getElementById('fileName').textContent = `File: ${file.name}`;
+                document.getElementById('fileSize').textContent = `Size: ${(file.size / (1024*1024)).toFixed(2)} MB`;
+                document.getElementById('fileInfo').style.display = 'block';
+                
+                console.log('📁 ZIP file selected:', file.name);
+            } else {
+                alert('Please select a valid ZIP file.');
+            }
+        }
+        
+        // Clear file selection
+        function clearSelection() {
+            selectedFile = null;
+            document.getElementById('zipFile').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'none';
+        }
+        
+        // Start processing
+        function startProcessing() {
+            if (!selectedFile) {
+                alert('Please select a ZIP file first.');
+                return;
+            }
+            
+            // Show processing overlay
+            document.getElementById('processingOverlay').style.display = 'block';
+            updateProcessingStatus('Uploading ZIP file...');
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('zip_file', selectedFile);
+            
+            // Upload and process
+            fetch('/bulk-analyzer/api/process-zip', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('processingOverlay').style.display = 'none';
+                
+                if (data.success) {
+                    analysisResults = data.data;
+                    displayResults(data.data);
+                } else {
+                    alert('Processing failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                document.getElementById('processingOverlay').style.display = 'none';
+                alert('Processing error: ' + error.message);
+            });
+        }
+        
+        // Update processing status
+        function updateProcessingStatus(message) {
+            document.getElementById('processingStatus').textContent = message;
+        }
+        
+        // Display analysis results
+        function displayResults(data) {
+            const results = data.results || [];
+            const summary = data.summary || {};
+            const statistics = data.statistics || {};
+            
+            // Show results container
+            document.getElementById('resultsContainer').style.display = 'block';
+            
+            // Display summary statistics
+            displaySummaryStats(summary, statistics);
+            
+            // Display correlation insights
+            displayCorrelationInsights(results, summary);
+            
+            // Display individual results
+            displayIndividualResults(results);
+            
+            // Show educational options
+            document.getElementById('educationalOptions').style.display = 'block';
+            document.getElementById('eduGenerateBtn').disabled = false;
+            
+            // Scroll to results
+            document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Display summary statistics
+        function displaySummaryStats(summary, statistics) {
+            const summaryHtml = `
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h2>${statistics.total_files || 0}</h2>
+                        <p>Total Images</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h2>${statistics.successful_extractions || 0}</h2>
+                        <p>Successfully Analyzed</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h2>${(summary.success_rate || 0).toFixed(1)}%</h2>
+                        <p>Success Rate</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h2>${summary.photos_with_gps || 0}</h2>
+                        <p>With GPS Data</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('summaryStats').innerHTML = summaryHtml;
+        }
+        
+        // Display correlation insights
+        function displayCorrelationInsights(results, summary) {
+            const insights = generateInsights(results, summary);
+            const insightsHtml = insights.map(insight => `
+                <div class="insight-card">
+                    <h5>${insight.title}</h5>
+                    <p>${insight.description}</p>
+                    ${insight.data ? `<small class="text-muted">${insight.data}</small>` : ''}
+                </div>
+            `).join('');
+            
+            document.getElementById('correlationInsights').innerHTML = insightsHtml;
+        }
+        
+        // Generate insights from data
+        function generateInsights(results, summary) {
+            const insights = [];
+            
+            // Flowering stage insights
+            if (summary.flowering_stages) {
+                const stages = Object.entries(summary.flowering_stages).sort((a, b) => b[1] - a[1]);
+                insights.push({
+                    title: '🌸 Flowering Stage Distribution',
+                    description: `Most images show orchids in ${stages[0]?.[0] || 'unknown'} stage`,
+                    data: `Found: ${stages.map(s => `${s[0]} (${s[1]})`).join(', ')}`
+                });
+            }
+            
+            // Growth habit insights
+            if (summary.growth_habits) {
+                const habits = Object.entries(summary.growth_habits).sort((a, b) => b[1] - a[1]);
+                insights.push({
+                    title: '🌿 Growth Habit Analysis',
+                    description: `Predominant growth habit: ${habits[0]?.[0] || 'unknown'}`,
+                    data: `Distribution: ${habits.map(h => `${h[0]} (${h[1]})`).join(', ')}`
+                });
+            }
+            
+            // Temporal insights
+            if (summary.date_range && summary.date_range.earliest && summary.date_range.latest) {
+                const earliest = new Date(summary.date_range.earliest).getFullYear();
+                const latest = new Date(summary.date_range.latest).getFullYear();
+                insights.push({
+                    title: '📅 Temporal Coverage',
+                    description: `Images span ${latest - earliest} years of orchid photography`,
+                    data: `Range: ${earliest} - ${latest}`
+                });
+            }
+            
+            // Species diversity
+            if (summary.genera_identified) {
+                const genera = Object.keys(summary.genera_identified).filter(g => g !== 'Unknown');
+                insights.push({
+                    title: '🧬 Taxonomic Diversity',
+                    description: `Identified ${genera.length} different orchid genera`,
+                    data: `Top genera: ${Object.entries(summary.genera_identified).sort((a,b) => b[1] - a[1]).slice(0,3).map(g => g[0]).join(', ')}`
+                });
+            }
+            
+            // GPS insights
+            if (summary.photos_with_gps > 0) {
+                insights.push({
+                    title: '🗺️ Geographic Data',
+                    description: `${summary.photos_with_gps} images contain precise GPS coordinates`,
+                    data: 'This enables habitat correlation analysis and distribution mapping'
+                });
+            }
+            
+            return insights;
+        }
+        
+        // Display individual results
+        function displayIndividualResults(results) {
+            const successfulResults = results.filter(r => r.processing_success).slice(0, 10); // Show first 10
+            
+            const resultsHtml = successfulResults.map((result, index) => `
+                <div class="result-card">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div style="width: 150px; height: 150px; background: linear-gradient(45deg, #333, #555); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                    <i data-feather="image" style="width: 40px; height: 40px; color: #ccc;"></i>
+                                </div>
+                                <p class="mt-2 small">${result.filename}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="metadata-grid">
+                                <div class="metadata-item">
+                                    <strong>AI Identification:</strong><br>
+                                    <span class="text-info">${result.identified_genus || 'Unknown'} ${result.identified_species || ''}</span><br>
+                                    <small>Confidence: ${result.ai_confidence || 'N/A'}</small>
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Flowering Stage:</strong><br>
+                                    <span class="text-success">${result.flowering_stage}</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Growth Habit:</strong><br>
+                                    <span class="text-warning">${result.growth_habit}</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Photo Date:</strong><br>
+                                    <span>${result.photo_datetime ? new Date(result.photo_datetime).toLocaleDateString() : 'Not available'}</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Location:</strong><br>
+                                    <span>${result.gps_location || 'Not available'}</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <strong>Features:</strong><br>
+                                    <span class="small">${result.special_features || 'None noted'}</span>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-muted small"><strong>AI Description:</strong> ${result.ai_description || 'No description available'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('imageResults').innerHTML = resultsHtml;
+            
+            // Re-initialize Feather icons
+            feather.replace();
+        }
+        
+        // Export results
+        function exportResults(format) {
+            if (!analysisResults || !analysisResults.results) {
+                alert('No results to export. Please process images first.');
+                return;
+            }
+            
+            fetch('/bulk-analyzer/api/export-results', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    results: analysisResults.results,
+                    format: format
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Export failed');
+                }
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `orchid_analysis_results.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                alert('Export error: ' + error.message);
+            });
+        }
+        
+        // Generate educational activities
+        function generateEducationalActivities() {
+            if (!analysisResults || !analysisResults.results) {
+                alert('No analysis results available. Please process images first.');
+                return;
+            }
+            
+            // Get selected activities
+            const selectedActivities = [];
+            const checkboxes = document.querySelectorAll('#educationalOptions input[type="checkbox"]:checked');
+            checkboxes.forEach(cb => selectedActivities.push(cb.value));
+            
+            if (selectedActivities.length === 0) {
+                alert('Please select at least one educational activity.');
+                return;
+            }
+            
+            // Show loading
+            const generateBtn = document.getElementById('eduGenerateBtn');
+            generateBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Generating...';
+            generateBtn.disabled = true;
+            feather.replace();
+            
+            // Generate activities
+            fetch('/educational-games/api/generate-activities', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    analyzed_results: analysisResults.results,
+                    activities: selectedActivities
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success and redirect to activities dashboard
+                    generateBtn.innerHTML = '<i data-feather="check" class="me-2"></i>Success!';
+                    generateBtn.style.background = '#28a745';
+                    
+                    setTimeout(() => {
+                        window.open('/educational-games/learning-activities', '_blank');
+                    }, 1000);
+                } else {
+                    alert('Activity generation failed: ' + data.error);
+                    generateBtn.innerHTML = '<i data-feather="zap" class="me-2"></i>Generate Activities';
+                    generateBtn.disabled = false;
+                }
+                feather.replace();
+            })
+            .catch(error => {
+                alert('Generation error: ' + error.message);
+                generateBtn.innerHTML = '<i data-feather="zap" class="me-2"></i>Generate Activities';
+                generateBtn.disabled = false;
+                feather.replace();
+            });
+        }
+    </script>
+</body>
+</html>

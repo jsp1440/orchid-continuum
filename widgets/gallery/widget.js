@@ -1,26 +1,75 @@
-// Orchid Gallery Widget JavaScript
+// Gallery Widget JavaScript
+class OrchidGallery {
+    constructor() {
+        this.galleryData = null;
+        this.container = document.getElementById('gallery-content');
+        this.init();
+    }
 
-// Example orchid data (you will replace with real JSON later)
-const orchids = [
-  { name: "Cattleya dowiana", img: "https://via.placeholder.com/150?text=Cattleya+dowiana" },
-  { name: "Phalaenopsis amabilis", img: "https://via.placeholder.com/150?text=Phalaenopsis+amabilis" },
-  { name: "Oncidium gramineum", img: "https://via.placeholder.com/150?text=Oncidium+gramineum" }
-];
+    async init() {
+        try {
+            await this.loadGalleryData();
+            this.renderGallery();
+        } catch (error) {
+            this.showError('Failed to load gallery data: ' + error.message);
+        }
+    }
 
-// Function to render the gallery
-function renderGallery() {
-  const gallery = document.getElementById("oc-gallery");
-  if (!gallery) return;
+    async loadGalleryData() {
+        // Use absolute path for fetch to work from any directory
+        const response = await fetch('/assets/data/gallery.json');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        this.galleryData = await response.json();
+    }
 
-  const html = orchids.map(o => `
-    <figure>
-      <img src="${o.img}" alt="${o.name}">
-      <figcaption>${o.name}</figcaption>
-    </figure>
-  `).join("");
+    renderGallery() {
+        if (!this.galleryData || !this.galleryData.images) {
+            this.showError('No gallery data available');
+            return;
+        }
 
-  gallery.innerHTML = `<div class="oc-grid">${html}</div>`;
+        const galleryHTML = `
+            <div class="gallery-grid">
+                ${this.galleryData.images.map(image => this.renderGalleryItem(image)).join('')}
+            </div>
+        `;
+
+        this.container.innerHTML = galleryHTML;
+    }
+
+    renderGalleryItem(image) {
+        return `
+            <div class="gallery-item">
+                <img 
+                    src="${image.src}" 
+                    alt="${image.title}"
+                    class="gallery-image"
+                    onerror="this.src='/images/orchid_placeholder.svg'"
+                >
+                <div class="gallery-content">
+                    <div class="gallery-title">${image.title}</div>
+                    <div class="gallery-description">${image.description}</div>
+                    <span class="gallery-category">${image.category}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    showError(message) {
+        this.container.innerHTML = `
+            <div class="error">
+                <h3>Error Loading Gallery</h3>
+                <p>${message}</p>
+            </div>
+        `;
+    }
 }
 
-// Run when page loads
-document.addEventListener("DOMContentLoaded", renderGallery);
+// Initialize gallery when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new OrchidGallery();
+});

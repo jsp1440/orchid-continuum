@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Research Attribution System - Orchid Continuum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attribution-showcase {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+    }
+    
+    .citation-block {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 8px 8px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        overflow-x: auto;
+    }
+    
+    .research-grade-badge {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-block;
+        margin: 5px;
+    }
+    
+    .source-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .source-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .reliability-high {
+        border-left: 4px solid #28a745;
+    }
+    
+    .reliability-medium-high {
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .reliability-medium {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .reliability-ai_generated {
+        border-left: 4px solid #fd7e14;
+    }
+    
+    .quality-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .quality-high { background: #28a745; }
+    .quality-medium-high { background: #17a2b8; }
+    .quality-medium { background: #ffc107; }
+    .quality-ai { background: #fd7e14; }
+    
+    .api-endpoint {
+        background: #1e1e1e;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        overflow-x: auto;
+    }
+    
+    .tab-content {
+        border: 1px solid #dee2e6;
+        border-top: none;
+        padding: 20px;
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .nav-tabs .nav-link {
+        border: 1px solid transparent;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #495057;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+    }
+    
+    .export-button {
+        margin: 5px;
+        font-size: 12px;
+    }
+    
+    .data-lineage {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    
+    .lineage-step {
+        position: relative;
+        padding: 10px 0 10px 30px;
+        border-left: 2px solid #007bff;
+        margin-left: 15px;
+    }
+    
+    .lineage-step:before {
+        content: '';
+        position: absolute;
+        left: -5px;
+        top: 15px;
+        width: 8px;
+        height: 8px;
+        background: #007bff;
+        border-radius: 50%;
+    }
+    
+    .lineage-step:last-child {
+        border-left-color: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="attribution-showcase">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="display-4">🏛️ Research-Grade Attribution System</h1>
+            <p class="lead">Complete source traceability and academic citation support for orchid research</p>
+            <div class="mt-4">
+                <span class="research-grade-badge">🔬 Peer-Reviewed Sources</span>
+                <span class="research-grade-badge">📚 Multi-Format Citations</span>
+                <span class="research-grade-badge">🔗 Data Lineage Tracking</span>
+                <span class="research-grade-badge">⚡ Real-time Export</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Research Quality Assessment -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3><i data-feather="award"></i> Research Quality Assessment</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Overall Quality Grade</h5>
+                            <div class="alert alert-success">
+                                <strong>{{ research_report.quality_assessment.overall_grade }}</strong>
+                            </div>
+                            
+                            <h6 class="mt-3">Strengths</h6>
+                            <ul>
+                                {% for strength in research_report.quality_assessment.strengths %}
+                                <li class="text-success">{{ strength }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Executive Summary</h5>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h2 class="text-primary">{{ research_report.executive_summary.total_sources }}</h2>
+                                    <small>Total Sources</small>
+                                </div>
+                                <div class="col-6">
+                                    <h2 class="text-success">{{ research_report.executive_summary.peer_reviewed_sources }}</h2>
+                                    <small>Peer Reviewed</small>
+                                </div>
+                                <div class="col-6">
+                                    <h2 class="text-info">{{ research_report.executive_summary.institutional_sources }}</h2>
+                                    <small>Institutional</small>
+                                </div>
+                                <div class="col-6">
+                                    <h2 class="text-warning">{{ research_report.executive_summary.ai_generated_components }}</h2>
+                                    <small>AI Generated</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Recommended Use</h6>
+                                <div class="alert alert-info">
+                                    {{ research_report.executive_summary.recommended_use }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Attribution Demo -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i data-feather="code"></i> Live Attribution Example</h3>
+                </div>
+                <div class="card-body">
+                    <p>This is how attribution appears throughout the system:</p>
+                    {{ attribution_html | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Citation Formats -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i data-feather="book-open"></i> Academic Citation Formats</h3>
+                    <p class="mb-0">Export citations in multiple academic formats for seamless integration into research papers</p>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="citationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="bibtex-tab" data-bs-toggle="tab" href="#bibtex" role="tab">BibTeX</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="apa-tab" data-bs-toggle="tab" href="#apa" role="tab">APA</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="mla-tab" data-bs-toggle="tab" href="#mla" role="tab">MLA</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="citationTabContent">
+                        <div class="tab-pane fade show active" id="bibtex" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>BibTeX Citations</h5>
+                                <button class="btn btn-outline-primary export-button" onclick="exportCitations('bibtex')">
+                                    <i data-feather="download"></i> Download .bib
+                                </button>
+                            </div>
+                            {% for citation in sample_citations.bibtex %}
+                            <div class="citation-block">{{ citation }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="tab-pane fade" id="apa" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>APA Style Citations</h5>
+                                <button class="btn btn-outline-primary export-button" onclick="exportCitations('apa')">
+                                    <i data-feather="download"></i> Download APA
+                                </button>
+                            </div>
+                            {% for citation in sample_citations.apa %}
+                            <div class="citation-block">{{ citation }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="tab-pane fade" id="mla" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>MLA Style Citations</h5>
+                                <button class="btn btn-outline-primary export-button" onclick="exportCitations('mla')">
+                                    <i data-feather="download"></i> Download MLA
+                                </button>
+                            </div>
+                            {% for citation in sample_citations.mla %}
+                            <div class="citation-block">{{ citation }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Source Analysis -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i data-feather="database"></i> Source Reliability Analysis</h3>
+                    <p class="mb-0">Detailed analysis of each data source with reliability metrics</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for source_key, source_data in research_report.source_analysis.items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="source-card reliability-{{ source_details[source_key].reliability.replace('-', '_') }}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">{{ source_data.name }}</h6>
+                                    <span class="quality-indicator quality-{{ source_details[source_key].reliability.replace('-', '_') }}"></span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <strong>Authority:</strong> {{ source_data.authority }}<br>
+                                    <strong>Type:</strong> {{ source_data.type.replace('_', ' ').title() }}<br>
+                                    <strong>Established:</strong> {{ source_data.established }}
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <span class="badge bg-{{ 'success' if source_data.peer_reviewed else 'secondary' }} me-1">
+                                        {{ 'Peer Reviewed' if source_data.peer_reviewed else 'Not Peer Reviewed' }}
+                                    </span>
+                                    <span class="badge bg-{{ 'success' if source_data.institutional else 'secondary' }}">
+                                        {{ 'Institutional' if source_data.institutional else 'Non-Institutional' }}
+                                    </span>
+                                </div>
+                                
+                                <small class="text-muted">
+                                    <strong>Coverage:</strong> {{ source_data.coverage }}<br>
+                                    <strong>Geographic Scope:</strong> {{ source_data.geographic_scope }}<br>
+                                    <strong>Temporal Scope:</strong> {{ source_data.temporal_scope }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Endpoints -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i data-feather="server"></i> Research API Endpoints</h3>
+                    <p class="mb-0">Programmatic access to citation and attribution data</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Citation Export API</h6>
+                            <div class="api-endpoint">
+GET /api/citations/{format}
+?sources=aos_culture_sheets,gbif_database
+&download=true</div>
+                            <p><small>Export citations in BibTeX, RIS, EndNote, APA, MLA, or Chicago formats</small></p>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6>Research Report API</h6>
+                            <div class="api-endpoint">
+GET /api/research-report
+?sources=gbif_database,world_orchids
+&ai_inferences=image_analysis</div>
+                            <p><small>Generate comprehensive attribution and quality assessment reports</small></p>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6>Data Lineage API</h6>
+                            <div class="api-endpoint">
+GET /api/data-lineage
+?source=GBIF Specimens
+&steps=extraction,analysis,validation
+&output=Species Identification</div>
+                            <p><small>Document complete data processing pathways for transparency</small></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Live API Test</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button class="btn btn-primary me-2" onclick="testAPI('citations')">Test Citation API</button>
+                                <button class="btn btn-success me-2" onclick="testAPI('research-report')">Test Research Report</button>
+                                <button class="btn btn-info" onclick="testAPI('data-lineage')">Test Data Lineage</button>
+                            </div>
+                        </div>
+                        <div id="apiResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Research Recommendations -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3><i data-feather="lightbulb"></i> Research Recommendations</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6>For Researchers Using This System:</h6>
+                        <ul class="mb-0">
+                            {% for recommendation in research_report.recommendations %}
+                            <li>{{ recommendation }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    {% if research_report.ai_inference_disclosure.ai_used %}
+                    <div class="alert alert-warning">
+                        <h6><i data-feather="alert-triangle"></i> AI Content Disclosure:</h6>
+                        <p>This dataset contains AI-generated components. Please note:</p>
+                        <ul class="mb-0">
+                            {% for inference in research_report.ai_inference_disclosure.inference_types %}
+                            <li><strong>{{ inference.type.replace('_', ' ').title() }}:</strong> {{ inference.disclaimer }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Lineage Example -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i data-feather="git-branch"></i> Data Lineage Example</h3>
+                    <p class="mb-0">Complete pathway from source to final output</p>
+                </div>
+                <div class="card-body">
+                    <div class="data-lineage">
+                        <div class="lineage-step">
+                            <strong>Source Collection</strong><br>
+                            <small>GBIF specimen database query → Raw occurrence records</small>
+                        </div>
+                        <div class="lineage-step">
+                            <strong>Data Extraction</strong><br>
+                            <small>Automated scraping → Structured taxonomic data</small>
+                        </div>
+                        <div class="lineage-step">
+                            <strong>AI Image Analysis</strong><br>
+                            <small>GPT-4o Vision processing → Species identification confidence scores</small>
+                        </div>
+                        <div class="lineage-step">
+                            <strong>Expert Validation</strong><br>
+                            <small>Cross-reference with AOS culture sheets → Validated care recommendations</small>
+                        </div>
+                        <div class="lineage-step">
+                            <strong>Final Output</strong><br>
+                            <small>Research-grade orchid database with full attribution</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportCitations(format) {
+    const sources = 'aos_culture_sheets,gbif_database,world_orchids_checklist';
+    const url = `/api/citations/${format}?sources=${sources}&download=true`;
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orchid_citations_${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function testAPI(endpoint) {
+    const resultsDiv = document.getElementById('apiResults');
+    resultsDiv.innerHTML = '<div class="spinner-border text-primary" role="status"></div> Testing API...';
+    
+    try {
+        let url;
+        switch(endpoint) {
+            case 'citations':
+                url = '/api/citations/bibtex?sources=aos_culture_sheets,gbif_database';
+                break;
+            case 'research-report':
+                url = '/api/research-report?sources=gbif_database,aos_culture_sheets&ai_inferences=image_analysis';
+                break;
+            case 'data-lineage':
+                url = '/api/data-lineage?source=GBIF Database&steps=extraction,analysis,validation&output=Species ID';
+                break;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        resultsDiv.innerHTML = `
+            <div class="alert alert-success">
+                <h6>✅ API Test Successful</h6>
+                <div class="api-endpoint">${JSON.stringify(data, null, 2)}</div>
+            </div>
+        `;
+    } catch (error) {
+        resultsDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <h6>❌ API Test Failed</h6>
+                <p>Error: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Initialize Feather icons
+feather.replace();
+
+// Initialize Bootstrap tabs
+var triggerTabList = [].slice.call(document.querySelectorAll('#citationTabs a[data-bs-toggle="tab"]'))
+triggerTabList.forEach(function (triggerEl) {
+    var tabTrigger = new bootstrap.Tab(triggerEl)
+    triggerEl.addEventListener('click', function (event) {
+        event.preventDefault()
+        tabTrigger.show()
+    })
+});
+</script>
+{% endblock %}

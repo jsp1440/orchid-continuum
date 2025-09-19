@@ -1,0 +1,618 @@
+/**
+ * Orchid Continuum — POC Widget + Online Orchid Lab (single-file app)
+ * ------------------------------------------------------------
+ * - Backend: Express (in this file)
+ * - Frontend: Single HTML served at "/"
+ * - Data: In-memory sample set + optional Postgres hook via DATABASE_URL
+ *
+ * What’s inside:
+ *  1) /          → UI (POC 5-step + Lab editor)
+ *  2) /lab/...   → Experiments CRUD + query API
+ *
+ * Optional Postgres:
+ *  - If process.env.DATABASE_URL is set and 'pg' is installed,
+ *    /lab/query will attempt a SELECT from an 'orchids_view' (adjust as you like).
+ *
+ * This is a working scaffold meant to be dropped into your environment and
+ * wired to your real Continuum DB + Weather Comparator when ready.
+ */
+
+const express = require("express");
+const crypto = require("crypto");
+const app = express();
+app.use(express.json({ limit: "2mb" }));
+
+// ---- Optional Postgres hook
+let pg = null, pool = null, dbMode = "memory";
+try {
+  if (process.env.DATABASE_URL) {
+    pg = require("pg");
+    pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+    dbMode = "postgres";
+    console.log("Postgres mode enabled");
+  } else {
+    console.log("Memory mode (no DATABASE_URL set)");
+  }
+} catch (e) {
+  console.log("Memory mode (pg not installed)", e?.message || "");
+}
+
+// ---- In-memory sample orchid records (expand or swap with DB)
+const ORCHIDS_SAMPLE = [
+  // equatorial / temp-dip triggers
+  { id:"o1", genus:"Phalaenopsis", species:"amabilis", native_lat: 7, native_alt_min:0, native_alt_max:800,
+    flower_months:["Jan","Mar","Sep","Nov"], flower_triggers:{ photoperiod:false, temperature:true, rainfall:true, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o2", genus:"Phalaenopsis", species:"schilleriana", native_lat: 8, native_alt_min:0, native_alt_max:900,
+    flower_months:["Feb","Mar"], flower_triggers:{ photoperiod:false, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  // subtropics / 35° band — photoperiod + cool nights
+  { id:"o3", genus:"Cymbidium", species:"ensifolium", native_lat: 28, native_alt_min:100, native_alt_max:1500,
+    flower_months:["Sep","Oct","Nov"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o4", genus:"Dendrobium", species:"nobile", native_lat: 27, native_alt_min:200, native_alt_max:2000,
+    flower_months:["Jan","Feb","Mar"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  // temperate terrestrials
+  { id:"o5", genus:"Spiranthes", species:"cernua", native_lat: 41, native_alt_min:0, native_alt_max:1400,
+    flower_months:["Aug","Sep","Oct"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o6", genus:"Bletilla", species:"striata", native_lat: 34, native_alt_min:0, native_alt_max:1500,
+    flower_months:["Apr","May"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  // more variety
+  { id:"o7", genus:"Oncidium", species:"sphacelatum", native_lat: 15, native_alt_min:0, native_alt_max:1800,
+    flower_months:["Jan","May","Oct"], flower_triggers:{ photoperiod:false, temperature:false, rainfall:true, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o8", genus:"Cattleya", species:"mossiae", native_lat: 10, native_alt_min:0, native_alt_max:1400,
+    flower_months:["Mar","Apr","May"], flower_triggers:{ photoperiod:false, temperature:true, rainfall:true, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o9", genus:"Dendrobium", species:"kingianum", native_lat: -33, native_alt_min:0, native_alt_max:1200,
+    flower_months:["Aug","Sep","Oct"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o10", genus:"Phragmipedium", species:"longifolium", native_lat: -1, native_alt_min:200, native_alt_max:1500,
+    flower_months:["All"], flower_triggers:{ photoperiod:false, temperature:true, rainfall:true, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o11", genus:"Vanda", species:"coerulea", native_lat: 23, native_alt_min:800, native_alt_max:1600,
+    flower_months:["Oct","Nov","Dec"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" },
+  { id:"o12", genus:"Paphiopedilum", species:"bellatulum", native_lat: 20, native_alt_min:500, native_alt_max:1500,
+    flower_months:["Apr","May"], flower_triggers:{ photoperiod:true, temperature:true, rainfall:false, maturity:false }, image_url:null, source:"FCOS" }
+];
+
+// ---- Lab Experiments store (in-memory for now)
+const LAB = new Map(); // id -> experiment
+
+// ---- Helpers
+const uid = () => crypto.randomBytes(8).toString("hex");
+
+// Photoperiod helpers (for captions/insights in the Compare step)
+function declinationRad(dayOfYear) {
+  return 23.44*Math.PI/180 * Math.sin(2*Math.PI*(dayOfYear-80)/365.25);
+}
+function daylengthHours(latDeg, doy) {
+  const δ = declinationRad(doy);
+  const φ = latDeg * Math.PI/180;
+  const cosH = -Math.tan(φ)*Math.tan(δ);
+  if (cosH <= -1) return 24;
+  if (cosH >= 1) return 0;
+  const H = Math.acos(cosH);
+  return (2*H) * 180/Math.PI / 15;
+}
+function bandFor(absLat) {
+  return absLat<=10 ? "0–10" : absLat<=40 ? "20–40" : ">40";
+}
+
+// ---- API: create/read/update/publish experiments
+app.post("/lab/experiments", (req, res) => {
+  const id = uid();
+  const now = new Date().toISOString();
+  const exp = {
+    id,
+    title: req.body.title || "Untitled Experiment",
+    status: "draft",
+    ownerUserId: req.body.ownerUserId || "user",
+    createdAt: now,
+    updatedAt: now,
+    hypothesis: req.body.hypothesis || {
+      question:"", statement:"",
+      variables:{ independent:[], dependent:[], controls:[] }
+    },
+    dataset: req.body.dataset || { filters:{}, sampleSize:0, sampleIds:[] },
+    analysis: req.body.analysis || { charts:[], stats:{} },
+    report: req.body.report || { background:"", methods:"", results:"", discussion:"", references:[] , notes:"" }
+  };
+  LAB.set(id, exp);
+  res.json({ id });
+});
+
+app.get("/lab/experiments/:id", (req, res) => {
+  const exp = LAB.get(req.params.id);
+  if (!exp) return res.status(404).json({ error:"not found" });
+  res.json(exp);
+});
+
+app.patch("/lab/experiments/:id", (req, res) => {
+  const exp = LAB.get(req.params.id);
+  if (!exp) return res.status(404).json({ error:"not found" });
+  const updated = { ...exp, ...req.body, updatedAt: new Date().toISOString() };
+  // Deep merge for JSON sections
+  if (req.body.hypothesis) updated.hypothesis = req.body.hypothesis;
+  if (req.body.dataset) updated.dataset = req.body.dataset;
+  if (req.body.analysis) updated.analysis = req.body.analysis;
+  if (req.body.report) updated.report = req.body.report;
+  LAB.set(req.params.id, updated);
+  res.json({ ok:true });
+});
+
+app.post("/lab/experiments/:id/publish", (req, res) => {
+  const exp = LAB.get(req.params.id);
+  if (!exp) return res.status(404).json({ error:"not found" });
+  exp.status = "published";
+  exp.updatedAt = new Date().toISOString();
+  LAB.set(req.params.id, exp);
+  res.json({ ok:true });
+});
+
+// ---- API: /lab/query
+app.post("/lab/query", async (req, res) => {
+  const { filters = {}, limit = 1000 } = req.body || {};
+  const max = Math.min(limit, 5000);
+
+  // Try Postgres if available; otherwise filter memory sample
+  if (dbMode === "postgres") {
+    try {
+      // You will likely replace 'orchids_view' with your real view/table.
+      // Expect columns similar to memory layout for easy front-end reuse.
+      const clauses = [];
+      const params = [];
+      if (filters.genus?.length) {
+        params.push(filters.genus);
+        clauses.push(`genus = ANY($${params.length})`);
+      }
+      if (filters.latBand?.length) {
+        const bandsSql = [];
+        for (const b of filters.latBand) {
+          if (b === "0–10") bandsSql.push("(ABS(native_lat) BETWEEN 0 AND 10)");
+          if (b === "20–40") bandsSql.push("(ABS(native_lat) BETWEEN 20 AND 40)");
+          if (b === ">40") bandsSql.push("(ABS(native_lat) > 40)");
+        }
+        if (bandsSql.length) clauses.push(`(${bandsSql.join(" OR ")})`);
+      }
+      if (filters.hasBloomMonths) clauses.push("jsonb_array_length(flower_months) > 0");
+      if (filters.triggers?.length) {
+        const tSql = filters.triggers.map(k => `(flower_triggers->>'${k}')::boolean = true`);
+        clauses.push(`(${tSql.join(" OR ")})`);
+      }
+      const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+      const sql = `
+        SELECT id, genus, species, native_lat, native_alt_min, native_alt_max, countries,
+               flower_months, flower_triggers, image_url, source
+        FROM orchids_view
+        ${where}
+        LIMIT ${max}
+      `;
+      const { rows } = await pool.query(sql, params);
+      return res.json({ rows, agg: aggregate(rows) });
+    } catch (err) {
+      console.log("Postgres query failed; falling back to memory:", err.message);
+    }
+  }
+
+  // Memory fallback
+  let rows = ORCHIDS_SAMPLE.slice();
+  if (filters.genus?.length) rows = rows.filter(r => filters.genus.includes(r.genus));
+  if (filters.latBand?.length) {
+    rows = rows.filter(r => filters.latBand.includes(bandFor(Math.abs(r.native_lat || 0))));
+  }
+  if (filters.hasBloomMonths) rows = rows.filter(r => Array.isArray(r.flower_months) && r.flower_months.length);
+  if (filters.triggers?.length) {
+    rows = rows.filter(r => {
+      const tr = r.flower_triggers || {};
+      return filters.triggers.some(k => tr[k] === true);
+    });
+  }
+  rows = rows.slice(0, max);
+  res.json({ rows, agg: aggregate(rows) });
+});
+
+function aggregate(rows) {
+  const bands = { "0–10":0, "20–40":0, ">40":0 };
+  const bandN = { "0–10":0, "20–40":0, ">40":0 };
+  for (const r of rows) {
+    const b = bandFor(Math.abs(r.native_lat || 0));
+    bandN[b]++;
+    if (r.flower_triggers?.photoperiod) bands[b]++;
+  }
+  return {
+    photoperiodByBand: [
+      { band:"0–10", n: bandN["0–10"], pct: bandN["0–10"] ? bands["0–10"]/bandN["0–10"] : 0 },
+      { band:"20–40", n: bandN["20–40"], pct: bandN["20–40"] ? bands["20–40"]/bandN["20–40"] : 0 },
+      { band:">40", n: bandN[">40"], pct: bandN[">40"] ? bands[">40"]/bandN[">40"] : 0 },
+    ]
+  };
+}
+
+// ---- UI (served inline)
+app.get("/", (req, res) => {
+  res.type("html").send(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Orchid Continuum — POC + Online Lab</title>
+<style>
+  :root { --a:#5b47ff; --b:#333; --bg:#fafafa; --stroke:#ddd; }
+  body { margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto; background:var(--bg); color:var(--b); }
+  header { padding:14px 20px; border-bottom:1px solid var(--stroke); background:#fff; position:sticky; top:0; z-index:1; }
+  nav a { margin-right:14px; color:var(--a); text-decoration:none; font-weight:600; }
+  .wrap { max-width:1080px; margin:0 auto; padding:20px; }
+  h1,h2,h3 { margin:12px 0; }
+  .panel { background:#fff; border:1px solid var(--stroke); border-radius:10px; padding:16px; margin:14px 0; }
+  .row { display:flex; gap:14px; flex-wrap:wrap; }
+  .btn { background:var(--a); color:#fff; border:none; border-radius:8px; padding:10px 14px; cursor:pointer; }
+  .btn.secondary { background:#eee; color:#111; }
+  .grid { width:100%; border-collapse:collapse; }
+  .grid th, .grid td { border:1px solid var(--stroke); padding:6px 8px; font-size:14px; }
+  .center { text-align:center; padding:30px; }
+  .bands button { margin:8px; padding:10px 12px; border:1px solid var(--stroke); border-radius:8px; background:#fff; cursor:pointer; }
+  input, textarea { width:100%; padding:8px; border:1px solid var(--stroke); border-radius:8px; }
+  .tabs { display:flex; gap:8px; }
+  .tabs button { border:1px solid var(--stroke); background:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
+  .tabs button.on { background:var(--a); color:#fff; border-color:transparent; }
+  small.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#666; }
+  .tiles { display:flex; gap:12px; }
+  .tiles label { flex:1; border:1px solid var(--stroke); padding:12px; border-radius:10px; cursor:pointer; background:#fff; }
+  .tiles label.active { outline:2px solid var(--a); }
+  .actions { display:flex; gap:10px; margin-top:10px; }
+  .note { font-size:13px; color:#666; }
+  .kbd { display:inline-block; border:1px solid var(--stroke); padding:2px 6px; border-radius:6px; background:#fff; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="#" id="nav-poc">POC Widget</a>
+    <a href="#" id="nav-lab">Online Orchid Lab</a>
+  </nav>
+</header>
+<div class="wrap">
+  <div id="view"></div>
+</div>
+
+<script>
+// --- Simple router
+const view = document.getElementById("view");
+document.getElementById("nav-poc").onclick = (e)=>{ e.preventDefault(); renderPOC(); };
+document.getElementById("nav-lab").onclick = (e)=>{ e.preventDefault(); renderLabHome(); };
+
+// --- Utilities
+const api = (path, method="GET", body=null) =>
+  fetch(path, { method, headers:{ "Content-Type":"application/json" }, body: body?JSON.stringify(body):null }).then(r=>r.json());
+
+function el(tag, props={}, ...kids) {
+  const d = document.createElement(tag);
+  for (const k in props) {
+    if (k === "class") d.className = props[k];
+    else if (k.startsWith("on")) d.addEventListener(k.slice(2).toLowerCase(), props[k]);
+    else d.setAttribute(k, props[k]);
+  }
+  for (const kid of kids) d.append(kid instanceof Node ? kid : document.createTextNode(kid));
+  return d;
+}
+
+// ---- Photoperiod helpers (same as server for captions)
+function declinationRad(doy){ return 23.44*Math.PI/180 * Math.sin(2*Math.PI*(doy-80)/365.25); }
+function daylengthHours(latDeg, doy){
+  const δ = declinationRad(doy);
+  const φ = latDeg * Math.PI/180;
+  const cosH = -Math.tan(φ)*Math.tan(δ);
+  if (cosH <= -1) return 24;
+  if (cosH >= 1) return 0;
+  const H = Math.acos(cosH);
+  return (2*H) * 180/Math.PI / 15;
+}
+
+// =======================================================
+// POC WIDGET
+// =======================================================
+function renderPOC(){
+  let step = 1;
+  let band = "20–40";
+  let genus = "Cymbidium";
+  let agg = null;
+  let expId = null;
+
+  const root = el("div");
+  view.replaceChildren(root);
+  draw();
+
+  function draw(){
+    root.replaceChildren();
+    if (step===1) root.append(screen1());
+    if (step===2) root.append(screen2());
+    if (step===3) root.append(screen3());
+    if (step===4) root.append(screen4());
+    if (step===5) { runQuery().then(()=>root.append(screen5())); root.append(el("div",{class:"panel"}, "Loading…")); }
+  }
+
+  function screen1(){
+    return el("div",{class:"panel center"},
+      el("h1",{}, "The Orchid Continuum Proves Itself"),
+      el("p",{}, "Do orchids remember their latitude?"),
+      el("button",{class:"btn", onclick:()=>{ step=2; draw(); }}, "Start Exploration")
+    );
+  }
+  function screen2(){
+    return el("div",{class:"panel"},
+      el("h2",{},"Pick a latitude band"),
+      el("div",{class:"bands"},
+        el("button",{onclick:()=>{ band="0–10"; step=3; draw(); }}, "Equator (0–10°)"),
+        el("button",{onclick:()=>{ band="20–40"; step=3; draw(); }}, "Subtropics (20–40°) • includes 35°"),
+        el("button",{onclick:()=>{ band=">40"; step=3; draw(); }}, "Temperate (>40°)")
+      ),
+      el("p",{class:"note"},"Tip: Choose 20–40° to see strong seasonal (photoperiod) cues.")
+    );
+  }
+  function screen3(){
+    return el("div",{class:"panel"},
+      el("h2",{},"Choose a genus"),
+      el("div",{class:"tiles"},
+        tile("Cymbidium","Photoperiod + cool nights","Cymbidium"),
+        tile("Phalaenopsis","Temperature dips + rainfall cues","Phalaenopsis")
+      ),
+      el("div",{class:"actions"},
+        el("button",{class:"btn secondary", onclick:()=>{ step=2; draw(); }},"Back"),
+        el("button",{class:"btn", onclick:()=>{ step=4; draw(); }},"Next")
+      ),
+      el("small",{class:"mono"},"Band: "+band)
+    );
+    function tile(title, sub, key){
+      return el("label",{class:"" + (genus===key?"active":""), onclick:()=>{ genus=key; draw(); }},
+        el("h3",{}, title), el("p",{}, sub)
+      );
+    }
+  }
+  function screen4(){
+    // Simple educational caption using daylength at 35° vs 5° for today
+    const doy = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(),0,1))/86400000)+1;
+    const dl35 = daylengthHours(35, doy).toFixed(1);
+    const dl05 = daylengthHours(5, doy).toFixed(1);
+    return el("div",{class:"panel"},
+      el("h2",{},"Climate comparison"),
+      el("p",{},"Open the Weather/Habitat comparator for this genus to compare your local climate to its native latitude."),
+      el("ul",{},
+        el("li",{},"Use ", el("b",{},"Seasonal"), " or ", el("b",{},"Photoperiod"), " mode."),
+        el("li",{},"Today’s daylength: 35° ≈ ", dl35, " h; 5° ≈ ", dl05, " h (illustrative).")
+      ),
+      el("div",{class:"actions"},
+        el("button",{class:"btn secondary", onclick:()=>{ step=3; draw(); }},"Back"),
+        el("button",{class:"btn", onclick:()=>{ step=5; draw(); }},"Continue")
+      )
+    );
+  }
+  async function runQuery(){
+    const data = await api("/lab/query","POST",{
+      filters:{
+        genus: genus==="Cymbidium" ? ["Cymbidium","Dendrobium"] : ["Phalaenopsis"],
+        latBand:[band],
+        hasBloomMonths:true
+      }
+    });
+    agg = data.agg?.photoperiodByBand || null;
+  }
+  function screen5(){
+    return el("div",{class:"panel"},
+      el("h2",{},"Photoperiod triggers by latitude band"),
+      agg ? tableAgg(agg) : el("p",{},"No data"),
+      el("div",{class:"actions"},
+        expId
+          ? el("a",{class:"btn", href:"/lab/exp/"+expId},"Open Experiment")
+          : el("button",{class:"btn", onclick:saveAsExperiment},"Save as Experiment → Online Orchid Lab")
+      )
+    );
+  }
+  function tableAgg(a){
+    const tbl = el("table",{class:"grid"},
+      el("thead",{}, el("tr",{}, el("th",{},"Band"), el("th",{},"N"), el("th",{},"% Photoperiod"))),
+      el("tbody",{},
+        ...a.map(r=>el("tr",{}, el("td",{},r.band), el("td",{},r.n), el("td",{}, Math.round(r.pct*100)+"%")))
+      )
+    );
+    return tbl;
+  }
+  async function saveAsExperiment(){
+    const resp = await api("/lab/experiments","POST",{
+      title: "POC: Photoperiod vs Latitude",
+      ownerUserId:"admin",
+      hypothesis:{
+        question:"Are photoperiod cues stronger around ~35°?",
+        statement:"Orchids near 35° show higher photoperiod-linked flowering than equatorial orchids.",
+        variables:{independent:["nativeLatitudeBand"],dependent:["hasPhotoperiodTrigger"],controls:["altitudeBand","growthForm"]}
+      },
+      dataset:{ filters:{ genus:[genus], latBand:[band], hasBloomMonths:true }, sampleSize:0, sampleIds:[] },
+      analysis:{ charts:[{id:"fig1",type:"bar",title:"Photoperiod by band",dataRef:"agg.photoperiodByBand"}], stats:{} },
+      report:{
+        background:"Species richness peaks at the equator; flowering triggers shift with latitude and seasonality.",
+        methods:"Filtered orchids by genus and latitude band; required bloom months; computed photoperiod prevalence by band.",
+        results:"See fig1.",
+        discussion:"Photoperiod prevalence rises with latitude, consistent with horticultural practice for Cymbidium/Dendrobium vs Phalaenopsis.",
+        references:[
+          {style:"APA",text:"Givnish, T. J., et al. (2015). Proceedings of the Royal Society B, 282(1814), 20151553. https://doi.org/10.1098/rspb.2015.1553"},
+          {style:"APA",text:"Djordjević, V., et al. (2022). Frontiers in Ecology & Evolution, 10, 929266. https://doi.org/10.3389/fevo.2022.929266"}
+        ],
+        notes:""
+      }
+    });
+    expId = resp.id;
+    draw();
+  }
+}
+
+// =======================================================
+// ONLINE ORCHID LAB (MVP)
+// =======================================================
+function renderLabHome(){
+  const root = el("div");
+  root.append(
+    el("div",{class:"panel"},
+      el("h1",{},"Online Orchid Lab"),
+      el("p",{},"Create experiments that follow the scientific method using Continuum data."),
+      el("div",{class:"actions"},
+        el("button",{class:"btn", onclick:startNew},"Start a new experiment"),
+        el("button",{class:"btn secondary", onclick:seedTemplate},"Start with POC template")
+      )
+    )
+  );
+  view.replaceChildren(root);
+
+  async function startNew(){
+    const r = await api("/lab/experiments","POST",{ title:"Untitled Experiment", ownerUserId:"user" });
+    renderLabEditor(r.id);
+  }
+  async function seedTemplate(){
+    const r = await api("/lab/experiments","POST",{
+      title:"POC: Photoperiod vs Latitude",
+      ownerUserId:"admin",
+      hypothesis:{
+        question:"Do orchids near ~35° rely more on photoperiod than equatorial orchids?",
+        statement:"Orchids native to ~35° bands show higher photoperiod prevalence than those from 0–10°.",
+        variables:{independent:["nativeLatitudeBand"], dependent:["hasPhotoperiodTrigger"], controls:["altitudeBand","growthForm"]}
+      },
+      dataset:{ filters:{ genus:["Cymbidium","Dendrobium","Phalaenopsis"], latBand:["0–10","20–40"], hasBloomMonths:true }, sampleSize:0, sampleIds:[] },
+      analysis:{ charts:[], stats:{} },
+      report:{ background:"", methods:"", results:"", discussion:"", references:[], notes:"" }
+    });
+    renderLabEditor(r.id);
+  }
+}
+
+async function renderLabEditor(id){
+  const exp = await api("/lab/experiments/"+id, "GET");
+  const root = el("div");
+  view.replaceChildren(root);
+
+  let tab = "hypothesis";
+  draw();
+
+  function draw(){
+    root.replaceChildren(
+      el("div",{class:"panel"},
+        el("div",{class:"row"},
+          el("input",{value:exp.title, oninput:(e)=>{ exp.title=e.target.value; save({ title:exp.title }); }})
+        ),
+        el("div",{class:"tabs"},
+          tabBtn("hypothesis"), tabBtn("data"), tabBtn("analysis"), tabBtn("report")
+        ),
+        el("div",{}, tab==="hypothesis" ? Hypothesis() : tab==="data" ? DataTab() : tab==="analysis" ? AnalysisTab() : ReportTab()),
+        el("div",{class:"actions"},
+          el("button",{class:"btn secondary", onclick:()=>renderLabHome()},"Back to Lab"),
+          el("button",{class:"btn", onclick:async()=>{ await api("/lab/experiments/"+id+"/publish","POST"); alert("Published"); }},"Publish")
+        )
+      )
+    );
+  }
+  function tabBtn(name){
+    return el("button",{class:""+(tab===name?"on":""), onclick:()=>{ tab=name; draw(); }}, name[0].toUpperCase()+name.slice(1));
+  }
+  async function save(patch){ await api("/lab/experiments/"+id,"PATCH", patch); }
+
+  function Hypothesis(){
+    const h = exp.hypothesis || { question:"", statement:"", variables:{independent:[],dependent:[],controls:[]} };
+    return el("div",{},
+      label("Research question"), textarea(h.question, v=>{ h.question=v; exp.hypothesis=h; save({ hypothesis:h }); }),
+      label("Hypothesis"), textarea(h.statement, v=>{ h.statement=v; exp.hypothesis=h; save({ hypothesis:h }); }),
+      label("Variables (independent, dependent, controls)"),
+      input(h.variables.independent.join(","), v=>{ h.variables.independent=splitCSV(v); exp.hypothesis=h; save({ hypothesis:h }); }),
+      input(h.variables.dependent.join(","), v=>{ h.variables.dependent=splitCSV(v); exp.hypothesis=h; save({ hypothesis:h }); }),
+      input(h.variables.controls.join(","), v=>{ h.variables.controls=splitCSV(v); exp.hypothesis=h; save({ hypothesis:h }); })
+    );
+  }
+
+  function DataTab(){
+    const f = exp.dataset?.filters || {};
+    let preview = null, agg = null;
+
+    const pane = el("div");
+    pane.append(
+      el("h3",{},"Filters"),
+      label("Genus (CSV)"),
+      input((f.genus||[]).join(","), v=>{ f.genus=splitCSV(v); }),
+      label("Latitude bands"),
+      el("div",{},
+        checkbox("0–10", (f.latBand||[]).includes("0–10"), onBand),
+        checkbox("20–40", (f.latBand||[]).includes("20–40"), onBand),
+        checkbox(">40", (f.latBand||[]).includes(">40"), onBand)
+      ),
+      el("label",{}, el("input",{type:"checkbox", checked:!!f.hasBloomMonths, onchange:e=>{ f.hasBloomMonths=e.target.checked; }}), " Require bloom months"),
+      el("div",{class:"actions"}, el("button",{class:"btn", onclick:run},"Run query")),
+      el("div",{id:"agg"}),
+      el("div",{id:"grid"})
+    );
+    return pane;
+
+    function onBand(val, checked){
+      const set = new Set(f.latBand||[]);
+      checked ? set.add(val) : set.delete(val);
+      f.latBand = Array.from(set);
+    }
+    async function run(){
+      const data = await api("/lab/query","POST",{ filters:f });
+      exp.dataset = { filters:f, sampleSize: data.rows.length, sampleIds: data.rows.map(r=>r.id) };
+      await save({ dataset: exp.dataset });
+      agg = data.agg;
+      preview = data.rows;
+      renderAgg(); renderGrid();
+    }
+    function renderAgg(){
+      const a = document.getElementById("agg");
+      a.replaceChildren(
+        el("h4",{},"Photoperiod prevalence (by band)"),
+        agg ? el("ul",{}, ...agg.photoperiodByBand.map(r=>el("li",{}, `${r.band}: N=${r.n}, ${Math.round(r.pct*100)}%`))) : el("p",{},"No data")
+      );
+    }
+    function renderGrid(){
+      const g = document.getElementById("grid");
+      if (!preview) return g.replaceChildren();
+      const tbl = el("table",{class:"grid"},
+        el("thead",{}, el("tr",{}, el("th",{},"Genus"), el("th",{},"Species"), el("th",{},"Lat"), el("th",{},"Bloom months"), el("th",{},"Photoperiod?"))),
+        el("tbody",{}, ...preview.slice(0,80).map(r=>el("tr",{},
+          el("td",{},r.genus), el("td",{},r.species||""), el("td",{}, Math.round(Math.abs(r.native_lat||0))+"°"),
+          el("td",{}, Array.isArray(r.flower_months)?r.flower_months.join(","):""),
+          el("td",{}, r.flower_triggers?.photoperiod?"Yes":"No")
+        )))
+      );
+      g.replaceChildren(tbl);
+    }
+  }
+
+  function AnalysisTab(){
+    return el("div",{},
+      el("p",{},"For MVP, your key aggregation is already computed in Data → “Photoperiod prevalence (by band)”."),
+      el("p",{},"Add more charts or export CSV in the Data tab for deeper analysis.")
+    );
+  }
+
+  function ReportTab(){
+    const r = exp.report || { background:"", methods:"", results:"", discussion:"", references:[], notes:"" };
+    return el("div",{},
+      label("Background"), textarea(r.background, v=>{ r.background=v; exp.report=r; save({ report:r }); }),
+      label("Methods"), textarea(r.methods, v=>{ r.methods=v; exp.report=r; save({ report:r }); }),
+      label("Results"), textarea(r.results, v=>{ r.results=v; exp.report=r; save({ report:r }); }),
+      label("Discussion"), textarea(r.discussion, v=>{ r.discussion=v; exp.report=r; save({ report:r }); }),
+      label("References (APA, one per line)"),
+      textarea((r.references||[]).map(x=>x.text).join("\\n"), v=>{
+        r.references = v.split("\\n").filter(Boolean).map(t=>({style:"APA", text:t}));
+        exp.report=r; save({ report:r });
+      }),
+      label("Notes"), textarea(r.notes||"", v=>{ r.notes=v; exp.report=r; save({ report:r }); })
+    );
+  }
+
+  // ui helpers
+  function label(t){ return el("label",{}, t); }
+  function input(val, on){ return el("input",{ value:val, oninput:e=>on(e.target.value) }); }
+  function textarea(val, on){ return el("textarea",{ oninput:e=>on(e.target.value) }, val || ""); }
+  function checkbox(val, checked, on){ return el("label",{}, el("input",{type:"checkbox", checked, onchange:e=>on(val, e.target.checked)}), " "+val+" "); }
+  function splitCSV(s){ return s.split(",").map(x=>x.trim()).filter(Boolean); }
+}
+
+// Init
+renderPOC();
+</script>
+</body>
+</html>`);
+});
+
+// ----------------------------------------------
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Orchid Continuum POC ready on http://localhost:${PORT}`));

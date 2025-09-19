@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Genetics Laboratory - Research-Grade Breeding Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        :root {
+            --lab-primary: #2563EB;
+            --lab-secondary: #7C3AED;
+            --lab-success: #059669;
+            --lab-warning: #D97706;
+            --lab-danger: #DC2626;
+            --lab-dark: #1F2937;
+        }
+        
+        .hero-lab {
+            background: linear-gradient(135deg, var(--lab-primary), var(--lab-secondary));
+            color: white;
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-lab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.1"><circle cx="30" cy="30" r="4"/></g></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .research-badge {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .methodology-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-left: 5px solid var(--lab-primary);
+        }
+        
+        .lab-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .lab-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .lab-card-header {
+            background: var(--lab-primary);
+            color: white;
+            padding: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .analysis-controls {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 2rem 0;
+        }
+        
+        .trait-pattern {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        
+        .inheritance-marker {
+            background: var(--lab-success);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin: 0.25rem;
+            display: inline-block;
+        }
+        
+        .prediction-result {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--lab-success);
+        }
+        
+        .success-meter {
+            height: 25px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .success-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--lab-warning), var(--lab-success));
+            transition: width 1s ease;
+            position: relative;
+        }
+        
+        .analysis-status {
+            background: var(--lab-dark);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .f226-reference {
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .btn-lab {
+            background: var(--lab-primary);
+            border-color: var(--lab-primary);
+            color: white;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-lab:hover {
+            background: var(--lab-secondary);
+            border-color: var(--lab-secondary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .database-stats {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-lab">
+        <div class="container">
+            <div class="hero-content">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="research-badge">
+                            <i data-feather="award" class="me-2"></i>
+                            Research-Grade Breeding Intelligence
+                        </div>
+                        <h1 class="display-4 fw-bold mb-3">
+                            <i data-feather="cpu" class="me-3"></i>
+                            Orchid Genetics Laboratory
+                        </h1>
+                        <p class="lead mb-4">
+                            Comprehensive trait inheritance database using AI photo analysis and proven breeding methodologies. 
+                            Built on Jeff Parham's Sarcochilus F226 research with real-world validation from professional breeding collections.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <button class="btn btn-outline-light btn-lg" onclick="startCollectionAnalysis()">
+                                <i data-feather="search" class="me-2"></i>
+                                Analyze Breeding Collection
+                            </button>
+                            <button class="btn btn-light btn-lg" onclick="showCrossPrediction()">
+                                <i data-feather="trending-up" class="me-2"></i>
+                                Predict Cross Outcome
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div style="font-size: 8rem; opacity: 0.7;">
+                            <i data-feather="dna"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <!-- F226 Methodology Reference -->
+        <div class="methodology-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="text-primary mb-3">
+                        <i data-feather="file-text" class="me-2"></i>
+                        F226 Research Methodology Foundation
+                    </h3>
+                    <p class="mb-3">
+                        <strong>Proven Cross:</strong> Kulnura Roundup 'Multi Spot' × Kulnura Secure 'Shapely' → F226
+                    </p>
+                    <p class="mb-3">
+                        This laboratory implements Jeff Parham's validated F226 trait inheritance methodology, 
+                        now scaled using AI photo analysis across professional breeding collections from Scott Barrita and Fred Clark.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="inheritance-marker">Photo Analysis</span>
+                        <span class="inheritance-marker">Trait Extraction</span>
+                        <span class="inheritance-marker">Inheritance Mapping</span>
+                        <span class="inheritance-marker">Breeding Prediction</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="database-stats">
+                        <h4 id="database-count" class="text-success mb-1">0</h4>
+                        <p class="mb-0 small text-muted">Documented Trait Patterns</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Controls -->
+        <div class="analysis-controls">
+            <h3 class="mb-4">
+                <i data-feather="settings" class="me-2"></i>
+                Laboratory Controls
+            </h3>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">Collection Analysis</h5>
+                    <p class="text-muted mb-3">
+                        Analyze breeding collection photos to extract trait inheritance patterns using AI.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Analysis Limit</label>
+                        <select class="form-select" id="analysis-limit">
+                            <option value="25">25 specimens (Quick analysis)</option>
+                            <option value="50" selected>50 specimens (Standard)</option>
+                            <option value="100">100 specimens (Comprehensive)</option>
+                            <option value="200">200 specimens (Research-grade)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-lab" onclick="startCollectionAnalysis()">
+                        <i data-feather="play" class="me-2"></i>
+                        Start Analysis
+                    </button>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5 class="mb-3">Cross Prediction</h5>
+                    <p class="text-muted mb-3">
+                        Predict breeding outcomes using trait inheritance database.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Pod Parent</label>
+                        <input type="text" class="form-control" id="pod-parent" placeholder="Search for pod parent...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pollen Parent</label>
+                        <input type="text" class="form-control" id="pollen-parent" placeholder="Search for pollen parent...">
+                    </div>
+                    <button class="btn btn-lab" onclick="predictCross()">
+                        <i data-feather="target" class="me-2"></i>
+                        Predict Cross
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Status -->
+        <div id="analysis-status" class="analysis-status" style="display: none;">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm text-light me-3" role="status"></div>
+                <span id="status-text">Initializing analysis...</span>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="row my-5">
+            <div class="col-md-4 mb-4">
+                <div class="lab-card">
+                    <div class="lab-card-header">
+                        <i data-feather="camera" class="me-2"></i>
+                        AI Photo Analysis
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Extract breeding-specific traits from orchid photos using advanced AI analysis. 
+                            Identifies color patterns, flower form, growth characteristics, and inheritance markers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="lab-card">
+                    <div class="lab-card-header">
+                        <i data-feather="database" class="me-2"></i>
+                        Trait Inheritance Database
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Comprehensive database of trait inheritance patterns built from real breeding collections. 
+                            Maps parent-offspring relationships and predicts trait expression.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="lab-card">
+                    <div class="lab-card-header">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Breeding Predictions
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Generate research-grade breeding predictions based on documented trait inheritance patterns. 
+                            Calculate success probabilities and recommend optimal crosses.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-area" style="display: none;">
+            <!-- Analysis results will be populated here -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Load trait database stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDatabaseStats();
+        });
+        
+        function loadDatabaseStats() {
+            fetch('/widgets/genetics-lab/api/trait-database')
+                .then(response => response.json())
+                .then(data => {
+                    const count = data.total_patterns || 0;
+                    document.getElementById('database-count').textContent = count;
+                })
+                .catch(error => {
+                    console.error('Error loading database stats:', error);
+                });
+        }
+        
+        function startCollectionAnalysis() {
+            const limit = document.getElementById('analysis-limit').value;
+            const statusDiv = document.getElementById('analysis-status');
+            const statusText = document.getElementById('status-text');
+            const resultsArea = document.getElementById('results-area');
+            
+            // Show status
+            statusDiv.style.display = 'block';
+            resultsArea.style.display = 'none';
+            
+            // Update status messages
+            const statusMessages = [
+                'Initializing AI photo analysis system...',
+                'Loading breeding collection records...',
+                'Extracting trait data from photos...',
+                'Identifying inheritance patterns...',
+                'Building trait inheritance database...',
+                'Generating breeding recommendations...'
+            ];
+            
+            let messageIndex = 0;
+            const statusInterval = setInterval(() => {
+                if (messageIndex < statusMessages.length) {
+                    statusText.textContent = statusMessages[messageIndex];
+                    messageIndex++;
+                } else {
+                    clearInterval(statusInterval);
+                }
+            }, 2000);
+            
+            // Start analysis
+            fetch('/widgets/genetics-lab/api/analyze-collection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ limit: parseInt(limit) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(statusInterval);
+                statusDiv.style.display = 'none';
+                displayAnalysisResults(data);
+                loadDatabaseStats(); // Refresh stats
+            })
+            .catch(error => {
+                clearInterval(statusInterval);
+                statusDiv.style.display = 'none';
+                showError('Analysis failed: ' + error.message);
+            });
+        }
+        
+        function displayAnalysisResults(data) {
+            const resultsArea = document.getElementById('results-area');
+            
+            if (data.success) {
+                const analysisResults = data.analysis_results;
+                const traitDatabase = data.trait_database;
+                
+                resultsArea.innerHTML = `
+                    <div class="prediction-result">
+                        <h3 class="text-success mb-4">
+                            <i data-feather="check-circle" class="me-2"></i>
+                            Analysis Complete
+                        </h3>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Collection Analysis Results</h5>
+                                <div class="trait-pattern">
+                                    <strong>Genera Analyzed:</strong> ${traitDatabase.genera_analyzed ? traitDatabase.genera_analyzed.join(', ') : 'None'}
+                                </div>
+                                <div class="trait-pattern">
+                                    <strong>Total Trait Patterns:</strong> ${traitDatabase.total_patterns || 0}
+                                </div>
+                                <div class="trait-pattern">
+                                    <strong>Analysis Date:</strong> ${new Date(traitDatabase.analysis_date).toLocaleDateString()}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Breeding Intelligence</h5>
+                                ${generateBreedingIntelligence(analysisResults)}
+                            </div>
+                        </div>
+                        
+                        <div class="f226-reference mt-4">
+                            <h6 class="text-warning">
+                                <i data-feather="award" class="me-2"></i>
+                                F226 Methodology Validation
+                            </h6>
+                            <p class="mb-0">
+                                Analysis successfully completed using Jeff Parham's proven F226 research methodology, 
+                                now enhanced with AI photo analysis for trait extraction and inheritance mapping.
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                resultsArea.style.display = 'block';
+                feather.replace();
+            } else {
+                showError(data.error || 'Analysis failed');
+            }
+        }
+        
+        function generateBreedingIntelligence(results) {
+            let html = '';
+            
+            if (results && typeof results === 'object') {
+                for (const [genus, data] of Object.entries(results)) {
+                    if (typeof data === 'object' && data.total_specimens) {
+                        html += `
+                            <div class="trait-pattern">
+                                <strong>${genus}:</strong> ${data.total_specimens} specimens, ${data.analyzed_photos || 0} photos analyzed
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            if (!html) {
+                html = '<div class="trait-pattern">Building trait inheritance patterns...</div>';
+            }
+            
+            return html;
+        }
+        
+        function predictCross() {
+            const podParent = document.getElementById('pod-parent').value;
+            const pollenParent = document.getElementById('pollen-parent').value;
+            
+            if (!podParent || !pollenParent) {
+                alert('Please enter both parent names');
+                return;
+            }
+            
+            const statusDiv = document.getElementById('analysis-status');
+            const statusText = document.getElementById('status-text');
+            
+            statusDiv.style.display = 'block';
+            statusText.textContent = 'Analyzing cross prediction using trait inheritance database...';
+            
+            fetch('/widgets/genetics-lab/api/predict-cross', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    parent1_name: podParent,
+                    parent2_name: pollenParent
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusDiv.style.display = 'none';
+                displayPredictionResults(data);
+            })
+            .catch(error => {
+                statusDiv.style.display = 'none';
+                showError('Prediction failed: ' + error.message);
+            });
+        }
+        
+        function displayPredictionResults(data) {
+            const resultsArea = document.getElementById('results-area');
+            
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+            
+            const successProb = data.success_probability || 0;
+            
+            resultsArea.innerHTML = `
+                <div class="prediction-result">
+                    <h3 class="text-primary mb-4">
+                        <i data-feather="target" class="me-2"></i>
+                        Cross Prediction Results
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Proposed Cross</h5>
+                            <p class="fs-5 fw-bold">${data.proposed_cross}</p>
+                            
+                            <h5 class="mt-4">Success Probability</h5>
+                            <div class="success-meter mb-2">
+                                <div class="success-bar" style="width: ${successProb}%"></div>
+                            </div>
+                            <p>${successProb}% probability of successful cross</p>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="database-stats">
+                                <h6 class="text-primary">F226 Methodology</h6>
+                                <p class="small text-muted">Prediction based on Jeff Parham's proven research approach</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${data.predicted_traits ? generatePredictedTraits(data.predicted_traits) : ''}
+                    ${data.breeding_recommendations ? generateRecommendations(data.breeding_recommendations) : ''}
+                </div>
+            `;
+            
+            resultsArea.style.display = 'block';
+            feather.replace();
+        }
+        
+        function generatePredictedTraits(traits) {
+            if (!Array.isArray(traits)) return '';
+            
+            return `
+                <div class="mt-4">
+                    <h5>Predicted Traits</h5>
+                    ${traits.map(trait => `
+                        <div class="trait-pattern">
+                            <strong>${trait.trait || 'Trait'}:</strong> ${trait.prediction || trait}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function generateRecommendations(recommendations) {
+            if (!Array.isArray(recommendations)) return '';
+            
+            return `
+                <div class="mt-4">
+                    <h5>Breeding Recommendations</h5>
+                    ${recommendations.map(rec => `
+                        <div class="alert alert-info py-2">${rec}</div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function showCrossPrediction() {
+            document.getElementById('pod-parent').focus();
+        }
+        
+        function showError(message) {
+            const resultsArea = document.getElementById('results-area');
+            resultsArea.innerHTML = `
+                <div class="alert alert-danger">
+                    <i data-feather="alert-circle" class="me-2"></i>
+                    ${message}
+                </div>
+            `;
+            resultsArea.style.display = 'block';
+            feather.replace();
+        }
+    </script>
+</body>
+</html>

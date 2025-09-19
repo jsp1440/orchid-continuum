@@ -1,0 +1,84 @@
+Perfect, Jeff — I’ll consolidate everything we’ve sketched into one master Replit AI prompt. This way, you can paste it directly into Replit’s “Generate app” and get a single-file index.html prototype that covers breeder privacy, tutorials, predictive modeling, judging systems, public dataset import (RHS, OrchidRoots, etc.), and proof-of-concept demos.
+
+⸻
+
+MASTER REPLIT PROMPT
+
+Goal: Build a one-file, client-side web app called Orchid Continuum — Breeder Assist (Prototype). Everything must live in index.html (HTML + inline CSS + vanilla JavaScript). No external libraries, frameworks, or CDNs. It must run offline when opened in a browser or hosted as static on Replit.
+
+⸻
+
+Core Modes
+
+1. Pro Breeder Mode (Private Projects)
+	•	Create encrypted, password-protected “Breeding Projects.”
+	•	Track plants, crosses, milestones, photos, awards, and notes.
+	•	Forward/Reverse cross recommendations with explainability.
+	•	Store all data locally (IndexedDB/localStorage).
+	•	Use client-side AES-GCM encryption via Web Crypto.
+	•	Allow breeders to mark records as Proprietary (never exported) or Shareable insights (anonymized only).
+
+2. Learning Mode (Tutorials)
+	•	Built-in lessons:
+	1.	Orchid genetics basics (Mendelian vs. polygenic, epistasis, unpredictability).
+	2.	Record-keeping (parentage, labeling, bloom logs).
+	3.	Photographing orchids for trait scoring.
+	4.	Estimating heritability (parent–offspring regression).
+	5.	Judging systems overview.
+	6.	Planning a crossing program (forward & reverse design).
+	•	Each lesson includes a short quiz, glossary, and references to orchid breeding texts and AOS resources.
+	•	Beginner-friendly mode that scaffolds into breeder analytics.
+
+3. Proof-of-Concept Import & Analysis
+	•	Support CSV/clipboard import of public data:
+	•	RHS-style CSV (grex, seed_parent, pollen_parent, registrant, date, url)
+	•	OrchidRoots-style CSV (name, parent1, parent2, url, img_url)
+	•	OrchidPro-style report (award, date, plant_name, parents, region, img_url)
+	•	Show lineage pies, year trends, parent frequency charts.
+	•	Use public data only in a separate Public Dataset store.
+	•	Allow toggle: “Use public datasets as priors for predictions.”
+
+⸻
+
+UI Layout (Tabs)
+	•	Header: “Orchid Continuum — Breeder Assist”
+	•	Tabs:
+	•	Projects: Create/Open/Lock/Delete vaults; New Project modal with passphrase, mode (Local-only / Share insights), genus focus.
+	•	Collection: Import CSV/photos; editable plant table (id, genus, grex_or_species, clonal_name, parent1, parent2, awards, bloom_month, fragrance, climate_json, traits_json, proprietary_flag).
+	•	Design (Reverse): Trait sliders/inputs (roundness, flatness, color family, saturation, flowers/spike, flower size, pattern class, symmetry, climate tolerances). “Find Crosses” button → ranked results with % goal, awardability score, parent-trait contributions, μ ± SD.
+	•	Recommend (Forward): Select subset, choose optimization (awardability, floriferousness, color novelty, climate fit, balanced). Returns ranked pairings.
+	•	Journal: Track crosses (seed × pollen, pod set, sow date, flasking, outplant, bloom, awards). Timeline view + photos.
+	•	Judging: AOS, JOGA, ANOS, NZOS, EOJC profiles; editable sliders that normalize to 1. Save per-project defaults.
+	•	Explorer: Scatterplots (roundness vs saturation, flowers/spike vs roundness); color-coded by lineage; tooltips show parents/photos.
+	•	Learn: Tutorials, glossaries, and quizzes.
+	•	PoC Import: Mapper UI for RHS/OrchidRoots/OrchidPro CSVs. Imported data tagged with source and URL, stored separate from breeder projects.
+	•	Export:
+	•	Encrypted Project backup (.ocp JSON, ciphertext).
+	•	Decrypted JSON (local-only, with warning).
+	•	Anonymized trait summaries (means, SDs, heritability).
+	•	Journal Report (printable PDF via CSS).
+
+⸻
+
+Traits & Modeling
+
+Traits (starter set)
+	•	Universal: roundness (0–1), flatness (0–1), color family, saturation (0–1), flower size (mm), flowers/spike (int), pattern class, symmetry (0–1).
+	•	Climate vector: { t_night_min, t_day_opt, chill_trigger, diurnal_min }
+
+Trait Inference
+	•	Lightweight computer vision (canvas):
+	•	Dominant color family from histogram.
+	•	Saturation/value.
+	•	Roundness from contour area/perimeter.
+	•	Flower count (manual override with optional blob-detect).
+
+Inheritance Model
+	•	Numeric traits: offspring μ = (A + B)/2; σ = (1−h²) × pooled_SD.
+	•	Categorical traits: smoothed one-hot averages.
+	•	Climate traits: logistic threshold model for cool tolerance.
+	•	Heritability sliders per trait (default 0.4–0.6).
+	•	Anomaly detection: flag offspring that deviate >Z-threshold (potential linkage/modifier).
+
+Judging System Weights
+	•	Example (AOS default):

@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+{% set page_title = "Taxonomy Verification Panel" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1><i data-feather="check-circle"></i> Taxonomy Verification System</h1>
+            <p class="text-muted">Analyze and correct orchid taxonomy classifications using image name analysis</p>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="settings"></i> Verification Controls</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="scanPotinaraIssues()">
+                                <i data-feather="search"></i> Scan Potinara Records
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100" onclick="scanAllRecords()">
+                                <i data-feather="database"></i> Scan All Records
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100" onclick="applyCorrections()" disabled id="applyBtn">
+                                <i data-feather="check"></i> Apply High-Confidence Fixes
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-secondary w-100" onclick="exportCorrections()">
+                                <i data-feather="download"></i> Export Corrections
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Records</h5>
+                    <h2 id="totalRecords">-</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Issues Found</h5>
+                    <h2 id="issuesFound">-</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">High-Confidence Fixes</h5>
+                    <h2 id="highConfidenceFixes">-</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i data-feather="list"></i> Verification Results</h5>
+                    <div>
+                        <select class="form-select form-select-sm d-inline-block w-auto" id="confidenceFilter" onchange="filterResults()">
+                            <option value="all">All Issues</option>
+                            <option value="high">High Confidence (>0.7)</option>
+                            <option value="medium">Medium Confidence (0.4-0.7)</option>
+                            <option value="low">Low Confidence (<0.4)</option>
+                        </select>
+                        <select class="form-select form-select-sm d-inline-block w-auto ms-2" id="genusFilter" onchange="filterResults()">
+                            <option value="all">All Genera</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Analyzing taxonomy classifications...</p>
+                    </div>
+                    
+                    <div id="resultsContainer" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Current Classification</th>
+                                        <th>Suggested Correction</th>
+                                        <th>Confidence</th>
+                                        <th>Issue Type</th>
+                                        <th>Image Name Analysis</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsTable">
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <nav aria-label="Results pagination">
+                            <ul class="pagination justify-content-center" id="pagination">
+                            </ul>
+                        </nav>
+                    </div>
+                    
+                    <div id="noResults" class="text-center py-4" style="display: none;">
+                        <i data-feather="info" class="text-muted" style="width: 48px; height: 48px;"></i>
+                        <p class="text-muted mt-2">No taxonomy issues found. Click "Scan" to analyze records.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Genus Statistics Modal -->
+    <div class="modal fade" id="genusStatsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Genus Distribution Statistics</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <canvas id="genusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentIssues = [];
+let currentPage = 1;
+const itemsPerPage = 20;
+
+async function scanPotinaraIssues() {
+    showLoading();
+    try {
+        const response = await fetch('/admin/taxonomy/scan-potinara', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        handleScanResults(data);
+    } catch (error) {
+        console.error('Error scanning Potinara issues:', error);
+        alert('Error scanning records. Please try again.');
+    }
+}
+
+async function scanAllRecords() {
+    showLoading();
+    try {
+        const response = await fetch('/admin/taxonomy/scan-all', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        handleScanResults(data);
+    } catch (error) {
+        console.error('Error scanning all records:', error);
+        alert('Error scanning records. Please try again.');
+    }
+}
+
+function handleScanResults(data) {
+    currentIssues = data.issues || [];
+    
+    // Update statistics
+    document.getElementById('totalRecords').textContent = data.total_scanned || 0;
+    document.getElementById('issuesFound').textContent = currentIssues.length;
+    
+    const highConfidence = currentIssues.filter(issue => 
+        issue.suggested_corrections.some(c => c.confidence > 0.7)
+    ).length;
+    document.getElementById('highConfidenceFixes').textContent = highConfidence;
+    
+    // Enable apply button if there are high-confidence fixes
+    document.getElementById('applyBtn').disabled = highConfidence === 0;
+    
+    // Update genus filter
+    updateGenusFilter();
+    
+    // Display results
+    displayResults();
+    hideLoading();
+}
+
+function updateGenusFilter() {
+    const genusFilter = document.getElementById('genusFilter');
+    const genera = [...new Set(currentIssues.map(issue => issue.current_genus))].sort();
+    
+    // Clear existing options except "All Genera"
+    genusFilter.innerHTML = '<option value="all">All Genera</option>';
+    
+    genera.forEach(genus => {
+        const option = document.createElement('option');
+        option.value = genus;
+        option.textContent = genus;
+        genusFilter.appendChild(option);
+    });
+}
+
+function filterResults() {
+    displayResults();
+}
+
+function displayResults() {
+    const confidenceFilter = document.getElementById('confidenceFilter').value;
+    const genusFilter = document.getElementById('genusFilter').value;
+    
+    let filteredIssues = currentIssues;
+    
+    // Apply confidence filter
+    if (confidenceFilter !== 'all') {
+        filteredIssues = filteredIssues.filter(issue => {
+            const maxConfidence = Math.max(...issue.suggested_corrections.map(c => c.confidence));
+            if (confidenceFilter === 'high') return maxConfidence > 0.7;
+            if (confidenceFilter === 'medium') return maxConfidence >= 0.4 && maxConfidence <= 0.7;
+            if (confidenceFilter === 'low') return maxConfidence < 0.4;
+        });
+    }
+    
+    // Apply genus filter
+    if (genusFilter !== 'all') {
+        filteredIssues = filteredIssues.filter(issue => issue.current_genus === genusFilter);
+    }
+    
+    // Paginate results
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageIssues = filteredIssues.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('resultsTable');
+    tbody.innerHTML = '';
+    
+    pageIssues.forEach(issue => {
+        const row = createResultRow(issue);
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination
+    updatePagination(filteredIssues.length);
+    
+    // Show/hide results
+    if (currentIssues.length > 0) {
+        document.getElementById('resultsContainer').style.display = 'block';
+        document.getElementById('noResults').style.display = 'none';
+    } else {
+        document.getElementById('resultsContainer').style.display = 'none';
+        document.getElementById('noResults').style.display = 'block';
+    }
+}
+
+function createResultRow(issue) {
+    const row = document.createElement('tr');
+    const correction = issue.suggested_corrections[0];
+    const confidence = correction ? correction.confidence : 0;
+    
+    // Confidence badge color
+    let badgeClass = 'bg-danger';
+    if (confidence > 0.7) badgeClass = 'bg-success';
+    else if (confidence > 0.4) badgeClass = 'bg-warning';
+    
+    // Issue type badge
+    let issueTypeBadge = '';
+    if (issue.issue_type === 'intergeneric_to_genus') {
+        issueTypeBadge = '<span class="badge bg-primary">Intergeneric → Genus</span>';
+    } else if (issue.issue_type === 'genus_mismatch') {
+        issueTypeBadge = '<span class="badge bg-info">Genus Mismatch</span>';
+    }
+    
+    row.innerHTML = `
+        <td>
+            <a href="/admin/orchid/${issue.record_id}" target="_blank">${issue.record_id}</a>
+        </td>
+        <td>
+            <strong>${issue.current_genus}</strong> ${issue.current_species || ''}
+        </td>
+        <td>
+            ${correction ? `<strong>${correction.to_genus}</strong>` : 'No suggestion'}
+        </td>
+        <td>
+            <span class="badge ${badgeClass}">${(confidence * 100).toFixed(0)}%</span>
+        </td>
+        <td>${issueTypeBadge}</td>
+        <td>
+            <small class="text-muted">
+                ${issue.filename_analysis.map(a => 
+                    `${a.source.substring(0, 30)}... → ${a.suggested_genus}`
+                ).join('<br>')}
+            </small>
+        </td>
+        <td>
+            <button class="btn btn-sm btn-success" onclick="applySingleCorrection(${issue.record_id})" 
+                    ${!correction || confidence < 0.5 ? 'disabled' : ''}>
+                Apply Fix
+            </button>
+        </td>
+    `;
+    
+    return row;
+}
+
+function updatePagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+        pagination.appendChild(li);
+    }
+}
+
+function changePage(page) {
+    currentPage = page;
+    displayResults();
+}
+
+async function applySingleCorrection(recordId) {
+    if (!confirm('Apply this taxonomy correction?')) return;
+    
+    try {
+        const response = await fetch('/admin/taxonomy/apply-single', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({record_id: recordId})
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('Correction applied successfully!');
+            // Remove from current issues
+            currentIssues = currentIssues.filter(issue => issue.record_id !== recordId);
+            displayResults();
+        } else {
+            alert('Error applying correction: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error applying correction');
+    }
+}
+
+async function applyCorrections() {
+    const highConfidenceIssues = currentIssues.filter(issue => 
+        issue.suggested_corrections.some(c => c.confidence > 0.7)
+    );
+    
+    if (!confirm(`Apply ${highConfidenceIssues.length} high-confidence corrections?`)) return;
+    
+    try {
+        const response = await fetch('/admin/taxonomy/apply-batch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                record_ids: highConfidenceIssues.map(issue => issue.record_id)
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(`Successfully applied ${result.corrections_applied} corrections!`);
+            // Refresh the scan
+            scanPotinaraIssues();
+        } else {
+            alert('Error applying corrections: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error applying corrections');
+    }
+}
+
+function exportCorrections() {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+        "ID,Current Genus,Current Species,Suggested Genus,Confidence,Issue Type\n" +
+        currentIssues.map(issue => {
+            const correction = issue.suggested_corrections[0] || {};
+            return `${issue.record_id},${issue.current_genus},${issue.current_species || ''},${correction.to_genus || ''},${correction.confidence || 0},${issue.issue_type || ''}`;
+        }).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "taxonomy_corrections.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function showLoading() {
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('noResults').style.display = 'none';
+}
+
+function hideLoading() {
+    document.getElementById('loadingIndicator').style.display = 'none';
+}
+
+// Initialize Feather icons when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

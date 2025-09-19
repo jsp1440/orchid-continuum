@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""
+IOSPE Safe ETL Scraper (Template)
+---------------------------------
+Purpose: Enrich your existing genus/species records with factual fields
+(safe to use) from IOSPE (orchidspecies.com) while avoiding copyrighted content.
+
+✅ Extract-only fields (facts/metadata):
+  - genus, species, abbreviation
+  - synonyms
+  - native region / countries
+  - altitude range
+  - habitat keywords
+  - bloom season
+  - growth habit / temperature band
+  - IOSPE page URL (source_link)
+
+❌ Do NOT copy:
+  - Photos
+  - Long descriptive text
+  - Page design
+"""
+
+import csv, re, time
+from typing import Dict, List, Optional
+
+import requests
+from bs4 import BeautifulSoup
+
+# ------------------------
+# Config
+# ------------------------
+
+USER_AGENT = "FCOS-OrchidContinuum-SafeETL/1.0 (contact: webmaster@fcos.org)"
+BASE_URL = "https://www.orchidspecies.com"
+DELAY_SECONDS = 2.0   # polite crawling
+
+OUTPUT_COLUMNS = [
+    "genus", "species", "abbreviation", "synonyms", "region", "altitude_meters",
+    "habitat", "bloom_season", "growth_habit", "temperature", "source", "source_link"
+]
+
+# ------------------------
+# Helpers
+# ------------------------
+
+def slugify_species(genus: str, species: str) -> str:
+    g = re.sub(r"[^a-zA-Z]", "", genus).lower()
+    s = re.sub(r"[^a-zA-Z]", "", species).lower()
+    return f"{g[:3]}{s}.htm"
+
+def iospe_url_for(genus: str, species: str) -> str:
+    return f"{BASE_URL}/{slugify_species(genus, species)}"
+
+def fetch_html(url: str) -> Optional[str]:
+    try:
+        headers = {"User-Agent": USER_AGENT}
+        r = requests.get(url, headers=headers, timeout=20)
+        if r.status_code == 200:
+            return r.text
+        else:
+            print(f"[WARN] HTTP {r.status_code} for {url}")
+            return None
+    except Exception as e:
+        print(f"[ERROR] {e} for {url}")
+        return None
+
+def clean_text(t: str) -> str:
+    return re.sub(r"\s+", " ", (t or "")).strip()
+
+# ------------------------
+# CORE: Parse Safe Fields
+# ------------------------
+
+def parse_safe_fields(html: str) -> Dict[str, str]:
+    """Extract factual fields only. Inspect page HTML to refine selectors."""
+    soup = BeautifulSoup(html, "html.parser")
+    data: Dict[str, str] = {}
+
+    # These are placeholder examples — update after inspecting IOSPE HTML structure
+    #
+    # Example:
+    # if soup.find(text=re.compile("Altitude", re.I)):
+    #     data["altitude_meters"] = clean_text(
+    #         soup.find(text=re.compile("Altitude", re.I)).find_next("p").get_text()
+    #     )
+
+    return data
+
+def merge_existing(row: Dict[str, str], new: Dict[str, str]) -> Dict[str, str]:
+    """Merge new safe fields without overwriting existing non-empty values."""
+    merged = dict(row)
+    for k, v in new.items():
+        if not merged.get(k):
+            merged[k] = v
+    return merged
+
+# ------------------------
+# Main enrichment
+# ------------------------
+
+def enrich_csv(input_csv: str, output_csv: str):
+    rows: List[Dict[str, str]] = []
+
+    with open(input_csv, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            genus = row.get("genus", "").strip()
+            species = row.get("species", "").strip()
+            if not genus or not species:
+                rows.append(row)
+                continue
+
+            url = iospe_url_for(genus, species)
+            html = fetch_html(url)
+            if html:
+                safe_fields = parse_safe_fields(html)
+                safe_fields["source"] = "IOSPE"
+                safe_fields["source_link"] = url
+                merged = merge_existing(row, safe_fields)
+            else:
+                merged = row
+
+            rows.append(merged)
+            time.sleep(DELAY_SECONDS)
+
+    # Ensure all expected fields exist
+    for r in rows:
+        for col in OUTPUT_COLUMNS:
+            r.setdefault(col, "")
+
+    with open(output_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=OUTPUT_COLUMNS)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({c: r.get(c, "") for c in OUTPUT_COLUMNS})
+
+    print(f"[DONE] Wrote: {output_csv}")
+
+
+if __name__ == "__main__":
+    import argparse
+    p = argparse.ArgumentParser(description="IOSPE Safe ETL Scraper (Template)")
+    p.add_argument("--infile", required=True, help="Input CSV with at least 'genus','species'")
+    p.add_argument("--outfile", default="orchid_enriched.csv", help="Output CSV with enriched fields")
+    args = p.parse_args()
+
+    enrich_csv(args.infile, args.outfile)

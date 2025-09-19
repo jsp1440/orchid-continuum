@@ -1,0 +1,199 @@
+{% extends "layout.html" %}
+{% set page_title = "SQL Console" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="terminal" class="me-2"></i>
+                    SQL Console - Ultimate Database Control
+                </h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-light">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>Execute Raw SQL Query
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="query" class="form-label">SQL Query</label>
+                            <textarea class="form-control bg-dark text-light border-secondary font-monospace" 
+                                      id="query" 
+                                      name="query" 
+                                      rows="8" 
+                                      placeholder="Enter your SQL query here..."
+                                      required>{{ query }}</textarea>
+                            <div class="form-text">
+                                <strong>Warning:</strong> Direct database access. Changes are permanent.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="play" class="me-1"></i>Execute Query
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearQuery()">
+                                <i data-feather="x" class="me-1"></i>Clear
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="insertSampleQuery()">
+                                <i data-feather="help-circle" class="me-1"></i>Sample Query
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-danger" role="alert">
+                <h5><i data-feather="alert-triangle" class="me-1"></i>Query Error</h5>
+                <pre class="mb-0"><code>{{ error }}</code></pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="check-circle" class="me-2"></i>Query Results
+                    </h5>
+                    {% if results.columns %}
+                    <span class="badge bg-success">{{ results.count }} rows</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if results.columns %}
+                        <!-- Table results -->
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        {% for column in results.columns %}
+                                        <th>{{ column }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in results.rows %}
+                                    <tr>
+                                        {% for cell in row %}
+                                        <td>{{ cell if cell is not none else 'NULL' }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <!-- Non-table results -->
+                        <div class="alert alert-success">
+                            <h6>{{ results.message }}</h6>
+                            {% if results.rows_affected %}
+                            <p class="mb-0">Rows affected: {{ results.rows_affected }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Query Examples -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="book" class="me-2"></i>Quick Query Examples
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Data Exploration</h6>
+                            <div class="list-group list-group-flush">
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT * FROM orchid_record LIMIT 10;')">
+                                    View first 10 orchid records
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT genus, COUNT(*) as count FROM orchid_record GROUP BY genus ORDER BY count DESC;')">
+                                    Count orchids by genus
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\';')">
+                                    Show all tables
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Analysis Queries</h6>
+                            <div class="list-group list-group-flush">
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT ai_confidence, COUNT(*) FROM orchid_record WHERE ai_confidence IS NOT NULL GROUP BY ai_confidence ORDER BY ai_confidence;')">
+                                    AI confidence distribution
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT * FROM orchid_record WHERE is_featured = true;')">
+                                    Featured orchids
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" 
+                                        onclick="setQuery('SELECT rhs_verification_status, COUNT(*) FROM orchid_record GROUP BY rhs_verification_status;')">
+                                    RHS verification status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function clearQuery() {
+    document.getElementById('query').value = '';
+}
+
+function setQuery(query) {
+    document.getElementById('query').value = query;
+}
+
+function insertSampleQuery() {
+    const sampleQuery = `-- Sample query: Get orchids with high AI confidence
+SELECT 
+    display_name,
+    scientific_name,
+    genus,
+    species,
+    ai_confidence,
+    created_at
+FROM orchid_record 
+WHERE ai_confidence > 0.8
+ORDER BY ai_confidence DESC
+LIMIT 20;`;
+    
+    document.getElementById('query').value = sampleQuery;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Game Settings - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Settings Header -->
+            <div class="d-flex align-items-center mb-4">
+                <a href="/games" class="btn btn-outline-secondary me-3">
+                    <i data-feather="arrow-left" class="me-2"></i>Back to Games
+                </a>
+                <h1 class="h2 mb-0">
+                    <i data-feather="settings" class="me-2 text-primary"></i>
+                    Game Settings
+                </h1>
+            </div>
+            
+            <!-- Settings Form -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="sliders" class="me-2"></i>
+                        Customize Your Gaming Experience
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="settingsForm">
+                        <!-- Audio Settings -->
+                        <div class="settings-section mb-4">
+                            <h6 class="settings-section-title">
+                                <i data-feather="volume-2" class="me-2 text-success"></i>
+                                Audio Settings
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="soundEffects" 
+                                               name="sound_effects" {{ 'checked' if settings.sound_effects }}>
+                                        <label class="form-check-label" for="soundEffects">
+                                            Sound Effects
+                                        </label>
+                                        <small class="form-text text-muted d-block">Card flip and match sounds</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="backgroundMusic" 
+                                               name="background_music" {{ 'checked' if settings.background_music }}>
+                                        <label class="form-check-label" for="backgroundMusic">
+                                            Background Music
+                                        </label>
+                                        <small class="form-text text-muted d-block">Relaxing orchid-themed music</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Visual Settings -->
+                        <div class="settings-section mb-4">
+                            <h6 class="settings-section-title">
+                                <i data-feather="eye" class="me-2 text-info"></i>
+                                Visual Settings
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="animations" 
+                                               name="animations" {{ 'checked' if settings.animations }}>
+                                        <label class="form-check-label" for="animations">
+                                            Card Animations
+                                        </label>
+                                        <small class="form-text text-muted d-block">Smooth card flipping and matching effects</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="timerDisplay" 
+                                               name="timer_display" {{ 'checked' if settings.timer_display }}>
+                                        <label class="form-check-label" for="timerDisplay">
+                                            Show Timer
+                                        </label>
+                                        <small class="form-text text-muted d-block">Display countdown timer during games</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-6">
+                                    <label for="theme" class="form-label">Theme</label>
+                                    <select class="form-select" id="theme" name="theme">
+                                        <option value="dark" {{ 'selected' if settings.theme == 'dark' }}>Dark Theme</option>
+                                        <option value="light" {{ 'selected' if settings.theme == 'light' }}>Light Theme</option>
+                                        <option value="orchid" {{ 'selected' if settings.theme == 'orchid' }}>Orchid Theme</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="cardBackStyle" class="form-label">Card Back Design</label>
+                                    <select class="form-select" id="cardBackStyle" name="card_back_style">
+                                        <option value="orchid" {{ 'selected' if settings.card_back_style == 'orchid' }}>Orchid Pattern</option>
+                                        <option value="botanical" {{ 'selected' if settings.card_back_style == 'botanical' }}>Botanical</option>
+                                        <option value="geometric" {{ 'selected' if settings.card_back_style == 'geometric' }}>Geometric</option>
+                                        <option value="classic" {{ 'selected' if settings.card_back_style == 'classic' }}>Classic</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gameplay Settings -->
+                        <div class="settings-section mb-4">
+                            <h6 class="settings-section-title">
+                                <i data-feather="play" class="me-2 text-warning"></i>
+                                Gameplay Settings
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="difficultyLevel" class="form-label">Default Difficulty</label>
+                                    <select class="form-select" id="difficultyLevel" name="difficulty_level">
+                                        <option value="easy" {{ 'selected' if settings.difficulty_level == 'easy' }}>Easy</option>
+                                        <option value="medium" {{ 'selected' if settings.difficulty_level == 'medium' }}>Medium</option>
+                                        <option value="hard" {{ 'selected' if settings.difficulty_level == 'hard' }}>Hard</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-4">
+                                        <input class="form-check-input" type="checkbox" id="showHints" 
+                                               name="show_hints" {{ 'checked' if settings.show_hints }}>
+                                        <label class="form-check-label" for="showHints">
+                                            Show Hints
+                                        </label>
+                                        <small class="form-text text-muted d-block">Display helpful hints for rebus puzzles</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="autoSave" 
+                                               name="auto_save" {{ 'checked' if settings.auto_save }}>
+                                        <label class="form-check-label" for="autoSave">
+                                            Auto-Save Progress
+                                        </label>
+                                        <small class="form-text text-muted d-block">Automatically save game progress</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="save" class="me-2"></i>
+                                Save Settings
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="resetToDefaults()">
+                                <i data-feather="refresh-cw" class="me-2"></i>
+                                Reset to Defaults
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Access Links -->
+            <div class="row g-3 mt-4">
+                <div class="col-md-4">
+                    <a href="/games/help" class="btn btn-outline-info w-100">
+                        <i data-feather="help-circle" class="me-2"></i>
+                        How to Play
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/games/faq" class="btn btn-outline-success w-100">
+                        <i data-feather="message-circle" class="me-2"></i>
+                        FAQ
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/games/bug-report" class="btn btn-outline-warning w-100">
+                        <i data-feather="flag" class="me-2"></i>
+                        Report Bug
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.settings-section {
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.settings-section-title {
+    color: var(--bs-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+}
+
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+
+<script>
+document.getElementById('settingsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const settings = {};
+    
+    // Convert form data to settings object
+    for (let [key, value] of formData.entries()) {
+        if (this.querySelector(`[name="${key}"]`).type === 'checkbox') {
+            settings[key] = true;
+        } else {
+            settings[key] = value;
+        }
+    }
+    
+    // Add unchecked checkboxes as false
+    const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        if (!formData.has(checkbox.name)) {
+            settings[checkbox.name] = false;
+        }
+    });
+    
+    // Save settings
+    fetch('/api/games/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showMessage('Settings saved successfully!', 'success');
+            
+            // Apply immediate visual changes if needed
+            if (settings.theme !== '{{ settings.theme }}') {
+                showMessage('Theme will take effect on next page load', 'info');
+            }
+        } else {
+            showMessage('Error saving settings: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error saving settings. Please try again.', 'error');
+    });
+});
+
+function resetToDefaults() {
+    if (confirm('Reset all settings to defaults? This cannot be undone.')) {
+        const defaults = {
+            sound_effects: true,
+            background_music: false,
+            animations: true,
+            difficulty_level: 'medium',
+            auto_save: true,
+            show_hints: true,
+            timer_display: true,
+            card_back_style: 'orchid',
+            theme: 'dark'
+        };
+        
+        // Update form fields
+        Object.entries(defaults).forEach(([key, value]) => {
+            const field = document.querySelector(`[name="${key}"]`);
+            if (field) {
+                if (field.type === 'checkbox') {
+                    field.checked = value;
+                } else {
+                    field.value = value;
+                }
+            }
+        });
+        
+        showMessage('Settings reset to defaults. Click "Save Settings" to apply.', 'info');
+    }
+}
+
+function showMessage(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

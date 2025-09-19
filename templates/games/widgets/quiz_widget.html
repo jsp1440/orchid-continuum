@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Quiz Widget</title>
+    <style>
+        .orchid-quiz-widget {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 2px solid #7A4B8E;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .quiz-header h3 {
+            color: #7A4B8E;
+            margin: 0 0 10px 0;
+        }
+        .orchid-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .options {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option {
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .option:hover {
+            border-color: #7A4B8E;
+            background: #f8f9fa;
+        }
+        .option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .quiz-controls {
+            text-align: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: #7A4B8E;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #6a3d7a;
+        }
+        .score {
+            text-align: center;
+            font-size: 18px;
+            color: #7A4B8E;
+            margin-bottom: 15px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="orchid-quiz-widget">
+        <div class="quiz-header">
+            <h3>🌺 Orchid Identification Quiz</h3>
+            <div class="score">Score: <span id="score">0</span>/<span id="total">0</span></div>
+        </div>
+        
+        <div id="quiz-content">
+            <div class="loading">Loading quiz question...</div>
+        </div>
+        
+        <div class="quiz-controls">
+            <button class="btn btn-primary" onclick="loadQuestion()">New Question</button>
+        </div>
+    </div>
+
+    <script>
+        let currentScore = 0;
+        let totalQuestions = 0;
+        let answered = false;
+
+        async function loadQuestion() {
+            document.getElementById('quiz-content').innerHTML = '<div class="loading">Loading quiz question...</div>';
+            answered = false;
+            
+            try {
+                const response = await fetch('/games/api/quiz-question');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('quiz-content').innerHTML = '<div class="loading">No questions available</div>';
+                    return;
+                }
+                
+                const html = `
+                    ${data.image_url ? `<img src="${data.image_url}" alt="Orchid" class="orchid-image" onerror="this.style.display='none'">` : ''}
+                    <div class="question">What is the name of this orchid?</div>
+                    <div class="options">
+                        ${data.options.map(option => `
+                            <div class="option" onclick="selectAnswer('${option}', '${data.correct_answer}')">${option}</div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                document.getElementById('quiz-content').innerHTML = html;
+                totalQuestions++;
+                document.getElementById('total').textContent = totalQuestions;
+            } catch (error) {
+                document.getElementById('quiz-content').innerHTML = '<div class="loading">Error loading question</div>';
+            }
+        }
+
+        function selectAnswer(selected, correct) {
+            if (answered) return;
+            answered = true;
+            
+            const options = document.querySelectorAll('.option');
+            options.forEach(option => {
+                if (option.textContent === correct) {
+                    option.classList.add('correct');
+                } else if (option.textContent === selected && selected !== correct) {
+                    option.classList.add('incorrect');
+                }
+                option.style.pointerEvents = 'none';
+            });
+            
+            if (selected === correct) {
+                currentScore++;
+                document.getElementById('score').textContent = currentScore;
+            }
+            
+            setTimeout(() => {
+                loadQuestion();
+            }, 2000);
+        }
+
+        // Load first question
+        loadQuestion();
+    </script>
+</body>
+</html>

@@ -1,0 +1,624 @@
+{% extends "base.html" %}
+
+{% block title %}My Collection Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-info">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="folder" class="me-2"></i>
+                            My Collection Hub
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('photos')">
+                                <i data-feather="image" class="me-1"></i>Photos
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('editor')">
+                                <i data-feather="edit" class="me-1"></i>Editor
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('publish')">
+                                <i data-feather="send" class="me-1"></i>Publish
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('page')">
+                                <i data-feather="layout" class="me-1"></i>My Page
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Manage your personal orchid collection, edit photos, and publish to various channels</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Tab Content Container -->
+                    <div id="collection-content" style="min-height: 600px;">
+                        <!-- Content will be loaded dynamically based on tab -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'photos';
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update URL without refresh
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    // Load content for tab
+    loadTabContent(tab);
+    
+    // Emit event for embed integration
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_collection_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('collection-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-info" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'photos':
+                await renderPhotosTab();
+                break;
+            case 'editor':
+                await renderEditorTab();
+                break;
+            case 'publish':
+                await renderPublishTab();
+                break;
+            case 'page':
+                await renderPageTab();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderPhotosTab() {
+    document.getElementById('collection-content').innerHTML = `
+        <div class="p-3">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4>My Orchid Photos</h4>
+                    <p class="text-muted">Manage your personal orchid photo collection</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-info" onclick="uploadNewPhoto()">
+                        <i data-feather="upload" class="me-1"></i>Upload Photos
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Upload Area -->
+            <div class="card bg-secondary mb-4" style="border: 2px dashed #6c757d;">
+                <div class="card-body text-center py-5">
+                    <i data-feather="upload-cloud" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                    <h5>Drag & Drop Photos Here</h5>
+                    <p class="text-muted">Or click to browse and select files</p>
+                    <input type="file" id="photo-upload" multiple accept="image/*" style="display: none;" onchange="handleFileUpload()">
+                    <button class="btn btn-outline-info" onclick="document.getElementById('photo-upload').click()">
+                        Select Files
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Photo Grid -->
+            <div class="row" id="user-photos">
+                <!-- Sample user photos -->
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card bg-secondary h-100">
+                        <div class="position-relative">
+                            <img src="/static/images/orchid_placeholder.svg" class="card-img-top" style="height: 200px; object-fit: cover;">
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light" data-bs-toggle="dropdown">
+                                        <i data-feather="more-vertical" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="editPhoto('1')">Edit</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="markForPublish('1')">Mark for Publishing</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="deletePhoto('1')">Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="position-absolute bottom-0 start-0 p-2">
+                                <span class="badge bg-success" id="publish-status-1">Private</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">Cattleya Hybrid</h6>
+                            <p class="card-text small text-muted">Uploaded 2 days ago</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Indoor growing</small>
+                                <span class="badge bg-info">Original</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card bg-secondary h-100">
+                        <div class="position-relative">
+                            <img src="/static/images/orchid_placeholder.svg" class="card-img-top" style="height: 200px; object-fit: cover;">
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light" data-bs-toggle="dropdown">
+                                        <i data-feather="more-vertical" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="editPhoto('2')">Edit</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="markForPublish('2')">Mark for Publishing</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="deletePhoto('2')">Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="position-absolute bottom-0 start-0 p-2">
+                                <span class="badge bg-warning" id="publish-status-2">Pending Review</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">Phalaenopsis White</h6>
+                            <p class="card-text small text-muted">Uploaded 1 week ago</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Greenhouse</small>
+                                <span class="badge bg-warning">Edited</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderEditorTab() {
+    document.getElementById('collection-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <!-- Photo Library Sidebar -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Photo Library</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="photo-thumbnail mb-2" onclick="loadPhotoInEditor('1')">
+                                <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded" style="height: 60px; width: 100%; object-fit: cover;">
+                                <small class="d-block text-muted">Cattleya Hybrid</small>
+                            </div>
+                            <div class="photo-thumbnail mb-2" onclick="loadPhotoInEditor('2')">
+                                <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded" style="height: 60px; width: 100%; object-fit: cover;">
+                                <small class="d-block text-muted">Phalaenopsis White</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <!-- Main Editor Canvas -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Photo Editor</h6>
+                        </div>
+                        <div class="card-body text-center">
+                            <div id="editor-canvas" style="height: 400px; background: #333; border-radius: 8px; position: relative;">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="text-center text-light">
+                                        <i data-feather="image" style="width: 48px; height: 48px;"></i>
+                                        <p class="mt-2">Select a photo to start editing</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <!-- Editor Tools -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Editing Tools</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Brightness</label>
+                                <input type="range" class="form-range" min="-100" max="100" value="0" id="brightness-slider">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Contrast</label>
+                                <input type="range" class="form-range" min="-100" max="100" value="0" id="contrast-slider">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Saturation</label>
+                                <input type="range" class="form-range" min="-100" max="100" value="0" id="saturation-slider">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Crop</label>
+                                <div class="btn-group w-100" role="group">
+                                    <button type="button" class="btn btn-outline-light btn-sm">Square</button>
+                                    <button type="button" class="btn btn-outline-light btn-sm">4:3</button>
+                                    <button type="button" class="btn btn-outline-light btn-sm">16:9</button>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-sm" onclick="saveEdits()">Save Changes</button>
+                                <button class="btn btn-outline-light btn-sm" onclick="resetEdits()">Reset</button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="cancelEdit()">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderPublishTab() {
+    document.getElementById('collection-content').innerHTML = `
+        <div class="p-3">
+            <h4>Publishing Dashboard</h4>
+            <p class="text-muted">Choose where to publish your orchid photos</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Selected Photos for Publishing -->
+                    <div class="card bg-secondary mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Selected for Publishing</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="selected-photos">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card bg-dark">
+                                        <img src="/static/images/orchid_placeholder.svg" class="card-img-top" style="height: 120px; object-fit: cover;">
+                                        <div class="card-body p-2">
+                                            <small>Cattleya Hybrid</small>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="newsletter-1" checked>
+                                                <label class="form-check-label small" for="newsletter-1">Newsletter</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="website-1">
+                                                <label class="form-check-label small" for="website-1">Website</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card bg-dark">
+                                        <img src="/static/images/orchid_placeholder.svg" class="card-img-top" style="height: 120px; object-fit: cover;">
+                                        <div class="card-body p-2">
+                                            <small>Phalaenopsis White</small>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="newsletter-2">
+                                                <label class="form-check-label small" for="newsletter-2">Newsletter</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="checkbox" id="website-2" checked>
+                                                <label class="form-check-label small" for="website-2">Website</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Publishing Options -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Publishing Channels</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="publish-newsletter">
+                                <label class="form-check-label" for="publish-newsletter">
+                                    <i data-feather="mail" class="me-2" style="width: 16px; height: 16px;"></i>
+                                    Monthly Newsletter
+                                </label>
+                                <small class="d-block text-muted">Feature in next newsletter</small>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="publish-website">
+                                <label class="form-check-label" for="publish-website">
+                                    <i data-feather="globe" class="me-2" style="width: 16px; height: 16px;"></i>
+                                    Public Website Gallery
+                                </label>
+                                <small class="d-block text-muted">Add to main gallery</small>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="publish-member">
+                                <label class="form-check-label" for="publish-member">
+                                    <i data-feather="users" class="me-2" style="width: 16px; height: 16px;"></i>
+                                    Member Gallery
+                                </label>
+                                <small class="d-block text-muted">Share with members only</small>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="publish-personal">
+                                <label class="form-check-label" for="publish-personal">
+                                    <i data-feather="user" class="me-2" style="width: 16px; height: 16px;"></i>
+                                    My Personal Page
+                                </label>
+                                <small class="d-block text-muted">Show on your profile</small>
+                            </div>
+                            
+                            <hr>
+                            <div class="d-grid">
+                                <button class="btn btn-info" onclick="submitForPublication()">
+                                    <i data-feather="send" class="me-1"></i>Submit for Review
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Publishing Status -->
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Publication Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Pending Review</span>
+                                <span class="badge bg-warning">3</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Approved</span>
+                                <span class="badge bg-success">12</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Published</span>
+                                <span class="badge bg-info">8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderPageTab() {
+    document.getElementById('collection-content').innerHTML = `
+        <div class="p-3">
+            <h4>My Personal Orchid Page</h4>
+            <p class="text-muted">Customize your personal orchid showcase page</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Page Preview -->
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Page Preview</h6>
+                            <button class="btn btn-outline-light btn-sm" onclick="openPagePreview()">
+                                <i data-feather="external-link" class="me-1"></i>Full Preview
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div style="border: 1px solid #666; border-radius: 8px; padding: 20px; background: #2a2a2a;">
+                                <!-- Mock Personal Page -->
+                                <div class="text-center mb-4">
+                                    <div class="bg-info rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i data-feather="user" style="width: 40px; height: 40px;"></i>
+                                    </div>
+                                    <h5 class="mt-2">Your Name</h5>
+                                    <p class="text-muted">Orchid Enthusiast since 2020</p>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4 text-center">
+                                        <h6>12</h6>
+                                        <small class="text-muted">Photos</small>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <h6>8</h6>
+                                        <small class="text-muted">Orchids</small>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <h6>3</h6>
+                                        <small class="text-muted">Favorites</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-4 mb-2">
+                                        <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded" style="height: 80px; width: 100%; object-fit: cover;">
+                                    </div>
+                                    <div class="col-4 mb-2">
+                                        <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded" style="height: 80px; width: 100%; object-fit: cover;">
+                                    </div>
+                                    <div class="col-4 mb-2">
+                                        <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded" style="height: 80px; width: 100%; object-fit: cover;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Page Customization -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Customize Your Page</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Display Name</label>
+                                <input type="text" class="form-control" placeholder="Your Name">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Bio</label>
+                                <textarea class="form-control" rows="3" placeholder="Tell us about your orchid journey..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Page Theme</label>
+                                <select class="form-select">
+                                    <option>Dark (Current)</option>
+                                    <option>Light</option>
+                                    <option>Nature</option>
+                                    <option>Minimal</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Featured Photos</label>
+                                <div class="small text-muted mb-2">Select up to 6 photos to feature</div>
+                                <div class="row">
+                                    <div class="col-6 mb-2">
+                                        <div class="border border-info rounded p-2 text-center" style="height: 60px;">
+                                            <i data-feather="plus" class="text-muted"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="border border-info rounded p-2 text-center" style="height: 60px;">
+                                            <i data-feather="plus" class="text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="page-public">
+                                <label class="form-check-label" for="page-public">
+                                    Make page publicly visible
+                                </label>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-info" onclick="savePageSettings()">Save Changes</button>
+                                <button class="btn btn-outline-light" onclick="resetPageSettings()">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Page URL -->
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-body">
+                            <h6>Your Page URL</h6>
+                            <div class="input-group">
+                                <span class="input-group-text">orchidcontinuum.com/member/</span>
+                                <input type="text" class="form-control" placeholder="username">
+                            </div>
+                            <small class="text-muted">Share this URL with others to show your collection</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+// Photo management functions
+function handleFileUpload() {
+    const files = document.getElementById('photo-upload').files;
+    console.log('Uploading files:', files);
+    // Implement file upload logic
+}
+
+function editPhoto(photoId) {
+    switchTab('editor');
+    setTimeout(() => loadPhotoInEditor(photoId), 100);
+}
+
+function loadPhotoInEditor(photoId) {
+    console.log('Loading photo in editor:', photoId);
+    // Implement photo loading in editor
+}
+
+function markForPublish(photoId) {
+    console.log('Marking for publish:', photoId);
+    document.getElementById(`publish-status-${photoId}`).className = 'badge bg-warning';
+    document.getElementById(`publish-status-${photoId}`).textContent = 'Pending Review';
+}
+
+function deletePhoto(photoId) {
+    if (confirm('Are you sure you want to delete this photo?')) {
+        console.log('Deleting photo:', photoId);
+        // Implement photo deletion
+    }
+}
+
+function saveEdits() {
+    console.log('Saving photo edits');
+    alert('Photo edits saved successfully!');
+}
+
+function resetEdits() {
+    console.log('Resetting photo edits');
+    // Reset all sliders
+    document.getElementById('brightness-slider').value = 0;
+    document.getElementById('contrast-slider').value = 0;
+    document.getElementById('saturation-slider').value = 0;
+}
+
+function cancelEdit() {
+    switchTab('photos');
+}
+
+function submitForPublication() {
+    console.log('Submitting for publication');
+    alert('Photos submitted for review! You will be notified when they are approved.');
+}
+
+function savePageSettings() {
+    console.log('Saving page settings');
+    alert('Page settings saved successfully!');
+}
+
+function resetPageSettings() {
+    console.log('Resetting page settings');
+}
+
+function openPagePreview() {
+    window.open('/member/preview', '_blank');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    // Set active button
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "layout.html" %}
+{% set page_title = "My Profile Settings" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="user" class="me-2"></i>
+                    Profile Settings
+                </h1>
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-light">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Profile Form -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="edit" class="me-2"></i>
+                        Update Your Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" 
+                                           class="form-control bg-dark text-light border-secondary" 
+                                           id="first_name" 
+                                           name="first_name"
+                                           value="{{ current_user.first_name or '' }}"
+                                           placeholder="Your first name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" 
+                                           class="form-control bg-dark text-light border-secondary" 
+                                           id="last_name" 
+                                           name="last_name"
+                                           value="{{ current_user.last_name or '' }}"
+                                           placeholder="Your last name">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" 
+                                   class="form-control bg-dark text-light border-secondary" 
+                                   id="email" 
+                                   value="{{ current_user.email }}"
+                                   readonly>
+                            <div class="form-text">Email cannot be changed. Contact support if needed.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="experience_level" class="form-label">Your Orchid Experience</label>
+                            <select class="form-select bg-dark text-light border-secondary" 
+                                    id="experience_level" 
+                                    name="experience_level">
+                                <option value="beginner" {% if current_user.experience_level == 'beginner' %}selected{% endif %}>
+                                    Beginner - Just starting with orchids
+                                </option>
+                                <option value="intermediate" {% if current_user.experience_level == 'intermediate' %}selected{% endif %}>
+                                    Intermediate - Growing orchids for a few years
+                                </option>
+                                <option value="expert" {% if current_user.experience_level == 'expert' %}selected{% endif %}>
+                                    Expert - Advanced grower or professional
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="orchid_interests" class="form-label">Your Orchid Interests</label>
+                            <textarea class="form-control bg-dark text-light border-secondary" 
+                                      id="orchid_interests" 
+                                      name="orchid_interests" 
+                                      rows="3"
+                                      placeholder="What types of orchids interest you most? (e.g., Phalaenopsis, Cattleya, species orchids, hybrids, etc.)">{{ current_user.orchid_interests or '' }}</textarea>
+                            <div class="form-text">Help us personalize your experience and connect you with relevant content.</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="bio" class="form-label">About You</label>
+                            <textarea class="form-control bg-dark text-light border-secondary" 
+                                      id="bio" 
+                                      name="bio" 
+                                      rows="4"
+                                      placeholder="Tell us about your orchid journey, growing setup, favorite species, or anything else you'd like to share with the community...">{{ current_user.bio or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="save" class="me-2"></i>
+                                Save Changes
+                            </button>
+                            <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Info Sidebar -->
+        <div class="col-lg-4">
+            <!-- Account Info -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="info" class="me-2"></i>
+                        Account Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-dark table-sm">
+                        <tr>
+                            <td><strong>Orchid ID:</strong></td>
+                            <td class="text-primary">{{ current_user.user_id }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Member Since:</strong></td>
+                            <td>{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Uploads:</strong></td>
+                            <td>{{ current_user.upload_count or 0 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Account Status:</strong></td>
+                            <td>
+                                {% if current_user.account_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Privacy & Settings -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="shield" class="me-2"></i>
+                        Privacy & Security
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        Your orchid contributions are part of the public database to help the community. 
+                        Personal information remains private.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-warning btn-sm" disabled>
+                            <i data-feather="key" class="me-1"></i>Change Password
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" disabled>
+                            <i data-feather="download" class="me-1"></i>Download My Data
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                            <i data-feather="user-x" class="me-1"></i>Delete Account
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-2">Password and data management features coming soon.</small>
+                </div>
+            </div>
+
+            <!-- Community Guidelines -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="users" class="me-2"></i>
+                        Community Guidelines
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="small list-unstyled">
+                        <li class="mb-2">• Upload clear, well-lit orchid photos</li>
+                        <li class="mb-2">• Provide accurate information when known</li>
+                        <li class="mb-2">• Respect copyright - only upload your own photos</li>
+                        <li class="mb-2">• Help identify and verify other contributions</li>
+                        <li class="mb-2">• Share growing tips and experiences</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

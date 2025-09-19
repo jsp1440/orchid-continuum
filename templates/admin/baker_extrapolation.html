@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Baker Culture Extrapolation System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-4">
+                <h1 class="mb-0">
+                    <span class="orchid-icon">👨‍🌾</span>
+                    Baker Culture Extrapolation System
+                </h1>
+                <div class="ms-auto">
+                    <span class="badge bg-success">Expert Knowledge Extension</span>
+                </div>
+            </div>
+            <p class="lead text-muted">
+                Extend Charles & Margaret Baker's expert culture sheet knowledge to additional genera and orchids through AI analysis and taxonomic relationships.
+            </p>
+        </div>
+    </div>
+
+    <!-- Analysis Dashboard -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="database"></i>
+                        Baker Sources
+                    </h5>
+                    <h2 class="mb-0" id="baker-sources">128</h2>
+                    <small>Culture sheets available</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="target"></i>
+                        Candidates
+                    </h5>
+                    <h2 class="mb-0" id="total-candidates">Loading...</h2>
+                    <small>Orchids for extrapolation</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i data-feather="trending-up"></i>
+                        Coverage
+                    </h5>
+                    <h2 class="mb-0" id="coverage-percent">Calculating...</h2>
+                    <small>Potential coverage increase</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extrapolation Strategies -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="git-branch"></i>
+                        Genus-Based Extrapolation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Apply Baker culture knowledge to related species within the same genus.</p>
+                    
+                    <div id="top-genera" class="mb-3">
+                        <h6>Top Target Genera:</h6>
+                        <div class="genera-list">Loading...</div>
+                    </div>
+                    
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="genus-input" placeholder="Enter genus name (e.g., Cattleya)">
+                        <button class="btn btn-primary" type="button" onclick="extrapolateGenus()">
+                            <i data-feather="play"></i>
+                            Extrapolate Genus
+                        </button>
+                    </div>
+                    
+                    <div id="genus-results" class="alert" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="thermometer"></i>
+                        Climate-Based Extrapolation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Apply culture knowledge to orchids with similar climate preferences.</p>
+                    
+                    <div id="climate-opportunities" class="mb-3">
+                        <h6>Climate Opportunities:</h6>
+                        <div class="climate-list">Loading...</div>
+                    </div>
+                    
+                    <div class="input-group mb-3">
+                        <select class="form-select" id="climate-select">
+                            <option value="">Select climate preference</option>
+                            <option value="cool">Cool</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="warm">Warm</option>
+                        </select>
+                        <button class="btn btn-success" type="button" onclick="extrapolateClimate()">
+                            <i data-feather="cloud"></i>
+                            Extrapolate Climate
+                        </button>
+                    </div>
+                    
+                    <div id="climate-results" class="alert" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart-2"></i>
+                        Extrapolation Analysis
+                    </h5>
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshAnalysis()">
+                        <i data-feather="refresh-cw"></i>
+                        Refresh Analysis
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="analysis-results">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading analysis...</span>
+                            </div>
+                            <div class="mt-2">Analyzing Baker culture extrapolation opportunities...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="lightbulb"></i>
+                        System Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recommendations">
+                        <p class="text-muted">Recommendations will appear after analysis...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Baker Extrapolation System JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    refreshAnalysis();
+});
+
+async function refreshAnalysis() {
+    try {
+        const response = await fetch('/api/baker-extrapolation/analyze');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateDashboard(data.report);
+            displayAnalysisResults(data.report);
+            showRecommendations(data.report.recommendations || []);
+        } else {
+            showError('Failed to load analysis: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Analysis error:', error);
+        showError('Unable to load analysis data');
+    }
+}
+
+function updateDashboard(report) {
+    const summary = report.summary || {};
+    
+    document.getElementById('total-candidates').textContent = (summary.total_candidates || 0).toLocaleString();
+    document.getElementById('baker-sources').textContent = summary.baker_sources || 128;
+    
+    // Calculate coverage percentage
+    const bakerSources = summary.baker_sources || 128;
+    const totalCandidates = summary.total_candidates || 0;
+    const coveragePercent = totalCandidates > 0 ? Math.round((bakerSources / (bakerSources + totalCandidates)) * 100) : 0;
+    document.getElementById('coverage-percent').textContent = coveragePercent + '%';
+    
+    // Update top genera
+    const topGenera = report.top_extrapolation_genera || [];
+    const generaHtml = topGenera.slice(0, 5).map(([genus, count]) => 
+        `<div class="d-flex justify-content-between">
+            <span>${genus}</span>
+            <span class="badge bg-primary">${count}</span>
+        </div>`
+    ).join('');
+    document.querySelector('.genera-list').innerHTML = generaHtml || '<div class="text-muted">No opportunities found</div>';
+    
+    // Update climate opportunities
+    const climateOpportunities = report.climate_extrapolation_potential || {};
+    const climateHtml = Object.entries(climateOpportunities)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3)
+        .map(([climate, count]) => 
+            `<div class="d-flex justify-content-between">
+                <span class="text-capitalize">${climate}</span>
+                <span class="badge bg-success">${count}</span>
+            </div>`
+        ).join('');
+    document.querySelector('.climate-list').innerHTML = climateHtml || '<div class="text-muted">No opportunities found</div>';
+}
+
+function displayAnalysisResults(report) {
+    const summary = report.summary || {};
+    
+    const html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Extrapolation Opportunities</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Same Genus</span>
+                        <span class="badge bg-primary">${summary.same_genus_opportunities || 0}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Similar Climate</span>
+                        <span class="badge bg-success">${summary.climate_opportunities || 0}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Similar Growth Habit</span>
+                        <span class="badge bg-info">${summary.growth_opportunities || 0}</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Coverage Analysis</h6>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-primary" style="width: ${Math.min((summary.same_genus_opportunities || 0) / Math.max(summary.total_candidates || 1, 1) * 100, 100)}%">
+                        Same Genus
+                    </div>
+                </div>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: ${Math.min((summary.climate_opportunities || 0) / Math.max(summary.total_candidates || 1, 1) * 100, 100)}%">
+                        Climate
+                    </div>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-info" style="width: ${Math.min((summary.growth_opportunities || 0) / Math.max(summary.total_candidates || 1, 1) * 100, 100)}%">
+                        Growth Habit
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('analysis-results').innerHTML = html;
+}
+
+function showRecommendations(recommendations) {
+    const html = recommendations.length > 0 
+        ? `<ol class="mb-0">${recommendations.map(rec => `<li class="mb-2">${rec}</li>`).join('')}</ol>`
+        : '<p class="text-muted mb-0">No specific recommendations at this time.</p>';
+    
+    document.getElementById('recommendations').innerHTML = html;
+}
+
+async function extrapolateGenus() {
+    const genus = document.getElementById('genus-input').value.trim();
+    if (!genus) return;
+    
+    const resultsDiv = document.getElementById('genus-results');
+    resultsDiv.style.display = 'block';
+    resultsDiv.className = 'alert alert-info';
+    resultsDiv.innerHTML = '<i data-feather="loader" class="rotating"></i> Processing genus extrapolation...';
+    feather.replace();
+    
+    try {
+        const response = await fetch(`/api/baker-extrapolation/batch-genus/${encodeURIComponent(genus)}?limit=20`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const results = data.results;
+            resultsDiv.className = 'alert alert-success';
+            resultsDiv.innerHTML = `
+                <h6>Genus Extrapolation Complete</h6>
+                <ul class="mb-0">
+                    <li>Processed: ${results.processed || 0} orchids</li>
+                    <li>Successful extrapolations: ${results.successful_extrapolations || 0}</li>
+                    <li>Failed: ${results.failed_extrapolations || 0}</li>
+                </ul>
+            `;
+        } else {
+            resultsDiv.className = 'alert alert-danger';
+            resultsDiv.innerHTML = `Error: ${data.error || 'Unknown error'}`;
+        }
+    } catch (error) {
+        resultsDiv.className = 'alert alert-danger';
+        resultsDiv.innerHTML = `Network error: ${error.message}`;
+    }
+    
+    feather.replace();
+}
+
+async function extrapolateClimate() {
+    const climate = document.getElementById('climate-select').value;
+    if (!climate) return;
+    
+    const resultsDiv = document.getElementById('climate-results');
+    resultsDiv.style.display = 'block';
+    resultsDiv.className = 'alert alert-info';
+    resultsDiv.innerHTML = '<i data-feather="loader" class="rotating"></i> Processing climate extrapolation...';
+    feather.replace();
+    
+    try {
+        const response = await fetch(`/api/baker-extrapolation/by-climate/${encodeURIComponent(climate)}?limit=50`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const results = data.results;
+            const avgConfidence = results.confidence_levels && results.confidence_levels.length > 0
+                ? (results.confidence_levels.reduce((a, b) => a + b, 0) / results.confidence_levels.length).toFixed(2)
+                : 'N/A';
+            
+            resultsDiv.className = 'alert alert-success';
+            resultsDiv.innerHTML = `
+                <h6>Climate Extrapolation Complete</h6>
+                <ul class="mb-0">
+                    <li>Processed: ${results.processed || 0} orchids</li>
+                    <li>Successful extrapolations: ${results.successful_extrapolations || 0}</li>
+                    <li>Average confidence: ${avgConfidence}</li>
+                </ul>
+            `;
+        } else {
+            resultsDiv.className = 'alert alert-danger';
+            resultsDiv.innerHTML = `Error: ${data.error || 'Unknown error'}`;
+        }
+    } catch (error) {
+        resultsDiv.className = 'alert alert-danger';
+        resultsDiv.innerHTML = `Network error: ${error.message}`;
+    }
+    
+    feather.replace();
+}
+
+function showError(message) {
+    document.getElementById('analysis-results').innerHTML = `
+        <div class="alert alert-danger">
+            <i data-feather="alert-circle"></i>
+            ${message}
+        </div>
+    `;
+    feather.replace();
+}
+
+// Add rotating animation for loader
+const style = document.createElement('style');
+style.textContent = `
+    .rotating {
+        animation: rotate 1s linear infinite;
+    }
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

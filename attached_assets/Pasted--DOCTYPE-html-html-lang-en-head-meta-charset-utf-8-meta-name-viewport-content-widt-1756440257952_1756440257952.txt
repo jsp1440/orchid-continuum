@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orchid Bingo</title>
+<style>
+  :root{
+    --bg: #fff8e1;
+    --tile: #ffe0b2;
+    --tile-border:#ef6c00;
+    --accent:#ef6c00;
+    --marked:#ffb74d;
+    --text:#3c2a1e;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0; padding:24px;
+    font-family: system-ui, Arial, sans-serif;
+    background:var(--bg); color:var(--text); text-align:center;
+  }
+  h1{ margin:.2em 0 .3em; color:var(--accent); font-size:clamp(1.4rem, 2.5vw, 2rem); }
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center;
+    margin: 8px 0 14px;
+  }
+  .controls > * { font-size:14px; }
+  button, select, input{
+    border:2px solid var(--accent);
+    background:#fff; color:var(--text);
+    padding:8px 12px; border-radius:10px; cursor:pointer;
+  }
+  button.primary{ background:var(--accent); color:white; font-weight:600; }
+  button[disabled]{ opacity:.5; cursor:not-allowed; }
+  #bingoBoard{
+    --n: 4; /* grid size (updated in JS) */
+    display:grid; grid-template-columns: repeat(var(--n), minmax(70px, 110px));
+    gap:10px; justify-content:center; margin:16px auto 8px; width:fit-content;
+  }
+  .tile{
+    aspect-ratio:1/1; width:100%;
+    background:var(--tile); border:2px solid var(--tile-border);
+    border-radius:10px; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:8px; font-size:clamp(12px, 2.2vw, 16px);
+    user-select:none; cursor:pointer; transition: transform .05s ease;
+    outline:none;
+  }
+  .tile:active{ transform:scale(.98); }
+  .tile.marked{
+    background:var(--marked); color:#fff; font-weight:700;
+    box-shadow: inset 0 0 0 2px #fff7;
+  }
+  .tile.free{
+    background:linear-gradient(135deg, #ffd89e, #ffc077 80%);
+    color:#3b2b1a; font-weight:800; border-style:dashed;
+  }
+  .status{
+    min-height:1.5em; margin: 8px 0 6px; font-weight:700; color:var(--accent);
+  }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body>
+
+<h1>Orchid Bingo</h1>
+
+<div class="controls" role="group" aria-label="Bingo Controls">
+  <label for="sizeSel" class="sr-only">Board size</label>
+  <select id="sizeSel" title="Board size">
+    <option value="4">4×4</option>
+    <option value="5">5×5 (Free center)</option>
+  </select>
+
+  <label for="seed" class="sr-only">Seed</label>
+  <input id="seed" type="text" placeholder="Seed (optional)" inputmode="numeric" pattern="[0-9]*" style="width:130px" />
+
+  <button id="newGame" class="primary">New Game</button>
+  <button id="clearMarks">Clear Marks</button>
+  <button id="copyCard">Copy Card Words</button>
+</div>
+
+<div id="bingoBoard" role="grid" aria-label="Bingo board"></div>
+<div class="status" id="status" aria-live="polite"></div>
+
+<script>
+/* =======================
+   ORCHID WORD BANK
+   Add/remove terms freely.
+   ======================= */
+const ORCHID_WORDS = [
+  "Cattleya", "Paphiopedilum", "Phalaenopsis", "Dendrobium", "Oncidium",
+  "Vanda", "Cymbidium", "Laelia", "Phragmipedium", "Dracula",
+  "Masdevallia", "Bulbophyllum", "Miltonia", "Gongora", "Stanhopea",
+  "Catasetum", "Pleurothallis", "Encyclia", "Brassia", "Epidendrum",
+  "Keiki", "Pseudobulb", "Aerial roots", "Spike", "Sepal",
+  "Labellum (lip)", "Column", "Pollinia", "Mycorrhizae", "Velamen",
+  "Epiphyte", "Monopodial", "Sympodial", "Inflorescence", "Raceme",
+  "Resupinate", "Clonal", "Mericlone", "Backbulb", "Sheath",
+  "Species", "Hybrid", "Intergeneric", "Fragrance", "Humidity",
+  "Mounted", "Medium", "Bark mix", "Sphagnum", "LECA"
+];
+
+const boardEl = document.getElementById('bingoBoard');
+const statusEl = document.getElementById('status');
+const sizeSel = document.getElementById('sizeSel');
+const seedInput = document.getElementById('seed');
+const btnNew = document.getElementById('newGame');
+const btnClear = document.getElementById('clearMarks');
+const btnCopy = document.getElementById('copyCard');
+
+let N = 4;               // grid size
+let tiles = [];          // tile elements
+let marks = 0n;          // bitmask of marked tiles
+let winMasks = [];       // precomputed winning masks
+let rng = mulberry32(seedFromString("")); // default RNG
+let currentWords = [];   // words currently on the board
+
+/* ======= Utilities ======= */
+function seedFromString(s){
+  if(!s) return Math.floor(Math.random()*2**31);
+  let h = 2166136261 >>> 0; // FNV-1a
+  for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+}
+function shuffleInPlace(arr, rnd){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(rnd()* (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function computeWinMasks(n){
+  const masks = [];
+  // rows
+  for(let r=0;r<n;r++){
+    let m = 0n;
+    for(let c=0;c<n;c++){ m |= 1n << BigInt(r*n + c); }
+    masks.push(m);
+  }
+  // cols
+  for(let c=0;c<n;c++){
+    let m = 0n;
+    for(let r=0;r<n;r++){ m |= 1n << BigInt(r*n + c); }
+    masks.push(m);
+  }
+  // diagonals
+  let d1=0n, d2=0n;
+  for(let i=0;i<n;i++){
+    d1 |= 1n << BigInt(i*n + i);
+    d2 |= 1n << BigInt(i*n + (n-1-i));
+  }
+  masks.push(d1, d2);
+  return masks;
+}
+function hasBingo(){
+  for(const m of winMasks){
+    if ((marks & m) === m) return true;
+  }
+  return false;
+}
+
+/* ======= Build Board ======= */
+function buildBoard(){
+  boardEl.style.setProperty('--n', N);
+  boardEl.innerHTML = '';
+  tiles = [];
+  marks = 0n;
+  winMasks = computeWinMasks(N);
+  statusEl.textContent = '';
+
+  // prepare words
+  const needed = N*N;
+  let list = ORCHID_WORDS.slice();    // copy
+  if (needed > list.length) {
+    // allow repeats if N*N exceeds bank (unlikely)
+    while(list.length < needed) list = list.concat(ORCHID_WORDS);
+  }
+  shuffleInPlace(list, rng);
+  currentWords = list.slice(0, needed);
+
+  // If 5x5, set Free center
+  let freeIdx = -1;
+  if (N === 5){
+    freeIdx = 12; // center of 25
+  }
+
+  // create tiles
+  for(let i=0;i<needed;i++){
+    const btn = document.createElement('button');
+    btn.className = 'tile';
+    btn.setAttribute('role','gridcell');
+    btn.setAttribute('aria-pressed','false');
+    btn.dataset.index = String(i);
+    btn.title = 'Toggle mark';
+
+    if (i === freeIdx){
+      btn.textContent = 'FREE';
+      btn.classList.add('free','marked');
+      btn.setAttribute('aria-pressed','true');
+      marks |= 1n << BigInt(i);
+    } else {
+      btn.textContent = currentWords[i];
+    }
+
+    btn.addEventListener('click', onTileToggle);
+    btn.addEventListener('keydown', onTileKey);
+
+    tiles.push(btn);
+    boardEl.appendChild(btn);
+  }
+
+  // focus the first tile for accessibility
+  tiles[0]?.focus();
+  announceIfBingo();
+}
+
+function onTileToggle(e){
+  const el = e.currentTarget;
+  const i = Number(el.dataset.index);
+  // don't allow unmarking FREE center
+  const isFree = el.classList.contains('free');
+  el.classList.toggle('marked', !el.classList.contains('marked') || isFree ? true : false);
+  if (el.classList.contains('marked')) {
+    marks |= 1n << BigInt(i);
+    el.setAttribute('aria-pressed','true');
+  } else if (!isFree) {
+    marks &= ~(1n << BigInt(i));
+    el.setAttribute('aria-pressed','false');
+  }
+  announceIfBingo();
+}
+
+function onTileKey(e){
+  const i = Number(e.currentTarget.dataset.index);
+  const r = Math.floor(i / N), c = i % N;
+  let target = i;
+  switch(e.key){
+    case 'ArrowRight': if (c < N-1) target = i+1; break;
+    case 'ArrowLeft':  if (c > 0)   target = i-1; break;
+    case 'ArrowDown':  if (r < N-1) target = i+N; break;
+    case 'ArrowUp':    if (r > 0)   target = i-N; break;
+    case ' ':
+    case 'Enter':
+      e.preventDefault();
+      e.currentTarget.click();
+      return;
+    default: return;
+  }
+  e.preventDefault();
+  tiles[target]?.focus();
+}
+
+function announceIfBingo(){
+  if (hasBingo()){
+    statusEl.textContent = '🌸 BINGO! Great job!';
+  } else {
+    statusEl.textContent = '';
+  }
+}
+
+/* ======= Controls ======= */
+sizeSel.addEventListener('change', ()=>{
+  N = Number(sizeSel.value);
+  const s = seedInput.value.trim();
+  rng = mulberry32(seedFromString(s));
+  buildBoard();
+});
+
+btnNew.addEventListener('click', ()=>{
+  const s = seedInput.value.trim();
+  rng = mulberry32(seedFromString(s || String(Math.floor(Math.random()*1e9))));
+  // If user provided no seed, fill with the auto one we used so they can reproduce
+  if (!s) seedInput.value = String(seedFromString(seedInput.value));
+  buildBoard();
+});
+
+btnClear.addEventListener('click', ()=>{
+  marks = 0n;
+  tiles.forEach((t, idx)=> {
+    const isFree = t.classList.contains('free');
+    t.classList.toggle('marked', isFree);
+    t.setAttribute('aria-pressed', isFree ? 'true' : 'false');
+    if (isFree) marks |= 1n << BigInt(idx);
+  });
+  announceIfBingo();
+});
+
+btnCopy.addEventListener('click', async ()=>{
+  try{
+    const words = tiles.map(t => t.textContent || '').join(', ');
+    await navigator.clipboard.writeText(words);
+    statusEl.textContent = 'Card words copied to clipboard.';
+    setTimeout(()=>{ if(!hasBingo()) statusEl.textContent = ''; }, 1500);
+  } catch {
+    statusEl.textContent = 'Could not copy (clipboard blocked).';
+  }
+});
+
+/* ======= Init ======= */
+(function init(){
+  N = Number(sizeSel.value);
+  rng = mulberry32(seedFromString(seedInput.value.trim()));
+  buildBoard();
+})();
+</script>
+</body>
+</html>

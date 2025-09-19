@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Care Helper - Ask Our AI Expert{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                <div class="card-header text-center" style="background: linear-gradient(135deg, #0f3460, #0e6b7d); border: none;">
+                    <h2 class="text-light mb-0">
+                        <i data-feather="help-circle" class="me-2"></i>
+                        🌺 Ask Our AI Orchid Expert
+                    </h2>
+                    <p class="text-light opacity-75 mt-2 mb-0">Get personalized care advice for your orchid problems</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Care Helper Form -->
+                    <form id="careHelperForm">
+                        <div class="mb-4">
+                            <label for="orchidQuestion" class="form-label text-light">
+                                <i data-feather="message-square" class="me-2"></i>
+                                Describe your orchid problem
+                            </label>
+                            <textarea 
+                                class="form-control bg-dark text-light border-secondary" 
+                                id="orchidQuestion" 
+                                name="question"
+                                rows="4" 
+                                placeholder="Example: My Angraecum sesquipedale has yellowing bottom leaves. The plant is indoors and I water it weekly..."
+                                style="border-radius: 8px; resize: vertical;"
+                                required></textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="userLocation" class="form-label text-light">
+                                <i data-feather="map-pin" class="me-2"></i>
+                                Your location (optional)
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control bg-dark text-light border-secondary" 
+                                id="userLocation" 
+                                name="location"
+                                placeholder="e.g., Los Osos, CA or London, UK"
+                                style="border-radius: 8px;">
+                            <div class="form-text text-secondary">
+                                <small>Location helps provide climate-specific advice</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="getAdviceBtn" style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 8px;">
+                                <i data-feather="search" class="me-2"></i>
+                                Get Expert Advice
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" id="loadingSpinner"></span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Results Area -->
+                    <div id="adviceResults" class="mt-4 d-none">
+                        <div class="card bg-dark border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i data-feather="check-circle" class="me-2"></i>
+                                    AI Expert Advice
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="adviceContent" class="text-light"></div>
+                                <div class="text-end mt-3">
+                                    <small class="text-muted">
+                                        <i data-feather="clock" class="me-1"></i>
+                                        <span id="adviceTimestamp"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Area -->
+                    <div id="errorResults" class="mt-4 d-none">
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-triangle" class="me-2"></i>
+                            <span id="errorContent"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Examples -->
+                    <div class="mt-5">
+                        <h6 class="text-light mb-3">
+                            <i data-feather="lightbulb" class="me-2"></i>
+                            Example Questions:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="example-question p-3 mb-2 rounded" style="background: rgba(255,255,255,0.1); cursor: pointer;" 
+                                     onclick="fillExample('My Phalaenopsis orchid has yellow leaves and the roots look mushy. I water it every few days in my apartment in Seattle.')">
+                                    <small class="text-light">
+                                        <i data-feather="droplet" class="me-1"></i>
+                                        "My Phalaenopsis has yellow leaves and mushy roots..."
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="example-question p-3 mb-2 rounded" style="background: rgba(255,255,255,0.1); cursor: pointer;"
+                                     onclick="fillExample('My Cattleya hasn\\'t bloomed in 2 years. It gets morning sun in my greenhouse in Florida.')">
+                                    <small class="text-light">
+                                        <i data-feather="sun" class="me-1"></i>
+                                        "My Cattleya hasn't bloomed in 2 years..."
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Handle form submission
+document.getElementById('careHelperForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const question = document.getElementById('orchidQuestion').value.trim();
+    const location = document.getElementById('userLocation').value.trim();
+    const btn = document.getElementById('getAdviceBtn');
+    const spinner = document.getElementById('loadingSpinner');
+    const resultsDiv = document.getElementById('adviceResults');
+    const errorDiv = document.getElementById('errorResults');
+    
+    if (!question) {
+        showError('Please describe your orchid problem.');
+        return;
+    }
+    
+    // Show loading state
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    resultsDiv.classList.add('d-none');
+    errorDiv.classList.add('d-none');
+    
+    try {
+        const response = await fetch('/care-helper/ask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question: question,
+                location: location
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAdvice(data.advice, data.timestamp);
+        } else {
+            showError(data.error || 'Unable to get advice at this time.');
+        }
+        
+    } catch (error) {
+        console.error('Error getting advice:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        // Hide loading state
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    }
+});
+
+function showAdvice(advice, timestamp) {
+    const content = document.getElementById('adviceContent');
+    const timestampEl = document.getElementById('adviceTimestamp');
+    const resultsDiv = document.getElementById('adviceResults');
+    
+    // Format the advice text with line breaks
+    content.innerHTML = advice.replace(/\n/g, '<br>');
+    
+    // Format timestamp
+    const date = new Date(timestamp);
+    timestampEl.textContent = date.toLocaleString();
+    
+    resultsDiv.classList.remove('d-none');
+    resultsDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showError(message) {
+    const errorContent = document.getElementById('errorContent');
+    const errorDiv = document.getElementById('errorResults');
+    
+    errorContent.textContent = message;
+    errorDiv.classList.remove('d-none');
+    errorDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function fillExample(exampleText) {
+    document.getElementById('orchidQuestion').value = exampleText;
+    document.getElementById('orchidQuestion').focus();
+}
+
+// Auto-resize textarea
+document.getElementById('orchidQuestion').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+</script>
+{% endblock %}

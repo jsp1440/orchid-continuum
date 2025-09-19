@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orchid Philosophy: {{ result.philosophy if result and result.philosophy else 'Results' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .result-header {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .badge-display {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .philosophy-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .action-buttons {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .btn-share {
+            background: linear-gradient(45deg, #10b981, #059669);
+            border: none;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-retake {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+            border: none;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-share:hover, .btn-retake:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .lead-notice {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid #8b5cf6;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .email-status {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .email-failed {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+        }
+        .philosophy-stats {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .social-sharing {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .error-display {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        {% if result and result.error %}
+        <div class="error-display">
+            <h2><i data-feather="alert-circle"></i> Quiz Processing Error</h2>
+            <p>{{ result.error }}</p>
+            <div class="action-buttons">
+                <a href="{{ url_for('philosophy_quiz_lead') }}" class="btn-retake">
+                    <i data-feather="refresh-cw"></i> Try Again
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="result-header">
+            {% if result and result.philosophy_data %}
+            <div class="badge-display">
+                {% if result.philosophy_data.badge_link %}
+                <img src="{{ result.philosophy_data.badge_link }}" 
+                     alt="{{ result.philosophy }} Badge" 
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.3);">
+                {% else %}
+                🌺
+                {% endif %}
+            </div>
+            <h1 class="display-4 mb-3">{{ result.philosophy }}</h1>
+            <h2 class="h5 text-muted mb-4">Your Orchid Philosophy</h2>
+            <p class="lead">{{ result.philosophy_data.life_philosophy }}</p>
+            {% else %}
+            <h1 class="display-4">🌺 Philosophy Discovered!</h1>
+            <p class="lead">Your unique orchid growing philosophy has been revealed.</p>
+            {% endif %}
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% if result and result.email_sent %}
+                <div class="email-status">
+                    <h4><i data-feather="mail"></i> Results Emailed Successfully!</h4>
+                    <p class="mb-2">Your complete philosophy profile has been sent to <strong>{{ result.user_email }}</strong></p>
+                    <p class="mb-0">Check your inbox for your personalized haiku, badge, and growing recommendations!</p>
+                </div>
+                {% elif result and result.email_sent == false %}
+                <div class="email-status email-failed">
+                    <h4><i data-feather="mail-x"></i> Email Delivery Issue</h4>
+                    <p class="mb-0">We had trouble sending your results. Don't worry - your philosophy is displayed below!</p>
+                </div>
+                {% endif %}
+
+                {% if result and result.lead_processed %}
+                <div class="lead-notice">
+                    <h4><i data-feather="heart"></i> Welcome to the FCOS Community!</h4>
+                    <p class="mb-2">Thank you {{ result.user_name }}! You've been added to our community of orchid enthusiasts.</p>
+                    {% if result.newsletter_subscribed %}
+                    <p class="mb-2">✅ Newsletter subscription confirmed - you'll receive our growing tips and community updates</p>
+                    {% endif %}
+                    {% if result.crm_added %}
+                    <p class="mb-2">✅ You've been added to our member database for exclusive updates</p>
+                    {% endif %}
+                    <p class="mb-0"><strong>Consider joining as a full member:</strong> <a href="https://fivecitiesorchidsociety.app.neoncrm.com/forms/12" target="_blank" style="color: #22c55e;">Join FCOS Today</a></p>
+                </div>
+                {% endif %}
+
+                {% if result and result.philosophy_data %}
+                <div class="philosophy-card">
+                    <h3 class="mb-3"><i data-feather="book-open"></i> Your Growing Philosophy</h3>
+                    <p class="lead">{{ result.philosophy_data.orchid_reflection }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <h5><i data-feather="sun"></i> Your Haiku</h5>
+                            <p class="text-muted">{{ result.philosophy_data.haiku }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5><i data-feather="compass"></i> Practical Growing</h5>
+                            <p>{{ result.philosophy_data.practical }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="philosophy-stats">
+                        <h5><i data-feather="zap"></i> Science Insight</h5>
+                        <p class="mb-0">{{ result.philosophy_data.science }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="social-sharing">
+                    <h4><i data-feather="share-2"></i> Share Your Philosophy</h4>
+                    <p class="mb-3">Discovered something amazing? Share your orchid philosophy with friends!</p>
+                    <div class="action-buttons">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" target="_blank" class="btn-share">
+                            <i data-feather="facebook"></i> Share on Facebook
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?text=I just discovered my orchid philosophy: {{ result.philosophy if result else 'Unknown' }}! Take the quiz at" target="_blank" class="btn-share">
+                            <i data-feather="twitter"></i> Share on Twitter
+                        </a>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="{{ url_for('philosophy_quiz_lead') }}" class="btn-retake">
+                        <i data-feather="refresh-cw"></i> Retake Quiz
+                    </a>
+                    <a href="https://fivecitiesorchidsociety.app.neoncrm.com/forms/12" target="_blank" class="btn-share">
+                        <i data-feather="users"></i> Join FCOS
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn-share">
+                        <i data-feather="home"></i> Explore More
+                    </a>
+                </div>
+                
+                <!-- Newsletter signup confirmation -->
+                <div class="lead-notice mt-4">
+                    <h5><i data-feather="mail"></i> Stay Connected</h5>
+                    <p class="mb-2">You're now part of our community! Expect:</p>
+                    <ul class="text-start">
+                        <li>Monthly growing tips tailored to your philosophy</li>
+                        <li>Exclusive member events and workshops</li>
+                        <li>Early access to new features and content</li>
+                        <li>Connection with fellow {{ result.philosophy if result else 'philosophy' }} growers</li>
+                    </ul>
+                    <p class="mb-0"><small>You can unsubscribe anytime, but we think you'll love being part of our community!</small></p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Track conversion for analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'conversion', {
+                'send_to': 'AW-CONVERSION_ID/CONVERSION_LABEL',
+                'philosophy': '{{ result.philosophy if result else 'unknown' }}',
+                'email_captured': {{ 'true' if result and result.user_email else 'false' }}
+            });
+        }
+        
+        // Scroll to top on load
+        window.scrollTo(0, 0);
+    </script>
+</body>
+</html>

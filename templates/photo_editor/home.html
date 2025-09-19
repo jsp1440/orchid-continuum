@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% set page_title = "Photo Editor - Orchid Continuum" %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="edit-3" class="me-2"></i>Advanced Photo Editor
+            </h1>
+            <p class="lead text-muted">
+                Professional orchid photo editing with AI analysis, plant recognition, and advanced filtering tools
+            </p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        <i data-feather="alert-circle" class="me-2"></i>{{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Quick Stats -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i data-feather="image" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ orchids|length }}</h3>
+                    <p class="mb-0">Photos Available</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i data-feather="edit" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ edited_orchids|length }}</h3>
+                    <p class="mb-0">Edited Versions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i data-feather="cpu" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>AI</h3>
+                    <p class="mb-0">Plant Analysis</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="photoEditorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="available-tab" data-bs-toggle="tab" 
+                    data-bs-target="#available-photos" type="button" role="tab">
+                <i data-feather="image" class="me-1"></i>Available Photos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="edited-tab" data-bs-toggle="tab" 
+                    data-bs-target="#edited-versions" type="button" role="tab">
+                <i data-feather="edit-3" class="me-1"></i>Edited Versions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gallery-tab" data-bs-toggle="tab" 
+                    data-bs-target="#gallery-view" type="button" role="tab">
+                <i data-feather="grid" class="me-1"></i>Gallery
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="photoEditorTabsContent">
+        <!-- Available Photos Tab -->
+        <div class="tab-pane fade show active" id="available-photos" role="tabpanel">
+            {% if orchids %}
+                <div class="row">
+                    {% for orchid in orchids %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                {% if orchid.image_url %}
+                                    <img src="{{ orchid.image_url }}" class="img-fluid rounded" alt="{{ orchid.scientific_name or orchid.display_name }}" style="max-height: 180px;">
+                                {% else %}
+                                    <i data-feather="image" class="text-muted" style="width: 64px; height: 64px;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {{ orchid.scientific_name or orchid.display_name or "Unknown Orchid" }}
+                                </h5>
+                                {% if orchid.genus %}
+                                    <p class="text-muted small mb-2">
+                                        <strong>Genus:</strong> {{ orchid.genus }}
+                                        {% if orchid.species %} | <strong>Species:</strong> {{ orchid.species }}{% endif %}
+                                    </p>
+                                {% endif %}
+                                <p class="card-text small">
+                                    {{ orchid.ai_description[:100] + '...' if orchid.ai_description and orchid.ai_description|length > 100 else orchid.ai_description or 'No description available' }}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('photo_editor.create_editing_session', orchid_id=orchid.id) }}" 
+                                       class="btn btn-primary">
+                                        <i data-feather="edit-3" class="me-1"></i>Edit Photo
+                                    </a>
+                                    {% if orchid.enhancement_data %}
+                                        <a href="{{ url_for('photo_editor.compare_versions', orchid_id=orchid.id) }}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i data-feather="eye" class="me-1"></i>Compare Versions
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i data-feather="image" class="mb-3 text-muted" style="width: 64px; height: 64px;"></i>
+                    <h5 class="text-muted">No Photos Available</h5>
+                    <p class="text-muted">Upload some orchid photos to get started with editing.</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i data-feather="upload" class="me-1"></i>Upload Photos
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Edited Versions Tab -->
+        <div class="tab-pane fade" id="edited-versions" role="tabpanel">
+            {% if edited_orchids %}
+                <div class="row">
+                    {% for item in edited_orchids %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                            {% if item.orchid.image_url %}
+                                                <img src="{{ item.orchid.image_url }}" class="img-fluid rounded" alt="Original" style="max-height: 100px;">
+                                            {% else %}
+                                                <i data-feather="image" class="text-muted"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h6 class="card-title">{{ item.orchid.scientific_name or item.orchid.display_name or "Unknown" }}</h6>
+                                        <p class="text-muted small mb-2">
+                                            <i data-feather="edit" class="me-1" style="width: 16px; height: 16px;"></i>
+                                            {{ item.versions }} edited version{{ 's' if item.versions != 1 else '' }}
+                                        </p>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('photo_editor.create_editing_session', orchid_id=item.orchid.id) }}" 
+                                               class="btn btn-outline-primary">
+                                                <i data-feather="edit-3" style="width: 16px; height: 16px;"></i>
+                                            </a>
+                                            <a href="{{ url_for('photo_editor.compare_versions', orchid_id=item.orchid.id) }}" 
+                                               class="btn btn-outline-secondary">
+                                                <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i data-feather="edit-3" class="mb-3 text-muted" style="width: 64px; height: 64px;"></i>
+                    <h5 class="text-muted">No Edited Versions</h5>
+                    <p class="text-muted">Start editing photos to see your creative work here.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Gallery View Tab -->
+        <div class="tab-pane fade" id="gallery-view" role="tabpanel">
+            <div class="text-center py-5">
+                <i data-feather="grid" class="mb-3 text-primary" style="width: 64px; height: 64px;"></i>
+                <h5>Full Gallery View</h5>
+                <p class="text-muted">View all original and edited photos in a comprehensive gallery.</p>
+                <a href="{{ url_for('photo_editor.edited_gallery') }}" class="btn btn-primary">
+                    <i data-feather="external-link" class="me-1"></i>Open Gallery
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Info -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="mb-3">
+                        <i data-feather="zap" class="me-2"></i>Photo Editor Features
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6 class="text-primary">Basic Editing</h6>
+                            <ul class="small">
+                                <li>Brightness & Contrast</li>
+                                <li>Saturation & Sharpness</li>
+                                <li>Crop & Resize</li>
+                                <li>Rotate & Flip</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-success">Advanced Filters</h6>
+                            <ul class="small">
+                                <li>Botanical Enhancement</li>
+                                <li>Vintage & Sepia</li>
+                                <li>Edge Enhancement</li>
+                                <li>Custom Plant Filters</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-info">AI Analysis</h6>
+                            <ul class="small">
+                                <li>Plant Feature Recognition</li>
+                                <li>Quality Assessment</li>
+                                <li>3D Spatial Analysis</li>
+                                <li>Species Identification</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-warning">Export Options</h6>
+                            <ul class="small">
+                                <li>Multiple Formats</li>
+                                <li>Quality Control</li>
+                                <li>Metadata Preservation</li>
+                                <li>Export Packages</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize feather icons after page load
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

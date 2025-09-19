@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}Weather vs Habitat - {{ orchid.scientific_name or orchid.display_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 class="text-light mb-1">
+                        <i data-feather="cloud" class="me-2"></i>Weather vs Habitat Comparison
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Compare your growing conditions with <strong>{{ orchid.scientific_name or orchid.display_name }}</strong>'s native habitat
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshComparison()">
+                        <i data-feather="refresh-cw" style="width: 16px; height: 16px;"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="exportToPDF()">
+                        <i data-feather="download" style="width: 16px; height: 16px;"></i>
+                        Export PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Mode Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-2">Comparison Mode</h6>
+                            <div class="btn-group" role="group" id="comparisonModeGroup">
+                                <input type="radio" class="btn-check" name="mode" id="mode-calendar" value="calendar">
+                                <label class="btn btn-outline-secondary btn-sm" for="mode-calendar">
+                                    <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                                    Calendar
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="mode" id="mode-seasonal" value="seasonal" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="mode-seasonal">
+                                    <i data-feather="rotate-cw" style="width: 14px; height: 14px;"></i>
+                                    Seasonal
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="mode" id="mode-photoperiod" value="photoperiod">
+                                <label class="btn btn-outline-warning btn-sm" for="mode-photoperiod">
+                                    <i data-feather="sun" style="width: 14px; height: 14px;"></i>
+                                    Photoperiod
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-2">Growing Environment</h6>
+                            <select class="form-select form-select-sm bg-dark text-light border-secondary" id="environmentType">
+                                <option value="greenhouse">Greenhouse</option>
+                                <option value="indoor">Indoor</option>
+                                <option value="outdoor">Outdoor</option>
+                                <option value="lights">Under Lights</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transparency Badges -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div id="transparencyBadges" class="d-flex flex-wrap gap-2">
+                <!-- Badges will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <!-- Hourly Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-dark text-light border-0 h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>24-Hour Comparison
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seasonal Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card bg-dark text-light border-0 h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="calendar" class="me-2"></i>Seasonal Patterns
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="seasonalChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="lightbulb" class="me-2"></i>Growing Insights & Recommendations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="insightsContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading insights...</span>
+                            </div>
+                            <p class="text-muted mt-2">Analyzing conditions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expandable Details Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-header">
+                    <button class="btn btn-link text-light p-0 w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#detailsCollapse">
+                        <i data-feather="info" class="me-2"></i>Transparency & Data Sources
+                        <i data-feather="chevron-down" class="float-end mt-1"></i>
+                    </button>
+                </div>
+                <div class="collapse" id="detailsCollapse">
+                    <div class="card-body">
+                        <div id="detailsContent">
+                            <!-- Details will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<script type="application/json" id="orchidData">
+{{ orchid | tojson }}
+</script>
+
+<script type="application/json" id="userLocationData">
+{{ user_location | tojson }}
+</script>
+
+<script type="application/json" id="habitatLocationData">
+{{ habitat_location | tojson }}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
+<script>
+// Weather/Habitat Comparison Widget JavaScript
+class WeatherHabitatWidget {
+    constructor() {
+        this.orchidData = JSON.parse(document.getElementById('orchidData').textContent);
+        this.userLocation = JSON.parse(document.getElementById('userLocationData').textContent);
+        this.habitatLocation = JSON.parse(document.getElementById('habitatLocationData').textContent);
+        this.comparisonData = null;
+        
+        this.hourlyChart = null;
+        this.seasonalChart = null;
+        
+        this.init();
+    }
+    
+    init() {
+        // Set up event listeners
+        this.setupEventListeners();
+        
+        // Load initial comparison
+        this.loadComparison();
+        
+        console.log('🌺 Weather/Habitat Comparison Widget initialized');
+    }
+    
+    setupEventListeners() {
+        // Mode change listeners
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', () => this.loadComparison());
+        });
+        
+        // Environment type change
+        document.getElementById('environmentType').addEventListener('change', () => this.loadComparison());
+    }
+    
+    async loadComparison() {
+        try {
+            this.showLoading();
+            
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const environmentType = document.getElementById('environmentType').value;
+            
+            const requestData = {
+                user_location: this.userLocation,
+                habitat_location: this.habitatLocation,
+                mode: mode,
+                environment_type: environmentType
+            };
+            
+            const response = await fetch('/weather-habitat/api/compare', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            this.comparisonData = await response.json();
+            
+            if (this.comparisonData.error) {
+                throw new Error(this.comparisonData.error);
+            }
+            
+            this.renderComparison();
+            
+        } catch (error) {
+            console.error('Error loading comparison:', error);
+            this.showError(error.message);
+        }
+    }
+    
+    showLoading() {
+        document.getElementById('insightsContainer').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Analyzing conditions...</p>
+            </div>
+        `;
+    }
+    
+    showError(message) {
+        document.getElementById('insightsContainer').innerHTML = `
+            <div class="alert alert-danger">
+                <i data-feather="alert-circle" class="me-2"></i>
+                Error: ${message}
+            </div>
+        `;
+        feather.replace();
+    }
+    
+    renderComparison() {
+        if (!this.comparisonData) return;
+        
+        // Render transparency badges
+        this.renderBadges();
+        
+        // Render charts
+        this.renderCharts();
+        
+        // Render insights
+        this.renderInsights();
+        
+        // Render details
+        this.renderDetails();
+        
+        // Re-initialize feather icons
+        feather.replace();
+    }
+    
+    renderBadges() {
+        const badgesContainer = document.getElementById('transparencyBadges');
+        const badges = this.comparisonData.badges || [];
+        
+        badgesContainer.innerHTML = badges.map(badge => `
+            <span class="badge bg-${badge.color} d-flex align-items-center" title="${badge.description}">
+                <i data-feather="${this.getBadgeIcon(badge.type)}" style="width: 14px; height: 14px;" class="me-1"></i>
+                ${badge.value}
+            </span>
+        `).join('');
+    }
+    
+    getBadgeIcon(type) {
+        const icons = {
+            'hemisphere': 'globe',
+            'solar': 'sun',
+            'elevation': 'triangle',
+            'confidence': 'check-circle'
+        };
+        return icons[type] || 'info';
+    }
+    
+    renderCharts() {
+        const charts = this.comparisonData.charts || {};
+        
+        // Render hourly chart
+        if (charts.hourly) {
+            this.renderHourlyChart(charts.hourly);
+        }
+        
+        // Render seasonal chart
+        if (charts.seasonal) {
+            this.renderSeasonalChart(charts.seasonal);
+        }
+    }
+    
+    renderHourlyChart(data) {
+        const ctx = document.getElementById('hourlyChart');
+        
+        if (this.hourlyChart) {
+            this.hourlyChart.destroy();
+        }
+        
+        this.hourlyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.hours.map(h => `${h}:00`),
+                datasets: [
+                    {
+                        label: 'Your Temperature',
+                        data: data.local.temperature,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Habitat Temperature',
+                        data: data.habitat.temperature,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        tension: 0.4,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#ffffff' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#ffffff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: '#ffffff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)',
+                            color: '#ffffff'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    renderSeasonalChart(data) {
+        const ctx = document.getElementById('seasonalChart');
+        
+        if (this.seasonalChart) {
+            this.seasonalChart.destroy();
+        }
+        
+        this.seasonalChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.month_names,
+                datasets: [
+                    {
+                        label: 'Your Location',
+                        data: data.local.temperature,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Habitat Average',
+                        data: data.habitat.temperature,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        tension: 0.4,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#ffffff' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#ffffff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: '#ffffff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)',
+                            color: '#ffffff'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    renderInsights() {
+        const insights = this.comparisonData.insights || [];
+        const container = document.getElementById('insightsContainer');
+        
+        if (insights.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i data-feather="check-circle" class="text-success mb-2" style="width: 48px; height: 48px;"></i>
+                    <h6 class="text-success">Optimal Conditions!</h6>
+                    <p class="text-muted mb-0">Your growing conditions closely match the habitat requirements.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = insights.map((insight, index) => `
+            <div class="alert alert-${this.getSeverityColor(insight.severity)} border-0 mb-3">
+                <div class="d-flex align-items-start">
+                    <i data-feather="${this.getInsightIcon(insight.type)}" class="me-3 mt-1 flex-shrink-0" style="width: 20px; height: 20px;"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-2">${this.getInsightTitle(insight.type)}</h6>
+                        <p class="mb-2">${insight.message}</p>
+                        <div class="bg-dark bg-opacity-25 p-2 rounded">
+                            <small><strong>Recommendation:</strong> ${insight.recommendation}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    getSeverityColor(severity) {
+        const colors = {
+            'info': 'primary',
+            'low': 'info',
+            'medium': 'warning',
+            'high': 'danger'
+        };
+        return colors[severity] || 'secondary';
+    }
+    
+    getInsightIcon(type) {
+        const icons = {
+            'temperature': 'thermometer',
+            'humidity': 'droplets',
+            'seasonal': 'rotate-cw',
+            'light': 'sun',
+            'general': 'info'
+        };
+        return icons[type] || 'info';
+    }
+    
+    getInsightTitle(type) {
+        const titles = {
+            'temperature': 'Temperature Analysis',
+            'humidity': 'Humidity Analysis',
+            'seasonal': 'Seasonal Alignment',
+            'light': 'Light Conditions',
+            'general': 'General Conditions'
+        };
+        return titles[type] || 'Analysis';
+    }
+    
+    renderDetails() {
+        const alignment = this.comparisonData.alignment || {};
+        const container = document.getElementById('detailsContent');
+        
+        container.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-warning mb-3">Alignment Method</h6>
+                    <ul class="list-unstyled">
+                        <li><i data-feather="check" class="me-2 text-success" style="width: 16px; height: 16px;"></i><strong>Mode:</strong> ${alignment.mode || 'N/A'}</li>
+                        <li><i data-feather="globe" class="me-2 text-info" style="width: 16px; height: 16px;"></i><strong>Hemisphere Offset:</strong> ${alignment.hemisphere_offset_months || 0} months</li>
+                        <li><i data-feather="sun" class="me-2 text-warning" style="width: 16px; height: 16px;"></i><strong>Solar Alignment:</strong> ${alignment.solar_alignment ? 'Yes' : 'No'}</li>
+                        ${alignment.elevation_difference ? `<li><i data-feather="triangle" class="me-2 text-secondary" style="width: 16px; height: 16px;"></i><strong>Elevation Difference:</strong> ${alignment.elevation_difference}m</li>` : ''}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-warning mb-3">Data Sources</h6>
+                    <ul class="list-unstyled">
+                        <li><i data-feather="cloud" class="me-2 text-primary" style="width: 16px; height: 16px;"></i><strong>Weather:</strong> Open-Meteo API</li>
+                        <li><i data-feather="map-pin" class="me-2 text-success" style="width: 16px; height: 16px;"></i><strong>Habitat:</strong> Estimated from species data</li>
+                        <li><i data-feather="clock" class="me-2 text-info" style="width: 16px; height: 16px;"></i><strong>Updated:</strong> ${new Date().toLocaleString()}</li>
+                        <li><i data-feather="shield" class="me-2 text-warning" style="width: 16px; height: 16px;"></i><strong>Confidence:</strong> ${this.comparisonData.confidence || 'Medium'}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6 class="text-warning mb-3">About This Comparison</h6>
+                    <p class="text-muted small">
+                        This comparison uses biologically meaningful alignment methods to compare your local growing conditions 
+                        with your orchid's native habitat. The <strong>${alignment.mode}</strong> mode 
+                        ${alignment.description || 'provides the most relevant seasonal alignment'}. 
+                        Data is sourced from weather stations and climate databases, with adjustments for hemisphere differences 
+                        and elevation when available.
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Global functions
+function refreshComparison() {
+    if (window.weatherWidget) {
+        window.weatherWidget.loadComparison();
+    }
+}
+
+function exportToPDF() {
+    // Implementation for PDF export
+    window.print();
+}
+
+// Initialize widget when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.weatherWidget = new WeatherHabitatWidget();
+});
+</script>
+{% endblock %}

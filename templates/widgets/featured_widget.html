@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Featured Orchid Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .orchid-widget {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 400px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .featured-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        .widget-content {
+            padding: 16px;
+        }
+        .orchid-title {
+            margin: 0 0 8px 0;
+            font-size: 1.25rem;
+            color: #333;
+        }
+        .orchid-scientific {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .orchid-description {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        .orchid-badges {
+            margin-bottom: 12px;
+        }
+        .learn-more-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .learn-more-btn:hover {
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+        .powered-by {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+        }
+        .powered-by a {
+            color: #28a745;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="orchid-widget" id="featured-orchid-widget">
+        {% if widget_data.orchid %}
+        {% set orchid = widget_data.orchid %}
+        
+        {% if orchid.image_url %}
+        <img src="{{ orchid.image_url }}" alt="{{ orchid.display_name }}" class="featured-image">
+        {% else %}
+        <div class="featured-image bg-light d-flex align-items-center justify-content-center">
+            <i data-feather="camera" style="width: 64px; height: 64px; color: #ccc;"></i>
+        </div>
+        {% endif %}
+        
+        <div class="widget-content">
+            <div class="d-flex align-items-center mb-2">
+                <i data-feather="star" style="width: 16px; height: 16px; color: #ffc107;" class="me-2"></i>
+                <small class="text-muted">Featured Orchid</small>
+            </div>
+            
+            <h3 class="orchid-title">{{ orchid.display_name }}</h3>
+            
+            {% if orchid.scientific_name %}
+            <p class="orchid-scientific">{{ orchid.scientific_name }}</p>
+            {% endif %}
+            
+            <div class="orchid-badges">
+                {% if orchid.genus %}
+                <span class="badge bg-success me-1">{{ orchid.genus }}</span>
+                {% endif %}
+                {% if orchid.species %}
+                <span class="badge bg-info me-1">{{ orchid.species }}</span>
+                {% endif %}
+                {% if orchid.growth_habit %}
+                <span class="badge bg-secondary">{{ orchid.growth_habit|title }}</span>
+                {% endif %}
+            </div>
+            
+            {% if orchid.ai_description %}
+            <p class="orchid-description">
+                {{ orchid.ai_description[:150] }}{% if orchid.ai_description|length > 150 %}...{% endif %}
+            </p>
+            {% endif %}
+            
+            {% if orchid.native_habitat %}
+            <div class="mb-3">
+                <small class="text-muted">
+                    <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                    Native to: {{ orchid.native_habitat[:50] }}{% if orchid.native_habitat|length > 50 %}...{% endif %}
+                </small>
+            </div>
+            {% endif %}
+            
+            <a href="#" onclick="openOrchidDetail({{ orchid.id }})" class="learn-more-btn">
+                <i data-feather="external-link" style="width: 16px; height: 16px;" class="me-2"></i>
+                Learn More About This Orchid
+            </a>
+        </div>
+        
+        {% else %}
+        <div class="widget-content text-center">
+            <i data-feather="image" style="width: 48px; height: 48px; color: #ccc;" class="mb-3"></i>
+            <h5>No Featured Orchid Available</h5>
+            <p class="text-muted">Check back soon for our featured orchid of the day!</p>
+        </div>
+        {% endif %}
+        
+        <div class="text-center mb-3">
+            <a href="/" class="btn btn-sm btn-outline-primary">
+                <i data-feather="home" style="width: 14px; height: 14px;"></i> Return to Homepage
+            </a>
+        </div>
+        <div class="powered-by">
+            Powered by <a href="#" target="_blank">Orchid Continuum</a>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Handle orchid detail clicks
+        function openOrchidDetail(orchidId) {
+            const baseUrl = window.location.origin;
+            window.open(`${baseUrl}/orchid/${orchidId}`, '_blank');
+        }
+        
+        // Widget initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Featured Orchid Widget loaded');
+        });
+    </script>
+</body>
+</html>

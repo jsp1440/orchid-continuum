@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Mycorrhizal Research - Orchid-Fungal Partnerships{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row bg-gradient-dark text-white py-5 mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">🍄 Mycorrhizal Research Platform</h1>
+            <p class="lead">Understanding Orchid-Fungal Partnerships for Conservation</p>
+            <div class="mt-4">
+                <a href="{{ url_for('mycorrhizal_research.view_projects') }}" class="btn btn-warning btn-lg me-3">
+                    <i data-feather="activity"></i> Active Research Projects
+                </a>
+                <a href="{{ url_for('mycorrhizal_research.mycorrhizal_mapping') }}" class="btn btn-outline-light btn-lg">
+                    <i data-feather="map"></i> Mycorrhizal Mapping
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Mission -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="mb-4">Critical Fungal Partnerships</h2>
+            <p class="lead text-muted">
+                Most orchids depend entirely on mycorrhizal fungi for survival. Understanding these partnerships 
+                is essential for conservation success, habitat restoration, and species reintroduction programs.
+            </p>
+        </div>
+    </div>
+
+    <!-- Research Priorities -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-5">Research Priority Areas</h3>
+        </div>
+        
+        {% for category_id, category_data in research_data.research_priorities.items() %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">{{ category_id.replace('_', ' ').title() }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Target Genera:</strong>
+                        <div class="mt-1">
+                            {% for genus in category_data.genera %}
+                            <span class="badge bg-light text-dark me-1">{{ genus }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Known Fungi:</strong>
+                        <div class="mt-1">
+                            {% for fungus in category_data.known_fungi %}
+                            <span class="badge bg-secondary me-1">{{ fungus }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% if category_data.get('priority_regions') %}
+                    <div class="mb-3">
+                        <strong>Priority Regions:</strong>
+                        <ul class="small mt-1 mb-0">
+                            {% for region in category_data.priority_regions %}
+                            <li>{{ region }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Key Researchers:</strong>
+                        <div class="mt-1">
+                            {% for researcher in category_data.key_researchers %}
+                            <span class="badge bg-info text-white me-1">{{ researcher }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Known Mycorrhizal Associations -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Documented Orchid-Fungal Associations</h3>
+            <div class="row">
+                {% for species, associations in research_data.known_associations.items() %}
+                <div class="col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">{{ species.replace('_', ' ').title() }}</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for assoc in associations %}
+                            <div class="mb-2 p-2 border rounded">
+                                <strong>Fungal Partner:</strong> <em>{{ assoc.fungal_genus }} {{ assoc.get('fungal_species', 'sp.') }}</em><br>
+                                <strong>Association:</strong> {{ assoc.association_type.title() }}<br>
+                                <strong>Habitat:</strong> {{ assoc.habitat }}<br>
+                                <strong>Soil pH:</strong> {{ assoc.soil_ph_range }}<br>
+                                <small class="text-muted">{{ assoc.research_citation }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Conservation Outreach -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Conservation Network Outreach</h3>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Ron Parsons</h6>
+                            <p class="small text-muted">Native Orchid Photography</p>
+                            <a href="{{ url_for('mycorrhizal_research.generate_outreach', contact_type='ron_parsons') }}" 
+                               class="btn btn-outline-primary btn-sm">
+                                View Collaboration Proposal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Mary Garrettson</h6>
+                            <p class="small text-muted">Orchid Conservation Alliance</p>
+                            <a href="{{ url_for('mycorrhizal_research.generate_outreach', contact_type='mary_garrettson') }}" 
+                               class="btn btn-outline-success btn-sm">
+                                View Conservation Plan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Dennis Wickham</h6>
+                            <p class="small text-muted">Smithsonian NAOCC</p>
+                            <a href="{{ url_for('mycorrhizal_research.generate_outreach', contact_type='dennis_wickham') }}" 
+                               class="btn btn-outline-warning btn-sm">
+                                View Research Proposal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">NOC Network</h6>
+                            <p class="small text-muted">North American Orchid Conservation</p>
+                            <a href="{{ url_for('mycorrhizal_research.generate_outreach', contact_type='noc_network') }}" 
+                               class="btn btn-outline-info btn-sm">
+                                View Citizen Science Plan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environmental Correlations -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Environmental Factor Correlations</h3>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">Soil pH Preferences</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if research_data.environmental_correlations %}
+                                {% for ph_type, species_list in research_data.environmental_correlations.soil_ph_preferences.items() %}
+                                <div class="mb-2">
+                                    <strong>{{ ph_type.title() }} Soils:</strong>
+                                    <ul class="small mt-1">
+                                        {% for species in species_list %}
+                                        <li><em>{{ species }}</em></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">Habitat-Fungal Associations</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if research_data.environmental_correlations %}
+                                {% for habitat, fungi_list in research_data.environmental_correlations.habitat_associations.items() %}
+                                <div class="mb-2">
+                                    <strong>{{ habitat.replace('_', ' ').title() }}:</strong>
+                                    <ul class="small mt-1">
+                                        {% for fungus in fungi_list %}
+                                        <li><em>{{ fungus }}</em></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Methodology -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-light">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Mycorrhizal Research Methodology</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <h6>Field Documentation</h6>
+                            <ul class="small">
+                                <li>GPS-tagged photography</li>
+                                <li>Habitat characterization</li>
+                                <li>Soil sampling protocols</li>
+                                <li>Environmental monitoring</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Laboratory Analysis</h6>
+                            <ul class="small">
+                                <li>Fungal isolation from roots</li>
+                                <li>Molecular identification (ITS)</li>
+                                <li>Soil chemistry analysis</li>
+                                <li>Microscopic examination</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Data Integration</h6>
+                            <ul class="small">
+                                <li>EOL TraitBank submission</li>
+                                <li>Geographic mapping</li>
+                                <li>Climate correlation</li>
+                                <li>Conservation assessment</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Conservation Application</h6>
+                            <ul class="small">
+                                <li>Habitat restoration</li>
+                                <li>Translocation planning</li>
+                                <li>Ex-situ propagation</li>
+                                <li>Climate adaptation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h3 class="mb-3">Join the Mycorrhizal Research Network</h3>
+            <p class="lead text-muted mb-4">
+                Understanding orchid-fungal partnerships is critical for conservation success. 
+                Your research and observations contribute to a global understanding of these essential relationships.
+            </p>
+            <div>
+                <a href="{{ url_for('mycorrhizal_research.view_projects') }}" class="btn btn-warning btn-lg me-3">
+                    <i data-feather="search"></i> Start Research Project
+                </a>
+                <a href="mailto:mycorrhizal@orchidcontinuum.org" class="btn btn-outline-primary btn-lg">
+                    <i data-feather="mail"></i> Contact Research Team
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initialize Feather Icons -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

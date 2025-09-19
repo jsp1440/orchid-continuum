@@ -1,0 +1,51 @@
+Prompt A — Add “Data Packs” with image files (no external server)
+
+Paste into Replit AI for your existing single-file app:
+
+Convert Orchid Continuum Studio to support Data Packs:
+	1.	Add Import Data Pack (.ocpack): accept a user-uploaded ZIP, unpack client-side (JSZip or equivalent written in vanilla JS; if not possible, implement chunked FileReader + Web Streams), then:
+	•	parse /metadata/*.csv and /analysis/*.jsonl,
+	•	register images from /images/ as Blob URLs with stable in-app IDs (persist in IndexedDB),
+	•	attach provenance to each record.
+	2.	Add Export Data Pack (.ocpack): ZIP up current project into the same structure:
+	•	/images/ with originals and generated thumbnails,
+	•	/metadata/plants.csv, /metadata/crosses.csv, /metadata/images.csv,
+	•	/analysis/traits.jsonl (one JSON per line with model_version),
+	•	/analysis/figures/ (PNG plots generated in app with canvas → blob).
+	3.	Update Collection and Explorer to load images from the in-app blob store (IndexedDB) with stable URLs.
+	4.	Add a Publication Export button that produces a ZIP with: cleaned CSVs, selected figures, a methods.txt describing trait extraction model + date + parameters.
+Keep one-file index.html, inline CSS/JS. Do not use external CDNs; implement minimal ZIP read/write in JS or embed a tiny ZIP routine.
+
+(If Replit AI balks at implementing ZIP without a lib, I can hand you a tiny embedded ZIP writer/reader in plain JS.)
+
+⸻
+
+Prompt B — Upgrade to full backend (FastAPI + SQLite now; Postgres/S3 later)
+
+Paste into a new Replit project (this creates a backend + keeps your front-end), or extend your existing one:
+
+Create a FastAPI backend with:
+	•	Endpoints:
+	•	POST /upload/image (multipart): stores image file to /data/images/{uuid}.jpg, returns {image_id, url}.
+	•	POST /plants {code, genus, grex, clonal_name, proprietary} → returns {plant_id}.
+	•	POST /images/attach {plant_id, image_id, src_url, provenance}.
+	•	POST /traits {plant_id, image_id, model_version, traits, qc}.
+	•	GET /plants?query=... with filters; GET /plant/{id} → plant + images + latest traits.
+	•	POST /crosses (seed_parent_id, pollen_parent_id, date_made, notes).
+	•	POST /import/rhs_csv, /import/orchidroots_csv (accept CSV, map to tables, store provenance).
+	•	GET /export/publication/{project_id} → bundles CSV + figures + methods.txt as a ZIP.
+	•	Use SQLite now (SQLAlchemy), with a migration path to Postgres. Create /data/ for files.
+	•	CORS enable for the front-end (same Replit origin).
+	•	Add a simple JWT auth with user accounts (email+password), and tenant scoping of data.
+	•	Include a background worker stub for per-image trait extraction (callable later).
+Output:
+	•	main.py (FastAPI app),
+	•	models.py (SQLAlchemy schema matching the tables above, JSON fields as TEXT),
+	•	worker.py (stubs for vision tasks),
+	•	static/ (serve thumbnails),
+	•	Update the existing index.html front-end to:
+	•	Upload images to /upload/image,
+	•	Create plants/crosses via API,
+	•	Read lists via /plants and show thumbnails from backend URLs,
+	•	Save trait results via /traits after client-side analysis (for now).
+Keep everything minimal and documented in comments so we can later swap SQLite→Postgres and local files→S3.

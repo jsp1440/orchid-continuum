@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard - Orchid Continuum{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Admin Styles -->
+    <style>
+        :root {
+            --fcos-purple: #6a3fb5;
+            --fcos-purple-600: #5a34a0;
+            --fcos-green: #3aa681;
+            --fcos-ink: #2c3e50;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .admin-sidebar {
+            background: linear-gradient(180deg, var(--fcos-purple) 0%, var(--fcos-purple-600) 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .admin-sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            margin: 2px 0;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-sidebar .nav-link:hover,
+        .admin-sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .admin-sidebar .nav-link i {
+            margin-right: 10px;
+            width: 18px;
+        }
+        
+        .admin-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .admin-content {
+            padding: 2rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--fcos-purple);
+            border-color: var(--fcos-purple);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--fcos-purple-600);
+            border-color: var(--fcos-purple-600);
+        }
+        
+        .btn-success {
+            background-color: var(--fcos-green);
+            border-color: var(--fcos-green);
+        }
+        
+        .text-primary {
+            color: var(--fcos-purple) !important;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .badge {
+            font-weight: 500;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: var(--fcos-ink);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .stat-card.green {
+            background: linear-gradient(135deg, var(--fcos-green) 0%, #2d7a63 100%);
+        }
+        
+        .stat-card.purple {
+            background: linear-gradient(135deg, var(--fcos-purple) 0%, var(--fcos-purple-600) 100%);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--fcos-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .research-highlight {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Admin Sidebar -->
+            <div class="col-md-3 col-lg-2 admin-sidebar p-3">
+                <div class="mb-4">
+                    <h4 class="text-white fw-bold">
+                        <i data-feather="shield" class="me-2"></i>
+                        Admin Panel
+                    </h4>
+                    <p class="small text-white-50 mb-0">Orchid Continuum Control</p>
+                </div>
+                
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" 
+                       href="{{ url_for('admin_dashboard') }}">
+                        <i data-feather="home"></i>Dashboard
+                    </a>
+                    
+                    <a class="nav-link {% if 'svo-research' in request.endpoint %}active{% endif %}" 
+                       href="{{ url_for('admin_svo.svo_research_dashboard') }}">
+                        <i data-feather="search"></i>SVO Research
+                    </a>
+                    
+                    <a class="nav-link {% if 'control-center' in request.endpoint %}active{% endif %}" 
+                       href="/admin/control-center">
+                        <i data-feather="monitor"></i>Control Center
+                    </a>
+                    
+                    <a class="nav-link {% if 'ai-widgets' in request.endpoint %}active{% endif %}" 
+                       href="/admin/ai-widgets/">
+                        <i data-feather="cpu"></i>AI Widgets
+                    </a>
+                    
+                    <a class="nav-link {% if 'orchid-approval' in request.endpoint %}active{% endif %}" 
+                       href="/admin/orchid-approval">
+                        <i data-feather="check-circle"></i>Orchid Approval
+                    </a>
+                    
+                    <a class="nav-link {% if 'processing' in request.endpoint %}active{% endif %}" 
+                       href="/admin/processing-dashboard">
+                        <i data-feather="activity"></i>Processing
+                    </a>
+                    
+                    <a class="nav-link {% if 'drive-import' in request.endpoint %}active{% endif %}" 
+                       href="/admin/drive-import">
+                        <i data-feather="upload-cloud"></i>Drive Import
+                    </a>
+                    
+                    <hr class="my-3" style="color: rgba(255,255,255,0.3);">
+                    
+                    <a class="nav-link text-white-50" href="{{ url_for('index') }}">
+                        <i data-feather="external-link"></i>Back to Site
+                    </a>
+                    
+                    <a class="nav-link text-white-50" href="{{ url_for('admin_logout') }}">
+                        <i data-feather="log-out"></i>Logout
+                    </a>
+                </nav>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <!-- Admin Header -->
+                <div class="admin-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0 text-dark fw-bold">{% block page_title %}Admin Dashboard{% endblock %}</h5>
+                            <p class="text-muted small mb-0">{% block page_subtitle %}System Administration{% endblock %}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success me-2">Online</span>
+                            <span class="text-muted small">
+                                <i data-feather="clock" style="width: 14px; height: 14px;"></i>
+                                <span id="current-time"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="admin-content pt-3 pb-0">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Admin Content -->
+                <div class="admin-content">
+                    {% block admin_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Initialize Feather Icons -->
+    <script>
+        feather.replace();
+        
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+        
+        updateTime();
+        setInterval(updateTime, 60000); // Update every minute
+        
+        // Auto-refresh functionality
+        window.adminAutoRefresh = function(url, containerId, interval = 30000) {
+            setInterval(function() {
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        const container = document.getElementById(containerId);
+                        if (container) {
+                            container.innerHTML = html;
+                            feather.replace(); // Re-initialize icons
+                        }
+                    })
+                    .catch(error => console.warn('Auto-refresh failed:', error));
+            }, interval);
+        };
+        
+        // Global error handler for AJAX requests
+        window.adminRequest = function(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            };
+            
+            return fetch(url, {...defaultOptions, ...options})
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error('Admin request failed:', error);
+                    // Show error toast or modal
+                    const errorAlert = document.createElement('div');
+                    errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+                    errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+                    errorAlert.innerHTML = `
+                        <strong>Error:</strong> ${error.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(errorAlert);
+                    setTimeout(() => errorAlert.remove(), 5000);
+                    throw error;
+                });
+        };
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

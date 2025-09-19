@@ -1,0 +1,37 @@
+field_name,type,required,format_or_allowed,example,notes
+photo_id,string,Y,unique,ph_000123,Primary key for photo record; index
+orchid_id,string,Y,unique,or_004567,FK to orchid/taxon table; index
+scientific_name,string,Y,Genus species or hybrid grex,Sarcochilus hartmannii,Normalized; separate genus/species if possible
+genus,string,Y,capitalized,Sarcochilus,Index
+species,string,N,lowercase,hartmannii,Blank for hybrids
+hybrid_flag,boolean,Y,true/false,false,true for hybrids; index
+hybrid_parentage,string,N,ParentA × ParentB,Sarco. fitzgeraldii × Sarco. ceciliae,If known
+common_name,string,N,,Hartmann's Sarcochilus,
+native_status,string,N,native|endemic|introduced|cultivated|unknown,native,Enum; index
+country,string,Y,ISO name preferred,Ecuador,Index
+country_code,string,N,ISO 3166-1 alpha-2,EC,Optional but recommended; index
+admin1,string,N,state/province,Pichincha,Optional; index
+locality,string,N,free text,Papallacta Valley,
+lat,number,N,decimal degrees,-0.375,Latitude; index if populated
+lng,number,N,decimal degrees,-78.141,Longitude; index if populated
+geoprecision_m,number,N,meters radius,500,Uncertainty radius for point
+elevation_m,number,N,meters,2200,Elevation; index
+date_observed,date,N,YYYY-MM-DD,2023-06-14,Prefer full date; derive month/year
+month_observed,integer,N,1-12,6,Derive if missing
+year_observed,integer,N,YYYY,2023,Derive if missing
+bloom_stage,string,N,bud|open|past|unknown,open,Enum
+flower_color,string,N,comma-separated or single,white,Normalize to a palette
+fragrance,string,N,yes|no|unknown|notes,yes,Short enum or note
+growth_habit,string,N,epiphytic|terrestrial|lithophytic|unknown,epiphytic,Enum; index
+pollinator,string,N,free text or controlled list,hawkmoth,Allow multiple; consider lookup table
+mycorrhiza,string,N,free text or controlled list,Rhizoctonia sp.,Consider lookup table
+image_url,string,Y,https URL,https://cdn.example.com/img/ph_000123.jpg,CDN preferred
+thumbnail_url,string,N,https URL,https://cdn.example.com/img/ph_000123_thumb.jpg,Optional
+photographer_id,string,N,ID,mem_1021,FK to members; index
+photographer_name,string,N,,Roberta Fox,For attribution display
+attribution,string,N,,"© 2025 Roberta Fox, CC BY-NC",License text
+license,string,N,CC0|CC BY|CC BY-NC|All Rights Reserved,CC BY-NC,Enum; index
+source,string,N,member|herbarium|partner|other,member,Provenance
+conservation_status,string,N,IUCN code / CITES,IUCN:NT; CITES:II,Free text or split fields
+inflorescence_type,string,N,free text,raceme,
+notes,string,N,free text,,

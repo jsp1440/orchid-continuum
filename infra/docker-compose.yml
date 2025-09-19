@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: orchid_postgres
+    environment:
+      POSTGRES_DB: orchid_continuum
+      POSTGRES_USER: orchid_user
+      POSTGRES_PASSWORD: orchid_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - orchid_network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: orchid_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - orchid_network
+
+  # FastAPI Backend
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: orchid_api
+    environment:
+      - DATABASE_URL=postgresql://orchid_user:orchid_password@postgres:5432/orchid_continuum
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=development-secret-key
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../apps/api:/app
+    networks:
+      - orchid_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Next.js Frontend
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: orchid_web
+    environment:
+      - API_BASE_URL=http://api:8000
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ../apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - orchid_network
+    command: npm run dev
+
+  # Admin Dashboard
+  admin:
+    build:
+      context: ../apps/admin
+      dockerfile: Dockerfile
+    container_name: orchid_admin
+    environment:
+      - API_BASE_URL=http://api:8000
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+    volumes:
+      - ../apps/admin:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - orchid_network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  orchid_network:
+    driver: bridge

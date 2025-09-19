@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Base - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient border-0">
+                <div class="card-body text-center py-5">
+                    <h1 class="display-4 fw-bold text-white mb-3">
+                        <i data-feather="book-open" class="me-3"></i>
+                        Orchid Knowledge Base
+                    </h1>
+                    <p class="lead text-white-50 mb-4">
+                        Comprehensive educational resources for orchid enthusiasts of all levels
+                    </p>
+                    
+                    <!-- Quick Stats -->
+                    <div class="row justify-content-center">
+                        <div class="col-md-2 col-sm-4 mb-2">
+                            <div class="text-center">
+                                <h3 class="text-white">{{ stats.total_entries or 0 }}</h3>
+                                <small class="text-white-50">Entries</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 mb-2">
+                            <div class="text-center">
+                                <h3 class="text-white">{{ stats.categories or 0 }}</h3>
+                                <small class="text-white-50">Categories</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-sm-4 mb-2">
+                            <div class="text-center">
+                                <h3 class="text-white">{{ stats.difficulty_counts.beginner + stats.difficulty_counts.intermediate + stats.difficulty_counts.advanced }}</h3>
+                                <small class="text-white-50">Topics</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('knowledge_base') }}">
+                        <div class="row g-3">
+                            <!-- Search Input -->
+                            <div class="col-lg-4 col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i data-feather="search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" name="q" 
+                                           value="{{ search_query }}" 
+                                           placeholder="Search knowledge base...">
+                                </div>
+                            </div>
+                            
+                            <!-- Category Filter -->
+                            <div class="col-lg-3 col-md-6">
+                                <select name="category" class="form-select">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}" 
+                                            {% if category == category_filter %}selected{% endif %}>
+                                        {{ category }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Difficulty Filter -->
+                            <div class="col-lg-2 col-md-6">
+                                <select name="difficulty" class="form-select">
+                                    <option value="">All Levels</option>
+                                    <option value="beginner" {% if difficulty_filter == 'beginner' %}selected{% endif %}>
+                                        Beginner ({{ stats.difficulty_counts.beginner }})
+                                    </option>
+                                    <option value="intermediate" {% if difficulty_filter == 'intermediate' %}selected{% endif %}>
+                                        Intermediate ({{ stats.difficulty_counts.intermediate }})
+                                    </option>
+                                    <option value="advanced" {% if difficulty_filter == 'advanced' %}selected{% endif %}>
+                                        Advanced ({{ stats.difficulty_counts.advanced }})
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <!-- Content Type Filter -->
+                            <div class="col-lg-2 col-md-6">
+                                <select name="type" class="form-select">
+                                    <option value="">All Types</option>
+                                    <option value="qa" {% if content_type_filter == 'qa' %}selected{% endif %}>
+                                        Q&A ({{ stats.content_types.qa }})
+                                    </option>
+                                    <option value="article" {% if content_type_filter == 'article' %}selected{% endif %}>
+                                        Articles ({{ stats.content_types.article }})
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <!-- Search Button -->
+                            <div class="col-lg-1 col-md-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i data-feather="filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        {% if entries %}
+            {% for entry in entries %}
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card h-100 shadow-sm knowledge-entry-card" onclick="window.location.href='{{ url_for('knowledge_base_entry', entry_id=entry.id) }}'">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if entry.content_type == 'qa' %}
+                                <i data-feather="help-circle" class="text-info me-2"></i>
+                            {% else %}
+                                <i data-feather="file-text" class="text-success me-2"></i>
+                            {% endif %}
+                            
+                            <!-- Difficulty Badge -->
+                            {% if entry.difficulty_level == 'beginner' %}
+                                <span class="badge bg-success">Beginner</span>
+                            {% elif entry.difficulty_level == 'intermediate' %}
+                                <span class="badge bg-warning">Intermediate</span>
+                            {% else %}
+                                <span class="badge bg-danger">Advanced</span>
+                            {% endif %}
+                        </div>
+                        
+                        <small class="text-muted">
+                            {{ entry.content_type.upper() }}
+                        </small>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ entry.title }}</h5>
+                        
+                        {% if entry.question %}
+                            <p class="text-primary fw-semibold mb-2">{{ entry.question }}</p>
+                        {% endif %}
+                        
+                        <p class="card-text text-muted">
+                            {% if entry.answer %}
+                                {{ entry.answer[:200] }}{% if entry.answer|length > 200 %}...{% endif %}
+                            {% elif entry.article %}
+                                {{ entry.article[:200] }}{% if entry.article|length > 200 %}...{% endif %}
+                            {% endif %}
+                        </p>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-secondary">{{ entry.category }}</span>
+                        </div>
+                        
+                        {% if entry.keywords %}
+                            <div class="keywords">
+                                {% for keyword in entry.keywords[:3] %}
+                                    <span class="badge bg-outline-primary me-1">{{ keyword }}</span>
+                                {% endfor %}
+                                {% if entry.keywords|length > 3 %}
+                                    <small class="text-muted">+{{ entry.keywords|length - 3 }} more</small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <small class="text-muted">
+                            <i data-feather="clock" class="me-1"></i>
+                            Click to read full content
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- No Results -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="search" class="display-1 text-muted mb-3"></i>
+                        <h3>No results found</h3>
+                        <p class="text-muted">
+                            {% if search_query or category_filter or difficulty_filter or content_type_filter %}
+                                Try adjusting your search criteria or filters.
+                            {% else %}
+                                The knowledge base is being populated. Check back soon!
+                            {% endif %}
+                        </p>
+                        <a href="{{ url_for('knowledge_base') }}" class="btn btn-primary">
+                            <i data-feather="refresh-cw" class="me-2"></i>
+                            View All Entries
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.knowledge-entry-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.knowledge-entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.keywords .badge {
+    font-size: 0.7em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

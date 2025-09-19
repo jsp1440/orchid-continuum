@@ -1,0 +1,101 @@
+"""
+Orchid Continuum Breeder Pro+ One-Click Orchestrator
+Full pipeline: Scrape → Organize → Analyze → Report → Email
+"""
+
+import os, time, smtplib, ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import pandas as pd
+
+# === IMPORT ALL COMPONENTS (scraper, GDrive, AI analysis, reporting) ===
+from svo_scraper import scrape_svo_hybrids       # Full scrape: all genera + pages
+from gdrive_manager import upload_images, init_drive
+from sheets_manager import init_sheets, update_sheet
+from ai_trait_analyzer import analyze_hybrids
+from report_generator import generate_report
+
+# === CONFIGURATION ===
+GOOGLE_DRIVE_FOLDER = "OrchidContinuum/SVO_Hybrids"
+SUMMARY_REPORT = "BreederPro_Summary.pdf"
+SUMMARY_DATA = "BreederPro_Data.csv"
+
+EMAIL_SENDER = "orchidcontinuum.bot@gmail.com"
+EMAIL_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")   # Use App Password
+EMAIL_RECEIVER = "your_email_here"
+
+# === MASTER ORCHESTRATOR ===
+def run_full_pipeline():
+    print("🌸 Starting Breeder Pro+ full pipeline...")
+
+    # Step 1: Scrape
+    print("🔍 Scraping SVO hybrids...")
+    hybrid_data, image_paths = scrape_svo_hybrids()
+    print(f"✅ Scraped {len(hybrid_data)} hybrids, {len(image_paths)} images")
+
+    # Step 2: Upload to Drive
+    drive = init_drive()
+    uploaded_files = upload_images(drive, image_paths, GOOGLE_DRIVE_FOLDER)
+    print(f"☁️ Uploaded {len(uploaded_files)} images to Google Drive")
+
+    # Step 3: Update Google Sheet
+    sheet = init_sheets("SVO_Hybrids")
+    update_sheet(sheet, hybrid_data)
+    print("📊 Google Sheet updated with hybrid metadata")
+
+    # Step 4: AI Trait + Inheritance Analysis
+    print("🤖 Running AI analysis on hybrids...")
+    analysis_results = analyze_hybrids(hybrid_data, uploaded_files)
+    print("✅ AI analysis completed")
+
+    # Step 5: Reporting
+    print("📑 Generating research-grade report...")
+    generate_report(analysis_results, SUMMARY_REPORT, SUMMARY_DATA)
+    print("✅ Report generated")
+
+    # Step 6: Email Results
+    print("📧 Sending summary package by email...")
+    send_email(SUMMARY_REPORT, SUMMARY_DATA)
+    print("✅ Email sent")
+
+    print("🎉 All done! Breeder Pro+ pipeline finished.")
+
+# === EMAIL FUNCTION ===
+def send_email(pdf_file, csv_file):
+    msg = MIMEMultipart()
+    msg["From"] = EMAIL_SENDER
+    msg["To"] = EMAIL_RECEIVER
+    msg["Subject"] = "🌸 Orchid Continuum Breeder Pro+ Results"
+
+    body = """Hello,
+
+Your Breeder Pro+ pipeline has finished running. 
+Attached you’ll find:
+- The PDF research summary
+- The CSV dataset of all hybrids and trait analyses
+
+Progress flags are also available in your Google Sheet.
+
+Cheers,
+🌸 Orchid Continuum Bot
+"""
+    msg.attach(MIMEText(body, "plain"))
+
+    for file in [pdf_file, csv_file]:
+        with open(file, "rb") as f:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file)}")
+            msg.attach(part)
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
+
+# === MAIN ENTRY ===
+if __name__ == "__main__":
+    run_full_pipeline()

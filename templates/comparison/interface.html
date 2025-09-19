@@ -1,0 +1,624 @@
+{% extends "layout.html" %}
+{% set page_title = "Orchid Comparison & Analysis Interface" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 text-light mb-3">
+                <i data-feather="layers" class="me-2"></i>
+                Orchid Comparison & Analysis Interface
+            </h1>
+            <p class="text-muted">
+                Advanced interface for viewing, comparing, and contrasting orchids by photo, metadata, 
+                country of origin, phenotypic traits, and biodiversity tags with AI-extracted temporal and location data.
+            </p>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_orchids }}</h4>
+                            <p class="mb-0">Total Orchids</p>
+                        </div>
+                        <i data-feather="database" style="width: 32px; height: 32px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ genera_count }}</h4>
+                            <p class="mb-0">Unique Genera</p>
+                        </div>
+                        <i data-feather="git-branch" style="width: 32px; height: 32px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="filtered-count">{{ total_orchids }}</h4>
+                            <p class="mb-0">Filtered Results</p>
+                        </div>
+                        <i data-feather="filter" style="width: 32px; height: 32px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="selected-count">0</h4>
+                            <p class="mb-0">Selected for Comparison</p>
+                        </div>
+                        <i data-feather="check-square" style="width: 32px; height: 32px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Advanced Search & Filters -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="search" class="me-2"></i>Advanced Search & Filters
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="search-form">
+                        <!-- Taxonomic Filters -->
+                        <div class="mb-3">
+                            <label class="form-label">Genus</label>
+                            <select class="form-select bg-secondary text-light" id="genus-filter">
+                                <option value="">All Genera</option>
+                                {% for genus in genera %}
+                                <option value="{{ genus }}">{{ genus }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Species</label>
+                            <input type="text" class="form-control bg-secondary text-light" 
+                                   id="species-filter" placeholder="Enter species name">
+                        </div>
+
+                        <!-- Morphological Filters -->
+                        <div class="mb-3">
+                            <label class="form-label">Growth Habit</label>
+                            <select class="form-select bg-secondary text-light" id="growth-filter">
+                                <option value="">All Growth Types</option>
+                                {% for habit in growth_habits %}
+                                <option value="{{ habit }}">{{ habit }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Geographic Filters -->
+                        <div class="mb-3">
+                            <label class="form-label">Geographic Origin</label>
+                            <select class="form-select bg-secondary text-light" id="origin-filter">
+                                <option value="">All Regions</option>
+                                <option value="asia">Asia</option>
+                                <option value="americas">Americas</option>
+                                <option value="africa">Africa</option>
+                                <option value="oceania">Oceania</option>
+                                <option value="tropical">Tropical Regions</option>
+                                <option value="subtropical">Subtropical Regions</option>
+                                <option value="montane">Montane/Cloud Forest</option>
+                            </select>
+                        </div>
+
+                        <!-- Biodiversity Tags -->
+                        <div class="mb-3">
+                            <label class="form-label">Biodiversity Tags</label>
+                            <select class="form-select bg-secondary text-light" id="biodiversity-filter">
+                                <option value="">Loading tags...</option>
+                            </select>
+                        </div>
+
+                        <!-- Temporal Filters -->
+                        <div class="mb-3">
+                            <label class="form-label">Photo Date Range</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="date" class="form-control bg-secondary text-light" 
+                                           id="date-from" placeholder="From">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" class="form-control bg-secondary text-light" 
+                                           id="date-to" placeholder="To">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i data-feather="search" class="me-1"></i>Search & Filter
+                        </button>
+                    </form>
+
+                    <!-- Quick Filters -->
+                    <div class="mt-4">
+                        <h6 class="text-light mb-3">Quick Filters</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-info btn-sm" onclick="quickFilter('epiphytic')">
+                                Epiphytic Orchids
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="quickFilter('terrestrial')">
+                                Terrestrial Orchids
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="quickFilter('hybrid')">
+                                Hybrid Orchids
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="quickFilter('species')">
+                                Pure Species
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected for Comparison -->
+            <div class="card bg-dark text-light" id="comparison-panel" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="git-compare" class="me-2"></i>Selected for Comparison
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="selected-orchids">
+                        <!-- Selected orchids will appear here -->
+                    </div>
+                    <button class="btn btn-success w-100 mt-3" id="compare-btn" disabled>
+                        <i data-feather="eye" class="me-1"></i>Compare Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Display -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="grid" class="me-2"></i>Orchid Gallery
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-light" id="view-grid" title="Grid View">
+                            <i data-feather="grid"></i>
+                        </button>
+                        <button class="btn btn-outline-light" id="view-list" title="List View">
+                            <i data-feather="list"></i>
+                        </button>
+                        <button class="btn btn-outline-light" id="view-table" title="Table View">
+                            <i data-feather="table"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Loading indicator -->
+                    <div id="loading-indicator" class="text-center py-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Analyzing orchids and extracting metadata...</p>
+                    </div>
+
+                    <!-- Results container -->
+                    <div id="results-container">
+                        <div class="text-center py-5 text-muted">
+                            <i data-feather="search" style="width: 64px; height: 64px; opacity: 0.3;"></i>
+                            <p class="mt-3">Use the search filters to explore your orchid collection</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="pagination-container" class="mt-4" style="display: none;">
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                <!-- Pagination will be inserted here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Orchid Detail Modal -->
+<div class="modal fade" id="orchidModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Orchid Analysis</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-content">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedOrchids = new Set();
+let allResults = [];
+let currentView = 'grid';
+
+// Initialize the interface
+document.addEventListener('DOMContentLoaded', function() {
+    loadBiodiversityTags();
+    
+    // Set up event handlers
+    document.getElementById('search-form').addEventListener('submit', performSearch);
+    document.getElementById('compare-btn').addEventListener('click', compareSelected);
+    
+    // View switchers
+    document.getElementById('view-grid').addEventListener('click', () => switchView('grid'));
+    document.getElementById('view-list').addEventListener('click', () => switchView('list'));
+    document.getElementById('view-table').addEventListener('click', () => switchView('table'));
+    
+    // Load initial results
+    performSearch(null);
+});
+
+// Load biodiversity tags
+async function loadBiodiversityTags() {
+    try {
+        const response = await fetch('/comparison/biodiversity-tags');
+        const data = await response.json();
+        
+        const select = document.getElementById('biodiversity-filter');
+        select.innerHTML = '<option value="">All Tags</option>';
+        
+        // Group by category
+        const categories = data.categorized_tags;
+        for (const [category, tags] of Object.entries(categories)) {
+            if (tags.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
+                
+                tags.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag;
+                    option.textContent = tag.replace('_', ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                    optgroup.appendChild(option);
+                });
+                
+                select.appendChild(optgroup);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading biodiversity tags:', error);
+    }
+}
+
+// Perform search with filters
+async function performSearch(event) {
+    if (event) event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('search-form'));
+    const params = new URLSearchParams();
+    
+    // Collect all filter values
+    const genus = document.getElementById('genus-filter').value;
+    const species = document.getElementById('species-filter').value;
+    const growth = document.getElementById('growth-filter').value;
+    const origin = document.getElementById('origin-filter').value;
+    const biodiversity = document.getElementById('biodiversity-filter').value;
+    const dateFrom = document.getElementById('date-from').value;
+    const dateTo = document.getElementById('date-to').value;
+    
+    if (genus) params.append('genus', genus);
+    if (species) params.append('species', species);
+    if (growth) params.append('growth_habit', growth);
+    if (origin) params.append('origin', origin);
+    if (biodiversity) params.append('biodiversity_tag', biodiversity);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`/comparison/search?${params}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            allResults = data.results;
+            displayResults(allResults);
+            document.getElementById('filtered-count').textContent = data.count;
+        } else {
+            showError('Search failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showError('Search error occurred.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Quick filter functions
+function quickFilter(type) {
+    // Reset other filters
+    document.getElementById('search-form').reset();
+    
+    switch(type) {
+        case 'epiphytic':
+            document.getElementById('growth-filter').value = 'epiphytic';
+            break;
+        case 'terrestrial':
+            document.getElementById('growth-filter').value = 'terrestrial';
+            break;
+        case 'hybrid':
+            document.getElementById('biodiversity-filter').value = 'classification_hybrid';
+            break;
+        case 'species':
+            document.getElementById('biodiversity-filter').value = 'classification_species';
+            break;
+    }
+    
+    performSearch();
+}
+
+// Display results based on current view
+function displayResults(results) {
+    const container = document.getElementById('results-container');
+    
+    if (results.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i data-feather="search" style="width: 64px; height: 64px; opacity: 0.3;"></i>
+                <p class="mt-3">No orchids found matching your criteria</p>
+            </div>
+        `;
+        return;
+    }
+    
+    if (currentView === 'grid') {
+        displayGridView(results);
+    } else if (currentView === 'list') {
+        displayListView(results);
+    } else if (currentView === 'table') {
+        displayTableView(results);
+    }
+    
+    // Re-initialize Feather icons
+    feather.replace();
+}
+
+// Grid view display
+function displayGridView(results) {
+    const container = document.getElementById('results-container');
+    let html = '<div class="row">';
+    
+    results.forEach(orchid => {
+        const isSelected = selectedOrchids.has(orchid.id);
+        html += `
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card bg-secondary h-100 ${isSelected ? 'border-warning' : ''}">
+                    <div class="position-relative">
+                        ${orchid.image_url ? `
+                            <img src="${orchid.image_url}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                        ` : `
+                            <div class="bg-dark d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i data-feather="camera" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                            </div>
+                        `}
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <button class="btn btn-sm ${isSelected ? 'btn-warning' : 'btn-outline-light'}" 
+                                    onclick="toggleSelection(${orchid.id})">
+                                <i data-feather="${isSelected ? 'check-square' : 'square'}"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-light">${orchid.display_name}</h6>
+                        <p class="card-text small text-muted mb-2">
+                            <em>${orchid.scientific_name}</em>
+                        </p>
+                        
+                        <!-- Biodiversity Tags Preview -->
+                        <div class="mb-2">
+                            ${orchid.biodiversity_tags.slice(0, 3).map(tag => 
+                                `<span class="badge bg-primary me-1" style="font-size: 0.6rem;">${tag.replace('_', ' ')}</span>`
+                            ).join('')}
+                            ${orchid.biodiversity_tags.length > 3 ? 
+                                `<span class="badge bg-secondary" style="font-size: 0.6rem;">+${orchid.biodiversity_tags.length - 3}</span>` 
+                                : ''}
+                        </div>
+                        
+                        <!-- Geographic Info -->
+                        ${orchid.geographic_origin && orchid.geographic_origin.continent !== 'Unknown' ? `
+                            <p class="small text-info mb-2">
+                                <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                                ${orchid.geographic_origin.continent}
+                                ${orchid.geographic_origin.climate_zone !== 'Unknown' ? 
+                                    ` • ${orchid.geographic_origin.climate_zone}` : ''}
+                            </p>
+                        ` : ''}
+                        
+                        <!-- Temporal Info -->
+                        ${orchid.temporal_data && orchid.temporal_data.photo_date ? `
+                            <p class="small text-success mb-2">
+                                <i data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                                ${orchid.temporal_data.photo_date}
+                                ${orchid.temporal_data.season_estimate ? 
+                                    ` • ${orchid.temporal_data.season_estimate}` : ''}
+                            </p>
+                        ` : ''}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <button class="btn btn-outline-primary btn-sm w-100" 
+                                onclick="viewOrchidDetails(${orchid.id})">
+                            <i data-feather="eye" class="me-1"></i>View Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    document.getElementById('results-container').innerHTML = html;
+}
+
+// Toggle orchid selection
+function toggleSelection(orchidId) {
+    if (selectedOrchids.has(orchidId)) {
+        selectedOrchids.delete(orchidId);
+    } else {
+        selectedOrchids.add(orchidId);
+    }
+    
+    updateSelectionDisplay();
+    displayResults(allResults); // Refresh to update selection styling
+}
+
+// Update selection display
+function updateSelectionDisplay() {
+    const count = selectedOrchids.size;
+    document.getElementById('selected-count').textContent = count;
+    
+    const panel = document.getElementById('comparison-panel');
+    const compareBtn = document.getElementById('compare-btn');
+    
+    if (count > 0) {
+        panel.style.display = 'block';
+        compareBtn.disabled = count < 2;
+        
+        // Show selected orchids
+        const selectedList = Array.from(selectedOrchids).map(id => {
+            const orchid = allResults.find(r => r.id === id);
+            return orchid ? `
+                <div class="d-flex align-items-center justify-content-between mb-2 p-2 bg-secondary rounded">
+                    <span class="small">${orchid.display_name}</span>
+                    <button class="btn btn-sm btn-outline-danger" onclick="toggleSelection(${id})">
+                        <i data-feather="x" style="width: 12px; height: 12px;"></i>
+                    </button>
+                </div>
+            ` : '';
+        }).join('');
+        
+        document.getElementById('selected-orchids').innerHTML = selectedList;
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// Switch view mode
+function switchView(view) {
+    currentView = view;
+    
+    // Update active button
+    document.querySelectorAll('[id^="view-"]').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+    
+    displayResults(allResults);
+}
+
+// View detailed orchid analysis
+async function viewOrchidDetails(orchidId) {
+    try {
+        const response = await fetch(`/comparison/analyze/${orchidId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayOrchidModal(data.analysis);
+        }
+    } catch (error) {
+        console.error('Error loading orchid details:', error);
+    }
+}
+
+// Display orchid analysis modal
+function displayOrchidModal(analysis) {
+    const modal = new bootstrap.Modal(document.getElementById('orchidModal'));
+    const content = document.getElementById('modal-content');
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>EXIF Metadata</h6>
+                ${analysis.exif_metadata.extracted ? `
+                    <div class="bg-secondary p-3 rounded mb-3">
+                        ${analysis.exif_metadata.datetime_info ? `
+                            <p><strong>Date/Time:</strong><br>
+                            ${JSON.stringify(analysis.exif_metadata.datetime_info, null, 2).slice(0, 200)}...</p>
+                        ` : ''}
+                        ${analysis.exif_metadata.location_info ? `
+                            <p><strong>Location:</strong><br>
+                            ${JSON.stringify(analysis.exif_metadata.location_info, null, 2)}</p>
+                        ` : ''}
+                    </div>
+                ` : '<p class="text-muted">No EXIF data available</p>'}
+                
+                <h6>Geographic Origin</h6>
+                <div class="bg-secondary p-3 rounded mb-3">
+                    ${JSON.stringify(analysis.geographic_origin, null, 2)}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Biodiversity Tags</h6>
+                <div class="mb-3">
+                    ${analysis.biodiversity_tags.map(tag => 
+                        `<span class="badge bg-primary me-1 mb-1">${tag.replace('_', ' ')}</span>`
+                    ).join('')}
+                </div>
+                
+                <h6>Phenotypic Traits</h6>
+                <div class="bg-secondary p-3 rounded mb-3">
+                    ${JSON.stringify(analysis.phenotypic_traits, null, 2).slice(0, 300)}...
+                </div>
+                
+                <h6>Temporal Data</h6>
+                <div class="bg-secondary p-3 rounded">
+                    ${JSON.stringify(analysis.temporal_data, null, 2)}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+// Compare selected orchids
+function compareSelected() {
+    const selectedArray = Array.from(selectedOrchids);
+    if (selectedArray.length >= 2) {
+        const id1 = selectedArray[0];
+        const id2 = selectedArray[1];
+        window.open(`/comparison/compare/${id1}/${id2}`, '_blank');
+    }
+}
+
+// Utility functions
+function showLoading(show) {
+    document.getElementById('loading-indicator').style.display = show ? 'block' : 'none';
+}
+
+function showError(message) {
+    // Could implement toast notifications here
+    console.error(message);
+}
+</script>
+{% endblock %}

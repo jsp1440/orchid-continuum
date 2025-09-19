@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% set page_title = "Compare Versions - " + comparison.orchid.scientific_name or comparison.orchid.display_name %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i data-feather="eye" class="me-2"></i>Compare Versions
+                    </h1>
+                    <h4 class="text-muted">{{ comparison.orchid.scientific_name or comparison.orchid.display_name or "Unknown Orchid" }}</h4>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('photo_editor.create_editing_session', orchid_id=comparison.orchid.id) }}" 
+                       class="btn btn-primary">
+                        <i data-feather="edit-3" class="me-1"></i>Continue Editing
+                    </a>
+                    <a href="{{ url_for('photo_editor.edited_gallery') }}" class="btn btn-outline-secondary">
+                        <i data-feather="grid" class="me-1"></i>Back to Gallery
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Grid -->
+    <div class="row">
+        <!-- Original Photo -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="camera" class="me-2"></i>Original Submission
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="bg-light rounded mb-3" style="height: 300px; display: flex; align-items: center; justify-content: center;">
+                        {% if comparison.original_url %}
+                            <img src="{{ comparison.original_url }}" 
+                                 class="img-fluid rounded" 
+                                 alt="Original photo" 
+                                 style="max-height: 280px; cursor: pointer;"
+                                 onclick="showImageModal('{{ comparison.original_url }}', 'Original Photo')">
+                        {% else %}
+                            <div class="text-center">
+                                <i data-feather="image" class="text-muted mb-2" style="width: 64px; height: 64px;"></i>
+                                <p class="text-muted">No original image available</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-start">
+                        <h6 class="text-muted">Details:</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Source:</strong> {{ comparison.orchid.ingestion_source or 'Upload' }}</li>
+                            <li><strong>Uploaded:</strong> {{ comparison.orchid.created_at.strftime('%Y-%m-%d') if comparison.orchid.created_at else 'Unknown' }}</li>
+                            <li><strong>Filename:</strong> {{ comparison.orchid.image_filename or 'N/A' }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid">
+                        {% if comparison.original_url %}
+                            <a href="{{ comparison.original_url }}" download class="btn btn-outline-primary btn-sm">
+                                <i data-feather="download" class="me-1"></i>Download Original
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-sm" disabled>
+                                <i data-feather="download" class="me-1"></i>Not Available
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edited Versions -->
+        {% for version in comparison.edited_versions %}
+        <div class="col-md-4 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="edit-3" class="me-2"></i>Edited Version {{ loop.index }}
+                    </h5>
+                    <small>{{ version.created_at[:10] }}</small>
+                </div>
+                <div class="card-body text-center">
+                    <div class="bg-light rounded mb-3" style="height: 300px; display: flex; align-items: center; justify-content: center;">
+                        {% if version.url %}
+                            <img src="{{ version.url }}" 
+                                 class="img-fluid rounded" 
+                                 alt="Edited version {{ loop.index }}" 
+                                 style="max-height: 280px; cursor: pointer;"
+                                 onclick="showImageModal('{{ version.url }}', 'Edited Version {{ loop.index }}')">
+                        {% else %}
+                            <div class="text-center">
+                                <i data-feather="edit-3" class="text-muted mb-2" style="width: 64px; height: 64px;"></i>
+                                <p class="text-muted">Processing...</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-start">
+                        <h6 class="text-muted">Modifications:</h6>
+                        {% if version.edit_history %}
+                            <div class="mb-2">
+                                {% for edit in version.edit_history[-4:] %}
+                                    <span class="badge bg-secondary me-1">{{ edit.operation|title }}</span>
+                                {% endfor %}
+                                {% if version.edit_history|length > 4 %}
+                                    <span class="small text-muted">+{{ version.edit_history|length - 4 }} more</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if version.notes %}
+                            <p class="small text-muted">
+                                <strong>Notes:</strong> {{ version.notes[:100] }}...
+                            </p>
+                        {% endif %}
+                        
+                        <ul class="list-unstyled small">
+                            <li><strong>Session:</strong> {{ version.session_id[:8] }}...</li>
+                            <li><strong>Created:</strong> {{ version.created_at[:16] }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group btn-group-sm w-100">
+                        {% if version.url %}
+                            <a href="{{ version.url }}" download class="btn btn-outline-success">
+                                <i data-feather="download" style="width: 16px; height: 16px;"></i>
+                            </a>
+                        {% endif %}
+                        <button class="btn btn-outline-info" onclick="showVersionDetails('{{ version.version_id }}')">
+                            <i data-feather="info" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="compareWithOriginal('{{ version.version_id }}')">
+                            <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- No Edited Versions -->
+        {% if not comparison.edited_versions %}
+        <div class="col-md-8">
+            <div class="text-center py-5">
+                <i data-feather="edit-3" class="mb-3 text-muted" style="width: 96px; height: 96px;"></i>
+                <h4 class="text-muted">No Edited Versions</h4>
+                <p class="text-muted">
+                    This orchid photo hasn't been edited yet. Create your first edited version!
+                </p>
+                <a href="{{ url_for('photo_editor.create_editing_session', orchid_id=comparison.orchid.id) }}" 
+                   class="btn btn-primary btn-lg">
+                    <i data-feather="edit-3" class="me-2"></i>Start Editing
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Analysis Summary -->
+    {% if comparison.edited_versions %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Editing Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-primary">{{ comparison.edited_versions|length }}</h3>
+                                <p class="text-muted">Total Versions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-success">
+                                    {% set total_operations = 0 %}
+                                    {% for version in comparison.edited_versions %}
+                                        {% set total_operations = total_operations + (version.edit_history|length if version.edit_history else 0) %}
+                                    {% endfor %}
+                                    {{ total_operations }}
+                                </h3>
+                                <p class="text-muted">Total Operations</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-info">
+                                    {% if comparison.edited_versions %}
+                                        {{ comparison.edited_versions[-1].created_at[:10] }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </h3>
+                                <p class="text-muted">Last Edited</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-warning">AI</h3>
+                                <p class="text-muted">Analysis Available</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Preview">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="modalDownload" href="" download class="btn btn-primary">
+                    <i data-feather="download" class="me-1"></i>Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Version Details Modal -->
+<div class="modal fade" id="versionDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Version Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="versionDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showImageModal(imageUrl, title) {
+    document.getElementById('imageModalLabel').textContent = title;
+    document.getElementById('modalImage').src = imageUrl;
+    document.getElementById('modalDownload').href = imageUrl;
+    
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+function showVersionDetails(versionId) {
+    // Load version details
+    document.getElementById('versionDetailsContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('versionDetailsModal'));
+    modal.show();
+    
+    // Simulate loading details
+    setTimeout(() => {
+        document.getElementById('versionDetailsContent').innerHTML = `
+            <h6>Version ID: ${versionId}</h6>
+            <p class="text-muted">Detailed information about this edited version would be displayed here, 
+            including complete edit history, AI analysis results, and technical metadata.</p>
+        `;
+    }, 1000);
+}
+
+function compareWithOriginal(versionId) {
+    // Implement side-by-side comparison
+    alert('Side-by-side comparison feature would be implemented here.');
+}
+
+// Initialize feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

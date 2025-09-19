@@ -1,0 +1,314 @@
+<!-- Visitor Teaser Overlay for Widgets -->
+<!-- Shows locked features to visitors with compelling CTAs -->
+
+{% if is_visitor and locked_features %}
+<div class="membership-teaser-overlay">
+    <div class="teaser-backdrop" onclick="closeTeaserOverlay()"></div>
+    
+    <div class="teaser-content">
+        <div class="teaser-header">
+            <h4>
+                <i data-feather="lock" class="me-2"></i>
+                Member Features in {{ widget_name.title() }} Widget
+            </h4>
+            <button class="btn-close" onclick="closeTeaserOverlay()"></button>
+        </div>
+        
+        <div class="teaser-body">
+            <div class="membership-benefits">
+                {% for feature in locked_features %}
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i data-feather="{{ feature.icon or 'star' }}"></i>
+                    </div>
+                    <div class="benefit-content">
+                        <h6>{{ feature.title }}</h6>
+                        <p class="small text-muted">{{ feature.description }}</p>
+                        <div class="benefit-details">
+                            {{ feature.teaser | safe }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="social-proof">
+                <div class="stats-row">
+                    <div class="stat">
+                        <strong>547</strong>
+                        <small>Active Members</small>
+                    </div>
+                    <div class="stat">
+                        <strong>15,678</strong>
+                        <small>Expert Contributions</small>
+                    </div>
+                    <div class="stat">
+                        <strong>98.5%</strong>
+                        <small>Database Accuracy</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="teaser-footer">
+            <div class="cta-buttons">
+                <button class="btn btn-success btn-lg" onclick="window.location.href='/start-demo'">
+                    <i data-feather="play-circle" class="me-2"></i>
+                    Try 15-Min Demo
+                </button>
+                <button class="btn btn-outline-warning" onclick="window.location.href='/membership'">
+                    <i data-feather="unlock" class="me-2"></i>
+                    Become a Member
+                </button>
+            </div>
+            
+            <div class="member-value-prop">
+                <small class="text-muted">
+                    Join the Five Cities Orchid Society and unlock all premium features • Free with society membership
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.membership-teaser-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.teaser-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+}
+
+.teaser-content {
+    position: relative;
+    background: var(--bs-body-bg);
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.teaser-header {
+    padding: 2rem 2rem 1rem;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border-radius: 16px 16px 0 0;
+    position: relative;
+}
+
+.teaser-header .btn-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    filter: invert(1);
+}
+
+.teaser-body {
+    padding: 2rem;
+}
+
+.benefit-card {
+    display: flex;
+    align-items: start;
+    padding: 1.5rem;
+    background: rgba(40, 167, 69, 0.05);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #28a745;
+}
+
+.benefit-icon {
+    width: 48px;
+    height: 48px;
+    background: #28a745;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.benefit-icon i {
+    color: white;
+    width: 24px;
+    height: 24px;
+}
+
+.benefit-content h6 {
+    margin-bottom: 0.5rem;
+    color: #28a745;
+}
+
+.benefit-details {
+    font-size: 0.9rem;
+    color: var(--bs-text-muted);
+    line-height: 1.4;
+}
+
+.social-proof {
+    background: rgba(23, 162, 184, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.stat strong {
+    display: block;
+    font-size: 1.5rem;
+    color: #17a2b8;
+}
+
+.stat small {
+    color: var(--bs-text-muted);
+    font-size: 0.8rem;
+}
+
+.teaser-footer {
+    padding: 2rem;
+    background: rgba(0,0,0,0.02);
+    border-radius: 0 0 16px 16px;
+    text-align: center;
+}
+
+.cta-buttons {
+    margin-bottom: 1rem;
+}
+
+.cta-buttons .btn {
+    margin: 0 0.5rem;
+    min-width: 140px;
+}
+
+.member-value-prop {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .teaser-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .teaser-header, .teaser-body, .teaser-footer {
+        padding: 1.5rem;
+    }
+    
+    .benefit-card {
+        padding: 1rem;
+    }
+    
+    .cta-buttons .btn {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+    
+    .stats-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>
+
+<script>
+function closeTeaserOverlay() {
+    document.querySelector('.membership-teaser-overlay').style.display = 'none';
+}
+
+function startDemoTour() {
+    // Close overlay and redirect to demo
+    closeTeaserOverlay();
+    
+    // Show demo signup modal or redirect
+    const demoModal = `
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i data-feather="play-circle" class="me-2"></i>
+                            Try Member Features
+                        </h5>
+                        <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Experience all member features with a demo account:</p>
+                        <form action="/membership/demo-login" method="post">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tier" value="member" id="demo-member" checked>
+                                    <label class="form-check-label" for="demo-member">
+                                        <strong>Member Demo</strong> - Try all premium features
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tier" value="expert" id="demo-expert">
+                                    <label class="form-check-label" for="demo-expert">
+                                        <strong>Expert Demo</strong> - Try expert verification tools
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i data-feather="play" class="me-2"></i>
+                                Start Demo Experience
+                            </button>
+                        </form>
+                        <div class="alert alert-info mt-3">
+                            <small>Demo sessions expire after 1 hour. No registration required.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', demoModal);
+    feather.replace();
+}
+
+// Auto-close after 30 seconds to avoid being annoying
+setTimeout(() => {
+    const overlay = document.querySelector('.membership-teaser-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0.8';
+        overlay.querySelector('.teaser-content').style.transform = 'scale(0.98)';
+    }
+}, 30000);
+
+// Initialize feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endif %}

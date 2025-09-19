@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hollywood Orchids Cinema Widget</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 0.5rem;
+        }
+
+        .widget-container {
+            max-width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .widget-header {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .widget-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .widget-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .movie-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(142, 68, 173, 0.2);
+        }
+
+        .movie-poster-container {
+            position: relative;
+            width: 100%;
+            height: 160px;
+            background: #000;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .poster-fallback {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .movie-info {
+            padding: 0.75rem;
+        }
+
+        .movie-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        .movie-year {
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .orchid-focus {
+            font-size: 0.75rem;
+            color: #8e44ad;
+            font-weight: 500;
+            background: rgba(142, 68, 173, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .movie-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .watch-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .watch-btn:hover {
+            background: #c0392b;
+            color: white;
+        }
+
+        .info-btn {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .info-btn:hover {
+            background: #d5dbdb;
+        }
+
+        .powered-by {
+            text-align: center;
+            padding: 0.75rem;
+            background: #f1f2f6;
+            font-size: 0.7rem;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+
+        .powered-by a {
+            color: #8e44ad;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Mobile optimization */
+        @media (max-width: 768px) {
+            .movies-grid {
+                grid-template-columns: 1fr;
+                padding: 0.75rem;
+                max-height: 500px;
+            }
+            
+            .movie-poster-container {
+                height: 140px;
+            }
+            
+            .widget-title {
+                font-size: 1.2rem;
+            }
+            
+            .movie-title {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.25rem;
+            }
+            
+            .widget-header {
+                padding: 0.75rem;
+            }
+            
+            .movies-grid {
+                padding: 0.5rem;
+                max-height: 400px;
+            }
+            
+            .movie-info {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Video modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .video-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .video-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: white;
+            color: #333;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .video-modal {
+                padding: 0.5rem;
+            }
+            
+            .close-btn {
+                top: -35px;
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="widget-header">
+            <div class="widget-title">🎬 Hollywood Orchids</div>
+            <div class="widget-subtitle">Cinema & Botanical Beauty</div>
+        </div>
+
+        <div class="movies-grid" id="moviesGrid">
+            <!-- Movies will be loaded here -->
+        </div>
+
+        <div class="powered-by">
+            Powered by <a href="https://fivecitiesorchidsociety.org" target="_blank">Five Cities Orchid Society</a>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <button class="close-btn" onclick="closeVideo()">×</button>
+            <iframe class="video-frame" id="videoFrame" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Featured movies for compact display
+        const featuredMovies = [
+            {
+                title: 'Adaptation (2002)',
+                year: 2002,
+                orchid_focus: 'Ghost Orchid Obsession',
+                poster_drive_id: '1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a6b',
+                youtube_url: 'https://www.youtube.com/embed/videoseries?list=PLsDoBTnmpIlXvZ7V0ppk3jRWL-sMCTlrw'
+            },
+            {
+                title: 'The Big Sleep (1946)',
+                year: 1946,
+                orchid_focus: 'Decay Beneath Glamour',
+                poster_drive_id: '1YRzsrv4_CIQ-uX-29e2QTZzLHlinkYlx',
+                youtube_url: 'https://www.youtube.com/embed/wFJBTpIKBnY'
+            },
+            {
+                title: 'Dennis the Menace (1993)',
+                year: 1993,
+                orchid_focus: 'Black Orchid Protection',
+                poster_drive_id: '170IkejyxZ1GG5MuY-Wou_k-3-fiPvRiL',
+                youtube_url: 'https://www.youtube.com/embed/7SxqyKh-9Uk'
+            },
+            {
+                title: 'Wild Orchid (1989)',
+                year: 1989,
+                orchid_focus: 'Sensuality & Passion',
+                poster_drive_id: '1RwlPE-mqFt1qiX7sp_0BuNQdYTxKHPy_',
+                youtube_url: 'https://www.youtube.com/embed/7QvVu2ZK_Ew'
+            },
+            {
+                title: 'The Black Orchid (1958)',
+                year: 1958,
+                orchid_focus: 'Love & Redemption',
+                poster_drive_id: '1oce4W1hQa5UnqEeTMEOdBUs-6Ru4HJ7Z',
+                youtube_url: 'https://www.youtube.com/embed/N7zqXkn8iwA'
+            },
+            {
+                title: 'Annihilation (2018)',
+                year: 2018,
+                orchid_focus: 'Mutation & Transformation',
+                poster_drive_id: '1OxJfz6qtD4XAsgl4oP9wXEhXul_ZKWIS',
+                youtube_url: 'https://www.youtube.com/embed/89OP78l9oF0'
+            }
+        ];
+
+        function renderMovies() {
+            const grid = document.getElementById('moviesGrid');
+            grid.innerHTML = '';
+
+            featuredMovies.forEach(movie => {
+                const movieCard = document.createElement('div');
+                movieCard.className = 'movie-card';
+                
+                const posterUrl = movie.poster_drive_id 
+                    ? `https://drive.google.com/uc?export=view&id=${movie.poster_drive_id}`
+                    : null;
+
+                movieCard.innerHTML = `
+                    <div class="movie-poster-container">
+                        ${posterUrl ? 
+                            `<img class="movie-poster" src="${posterUrl}" alt="${movie.title}" onerror="this.parentElement.innerHTML='<div class=\\"poster-fallback\\">🎬</div>'">` :
+                            '<div class="poster-fallback">🎬</div>'
+                        }
+                    </div>
+                    <div class="movie-info">
+                        <div class="movie-title">${movie.title}</div>
+                        <div class="movie-year">${movie.year}</div>
+                        <div class="orchid-focus">${movie.orchid_focus}</div>
+                        <div class="movie-actions">
+                            <button class="action-btn watch-btn" onclick="playVideo('${movie.youtube_url}')">
+                                ▶ Watch
+                            </button>
+                            <a class="action-btn info-btn" href="/widgets/hollywood-orchids/" target="_blank">
+                                ℹ Details
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(movieCard);
+            });
+        }
+
+        function playVideo(youtubeUrl) {
+            const modal = document.getElementById('videoModal');
+            const frame = document.getElementById('videoFrame');
+            
+            // Add autoplay parameter
+            const autoplayUrl = youtubeUrl + (youtubeUrl.includes('?') ? '&' : '?') + 'autoplay=1';
+            frame.src = autoplayUrl;
+            modal.classList.add('active');
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeVideo() {
+            const modal = document.getElementById('videoModal');
+            const frame = document.getElementById('videoFrame');
+            
+            frame.src = '';
+            modal.classList.remove('active');
+            
+            // Restore body scroll
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close video on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeVideo();
+            }
+        });
+
+        // Close video on backdrop click
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVideo();
+            }
+        });
+
+        // Initialize
+        renderMovies();
+
+        // Auto-resize for embedding
+        function adjustHeight() {
+            const container = document.querySelector('.widget-container');
+            const height = container.offsetHeight;
+            
+            // Post message to parent window for iframe resizing
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'resize',
+                    height: height + 20
+                }, '*');
+            }
+        }
+
+        // Adjust height on load and resize
+        window.addEventListener('load', adjustHeight);
+        window.addEventListener('resize', adjustHeight);
+
+        console.log('🎬 Hollywood Orchids embed widget loaded');
+    </script>
+</body>
+</html>

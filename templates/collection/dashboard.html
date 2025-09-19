@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+
+{% block title %}My Orchid Collection - Five Cities Orchid Society{% endblock %}
+
+{% block extra_css %}
+<link href="/api/mobile-widget-styles.css" rel="stylesheet">
+<style>
+.collection-dashboard {
+    padding: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.section-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.orchid-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.orchid-card:hover {
+    transform: translateY(-5px);
+}
+
+.orchid-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.orchid-info {
+    padding: 15px;
+}
+
+.orchid-name {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.orchid-scientific {
+    font-style: italic;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.care-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.care-indicator {
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.care-indicator.overdue {
+    background: #e74c3c;
+    color: white;
+}
+
+.care-indicator.today {
+    background: #f39c12;
+    color: white;
+}
+
+.care-indicator.good {
+    background: #27ae60;
+    color: white;
+}
+
+.reminders-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.reminder-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid #3498db;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reminder-item.overdue {
+    border-left-color: #e74c3c;
+}
+
+.reminder-item.today {
+    border-left-color: #f39c12;
+}
+
+.recommendations-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    transition: background 0.3s ease;
+}
+
+.recommendation-item:hover {
+    background: #f8f9fa;
+}
+
+.recommendation-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 15px;
+}
+
+.recommendation-info {
+    flex: 1;
+}
+
+.recommendation-name {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.recommendation-reason {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.compatibility-score {
+    background: #3498db;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.add-to-collection-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+}
+
+.add-to-collection-btn:hover {
+    background: #219a52;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #7f8c8d;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .collection-dashboard {
+        padding: 10px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .collection-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .reminder-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .recommendation-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .recommendation-image {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="collection-dashboard">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-light">
+            <i data-feather="heart" class="me-2"></i>
+            My Orchid Collection
+        </h1>
+        <div>
+            <a href="{{ url_for('gallery') }}" class="btn btn-primary me-2">
+                <i data-feather="plus" class="me-1"></i>Add from Gallery
+            </a>
+            <a href="{{ url_for('upload') }}" class="btn btn-success">
+                <i data-feather="camera" class="me-1"></i>Upload New
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ dashboard.statistics.total_owned }}</div>
+            <div class="stat-label">Orchids Owned</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ dashboard.statistics.genera_count }}</div>
+            <div class="stat-label">Different Genera</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ dashboard.statistics.total_wishlist }}</div>
+            <div class="stat-label">On Wishlist</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ dashboard.statistics.overdue_care + dashboard.statistics.care_due_today }}</div>
+            <div class="stat-label">Care Tasks</div>
+        </div>
+    </div>
+
+    <!-- Care Reminders -->
+    {% if dashboard.care_reminders %}
+    <div class="reminders-section">
+        <div class="section-header">
+            <h3><i data-feather="clock" class="me-2"></i>Care Reminders</h3>
+        </div>
+        {% for reminder in dashboard.care_reminders[:5] %}
+        <div class="reminder-item {{ reminder.urgency }}">
+            <div>
+                <strong>{{ reminder.orchid_name }}</strong> - {{ reminder.care_type.title() }}
+                <br>
+                <small class="text-muted">
+                    {% if reminder.urgency == 'overdue' %}
+                        {{ reminder.days_until|abs }} days overdue
+                    {% elif reminder.urgency == 'today' %}
+                        Due today
+                    {% else %}
+                        Due in {{ reminder.days_until }} days
+                    {% endif %}
+                </small>
+            </div>
+            <button class="btn btn-sm btn-outline-primary log-care-btn" 
+                    data-orchid-id="{{ reminder.orchid_id }}" 
+                    data-care-type="{{ reminder.care_type }}">
+                Mark Done
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- My Collection -->
+    <div class="section-header">
+        <h3><i data-feather="grid" class="me-2"></i>My Orchids</h3>
+        <span class="badge bg-secondary">{{ dashboard.statistics.total_owned }} orchids</span>
+    </div>
+
+    {% if dashboard.collection.owned_orchids %}
+    <div class="collection-grid">
+        {% for orchid in dashboard.collection.owned_orchids %}
+        <div class="orchid-card">
+            {% if orchid.image_url %}
+            <img src="{{ orchid.image_url }}" alt="{{ orchid.display_name }}" class="orchid-image">
+            {% else %}
+            <div class="orchid-image d-flex align-items-center justify-content-center bg-light">
+                <i data-feather="camera" class="text-muted" style="width: 48px; height: 48px;"></i>
+            </div>
+            {% endif %}
+            
+            <div class="orchid-info">
+                <div class="orchid-name">{{ orchid.display_name }}</div>
+                <div class="orchid-scientific">{{ orchid.scientific_name or 'Unknown species' }}</div>
+                
+                {% if orchid.personal_notes %}
+                <p class="small text-muted">{{ orchid.personal_notes[:100] }}{% if orchid.personal_notes|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                
+                <div class="care-status">
+                    <span class="care-indicator good">{{ orchid.current_stage or 'Healthy' }}</span>
+                    <small class="text-muted">Added {{ orchid.added_at[:10] }}</small>
+                </div>
+                
+                <div class="mt-2">
+                    <a href="/orchid/{{ orchid.orchid_id }}" class="btn btn-sm btn-outline-primary me-2">View Details</a>
+                    <button class="btn btn-sm btn-outline-success add-to-wishlist-btn" 
+                            data-orchid-id="{{ orchid.orchid_id }}">
+                        <i data-feather="star" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">🌺</div>
+        <h4>Start Your Orchid Journey</h4>
+        <p>Add your first orchid to begin tracking your collection and receiving personalized care reminders.</p>
+        <a href="{{ url_for('gallery') }}" class="btn btn-primary">Browse Gallery</a>
+    </div>
+    {% endif %}
+
+    <!-- Recommendations -->
+    {% if recommendations.recommendations %}
+    <div class="recommendations-section">
+        <div class="section-header">
+            <h3><i data-feather="target" class="me-2"></i>Recommended for You</h3>
+            <small class="text-muted">Based on your collection and preferences</small>
+        </div>
+        
+        {% for rec in recommendations.recommendations[:5] %}
+        <div class="recommendation-item">
+            {% if rec.image_url %}
+            <img src="{{ rec.image_url }}" alt="{{ rec.display_name }}" class="recommendation-image">
+            {% else %}
+            <div class="recommendation-image d-flex align-items-center justify-content-center bg-light">
+                <i data-feather="camera" class="text-muted"></i>
+            </div>
+            {% endif %}
+            
+            <div class="recommendation-info">
+                <div class="recommendation-name">{{ rec.display_name }}</div>
+                <div class="text-muted small">{{ rec.scientific_name }}</div>
+                <div class="recommendation-reason">{{ rec.reason }}</div>
+            </div>
+            
+            <div class="d-flex align-items-center">
+                <span class="compatibility-score me-3">{{ (rec.care_compatibility * 100)|round }}% match</span>
+                <button class="add-to-collection-btn" 
+                        data-orchid-id="{{ rec.orchid_id }}" 
+                        data-collection-type="wishlist">
+                    Add to Wishlist
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Genus Distribution Chart -->
+    {% if dashboard.genus_distribution %}
+    <div class="section-header">
+        <h3><i data-feather="pie-chart" class="me-2"></i>Genus Distribution</h3>
+    </div>
+    <div class="bg-white p-4 rounded shadow-sm">
+        <canvas id="genusChart" width="400" height="200"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Care Logging Modal -->
+<div class="modal fade" id="careLogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Care Activity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="careLogForm">
+                    <input type="hidden" id="careOrchidId">
+                    <input type="hidden" id="careType">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Care Type</label>
+                        <input type="text" class="form-control" id="careTypeDisplay" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="careNotes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="careNotes" rows="3" 
+                                placeholder="Any observations or special notes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCareLog">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/api/mobile-touch-controls.js?widget_type=collection"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Log care activity
+    document.querySelectorAll('.log-care-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orchidId = this.dataset.orchidId;
+            const careType = this.dataset.careType;
+            
+            document.getElementById('careOrchidId').value = orchidId;
+            document.getElementById('careType').value = careType;
+            document.getElementById('careTypeDisplay').value = careType.charAt(0).toUpperCase() + careType.slice(1);
+            
+            new bootstrap.Modal(document.getElementById('careLogModal')).show();
+        });
+    });
+    
+    // Save care log
+    document.getElementById('saveCareLog').addEventListener('click', function() {
+        const orchidId = document.getElementById('careOrchidId').value;
+        const careType = document.getElementById('careType').value;
+        const notes = document.getElementById('careNotes').value;
+        
+        fetch('/api/collection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'log_care',
+                orchid_id: parseInt(orchidId),
+                care_type: careType,
+                notes: notes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('careLogModal')).hide();
+                location.reload(); // Refresh to update reminders
+            } else {
+                alert('Error logging care activity: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error occurred');
+        });
+    });
+    
+    // Add to collection/wishlist
+    document.querySelectorAll('.add-to-collection-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orchidId = this.dataset.orchidId;
+            const collectionType = this.dataset.collectionType || 'wishlist';
+            
+            fetch('/api/collection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'add_orchid',
+                    orchid_id: parseInt(orchidId),
+                    collection_type: collectionType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.innerHTML = '<i data-feather="check" style="width: 14px; height: 14px;"></i> Added';
+                    this.disabled = true;
+                    feather.replace();
+                } else {
+                    alert('Error adding to collection: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error occurred');
+            });
+        });
+    });
+    
+    // Genus distribution chart
+    {% if dashboard.genus_distribution %}
+    const ctx = document.getElementById('genusChart').getContext('2d');
+    const genusData = {{ dashboard.genus_distribution | tojsonfilter }};
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(genusData),
+            datasets: [{
+                data: Object.values(genusData),
+                backgroundColor: [
+                    '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
+                    '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#f1c40f'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    {% endif %}
+    
+    // Initialize feather icons
+    feather.replace();
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

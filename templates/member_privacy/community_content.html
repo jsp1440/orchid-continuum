@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌺 Community Posts - Five Cities Orchid Society</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .community-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 30px 30px;
+        }
+        
+        .post-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .post-content {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-family: Georgia, serif;
+            line-height: 1.6;
+        }
+        
+        .post-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .member-badge {
+            background: #3498db;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .content-type-badge {
+            background: #27ae60;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .orchid-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .no-content {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin: 2rem 0;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <section class="community-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-3">
+                        🌺 Community Posts
+                    </h1>
+                    <p class="lead mb-0">
+                        Approved content from our community members. All posts are reviewed to ensure a supportive environment.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div style="font-size: 6rem; opacity: 0.3;">
+                        👥🌸
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <!-- Community Stats -->
+        <div class="stats-row">
+            <div class="stats-card">
+                <div class="stat-value">{{ content_items|length }}</div>
+                <div>Published Posts</div>
+            </div>
+            <div class="stats-card">
+                <div class="stat-value">{{ content_items|selectattr('orchid_related')|list|length }}</div>
+                <div>Orchid Related</div>
+            </div>
+            <div class="stats-card">
+                <div class="stat-value">{{ content_items|selectattr('content_type', 'equalto', 'tip')|list|length }}</div>
+                <div>Care Tips</div>
+            </div>
+        </div>
+
+        {% if content_items|length == 0 %}
+        <!-- No Content Yet -->
+        <div class="no-content">
+            <div style="font-size: 4rem; margin-bottom: 2rem;">🌱</div>
+            <h3>Community Growing!</h3>
+            <p class="text-muted">No approved content yet, but our community is just getting started!</p>
+            <a href="/member-privacy/submit-content" class="btn btn-success mt-3">
+                <i data-feather="plus" class="me-2"></i>
+                Be the First to Share
+            </a>
+        </div>
+        {% else %}
+
+        <!-- Community Posts -->
+        {% for item in content_items %}
+        <div class="post-item">
+            <!-- Post Header -->
+            <div class="post-meta">
+                <div>
+                    <span class="member-badge">👤 {{ item.display_name }}</span>
+                    <span class="content-type-badge">{{ item.content_type|title }}</span>
+                    {% if item.orchid_related %}
+                    <span class="orchid-badge">🌺 Orchid Related</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <small class="text-muted">
+                        {{ item.approved_date.strftime('%B %d, %Y') if item.approved_date else item.submitted_date.strftime('%B %d, %Y') }}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Post Title -->
+            {% if item.title %}
+            <h4 class="mb-3">{{ item.title }}</h4>
+            {% endif %}
+
+            <!-- Post Content -->
+            <div class="post-content">
+                {{ item.content | replace('\n', '<br>')|safe }}
+            </div>
+
+            <!-- Post Actions -->
+            <div class="text-end mt-3">
+                <button class="btn btn-sm btn-outline-warning" 
+                        onclick="reportPostBug('{{ item.id }}', '{{ item.display_name }}')"
+                        title="Report issue with this post">
+                    🐛 Report Issue
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="text-center mb-4">
+            <a href="/member-privacy/submit-content" class="btn btn-success me-3">
+                <i data-feather="plus" class="me-2"></i>
+                Share Something
+            </a>
+            <a href="/member-privacy/privacy-settings" class="btn btn-outline-light me-3">
+                <i data-feather="settings" class="me-2"></i>
+                Privacy Settings
+            </a>
+            <a href="/" class="btn btn-outline-light">
+                <i data-feather="arrow-left" class="me-2"></i>
+                Back to Main Site
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Bug reporting function for community posts
+        function reportPostBug(postId, authorName) {
+            const issueDescription = prompt(`What's wrong with ${authorName}'s post?\n\nPlease describe the issue (e.g., inappropriate content, technical problem, formatting issue):`);
+            if (!issueDescription) return;
+            
+            const email = prompt('Email (optional, for follow-up):');
+            
+            fetch('/api/report-bug', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    item_type: 'community_post',
+                    item_id: postId,
+                    item_name: `Post by ${authorName}`,
+                    issue_type: 'other',
+                    description: issueDescription,
+                    user_email: email || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Issue reported! Our team will review this post and take appropriate action if needed.');
+                } else {
+                    alert('❌ Error submitting report. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Bug report error:', error);
+                alert('❌ Network error. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

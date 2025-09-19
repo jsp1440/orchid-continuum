@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+{% set title = "Geographic Mapping" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+.mapping-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.mapping-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.map-preview {
+    height: 300px;
+    border-radius: 10px;
+    border: 2px solid rgba(0, 212, 170, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.map-preview:hover {
+    border-color: #00d4aa;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+}
+
+.map-icon {
+    color: #00d4aa;
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 212, 170, 0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.stat-card {
+    background: rgba(0, 212, 170, 0.1);
+    padding: 1.5rem;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(0, 212, 170, 0.3);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00d4aa;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.btn-mapping {
+    background: linear-gradient(135deg, #00d4aa, #00a085);
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-mapping:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 212, 170, 0.4);
+    color: white;
+}
+
+.loading-placeholder {
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mapping-container">
+    <div class="container py-5">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="display-4 mb-3"><i data-feather="globe"></i> <strong>Orchid Geographic Mapping</strong></h1>
+            <p class="lead mb-4">Explore the global distribution of orchids through interactive maps powered by 35,000+ GBIF specimens</p>
+            <p class="text-light">Visualize orchid diversity patterns, species hotspots, and geographic distributions worldwide</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="mapping-card">
+            <h3 class="mb-4"><i data-feather="bar-chart"></i> Global Orchid Statistics</h3>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card loading-placeholder">
+                    <div class="stat-number">---</div>
+                    <div class="text-muted">Total Orchids</div>
+                </div>
+                <div class="stat-card loading-placeholder">
+                    <div class="stat-number">---</div>
+                    <div class="text-muted">With Coordinates</div>
+                </div>
+                <div class="stat-card loading-placeholder">
+                    <div class="stat-number">---%</div>
+                    <div class="text-muted">Geographic Coverage</div>
+                </div>
+                <div class="stat-card loading-placeholder">
+                    <div class="stat-number">---</div>
+                    <div class="text-muted">Countries</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Mapping Options -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mapping-card">
+                    <h3 class="mb-3"><i data-feather="map"></i> Interactive World Map</h3>
+                    <p class="text-muted mb-4">Explore orchid occurrences worldwide with interactive markers and heat maps</p>
+                    
+                    <a href="/mapping/world-map" class="map-preview">
+                        <div>
+                            <div class="map-icon">🌍</div>
+                            <h5>Launch World Map</h5>
+                            <p class="text-muted">Click to explore global orchid distribution</p>
+                        </div>
+                    </a>
+                    
+                    <div class="mt-3 text-center">
+                        <a href="/mapping/world-map" class="btn-mapping">
+                            <i data-feather="external-link"></i> Open Interactive Map
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="mapping-card">
+                    <h3 class="mb-3"><i data-feather="layers"></i> Species Density Maps</h3>
+                    <p class="text-muted mb-4">Visualize orchid diversity hotspots and concentration patterns</p>
+                    
+                    <div class="map-preview" onclick="showHeatMap()">
+                        <div>
+                            <div class="map-icon">🔥</div>
+                            <h5>Heat Map View</h5>
+                            <p class="text-muted">Species density visualization</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 text-center">
+                        <button class="btn-mapping" onclick="showHeatMap()">
+                            <i data-feather="trending-up"></i> View Heat Maps
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <i data-feather="filter" style="width: 48px; height: 48px; color: #00d4aa;"></i>
+                <h5 class="mt-3">Genus Mapping</h5>
+                <p class="text-muted">Explore distribution patterns of specific orchid genera</p>
+                <button class="btn btn-outline-light btn-sm" onclick="showGenusSelector()">
+                    <i data-feather="search"></i> Select Genus
+                </button>
+            </div>
+            
+            <div class="feature-card">
+                <i data-feather="download" style="width: 48px; height: 48px; color: #00d4aa;"></i>
+                <h5 class="mt-3">Data Export</h5>
+                <p class="text-muted">Download geographic data in GeoJSON, CSV, or KML formats</p>
+                <button class="btn btn-outline-light btn-sm" onclick="showExportOptions()">
+                    <i data-feather="download-cloud"></i> Export Data
+                </button>
+            </div>
+            
+            <div class="feature-card">
+                <i data-feather="pie-chart" style="width: 48px; height: 48px; color: #00d4aa;"></i>
+                <h5 class="mt-3">Regional Analysis</h5>
+                <p class="text-muted">Compare orchid diversity across different regions</p>
+                <button class="btn btn-outline-light btn-sm" onclick="showRegionalAnalysis()">
+                    <i data-feather="bar-chart-2"></i> Analyze Regions
+                </button>
+            </div>
+            
+            <div class="feature-card">
+                <i data-feather="target" style="width: 48px; height: 48px; color: #00d4aa;"></i>
+                <h5 class="mt-3">Biodiversity Hotspots</h5>
+                <p class="text-muted">Identify areas with highest orchid diversity</p>
+                <button class="btn btn-outline-light btn-sm" onclick="showHotspots()">
+                    <i data-feather="map-pin"></i> Find Hotspots
+                </button>
+            </div>
+        </div>
+
+        <!-- API Information -->
+        <div class="mapping-card mt-4">
+            <h3 class="mb-3"><i data-feather="code"></i> Mapping API</h3>
+            <p class="text-muted mb-3">Access orchid geographic data programmatically</p>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Coordinates API</h6>
+                    <code>/mapping/api/coordinates</code>
+                    <p class="small text-muted mt-1">Get orchid coordinate data</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Statistics API</h6>
+                    <code>/mapping/api/statistics</code>
+                    <p class="small text-muted mt-1">Geographic statistics</p>
+                </div>
+                <div class="col-md-4">
+                    <h6>Export API</h6>
+                    <code>/mapping/api/export/geojson</code>
+                    <p class="small text-muted mt-1">Export geographic data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals and Interactive Elements -->
+<div class="modal fade" id="genusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title"><i data-feather="filter"></i> Select Orchid Genus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Choose an orchid genus to view its geographic distribution:</p>
+                <select class="form-select bg-dark text-light border-secondary" id="genusSelect">
+                    <option value="">Loading genera...</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="viewGenusMap()">View Map</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load statistics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics();
+    loadGenera();
+    feather.replace();
+});
+
+async function loadStatistics() {
+    try {
+        const response = await fetch('/mapping/api/statistics');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.statistics;
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total_orchids.toLocaleString()}</div>
+                    <div class="text-muted">Total Orchids</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.with_coordinates.toLocaleString()}</div>
+                    <div class="text-muted">With Coordinates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.coordinate_coverage}%</div>
+                    <div class="text-muted">Geographic Coverage</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.top_regions.length}</div>
+                    <div class="text-muted">Regions</div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading statistics:', error);
+    }
+}
+
+async function loadGenera() {
+    try {
+        const response = await fetch('/mapping/api/statistics');
+        const data = await response.json();
+        
+        if (data.success && data.statistics.top_genera) {
+            const select = document.getElementById('genusSelect');
+            select.innerHTML = '<option value="">Select a genus...</option>';
+            
+            data.statistics.top_genera.forEach(genus => {
+                select.innerHTML += `<option value="${genus.genus}">${genus.genus} (${genus.count} specimens)</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading genera:', error);
+    }
+}
+
+function showHeatMap() {
+    window.open('/mapping/world-map?view=heatmap', '_blank');
+}
+
+function showGenusSelector() {
+    new bootstrap.Modal(document.getElementById('genusModal')).show();
+}
+
+function viewGenusMap() {
+    const genus = document.getElementById('genusSelect').value;
+    if (genus) {
+        window.open(`/mapping/genus-map/${genus}`, '_blank');
+        bootstrap.Modal.getInstance(document.getElementById('genusModal')).hide();
+    } else {
+        alert('Please select a genus first');
+    }
+}
+
+function showExportOptions() {
+    const formats = ['geojson', 'csv'];
+    const format = prompt(`Choose export format:\n${formats.join(', ')}`);
+    
+    if (format && formats.includes(format.toLowerCase())) {
+        window.open(`/mapping/api/export/${format.toLowerCase()}`, '_blank');
+    }
+}
+
+function showRegionalAnalysis() {
+    alert('Regional analysis feature coming soon! This will show comparative charts of orchid diversity across different regions.');
+}
+
+function showHotspots() {
+    alert('Biodiversity hotspot analysis coming soon! This will highlight areas with the highest orchid species concentration.');
+}
+</script>
+{% endblock %}

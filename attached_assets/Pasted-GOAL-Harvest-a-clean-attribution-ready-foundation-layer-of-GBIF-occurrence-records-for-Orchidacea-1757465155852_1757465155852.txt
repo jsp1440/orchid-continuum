@@ -1,0 +1,46 @@
+GOAL
+Harvest a clean, attribution-ready “foundation layer” of GBIF occurrence records for Orchidaceae to power downstream cross-linking (pollination, symbiosis, ethnobotany).
+
+SCOPE
+- Taxon: Orchidaceae (family) including accepted names + synonyms
+- Geography: global
+- Time: all years (but keep eventDate for phenology)
+- License: ONLY records with CC0, CC BY, or CC BY-NC licenses
+- Basis of record: HUMAN_OBSERVATION, OBSERVATION, PRESERVED_SPECIMEN
+- Geospatial: must have coordinates (decimalLatitude/decimalLongitude), with coordinateUncertaintyInMeters <= 50000 if present
+- Quality: exclude records flagged as "PRESUMED_NEGATED_LONGITUDE", "PRESUMED_NEGATED_LATITUDE", "COUNTRY_COORDINATE_MISMATCH", or "ZERO_COORDINATE"; remove obvious duplicates (same scientificName, date, lat/lon rounded to 4 decimals, same datasetKey)
+
+FIELDS (Darwin Core first, then GBIF extras)
+occurrenceID, datasetKey, datasetName, license, rightsHolder, institutionCode, collectionCode,
+scientificName, acceptedScientificName (resolve), taxonRank, taxonKey, acceptedTaxonKey, kingdom, phylum, class, order, family, genus, species,
+eventDate, year, month, day, recordedBy, identifiedBy,
+decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters, geodeticDatum, elevation, minimumElevationInMeters, maximumElevationInMeters,
+country, countryCode, stateProvince, county, municipality, locality,
+basisOfRecord, establishmentMeans, occurrenceStatus,
+individualCount, lifeStage, sex,
+media (urls), references (urls),
+issue (list), modified, lastInterpreted,
+gbifID (stable key), publishingOrgKey
+
+NORMALIZATION
+- Resolve synonyms to acceptedTaxonKey/acceptedScientificName (keep verbatim scientificName + taxonomic status)
+- Normalize country/region names to ISO codes; strip bad coords; round coords to 5 decimals for de-dup
+- Store both original and normalized fields
+- Store dataset-level attribution + license for display
+
+OUTPUT
+- Partition by genus (e.g., /orchidaceae/genus=Vanilla/part-0001.parquet)
+- Provide Parquet + JSONL exports
+- Emit a catalog: datasets.json (datasetKey → {title, publisher, license, citation})
+- Emit taxa.json (taxonKey → {acceptedName, rank, synonyms[], commonNames[]})
+
+VALIDATION
+- Report totals by license, basisOfRecord, and top 20 datasetKeys
+- Sample 100 records with media links; confirm media resolves (HTTP 200)
+- Write a data dictionary (fields + types)
+
+DELIVERABLES
+- /exports/gbif_orchidaceae/{parquet,jsonl}
+- /exports/catalog/datasets.json
+- /exports/catalog/taxa.json
+- /exports/reports/quality_summary.md

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Climate Research - CAM Photosynthesis & Carbon Sequestration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row bg-gradient-success text-white py-5 mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">🌡️ Climate Research Platform</h1>
+            <p class="lead">CAM Photosynthesis & Mycorrhizal Carbon Sequestration</p>
+            <div class="mt-4">
+                <a href="{{ url_for('climate_research.view_projects') }}" class="btn btn-warning btn-lg me-3">
+                    <i data-feather="activity"></i> Research Projects
+                </a>
+                <a href="{{ url_for('climate_research.cam_database') }}" class="btn btn-outline-light btn-lg">
+                    <i data-feather="database"></i> CAM Orchid Database
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Vision -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto text-center">
+            <h2 class="mb-4">Revolutionary Climate Solutions Through Orchid Biology</h2>
+            <p class="lead text-muted">
+                CAM orchids have evolved remarkable carbon capture abilities, fixing CO2 at night and storing it as malic acid. 
+                Combined with their mycorrhizal partnerships for underground carbon storage, orchids could play a transformative 
+                role in atmospheric carbon removal and climate mitigation.
+            </p>
+        </div>
+    </div>
+
+    <!-- CAM Process Visualization -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🌙 CAM Photosynthesis Process</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Night Phase (CO2 Capture)</h6>
+                            <ul class="list-unstyled">
+                                <li>🌙 <strong>Stomata Open:</strong> CO2 enters leaf tissue</li>
+                                <li>⚗️ <strong>PEP Carboxylase:</strong> Fixes CO2 into organic acids</li>
+                                <li>🧪 <strong>Malic Acid Storage:</strong> CO2 stored as malic acid in vacuoles</li>
+                                <li>💧 <strong>Water Conservation:</strong> Efficient CO2 uptake minimizes water loss</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Day Phase (Carbon Processing)</h6>
+                            <ul class="list-unstyled">
+                                <li>☀️ <strong>Stomata Closed:</strong> Water conservation during heat</li>
+                                <li>🔬 <strong>Malic Acid Breakdown:</strong> CO2 released internally</li>
+                                <li>🌱 <strong>Calvin Cycle:</strong> CO2 converted to sugars</li>
+                                <li>🍄 <strong>Mycorrhizal Transfer:</strong> Carbon shared with fungal partners</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Priorities -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-5">Climate Research Priorities</h3>
+        </div>
+        
+        {% for priority_id, priority_data in research_data.research_priorities.items() %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">{{ priority_id.replace('_', ' ').title() }}</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">{{ priority_data.description }}</p>
+                    
+                    <div class="mb-3">
+                        <strong>Target Species:</strong>
+                        <div class="mt-1">
+                            {% for species in priority_data.target_species %}
+                            <span class="badge bg-light text-dark me-1 mb-1"><em>{{ species }}</em></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Research Goals:</strong>
+                        <ul class="small mt-1 mb-0">
+                            {% for goal in priority_data.research_goals %}
+                            <li>{{ goal }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- CAM Orchid Database Preview -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">High-Efficiency CAM Orchids</h3>
+            <div class="row">
+                {% for species_id, species_data in research_data.cam_orchid_database.items() %}
+                <div class="col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">{{ species_data.common_name }}</h6>
+                            <small><em>{{ species_id.replace('_', ' ').title() }}</em></small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <strong>CO2 Uptake:</strong><br>
+                                    <span class="text-success">{{ species_data.co2_uptake_rate }} μmol/m²/s</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>CAM Type:</strong><br>
+                                    <span class="badge bg-secondary">{{ species_data.cam_type }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <strong>Water Efficiency:</strong><br>
+                                    <span class="text-info">{{ species_data.water_use_efficiency }} g/kg</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Carbon Transfer:</strong><br>
+                                    <span class="text-warning">{{ species_data.carbon_transfer_efficiency }}%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <strong>Malic Acid Peak:</strong> {{ species_data.malic_acid_peak }} mmol/g<br>
+                                <strong>Optimal Temp:</strong> {{ species_data.optimal_temperature }}°C
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Carbon Sequestration Targets -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Carbon Sequestration Research Targets</h3>
+            <div class="row">
+                {% for target_id, target_data in research_data.carbon_targets.items() %}
+                <div class="col-md-4 mb-3">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">{{ target_id.replace('_', ' ').title() }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Current Research:</strong>
+                                <p class="small text-muted">{{ target_data.current_research }}</p>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <strong>Enhancement Potential:</strong>
+                                <p class="small text-muted">{{ target_data.enhancement_potential }}</p>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <strong>Scaling Opportunities:</strong>
+                                <p class="small text-muted">{{ target_data.scaling_opportunities }}</p>
+                            </div>
+                            
+                            <div class="alert alert-success py-2">
+                                <strong>Target Reduction:</strong><br>
+                                <span class="h6 text-success">{{ target_data.target_reduction }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Climate Impact Summary -->
+    {% if research_data.climate_potential_summary %}
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">🌍 Climate Impact Potential</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-primary">{{ research_data.climate_potential_summary.total_species_studied }}</h4>
+                            <small>Species Studied</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-success">{{ research_data.climate_potential_summary.high_impact_species }}</h4>
+                            <small>High-Impact Species</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-info">{{ research_data.climate_potential_summary.average_co2_capture }}</h4>
+                            <small>Avg CO2 Capture (μmol/m²/s)</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-warning">15-50</h4>
+                            <small>Tons CO2/hectare/year potential</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Research Methodology -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-light">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Climate Research Methodology</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <h6>CAM Analysis</h6>
+                            <ul class="small">
+                                <li>Night/day CO2 flux measurement</li>
+                                <li>Malic acid concentration tracking</li>
+                                <li>Water use efficiency calculation</li>
+                                <li>Environmental optimization testing</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Carbon Sequestration</h6>
+                            <ul class="small">
+                                <li>Mycorrhizal carbon transfer rates</li>
+                                <li>Soil carbon storage measurement</li>
+                                <li>Fungal network carbon mapping</li>
+                                <li>Long-term sequestration tracking</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Climate Modeling</h6>
+                            <ul class="small">
+                                <li>Carbon capture potential scaling</li>
+                                <li>Climate change adaptation analysis</li>
+                                <li>Ecosystem impact assessment</li>
+                                <li>Economic viability modeling</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Implementation</h6>
+                            <ul class="small">
+                                <li>Large-scale cultivation trials</li>
+                                <li>Vertical farming integration</li>
+                                <li>Reforestation enhancement</li>
+                                <li>Carbon farming development</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h3 class="mb-3">Join the Climate Research Revolution</h3>
+            <p class="lead text-muted mb-4">
+                Help unlock the climate solution potential of CAM orchids and their mycorrhizal partnerships. 
+                Your research could contribute to breakthrough technologies for atmospheric carbon removal.
+            </p>
+            <div>
+                <a href="{{ url_for('climate_research.view_projects') }}" class="btn btn-success btn-lg me-3">
+                    <i data-feather="trending-up"></i> Start Climate Project
+                </a>
+                <a href="{{ url_for('climate_research.carbon_potential') }}" class="btn btn-outline-primary btn-lg">
+                    <i data-feather="pie-chart"></i> Carbon Potential Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initialize Feather Icons -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

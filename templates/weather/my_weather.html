@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% set title = "My Weather Dashboard" %}
+
+{% block head %}
+<style>
+.weather-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.location-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.weather-metric {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 5px 0;
+}
+
+.alert-card {
+    border-left: 4px solid;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 0 8px 8px 0;
+}
+
+.alert-critical { border-left-color: #dc3545; background-color: #f8d7da; }
+.alert-high { border-left-color: #fd7e14; background-color: #fff3cd; }
+.alert-medium { border-left-color: #ffc107; background-color: #fff3cd; }
+.alert-low { border-left-color: #20c997; background-color: #d1ecf1; }
+
+.add-location-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i data-feather="cloud" class="me-2"></i>My Weather Dashboard</h1>
+                <a href="{{ url_for('user_weather.add_location') }}" class="btn add-location-btn">
+                    <i data-feather="plus" class="me-2"></i>Add Location
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if alerts %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3><i data-feather="alert-triangle" class="me-2"></i>Weather Alerts</h3>
+            {% for alert in alerts %}
+            <div class="alert-card alert-{{ alert.severity }}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="mb-1">{{ alert.title }}</h5>
+                        <p class="mb-2">{{ alert.message }}</p>
+                        {% if alert.orchid_care_advice %}
+                        <small class="text-muted">
+                            <strong>Orchid Care:</strong> {{ alert.orchid_care_advice }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            onclick="acknowledgeAlert({{ alert.id }})">
+                        <i data-feather="check"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if locations %}
+    <div class="row">
+        {% for location in locations %}
+        <div class="col-md-6 col-lg-4">
+            <div class="location-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h4>{{ location.name }}</h4>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                data-bs-toggle="dropdown">
+                            <i data-feather="more-horizontal"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" 
+                                   href="{{ url_for('user_weather.location_detail', location_id=location.id) }}">
+                                <i data-feather="eye" class="me-2"></i>View Details</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" 
+                                   onclick="confirmDelete({{ location.id }}, '{{ location.name }}')">
+                                <i data-feather="trash-2" class="me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i data-feather="map-pin" class="me-1"></i>
+                        ZIP: {{ location.zip_code }} | {{ location.growing_type|title }}
+                    </small>
+                </div>
+
+                {% set weather = weather_data.get(location.id) %}
+                {% if weather %}
+                <div class="weather-card">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="weather-metric">
+                                <div style="font-size: 2rem; font-weight: bold;">
+                                    {{ "%.1f"|format(weather.temperature) }}°C
+                                </div>
+                                <small>Temperature</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="weather-metric">
+                                <div style="font-size: 2rem; font-weight: bold;">
+                                    {{ "%.0f"|format(weather.humidity) }}%
+                                </div>
+                                <small>Humidity</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="weather-metric">
+                                <div><strong>{{ "%.1f"|format(weather.wind_speed) }}</strong> km/h</div>
+                                <small>Wind Speed</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="weather-metric">
+                                <div><strong>{{ "%.0f"|format(weather.pressure) }}</strong> hPa</div>
+                                <small>Pressure</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if weather.vpd %}
+                    <div class="weather-metric mt-2">
+                        <div><strong>VPD:</strong> {{ "%.2f"|format(weather.vpd) }} kPa</div>
+                        <small>{% if weather.vpd < 0.8 %}Too Low{% elif weather.vpd > 1.2 %}Too High{% else %}Optimal{% endif %}</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('user_weather.location_detail', location_id=location.id) }}" 
+                           class="btn btn-light btn-sm">
+                            <i data-feather="trending-up" class="me-2"></i>View Forecast
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i data-feather="cloud-off" class="me-2"></i>
+                    Weather data not available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12 text-center py-5">
+            <i data-feather="cloud-drizzle" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h3 class="text-muted">No Locations Added Yet</h3>
+            <p class="lead text-muted">Add your first location by entering your ZIP code to get personalized weather for your orchids.</p>
+            <a href="{{ url_for('user_weather.add_location') }}" class="btn add-location-btn">
+                <i data-feather="plus" class="me-2"></i>Add Your First Location
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function acknowledgeAlert(alertId) {
+    fetch(`{{ url_for('user_weather.acknowledge_alert', alert_id=0) }}`.replace('0', alertId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error acknowledging alert');
+        }
+    });
+}
+
+function confirmDelete(locationId, locationName) {
+    if (confirm(`Are you sure you want to delete "${locationName}"? This will remove all weather data and alerts for this location.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ url_for('user_weather.delete_location', location_id=0) }}`.replace('0', locationId);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

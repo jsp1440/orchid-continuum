@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecosystem Explorer - {{ widget_data.title if widget_data.title else 'Orchid Continuum' }}</title>
+    
+    <!-- Bootstrap CSS with dark theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e9ecef;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .widget-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem auto;
+            max-width: 1200px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .widget-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(111, 66, 193, 0.3);
+        }
+        
+        .widget-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .widget-title h1 {
+            margin: 0;
+            color: #fff;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+        
+        .ecosystem-icon {
+            font-size: 2rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .widget-subtitle {
+            color: #adb5bd;
+            font-style: italic;
+            margin: 0;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(111, 66, 193, 0.2);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(111, 66, 193, 0.5);
+        }
+        
+        .search-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-input-group {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .search-input::placeholder {
+            color: #adb5bd;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+            pointer-events: none;
+        }
+        
+        .search-btn {
+            background: linear-gradient(45deg, #6f42c1, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-btn:hover {
+            background: linear-gradient(45deg, #5a32a3, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4);
+        }
+        
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-section.active {
+            display: block;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .species-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #6f42c1;
+        }
+        
+        .species-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .species-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #6f42c1;
+            background: rgba(111, 66, 193, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .species-details h3 {
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        
+        .species-details .scientific-name {
+            color: #adb5bd;
+            font-style: italic;
+            margin: 0;
+        }
+        
+        .ecosystem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .ecosystem-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .ecosystem-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: rgba(111, 66, 193, 0.3);
+        }
+        
+        .ecosystem-card h4 {
+            color: #fff;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .ecosystem-card .card-icon {
+            color: #6f42c1;
+            font-size: 1.5rem;
+        }
+        
+        .ecosystem-data {
+            margin: 0.75rem 0;
+        }
+        
+        .data-label {
+            color: #adb5bd;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .data-value {
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .habitat-insights {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .habitat-insights h5 {
+            color: #28a745;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .insight-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .insight-item h6 {
+            color: #28a745;
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .insight-item p {
+            margin: 0;
+            color: #e9ecef;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+            color: #f8d7da;
+        }
+        
+        .home-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(111, 66, 193, 0.2);
+            border: 1px solid #6f42c1;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .home-btn:hover {
+            background: rgba(111, 66, 193, 0.3);
+            color: #fff;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+        
+        .suggestions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .suggestion-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #adb5bd;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .suggestion-btn:hover {
+            background: rgba(111, 66, 193, 0.2);
+            color: #fff;
+            border-color: #6f42c1;
+        }
+        
+        .data-source {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .data-source a {
+            color: #6f42c1;
+            text-decoration: none;
+        }
+        
+        .data-source a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .widget-container {
+                padding: 1rem;
+                margin: 0.5rem;
+            }
+            
+            .widget-title h1 {
+                font-size: 1.5rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input-group {
+                min-width: auto;
+            }
+            
+            .species-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .ecosystem-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .home-btn {
+                position: static;
+                margin: 1rem auto 0;
+                display: flex;
+                justify-content: center;
+            }
+        }
+        
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .widget-container {
+                border: 2px solid #fff;
+                background: rgba(0, 0, 0, 0.9);
+            }
+            
+            .search-input {
+                border: 2px solid #fff;
+            }
+            
+            .ecosystem-card {
+                border: 2px solid rgba(255, 255, 255, 0.3);
+            }
+        }
+        
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <!-- Home Button -->
+        <a href="/" class="home-btn">
+            <i data-feather="home"></i>
+            Home
+        </a>
+        
+        <!-- Widget Header -->
+        <div class="widget-header">
+            <div class="widget-title">
+                <span class="ecosystem-icon">🌿</span>
+                <h1>Ecosystem Explorer</h1>
+            </div>
+            <p class="widget-subtitle">Discover orchid habitats and ecological relationships through botanical data</p>
+            <div class="badges">
+                <span class="badge">🔬 Botanical Research</span>
+                <span class="badge">🌍 Habitat Analysis</span>
+                <span class="badge">📊 5,975 Species Database</span>
+            </div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-form">
+                <div class="search-input-group">
+                    <i data-feather="search" class="search-icon"></i>
+                    <input type="text" 
+                           id="orchid-search" 
+                           class="search-input" 
+                           placeholder="Enter orchid scientific name (e.g., Phalaenopsis amabilis)">
+                </div>
+                <button id="search-btn" class="search-btn">
+                    <i data-feather="globe"></i>
+                    Explore Ecosystem
+                </button>
+            </div>
+            
+            <div class="suggestions">
+                <span class="suggestion-btn" onclick="searchSuggestion('Phalaenopsis amabilis')">Phalaenopsis amabilis</span>
+                <span class="suggestion-btn" onclick="searchSuggestion('Dendrobium nobile')">Dendrobium nobile</span>
+                <span class="suggestion-btn" onclick="searchSuggestion('Cattleya labiata')">Cattleya labiata</span>
+                <span class="suggestion-btn" onclick="searchSuggestion('Vanda coerulea')">Vanda coerulea</span>
+                <span class="suggestion-btn" onclick="searchSuggestion('Oncidium flexuosum')">Oncidium flexuosum</span>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results-section" class="results-section">
+            <!-- Species Info will be inserted here -->
+        </div>
+        
+        <!-- Data Source Attribution -->
+        <div class="data-source">
+            <p>Botanical data provided by <a href="https://www.gbif.org" target="_blank" rel="noopener">GBIF</a> with ecosystem integrations • 
+            Orchid database: <strong>{{ widget_data.orchid_count if widget_data.orchid_count else '5,975' }}</strong> species • 
+            Powered by <a href="/">Orchid Continuum</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Widget state management
+        let currentOrchidId = null;
+        let searchInProgress = false;
+        
+        // DOM elements
+        const searchInput = document.getElementById('orchid-search');
+        const searchBtn = document.getElementById('search-btn');
+        const resultsSection = document.getElementById('results-section');
+        
+        // Event listeners
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        // Search functionality
+        async function performSearch() {
+            const scientificName = searchInput.value.trim();
+            
+            if (!scientificName) {
+                showError('Please enter an orchid scientific name to search.');
+                return;
+            }
+            
+            if (searchInProgress) {
+                return;
+            }
+            
+            try {
+                searchInProgress = true;
+                setSearchLoading(true);
+                resultsSection.innerHTML = '';
+                resultsSection.classList.remove('active');
+                
+                console.log(`🔍 Searching for: ${scientificName}`);
+                
+                // First, search the local orchid database
+                const orchidResponse = await fetch(`/api/trefle/search?scientific_name=${encodeURIComponent(scientificName)}`);
+                const orchidData = await orchidResponse.json();
+                
+                if (!orchidResponse.ok) {
+                    throw new Error(orchidData.message || 'Failed to search orchid database');
+                }
+                
+                if (orchidData.success && orchidData.ecosystem_data) {
+                    // Found orchid with ecosystem data
+                    displayEcosystemData(orchidData.ecosystem_data, scientificName);
+                } else if (orchidData.orchid_id) {
+                    // Found orchid in database, get ecosystem data
+                    currentOrchidId = orchidData.orchid_id;
+                    await getEcosystemData(orchidData.orchid_id, scientificName);
+                } else {
+                    // No orchid found in database
+                    showError(`No orchid found with scientific name "${scientificName}". Try searching for a different species or check the spelling.`);
+                }
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showError(`Search failed: ${error.message}. Please try again.`);
+            } finally {
+                searchInProgress = false;
+                setSearchLoading(false);
+            }
+        }
+        
+        async function getEcosystemData(orchidId, searchName) {
+            try {
+                console.log(`🌿 Getting ecosystem data for orchid ID: ${orchidId}`);
+                
+                const response = await fetch(`/api/trefle/orchid/${orchidId}/ecosystem`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get ecosystem data');
+                }
+                
+                if (data.success && data.ecosystem_data) {
+                    displayEcosystemData(data.ecosystem_data, searchName);
+                } else {
+                    showError('No ecosystem data available for this species. This may be because the species is not found in the GBIF ecosystem database.');
+                }
+                
+            } catch (error) {
+                console.error('Ecosystem data error:', error);
+                showError(`Failed to retrieve ecosystem data: ${error.message}`);
+            }
+        }
+        
+        function displayEcosystemData(ecosystemData, searchName) {
+            console.log('📊 Displaying ecosystem data:', ecosystemData);
+            
+            const html = `
+                <div class="species-info">
+                    <div class="species-header">
+                        <div class="species-image">
+                            🌺
+                        </div>
+                        <div class="species-details">
+                            <h3>${ecosystemData.trefle_scientific_name || searchName}</h3>
+                            <p class="scientific-name">${ecosystemData.family_name || 'Orchidaceae'} family</p>
+                            ${ecosystemData.trefle_common_name ? `<p class="text-muted">Common name: ${ecosystemData.trefle_common_name}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ecosystem-grid">
+                    ${generateGrowthCard(ecosystemData)}
+                    ${generateClimateCard(ecosystemData)}
+                    ${generateHabitatCard(ecosystemData)}
+                    ${generateEcologyCard(ecosystemData)}
+                </div>
+                
+                ${generateHabitatInsights(ecosystemData)}
+            `;
+            
+            resultsSection.innerHTML = html;
+            resultsSection.classList.add('active');
+            
+            // Re-initialize Feather icons for new content
+            setTimeout(() => feather.replace(), 100);
+        }
+        
+        function generateGrowthCard(data) {
+            const growth = data.growth_form || {};
+            const flower = data.flower_characteristics || {};
+            const foliage = data.foliage_characteristics || {};
+            
+            return `
+                <div class="ecosystem-card">
+                    <h4><span class="card-icon">🌱</span>Growth Characteristics</h4>
+                    
+                    ${growth.growth_form ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Growth Form</div>
+                        <div class="data-value">${growth.growth_form}</div>
+                    </div>` : ''}
+                    
+                    ${growth.growth_rate ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Growth Rate</div>
+                        <div class="data-value">${growth.growth_rate}</div>
+                    </div>` : ''}
+                    
+                    ${flower.color ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Flower Color</div>
+                        <div class="data-value">${Array.isArray(flower.color) ? flower.color.join(', ') : flower.color}</div>
+                    </div>` : ''}
+                    
+                    ${foliage.texture ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Foliage Texture</div>
+                        <div class="data-value">${foliage.texture}</div>
+                    </div>` : ''}
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Special Notes</div>
+                        <div class="data-value">Orchids typically have specialized aerial roots and depend on mycorrhizal relationships</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateClimateCard(data) {
+            const climate = data.climate_data || {};
+            const light = data.light_requirements || {};
+            const water = data.water_requirements || {};
+            
+            return `
+                <div class="ecosystem-card">
+                    <h4><span class="card-icon">🌡️</span>Climate Requirements</h4>
+                    
+                    ${climate.temperature_minimum ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Minimum Temperature</div>
+                        <div class="data-value">${climate.temperature_minimum}°C</div>
+                    </div>` : ''}
+                    
+                    ${climate.bloom_months ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Blooming Months</div>
+                        <div class="data-value">${Array.isArray(climate.bloom_months) ? climate.bloom_months.join(', ') : climate.bloom_months}</div>
+                    </div>` : ''}
+                    
+                    ${light.light_minimum ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Light Requirements</div>
+                        <div class="data-value">${light.light_minimum}</div>
+                    </div>` : ''}
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Typical Light Preference</div>
+                        <div class="data-value">Bright, indirect light (most orchids)</div>
+                    </div>
+                    
+                    ${water.moisture_requirements ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Moisture Requirements</div>
+                        <div class="data-value">${water.moisture_requirements}</div>
+                    </div>` : ''}
+                </div>
+            `;
+        }
+        
+        function generateHabitatCard(data) {
+            const distribution = data.native_distribution || {};
+            const habitat = data.habitat_description || '';
+            
+            return `
+                <div class="ecosystem-card">
+                    <h4><span class="card-icon">🏞️</span>Habitat & Distribution</h4>
+                    
+                    ${habitat ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Habitat Description</div>
+                        <div class="data-value">${habitat}</div>
+                    </div>` : ''}
+                    
+                    ${distribution.native ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Native Range</div>
+                        <div class="data-value">${Array.isArray(distribution.native) ? distribution.native.join(', ') : distribution.native}</div>
+                    </div>` : ''}
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Typical Orchid Habitats</div>
+                        <div class="data-value">Tropical rainforests, cloud forests, temperate woodlands, rocky outcrops</div>
+                    </div>
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Growth Strategy</div>
+                        <div class="data-value">Often epiphytic (growing on trees) or terrestrial with specialized substrates</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateEcologyCard(data) {
+            const ecology = data.ecological_niche || {};
+            const soil = data.soil_requirements || {};
+            
+            return `
+                <div class="ecosystem-card">
+                    <h4><span class="card-icon">🔗</span>Ecological Relationships</h4>
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Pollination</div>
+                        <div class="data-value">${ecology.pollination_method || 'Highly specialized - varies by species (insects, birds, self-pollination)'}</div>
+                    </div>
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Mycorrhizal Partnership</div>
+                        <div class="data-value">Essential symbiotic relationship with fungi for seed germination and growth</div>
+                    </div>
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Ecological Role</div>
+                        <div class="data-value">${ecology.ecological_role || 'Biodiversity indicators and specialized pollinators for other plants'}</div>
+                    </div>
+                    
+                    ${soil.substrate_notes ? `
+                    <div class="ecosystem-data">
+                        <div class="data-label">Substrate Needs</div>
+                        <div class="data-value">${soil.substrate_notes}</div>
+                    </div>` : ''}
+                    
+                    <div class="ecosystem-data">
+                        <div class="data-label">Conservation Status</div>
+                        <div class="data-value">Many orchids are threatened due to habitat loss and over-collection</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateHabitatInsights(data) {
+            const insights = data.orchid_ecosystem_insights || {};
+            
+            return `
+                <div class="habitat-insights">
+                    <h5><i data-feather="lightbulb"></i>Orchid Ecosystem Insights</h5>
+                    <div class="insights-grid">
+                        <div class="insight-item">
+                            <h6>Epiphytic Adaptations</h6>
+                            <p>${insights.epiphytic_adaptations || 'Many orchids are epiphytes with aerial roots designed for water and nutrient absorption from air and rain.'}</p>
+                        </div>
+                        <div class="insight-item">
+                            <h6>Mycorrhizal Relationships</h6>
+                            <p>${insights.mycorrhizal_relationships || 'Orchids depend on specific fungi for seed germination and nutrient uptake throughout their lives.'}</p>
+                        </div>
+                        <div class="insight-item">
+                            <h6>Pollination Specialization</h6>
+                            <p>${insights.pollination_specialization || 'Orchids often have highly specialized relationships with specific pollinators, leading to unique flower shapes and scents.'}</p>
+                        </div>
+                        <div class="insight-item">
+                            <h6>Conservation Importance</h6>
+                            <p>${insights.conservation_importance || 'Orchids serve as indicators of ecosystem health and support biodiversity through complex ecological relationships.'}</p>
+                        </div>
+                        ${insights.habitat_specificity ? `
+                        <div class="insight-item">
+                            <h6>Habitat Specificity</h6>
+                            <p>${insights.habitat_specificity}</p>
+                        </div>` : ''}
+                        ${insights.growth_strategy ? `
+                        <div class="insight-item">
+                            <h6>Growth Strategy</h6>
+                            <p>${insights.growth_strategy}</p>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function searchSuggestion(scientificName) {
+            searchInput.value = scientificName;
+            performSearch();
+        }
+        
+        function setSearchLoading(loading) {
+            if (loading) {
+                searchBtn.innerHTML = '<span class="loading-spinner"></span> Exploring...';
+                searchBtn.disabled = true;
+                searchInput.disabled = true;
+            } else {
+                searchBtn.innerHTML = '<i data-feather="globe"></i> Explore Ecosystem';
+                searchBtn.disabled = false;
+                searchInput.disabled = false;
+                feather.replace();
+            }
+        }
+        
+        function showError(message) {
+            const errorHtml = `
+                <div class="error-message">
+                    <strong>⚠️ Search Error</strong><br>
+                    ${message}
+                </div>
+            `;
+            resultsSection.innerHTML = errorHtml;
+            resultsSection.classList.add('active');
+        }
+        
+        // Initialize widget on load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌿 Ecosystem Explorer widget loaded');
+            
+            // Focus search input for immediate use
+            searchInput.focus();
+            
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    resultsSection.innerHTML = '';
+                    resultsSection.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

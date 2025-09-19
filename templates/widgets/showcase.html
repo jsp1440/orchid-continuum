@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% set page_title = "Orchid Continuum Widgets" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 text-light mb-4">
+                <i data-feather="code" class="me-2"></i>
+                Orchid Continuum Widgets
+            </h1>
+            <p class="text-muted mb-4">
+                Embeddable widgets for integrating orchid data into external websites, including Neon One webpages.
+            </p>
+        </div>
+    </div>
+
+    <!-- Widget Gallery -->
+    <div class="row">
+        {% for widget_id, widget_name in widget_types.items() %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ widget_name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        {% if widget_id == 'gallery' %}
+                        Display a grid of orchid photos with names and basic information. Perfect for showcasing your collection.
+                        {% elif widget_id == 'search' %}
+                        Interactive search widget allowing visitors to search for specific orchids by name, genus, or species.
+                        {% elif widget_id == 'featured' %}
+                        Showcase a single featured orchid with detailed information and attractive styling.
+                        {% elif widget_id == 'comparison' %}
+                        Side-by-side comparison tool for analyzing orchid similarities and differences.
+                        {% elif widget_id == 'citation' %}
+                        Generate proper academic citations for research and educational use.
+                        {% elif widget_id == 'identifier' %}
+                        AI-powered orchid identification tool for uploaded photos.
+                        {% elif widget_id == 'mission' %}
+                        Display the Five Cities Orchid Society mission and support information.
+                        {% elif widget_id == 'map' %}
+                        Interactive world map showing orchid locations and geographic distribution.
+                        {% elif widget_id == 'weather' %}
+                        Compare local weather to native orchid habitat conditions with growing advice.
+                        {% elif widget_id == 'enhanced_globe' %}
+                        Interactive 3D Earth globe with solar activity and country-specific orchid exploration.
+                        {% elif widget_id == 'trivia' %}
+                        Test your orchid knowledge with fun trivia questions using real photos from the Five Cities collection.
+                        {% elif widget_id == 'mahjong' %}
+                        Relaxing Mahjong-style game featuring beautiful orchid photos and matching gameplay.
+                        {% elif widget_id == 'orchid_explorer_pro' %}
+                        Combined geographic explorer with interactive globe, world map, weather comparison, and climate analysis tools.
+                        {% elif widget_id == 'discovery_center' %}
+                        Unified search hub combining gallery browsing, AI identification, featured orchids, and advanced search capabilities.
+                        {% elif widget_id == 'learning_games' %}
+                        Multi-game educational suite with trivia challenges, Mahjong matching, memory games, and expert quizzes.
+                        {% elif widget_id == 'research_hub' %}
+                        Professional research toolkit with side-by-side comparison, citation generator, statistical analysis, and data export.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100">
+                        <a href="/widgets/embed/{{ widget_id }}" target="_blank" class="btn btn-primary">
+                            <i data-feather="eye" class="me-1"></i>Preview
+                        </a>
+                        <a href="/widgets/integration/{{ widget_id }}" class="btn btn-outline-success">
+                            <i data-feather="code" class="me-1"></i>Get Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Integration Instructions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>Quick Integration Guide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">1. Choose Your Widget</h6>
+                            <p>Select the widget type that best fits your needs from the gallery above.</p>
+                            
+                            <h6 class="text-success">2. Get Integration Code</h6>
+                            <p>Click "Get Code" to receive the HTML embed code for your chosen widget.</p>
+                            
+                            <h6 class="text-success">3. Embed in Your Site</h6>
+                            <p>Copy and paste the provided iframe code into your Neon One webpage.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Example Embed Code:</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                <pre class="text-light mb-0" style="font-size: 0.8rem;"><code>&lt;iframe 
+    src="https://your-orchid-site.com/widgets/embed/gallery"
+    width="100%" 
+    height="400"
+    frameborder="0"
+    scrolling="no"&gt;
+&lt;/iframe&gt;</code></pre>
+                            </div>
+                            
+                            <h6 class="text-warning mt-3">Customization Options:</h6>
+                            <ul class="small">
+                                <li>Add <code>?genus=Cattleya</code> to filter by genus</li>
+                                <li>Add <code>?limit=8</code> to change number of items</li>
+                                <li>Modify width and height as needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Endpoints -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>API Endpoints for Custom Integration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>For advanced integrations, use these JSON API endpoints:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Gallery Data</h6>
+                            <code>/widgets/api/gallery?limit=6</code>
+                            
+                            <h6 class="mt-3">Search Data</h6>
+                            <code>/widgets/api/search?query=cattleya</code>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Featured Orchid</h6>
+                            <code>/widgets/api/featured</code>
+                            
+                            <h6 class="mt-3">Weather Widget</h6>
+                            <code>/widgets/api/weather?zip=93401</code>
+                            
+                            <h6 class="mt-3">Comparison Data</h6>
+                            <code>/widgets/api/comparison</code>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i data-feather="info" class="me-2"></i>
+                        All API endpoints return JSON data that can be consumed by your own JavaScript applications.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Widget Feature -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="cloud-drizzle" class="me-2"></i>Orchid Weather Comparison Widget
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Mobile-Optimized Design</h6>
+                            <p>Responsive widget under 300px width, perfect for sidebars and mobile displays.</p>
+                            
+                            <h6 class="text-success">Climate Comparison</h6>
+                            <p>Compares local weather to your orchids' native habitats with color-coded indicators.</p>
+                            
+                            <h6 class="text-success">Personalized Collection</h6>
+                            <p>Shows weather advice for your specific orchid collection when logged in.</p>
+                            
+                            <div class="mt-3">
+                                <h6 class="text-info">Embed Code:</h6>
+                                <div class="bg-secondary p-3 rounded">
+                                    <pre class="text-light mb-0" style="font-size: 0.8rem;"><code>&lt;iframe 
+    src="YOUR_DOMAIN/widgets/embed/weather"
+    width="300" 
+    height="350"
+    frameborder="0"&gt;
+&lt;/iframe&gt;</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="max-width: 280px; margin: 0 auto;">
+                                <iframe src="/widgets/embed/weather" 
+                                        width="100%" 
+                                        height="350" 
+                                        frameborder="0" 
+                                        scrolling="no" 
+                                        style="border-radius: 8px; border: 1px solid #444;">
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

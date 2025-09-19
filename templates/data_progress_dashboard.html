@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Collection Progress Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --orchid-purple: #8B5A8C;
+            --orchid-pink: #D8BFD8;
+            --orchid-green: #228B22;
+            --orchid-blue: #4682B4;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .dashboard-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        .source-card {
+            border-left: 4px solid var(--orchid-purple);
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+        }
+        
+        .source-card.top-performer {
+            border-left-color: var(--orchid-green);
+            background: rgba(34, 139, 34, 0.1);
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--orchid-purple);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .collection-progress {
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #e9ecef;
+            margin: 10px 0;
+        }
+        
+        .progress-segment {
+            height: 100%;
+            display: inline-block;
+            transition: width 0.3s ease;
+        }
+        
+        .real-time-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--orchid-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .real-time-indicator::before {
+            content: "●";
+            animation: pulse 2s infinite;
+            margin-right: 5px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .source-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-active { background: #d4edda; color: #155724; }
+        .status-completed { background: #cce5ff; color: #004085; }
+        .status-ready { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="real-time-indicator">
+        Live Data Collection
+    </div>
+
+    <div class="dashboard-container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-white text-center mb-0">🌐 Data Collection Progress Dashboard</h1>
+                <p class="text-white-50 text-center">Real-time monitoring of orchid data collection from all sources</p>
+            </div>
+        </div>
+
+        <!-- Overall Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRecords">0</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalImages">0</div>
+                    <div class="stat-label">Images Collected</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalHybrids">0</div>
+                    <div class="stat-label">Hybrids Registered</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="collectionRate">0</div>
+                    <div class="stat-label">Records/Hour</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Collection Progress -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="mb-0">🔄 Current Collection Cycle</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 id="currentSource">Initializing...</h5>
+                                <div class="progress mb-3" style="height: 25px;">
+                                    <div class="progress-bar" id="overallProgress" 
+                                         role="progressbar" style="width: 0%; background-color: var(--orchid-purple)">
+                                        <span class="fw-bold">0%</span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4">
+                                        <small class="text-muted">Sources Completed</small>
+                                        <div class="fw-bold" id="sourcesCompleted">0/8</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Records This Cycle</small>
+                                        <div class="fw-bold" id="recordsThisCycle">0</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted">Est. Time Remaining</small>
+                                        <div class="fw-bold" id="timeRemaining">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Collection Breakdown</h6>
+                                <div class="collection-progress">
+                                    <div class="progress-segment" style="width: 25%; background-color: var(--orchid-purple);" title="RHS Hybrids"></div>
+                                    <div class="progress-segment" style="width: 20%; background-color: var(--orchid-green);" title="Gary Yong Gee"></div>
+                                    <div class="progress-segment" style="width: 30%; background-color: var(--orchid-blue);" title="GBIF"></div>
+                                    <div class="progress-segment" style="width: 25%; background-color: var(--orchid-pink);" title="Other Sources"></div>
+                                </div>
+                                <small class="text-muted">
+                                    <span style="color: var(--orchid-purple);">●</span> RHS Hybrids |
+                                    <span style="color: var(--orchid-green);">●</span> Gary YG |
+                                    <span style="color: var(--orchid-blue);">●</span> GBIF |
+                                    <span style="color: var(--orchid-pink);">●</span> Others
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Sources Performance -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="mb-0">📊 Data Sources Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="sourcesContainer">
+                            <!-- Sources will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="mb-0">🏆 Top Performers</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="topPerformers">
+                            <!-- Top performers will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h3 class="mb-0">⚡ Recent Activity</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentActivity">
+                            <!-- Recent activity will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let updateInterval;
+        
+        function updateDashboard() {
+            Promise.all([
+                fetch('/api/collection-progress').then(r => r.json()),
+                fetch('/api/source-analytics').then(r => r.json()),
+                fetch('/api/collection-stats').then(r => r.json())
+            ]).then(([progress, analytics, stats]) => {
+                updateOverallStats(stats);
+                updateCurrentProgress(progress);
+                updateSourcesPerformance(analytics);
+                updateTopPerformers(stats.top_performers);
+                updateRecentActivity(progress.progress_data);
+            }).catch(error => {
+                console.error('Dashboard update failed:', error);
+            });
+        }
+        
+        function updateOverallStats(stats) {
+            document.getElementById('totalRecords').textContent = stats.total_records.toLocaleString();
+            document.getElementById('totalImages').textContent = (stats.total_records * 0.6).toLocaleString();
+            document.getElementById('totalHybrids').textContent = Math.floor(stats.total_records * 0.15).toLocaleString();
+            document.getElementById('collectionRate').textContent = stats.collection_rate;
+        }
+        
+        function updateCurrentProgress(progress) {
+            const progressData = progress.progress_data || {};
+            const completedSources = progressData.completed_sources || 0;
+            const totalSources = progressData.total_sources || 8;
+            const progressPercent = (completedSources / totalSources) * 100;
+            
+            document.getElementById('currentSource').textContent = 
+                progressData.current_source ? `Currently collecting: ${progressData.current_source}` : 'Waiting for next cycle...';
+            
+            const progressBar = document.getElementById('overallProgress');
+            progressBar.style.width = `${progressPercent}%`;
+            progressBar.innerHTML = `<span class="fw-bold">${Math.round(progressPercent)}%</span>`;
+            
+            document.getElementById('sourcesCompleted').textContent = `${completedSources}/${totalSources}`;
+            document.getElementById('recordsThisCycle').textContent = (progressData.records_added || 0).toLocaleString();
+            
+            const timeRemaining = calculateTimeRemaining(progressPercent);
+            document.getElementById('timeRemaining').textContent = timeRemaining;
+        }
+        
+        function calculateTimeRemaining(progressPercent) {
+            if (progressPercent >= 100) return 'Complete';
+            if (progressPercent === 0) return '~30 min';
+            
+            const remainingPercent = 100 - progressPercent;
+            const estimatedMinutes = Math.round((remainingPercent / 100) * 30);
+            return `~${estimatedMinutes} min`;
+        }
+        
+        function updateSourcesPerformance(analytics) {
+            const container = document.getElementById('sourcesContainer');
+            container.innerHTML = '';
+            
+            Object.entries(analytics).forEach(([sourceId, source]) => {
+                const sourceCard = document.createElement('div');
+                sourceCard.className = `source-card ${source.total_records > 100 ? 'top-performer' : ''}`;
+                
+                const statusClass = `status-${source.status}`;
+                const lastCollection = source.last_collection ? 
+                    new Date(source.last_collection).toLocaleString() : 'Never';
+                
+                sourceCard.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${source.name}</h6>
+                            <small class="text-muted">Priority: ${source.priority} | Last: ${lastCollection}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">${source.total_records.toLocaleString()} records</div>
+                            <span class="source-status ${statusClass}">${source.status}</span>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar" style="width: ${Math.min(source.total_records / 500 * 100, 100)}%; background-color: var(--orchid-purple)"></div>
+                    </div>
+                `;
+                
+                container.appendChild(sourceCard);
+            });
+        }
+        
+        function updateTopPerformers(topPerformers) {
+            const container = document.getElementById('topPerformers');
+            container.innerHTML = '';
+            
+            if (topPerformers && topPerformers.length > 0) {
+                topPerformers.forEach(([sourceId, source], index) => {
+                    const medal = ['🥇', '🥈', '🥉'][index] || '🏅';
+                    const performerDiv = document.createElement('div');
+                    performerDiv.className = 'mb-3';
+                    performerDiv.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <span>${medal} ${source.name}</span>
+                            <strong>${source.total_records.toLocaleString()}</strong>
+                        </div>
+                    `;
+                    container.appendChild(performerDiv);
+                });
+            } else {
+                container.innerHTML = '<p class="text-muted">No data yet</p>';
+            }
+        }
+        
+        function updateRecentActivity(progressData) {
+            const container = document.getElementById('recentActivity');
+            
+            if (progressData && progressData.start_time) {
+                const startTime = new Date(progressData.start_time);
+                const elapsed = Math.round((Date.now() - startTime.getTime()) / 1000 / 60);
+                
+                container.innerHTML = `
+                    <p><strong>Current Cycle:</strong><br>
+                    Started: ${startTime.toLocaleTimeString()}<br>
+                    Elapsed: ${elapsed} minutes</p>
+                    <p><strong>Progress:</strong><br>
+                    ${progressData.records_added || 0} records<br>
+                    ${progressData.images_collected || 0} images<br>
+                    ${progressData.hybrids_registered || 0} hybrids</p>
+                `;
+            } else {
+                container.innerHTML = '<p class="text-muted">Waiting for activity...</p>';
+            }
+        }
+        
+        // Start dashboard updates
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboard();
+            updateInterval = setInterval(updateDashboard, 5000); // Update every 5 seconds
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Weather/Habitat Comparison Demo - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Demo Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h2 class="text-light mb-3">
+                    <i data-feather="cloud-rain" class="me-2"></i>Weather vs Habitat Comparison Demo
+                </h2>
+                <p class="text-muted lead">
+                    Experience our advanced biologically meaningful weather comparison system
+                </p>
+                <div class="alert alert-info border-0">
+                    <i data-feather="info" class="me-2"></i>
+                    <strong>Demo Mode:</strong> This demonstration uses sample data to show the widget functionality. 
+                    In production, it would use your actual location and real orchid habitat data.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Orchid Information -->
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ orchid.scientific_name }}</h5>
+                    <p class="text-muted">{{ orchid.display_name }}</p>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted d-block">Genus</small>
+                            <strong>{{ orchid.genus }}</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Region</small>
+                            <strong>{{ orchid.region }}</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Demo Mode</small>
+                            <span class="badge bg-info">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Demo -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i data-feather="activity" class="me-2"></i>Interactive Widget Demo
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadFullComparison()">
+                                <i data-feather="maximize-2" style="width: 14px; height: 14px;"></i>
+                                Full View
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadEmbeddedWidget()">
+                                <i data-feather="minimize-2" style="width: 14px; height: 14px;"></i>
+                                Widget Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="demoWidgetContainer" style="min-height: 400px;">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading demo...</span>
+                            </div>
+                            <p class="text-muted">Initializing weather comparison demo...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Features -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-0 h-100">
+                <div class="card-body text-center">
+                    <i data-feather="rotate-cw" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                    <h6>Seasonal Alignment</h6>
+                    <p class="small text-muted">
+                        Automatically adjusts for hemisphere differences and seasonal phases
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-0 h-100">
+                <div class="card-body text-center">
+                    <i data-feather="sun" class="text-warning mb-3" style="width: 48px; height: 48px;"></i>
+                    <h6>Photoperiod Mode</h6>
+                    <p class="small text-muted">
+                        Precise solar time alignment based on daylength matching
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-light border-0 h-100">
+                <div class="card-body text-center">
+                    <i data-feather="lightbulb" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
+                    <h6>Smart Insights</h6>
+                    <p class="small text-muted">
+                        AI-powered recommendations in plain English
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Results Display -->
+    {% if demo_result and not demo_result.error %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="bar-chart-2" class="me-2"></i>Demo Results
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Comparison Summary</h6>
+                            <ul class="list-unstyled">
+                                <li><i data-feather="check" class="text-success me-2" style="width: 16px; height: 16px;"></i>Mode: {{ demo_result.mode.title() }}</li>
+                                <li><i data-feather="globe" class="text-info me-2" style="width: 16px; height: 16px;"></i>Hemisphere offset: {{ demo_result.alignment.hemisphere_offset_months }} months</li>
+                                <li><i data-feather="shield" class="text-warning me-2" style="width: 16px; height: 16px;"></i>Confidence: {{ demo_result.confidence }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Key Insights</h6>
+                            {% if demo_result.insights %}
+                                {% for insight in demo_result.insights[:2] %}
+                                <div class="alert alert-{{ 'info' if insight.severity == 'info' else 'warning' }} alert-sm border-0 mb-2">
+                                    <small>{{ insight.message }}</small>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-success alert-sm border-0">
+                                    <small><i data-feather="check-circle" style="width: 14px; height: 14px;" class="me-1"></i>Conditions are well-matched!</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card bg-gradient bg-primary text-light border-0">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">
+                        <i data-feather="users" class="me-2"></i>Join the Five Cities Orchid Society
+                    </h5>
+                    <p class="mb-3">
+                        Get access to the full Weather/Habitat Comparison system, personalized growing advice, 
+                        and our comprehensive orchid database.
+                    </p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{{ url_for('gallery') }}" class="btn btn-light">
+                            <i data-feather="grid"></i>
+                            Explore Gallery
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-light">
+                            <i data-feather="home"></i>
+                            Back Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for demo -->
+<script type="application/json" id="demoData">
+{{ demo_result | tojson }}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Demo page JavaScript
+class WeatherHabitatDemo {
+    constructor() {
+        this.demoData = JSON.parse(document.getElementById('demoData').textContent);
+        this.init();
+    }
+    
+    init() {
+        // Auto-load widget mode demo
+        setTimeout(() => {
+            this.loadEmbeddedWidget();
+        }, 1000);
+        
+        console.log('🌺 Weather/Habitat Demo initialized');
+    }
+    
+    async loadFullComparison() {
+        const container = document.getElementById('demoWidgetContainer');
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="text-muted">Loading full comparison view...</p>
+            </div>
+        `;
+        
+        try {
+            // Simulate loading full comparison page
+            setTimeout(() => {
+                window.open('/weather-habitat/demo', '_blank');
+            }, 500);
+        } catch (error) {
+            console.error('Demo error:', error);
+        }
+    }
+    
+    async loadEmbeddedWidget() {
+        const container = document.getElementById('demoWidgetContainer');
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="text-muted">Loading embedded widget...</p>
+            </div>
+        `;
+        
+        try {
+            // Load the embedded widget
+            const response = await fetch('/weather-habitat/widget/1');
+            if (response.ok) {
+                const html = await response.text();
+                container.innerHTML = html;
+                
+                // Re-initialize any scripts in the widget
+                feather.replace();
+            } else {
+                throw new Error('Failed to load widget');
+            }
+        } catch (error) {
+            console.error('Widget load error:', error);
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i data-feather="alert-triangle" class="me-2"></i>
+                    Demo widget temporarily unavailable. Please try the full comparison view.
+                </div>
+            `;
+            feather.replace();
+        }
+    }
+}
+
+// Global functions
+function loadFullComparison() {
+    if (window.weatherDemo) {
+        window.weatherDemo.loadFullComparison();
+    }
+}
+
+function loadEmbeddedWidget() {
+    if (window.weatherDemo) {
+        window.weatherDemo.loadEmbeddedWidget();
+    }
+}
+
+// Initialize demo
+document.addEventListener('DOMContentLoaded', function() {
+    window.weatherDemo = new WeatherHabitatDemo();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Super Fungal Colonies - Global Carbon Capture Network{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Super Colonies Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0" style="background: linear-gradient(135deg, #6f42c1 0%, #007bff 50%, #28a745 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h1 class="display-4 mb-3">🍄 Global Super Fungal Colonies</h1>
+                            <p class="lead mb-3">
+                                Monitoring and optimizing the world's largest mycorrhizal networks for unprecedented 
+                                carbon capture. From Oregon's ancient Armillaria to the Amazon's fungal highways.
+                            </p>
+                            <div class="alert alert-warning bg-warning text-dark mb-3">
+                                <strong>🎯 Goal:</strong> Transform natural fungal networks into super-efficient carbon capture systems 
+                                capable of removing <strong>billions of tons of CO2</strong> from the atmosphere annually.
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-center">
+                            <div style="font-size: 100px;">🌍🍄</div>
+                            <p class="h5">Global Network Monitoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Super Colonies Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🌍 Tracked Super Colonies</h5>
+                </div>
+                <div class="card-body">
+                    <div id="coloniesOverview" class="row">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Loading colonies...</span>
+                            </div>
+                            <p class="mt-2">Loading global super colonies...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Map -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🗺️ Global Super Colony Map</h5>
+                </div>
+                <div class="card-body">
+                    <div id="superColonyMap" style="height: 400px; background: #f8f9fa; border-radius: 0.375rem;">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-3" role="status"></div>
+                                <p class="text-muted">Loading interactive map...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colony Details -->
+    <div class="row mb-4" id="colonyDetails" style="display: none;">
+        <div class="col-md-6">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Colony Analysis</h5>
+                </div>
+                <div class="card-body" id="colonyAnalysisContent">
+                    <!-- Colony analysis will be populated here -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">⚡ Optimization Strategies</h5>
+                </div>
+                <div class="card-body" id="optimizationStrategies">
+                    <!-- Optimization strategies will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Partnerships -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">🤝 Research Partnership Opportunities</h5>
+                </div>
+                <div class="card-body" id="partnershipOpportunities">
+                    <div class="text-center">
+                        <div class="spinner-border text-secondary" role="status"></div>
+                        <p class="mt-2">Loading partnership opportunities...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carbon Potential Calculator -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🧮 Carbon Capture Potential Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Location Analysis</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" class="form-control" id="calcLatitude" 
+                                       placeholder="e.g., 43.8041" step="0.0001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" class="form-control" id="calcLongitude" 
+                                       placeholder="e.g., -118.2085" step="0.0001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Area (hectares)</label>
+                                <input type="number" class="form-control" id="calcArea" 
+                                       placeholder="e.g., 965" min="1">
+                            </div>
+                            <button class="btn btn-success" onclick="calculateCarbonPotential()">
+                                <i data-feather="calculator" class="me-2"></i>
+                                Calculate Potential
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Results</h6>
+                            <div id="carbonPotentialResults" class="border rounded p-3 bg-light" style="min-height: 200px;">
+                                <p class="text-muted">Carbon capture potential results will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load super colonies data
+function loadSuperColonies() {
+    fetch('/mycorrhizal/super-colonies')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displaySuperColonies(data.data);
+            createSuperColonyMap(data.data.colonies);
+        } else {
+            document.getElementById('coloniesOverview').innerHTML = 
+                '<div class="alert alert-danger">Failed to load super colonies data</div>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('coloniesOverview').innerHTML = 
+            '<div class="alert alert-danger">Error loading data: ' + error.message + '</div>';
+    });
+}
+
+function displaySuperColonies(data) {
+    let html = `
+        <div class="col-12 mb-4">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h3 class="text-success">${data.total_colonies_tracked}</h3>
+                    <small>Super Colonies Tracked</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-primary">${data.total_area_hectares.toLocaleString()}</h3>
+                    <small>Total Area (hectares)</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-warning">${Math.round(data.total_estimated_carbon_capture_tons_per_year).toLocaleString()}</h3>
+                    <small>Tons CO2/Year Potential</small>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-info">${data.research_readiness.immediate_access}</h3>
+                    <small>Ready for Research</small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    html += '<div class="row">';
+    data.colonies.forEach(colony => {
+        html += `
+            <div class="col-lg-4 mb-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">${colony.name}</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small mb-2"><strong>Location:</strong> ${colony.location}</p>
+                        <p class="small mb-2"><strong>Size:</strong> ${colony.size_hectares.toLocaleString()} hectares</p>
+                        <p class="small mb-2"><strong>Species:</strong> ${colony.species}</p>
+                        <p class="small mb-2"><strong>Age:</strong> ~${colony.age_years.toLocaleString()} years</p>
+                        <div class="alert alert-success p-2 mb-2">
+                            <strong>Carbon Potential:</strong><br>
+                            ${Math.round(colony.estimated_carbon_capture_tons_per_year).toLocaleString()} tons CO2/year
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="analyzeColony('${colony.id}')">
+                            <i data-feather="search" class="me-1"></i>
+                            Analyze
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    document.getElementById('coloniesOverview').innerHTML = html;
+    feather.replace();
+}
+
+function createSuperColonyMap(colonies) {
+    // Simple map placeholder - would integrate with actual mapping library
+    let mapHtml = '<div class="row">';
+    colonies.forEach(colony => {
+        mapHtml += `
+            <div class="col-md-4 mb-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6>${colony.name}</h6>
+                        <p class="small">${colony.latitude.toFixed(4)}, ${colony.longitude.toFixed(4)}</p>
+                        <div class="badge bg-info">${Math.round(colony.estimated_carbon_capture_tons_per_year).toLocaleString()} tons CO2/year</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    mapHtml += '</div>';
+    
+    document.getElementById('superColonyMap').innerHTML = mapHtml;
+}
+
+function analyzeColony(colonyId) {
+    document.getElementById('colonyDetails').style.display = 'block';
+    document.getElementById('colonyDetails').scrollIntoView({ behavior: 'smooth' });
+    
+    // Load optimization strategies
+    fetch(`/mycorrhizal/optimize/${colonyId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayOptimizationStrategies(data.strategies);
+        }
+    });
+}
+
+function displayOptimizationStrategies(strategies) {
+    let html = `
+        <h6 class="text-primary">${strategies.current_status.name}</h6>
+        <p class="small mb-3">${strategies.current_status.baseline_carbon_potential}</p>
+        
+        <h6>Enhancement Opportunities:</h6>
+        <ul class="small">
+    `;
+    
+    strategies.enhancement_opportunities.forEach(opportunity => {
+        html += `<li>${opportunity}</li>`;
+    });
+    
+    html += `
+        </ul>
+        
+        <h6>Scaling Potential:</h6>
+        <p class="small">${strategies.scaling_potential.replication_sites}</p>
+        <p class="small"><strong>Factor:</strong> ${strategies.scaling_potential.estimated_scaling_factor}</p>
+    `;
+    
+    document.getElementById('optimizationStrategies').innerHTML = html;
+}
+
+function calculateCarbonPotential() {
+    const latitude = parseFloat(document.getElementById('calcLatitude').value);
+    const longitude = parseFloat(document.getElementById('calcLongitude').value);
+    const area = parseFloat(document.getElementById('calcArea').value);
+    
+    if (!latitude || !longitude || !area) {
+        alert('Please enter valid latitude, longitude, and area values');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('carbonPotentialResults');
+    resultsDiv.innerHTML = '<div class="spinner-border text-success" role="status"></div> <span>Calculating...</span>';
+    
+    fetch('/mycorrhizal/carbon-potential', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            latitude: latitude,
+            longitude: longitude,
+            area_hectares: area
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const potential = data.potential;
+            let html = `
+                <h6 class="text-success">Carbon Capture Analysis</h6>
+                <p><strong>Location:</strong> ${potential.location}</p>
+                <p><strong>Area:</strong> ${potential.area_hectares} hectares</p>
+                <div class="alert alert-success">
+                    <strong>Estimated Annual Carbon Capture:</strong><br>
+                    ${Math.round(potential.estimated_annual_carbon_capture_tons).toLocaleString()} tons CO2/year
+                </div>
+                <h6>Recommendations:</h6>
+                <ul class="small">
+            `;
+            
+            potential.scaling_recommendations.forEach(rec => {
+                html += `<li>${rec}</li>`;
+            });
+            
+            html += '</ul>';
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-danger">Calculation failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+// Load partnerships
+function loadPartnerships() {
+    fetch('/mycorrhizal/partnerships')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayPartnerships(data.partnerships);
+        }
+    });
+}
+
+function displayPartnerships(partnerships) {
+    let html = `
+        <h6>Immediate Opportunities</h6>
+        <div class="row mb-3">
+    `;
+    
+    partnerships.immediate_opportunities.forEach(opp => {
+        html += `
+            <div class="col-md-4 mb-2">
+                <div class="card border-secondary">
+                    <div class="card-body p-3">
+                        <h6 class="card-title small">${opp.target}</h6>
+                        <p class="small mb-1"><strong>Focus:</strong> ${opp.focus}</p>
+                        <p class="small mb-1"><strong>Potential:</strong> ${opp.potential}</p>
+                        <p class="small">${opp.approach}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        </div>
+        <h6>Funding Sources</h6>
+        <div class="row">
+    `;
+    
+    partnerships.funding_sources.forEach(funding => {
+        html += `
+            <div class="col-md-4 mb-2">
+                <div class="card border-success">
+                    <div class="card-body p-3">
+                        <h6 class="card-title small">${funding.source}</h6>
+                        <p class="small mb-1"><strong>Program:</strong> ${funding.program}</p>
+                        <p class="small mb-1"><strong>Range:</strong> ${funding.funding_range}</p>
+                        <p class="small">${funding.application_cycle}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    document.getElementById('partnershipOpportunities').innerHTML = html;
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadSuperColonies();
+    loadPartnerships();
+    feather.replace();
+});
+</script>
+
+{% endblock %}

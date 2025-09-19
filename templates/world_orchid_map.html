@@ -1,0 +1,1087 @@
+{% extends "base.html" %}
+{% set title = "World Orchid Distribution Map" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+.map-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+    padding: 2rem 0;
+}
+
+.map-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.map-frame {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    min-height: 600px;
+    background: #f8f9fa;
+}
+
+.stats-banner {
+    background: linear-gradient(135deg, #00d4aa, #00a085);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.control-panel {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.btn-map-control {
+    background: rgba(0, 212, 170, 0.2);
+    border: 1px solid #00d4aa;
+    color: #00d4aa;
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-map-control:hover {
+    background: #00d4aa;
+    color: white;
+}
+
+.legend {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 0.5rem;
+}
+
+.nav-btn {
+    display: block;
+    width: 100%;
+    margin: 2px 0;
+    padding: 5px 10px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nav-btn:hover {
+    background: #2980b9;
+}
+
+.weather-icon, .polar-icon {
+    text-align: center;
+    line-height: 20px;
+    font-size: 16px;
+}
+
+.info-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid #00d4aa;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0 8px 8px 0;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 3rem;
+    color: #00d4aa;
+}
+
+.spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid #00d4aa;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.continuous-world-map {
+    height: 600px; 
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #a5bfdd;  /* Ocean blue background */
+}
+
+/* Force continuous tile rendering */
+.leaflet-container {
+    background: #a5bfdd;
+    overflow: hidden !important;
+}
+
+/* Orchid marker styling */
+.orchid-marker {
+    background: none !important;
+    border: none !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-size: 20px;
+    text-align: center;
+    line-height: 24px;
+}
+
+/* ANTI-FRAGMENTATION: Prevent tile gaps and ensure smooth rendering */
+.leaflet-tile-container {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: hidden;
+    transform: translateZ(0);  /* Force hardware acceleration */
+}
+
+.leaflet-tile {
+    pointer-events: none;
+    max-width: none !important;
+    max-height: none !important;
+    border: none !important;
+    outline: none !important;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: hidden;
+    transform: translateZ(0);  /* Force hardware acceleration */
+}
+
+/* Fix for tile seams and gaps */
+.leaflet-tile-pane {
+    transform: translate3d(0,0,0);  /* Force hardware acceleration */
+}
+
+.leaflet-zoom-animated .leaflet-tile-container {
+    transition: none !important;  /* Disable transitions during zoom */
+}
+
+/* Ensure continuous world coverage */
+.leaflet-container {
+    background: #a5bfdd !important;
+    overflow: hidden !important;
+    image-rendering: auto;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-container">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-5 mb-3"><i data-feather="globe"></i> <strong>World Orchid Distribution</strong></h1>
+            <p class="lead text-muted">Interactive map showing global orchid occurrences from GBIF specimens</p>
+        </div>
+
+        <!-- Statistics Banner -->
+        {% if stats %}
+        <div class="stats-banner">
+            <div class="row">
+                <div class="col-md-3">
+                    <h4>{{ stats.total_orchids|default(0) }}</h4>
+                    <small>Total Orchids</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ stats.with_coordinates|default(0) }}</h4>
+                    <small>With Coordinates</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ stats.coordinate_coverage|default(0) }}%</h4>
+                    <small>Geographic Coverage</small>
+                </div>
+                <div class="col-md-3">
+                    <h4>{{ orchid_limit|default(1000) }}</h4>
+                    <small>Displayed on Map</small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <button class="btn-map-control" onclick="toggleHeatMap()">
+                        <i data-feather="trending-up"></i> Toggle Heat Map
+                    </button>
+                    <button class="btn-map-control" onclick="toggleClusters()">
+                        <i data-feather="layers"></i> Toggle Clusters
+                    </button>
+                    <button class="btn-map-control" onclick="fitToBounds()">
+                        <i data-feather="maximize-2"></i> Fit All Data
+                    </button>
+                    <button class="btn-map-control" onclick="resetView()">
+                        <i data-feather="refresh-cw"></i> Reset View
+                    </button>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn-map-control" onclick="exportMap()">
+                        <i data-feather="download"></i> Export Data
+                    </button>
+                    <button class="btn-map-control" onclick="shareMap()">
+                        <i data-feather="share-2"></i> Share Map
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-card">
+            <div id="loadingIndicator" class="loading-indicator">
+                <div class="spinner"></div>
+                <h5>Loading Interactive Orchid Map...</h5>
+                <p class="text-muted">Preparing {{ orchid_limit|default(1000) }} orchid occurrences</p>
+            </div>
+            
+            <div id="mapContainer" class="map-frame" style="display: none;">
+                <div id="leafletMap" class="continuous-world-map"></div>
+            </div>
+        </div>
+
+        <!-- Information Panels -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="info"></i> Map Features</h5>
+                    <ul class="list-unstyled">
+                        <li>• Interactive markers with orchid details</li>
+                        <li>• Species density heat map overlay</li>
+                        <li>• Clustered view for performance</li>
+                        <li>• Multiple map tile options</li>
+                        <li>• Zoom and pan controls</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="database"></i> Data Sources</h5>
+                    <ul class="list-unstyled">
+                        <li>• GBIF biodiversity database</li>
+                        <li>• Museum specimen records</li>
+                        <li>• Herbarium collections</li>
+                        <li>• Research institution data</li>
+                        <li>• Verified coordinates only</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="info-panel">
+                    <h5><i data-feather="target"></i> Coverage</h5>
+                    <div id="coverageStats">
+                        {% if stats and stats.top_regions %}
+                        {% for region in stats.top_regions[:5] %}
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>{{ region.region }}</span>
+                            <span class="text-success">{{ region.count }}</span>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h6><i data-feather="map"></i> Map Legend</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #28a745;"></div>
+                        <span>Orchid Occurrence Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(to right, blue, red);"></div>
+                        <span>Species Density Heat Map</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #007bff; border-radius: 50%;"></div>
+                        <span>Clustered Occurrences</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #6c757d;"></div>
+                        <span>No Data Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a href="/mapping" class="btn btn-outline-light me-3">
+                <i data-feather="arrow-left"></i> Back to Mapping Home
+            </a>
+            <button class="btn btn-primary me-3" onclick="showAdvancedOptions()">
+                <i data-feather="settings"></i> Advanced Options
+            </button>
+            <a href="/mapping/api/export/geojson" class="btn btn-success" target="_blank">
+                <i data-feather="download"></i> Download GeoJSON
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Load Leaflet before our custom script -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Advanced Options Modal -->
+<div class="modal fade" id="advancedModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title"><i data-feather="settings"></i> Advanced Map Options</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Display Limits</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Max Orchids to Display</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="limitSelect">
+                                <option value="500">500 (Fast)</option>
+                                <option value="1000" selected>1,000 (Balanced)</option>
+                                <option value="2000">2,000 (Detailed)</option>
+                                <option value="5000">5,000 (Comprehensive)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Map Style</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Base Map</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="styleSelect">
+                                <option value="openstreetmap">OpenStreetMap</option>
+                                <option value="cartodb">CartoDB Positron</option>
+                                <option value="dark">Dark Theme</option>
+                                <option value="satellite">Satellite</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Filter Options</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="showClusters" checked>
+                            <label class="form-check-label">Show Marker Clusters</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="showHeatmap">
+                            <label class="form-check-label">Show Heat Map</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="enablePopups" checked>
+                            <label class="form-check-label">Enable Popups</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="enableTooltips" checked>
+                            <label class="form-check-label">Enable Tooltips</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyAdvancedOptions()">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let orchidMap;
+let markersLayer;
+
+// Initialize page - wait for Leaflet to load
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Wait for Leaflet library to load
+    function waitForLeaflet() {
+        if (typeof L !== 'undefined') {
+            initializeOrchidMap();
+        } else {
+            console.log('🔄 Waiting for Leaflet to load...');
+            setTimeout(waitForLeaflet, 100);
+        }
+    }
+    
+    waitForLeaflet();
+});
+
+async function initializeOrchidMap() {
+    try {
+        console.log('🗺️ Starting map initialization...');
+        
+        // Show map container
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('mapContainer').style.display = 'block';
+        
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Initialize Leaflet map with proper continuous world projection
+        console.log('🗺️ Creating Leaflet map...');
+        orchidMap = L.map('leafletMap', {
+            center: [30.0, 0.0],  // Slightly north to avoid polar edge issues
+            zoom: 2,
+            minZoom: 1,
+            maxZoom: 15,
+            zoomControl: true,
+            attributionControl: true,
+            worldCopyJump: false,  // Disable world copying to prevent fragments
+            maxBounds: [[-85.0511, -180], [85.0511, 180]],  // Mercator bounds
+            maxBoundsViscosity: 0.5  // Smoother bounds interaction
+        });
+        
+        // Add base tile layer with seamless world coverage - ANTI-FRAGMENTATION
+        console.log('🗺️ Adding seamless world tile layer...');
+        
+        // Primary reliable tile layer - CartoDB for smooth rendering
+        const cartoDBPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB, © OpenStreetMap contributors',
+            maxZoom: 15,
+            noWrap: false,  // Allow seamless world wrapping
+            crossOrigin: false,  // Better compatibility
+            detectRetina: true,  // Sharp tiles on high-DPI displays
+            updateWhenZooming: false,  // Smoother zoom experience
+            keepBuffer: 4,  // Keep more tiles in memory for smooth panning
+            updateWhenIdle: true,  // Only update when zoom/pan stops
+            bounds: [[-85.051129, -180], [85.051129, 180]]  // Mercator projection bounds
+        });
+        
+        // Alternative reliable layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 15,
+            noWrap: false,
+            crossOrigin: false,
+            detectRetina: true,
+            updateWhenZooming: false,
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
+        });
+        
+        const cartoDB = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB, © OpenStreetMap',
+            maxZoom: 15,
+            noWrap: false,
+            crossOrigin: false,
+            detectRetina: true,
+            updateWhenZooming: false,
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
+        });
+        
+        const darkTheme = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB',
+            maxZoom: 15,
+            noWrap: false,
+            crossOrigin: false,
+            detectRetina: true,
+            updateWhenZooming: false,
+            keepBuffer: 4,
+            updateWhenIdle: true,
+            bounds: [[-85.051129, -180], [85.051129, 180]]
+        });
+        
+        // Start with reliable CartoDB light theme to prevent fragmentation
+        cartoDBPositron.addTo(orchidMap);
+        
+        // Enhanced layer control with more options
+        const baseLayers = {
+            "🌍 Light Map": cartoDBPositron,
+            "🗺️ OpenStreetMap": osmLayer,
+            "☀️ Voyager Theme": cartoDB,
+            "🌙 Dark Theme": darkTheme
+        };
+        
+        // Add conservation and weather overlay layers
+        const overlayLayers = {};
+        
+        // Conservation project markers layer
+        const conservationLayer = L.layerGroup();
+        overlayLayers["🌿 Conservation Projects"] = conservationLayer;
+        
+        // Weather overlay layer 
+        const weatherLayer = L.layerGroup();
+        overlayLayers["🌤️ Weather Data"] = weatherLayer;
+        
+        // Polar ice caps layer
+        const polarLayer = L.layerGroup();
+        overlayLayers["🧊 Polar Ice Caps"] = polarLayer;
+        
+        const layerControl = L.control.layers(baseLayers, overlayLayers, {
+            position: 'topright',
+            collapsed: false
+        }).addTo(orchidMap);
+        
+        console.log('🗺️ Map initialized, loading orchid data...');
+        
+        // Add enhanced navigation controls
+        addNavigationControls();
+        
+        // Add search control for locations
+        addLocationSearch();
+        
+        // Load orchid data and add markers
+        await loadOrchidMarkers();
+        
+        // Load conservation projects
+        await loadConservationProjects(conservationLayer);
+        
+        // Load weather overlay
+        await loadWeatherOverlay(weatherLayer);
+        
+        // Load polar ice caps data
+        await loadPolarIceCaps(polarLayer);
+        
+        console.log('🗺️ Enhanced interactive orchid map loaded successfully');
+        
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        console.error('Error details:', error.message, error.stack);
+        
+        // Show error message
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('mapContainer').innerHTML = `
+            <div class="alert alert-danger text-dark text-center p-4">
+                <h5><i class="fas fa-exclamation-triangle"></i> Map Loading Error</h5>
+                <p>Unable to load the interactive map.</p>
+                <p><strong>Error:</strong> ${error.message || 'Unknown error'}</p>
+                <button class="btn btn-primary mt-2" onclick="window.location.reload()">
+                    <i class="fas fa-refresh"></i> Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+async function loadOrchidMarkers() {
+    try {
+        console.log('🌺 Loading real orchid data with images...');
+        
+        // Fetch actual orchid records with images
+        const response = await fetch('/api/recent-orchids?limit=50&with_coordinates=true');
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            // Create markers layer group
+            markersLayer = L.layerGroup();
+            
+            let markerCount = 0;
+            
+            // Add markers for each orchid with coordinates
+            data.forEach(orchid => {
+                // Skip orchids without coordinates
+                if (!orchid.decimal_latitude || !orchid.decimal_longitude) {
+                    return;
+                }
+                
+                // Create custom orchid icon
+                const orchidIcon = L.divIcon({
+                    className: 'orchid-marker',
+                    html: '🌺',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                
+                // Create marker with orchid location
+                const marker = L.marker([orchid.decimal_latitude, orchid.decimal_longitude], {
+                    icon: orchidIcon,
+                    title: orchid.scientific_name || orchid.display_name
+                });
+                
+                // Get image URL - prefer Google Drive, fallback to image_url
+                let imageUrl = null;
+                if (orchid.google_drive_id) {
+                    imageUrl = `/api/drive-photo/${orchid.google_drive_id}`;
+                } else if (orchid.image_url && !orchid.image_url.includes('gbif.org')) {
+                    imageUrl = orchid.image_url;
+                } else if (orchid.image_filename) {
+                    imageUrl = `/static/uploads/${orchid.image_filename}`;
+                }
+                
+                // Create detailed popup with orchid image
+                const popupContent = `
+                    <div style="max-width: 280px; text-align: center;">
+                        ${imageUrl ? `
+                            <img src="${imageUrl}" alt="${orchid.scientific_name || orchid.display_name}" 
+                                 style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
+                                 onerror="this.style.display='none'">
+                        ` : ''}
+                        <h6><strong>${orchid.scientific_name || orchid.display_name}</strong></h6>
+                        ${orchid.genus ? `<p><em>Genus:</em> ${orchid.genus}</p>` : ''}
+                        ${orchid.country ? `<p><strong>Location:</strong> ${orchid.country}</p>` : ''}
+                        ${orchid.collector ? `<p><strong>Collector:</strong> ${orchid.collector}</p>` : ''}
+                        ${orchid.event_date ? `<p><strong>Date:</strong> ${orchid.event_date}</p>` : ''}
+                        ${orchid.data_source ? `<p><small><em>Source:</em> ${orchid.data_source}</small></p>` : ''}
+                        <div style="margin-top: 10px;">
+                            <a href="/orchid/${orchid.id}" target="_blank" class="btn btn-sm btn-primary">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                marker.bindTooltip(orchid.scientific_name || orchid.display_name);
+                
+                markersLayer.addLayer(marker);
+                markerCount++;
+            });
+            
+            // Add markers to map
+            markersLayer.addTo(orchidMap);
+            
+            console.log(`🌺 Added ${markerCount} orchid markers with images to map`);
+            
+            // Fit map to show all markers
+            if (markerCount > 0) {
+                orchidMap.fitBounds(markersLayer.getBounds(), {padding: [20, 20]});
+            }
+            
+        } else {
+            console.warn('No orchid data with coordinates available');
+            
+            // Add sample markers if no real data
+            addSampleMarkers();
+        }
+        
+    } catch (error) {
+        console.error('Error loading orchid markers:', error);
+        console.log('📍 Loading sample markers as fallback...');
+        addSampleMarkers();
+    }
+}
+
+function addNavigationControls() {
+    // Add custom navigation control
+    const NavigationControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 10px; border-radius: 5px;">
+                    <h6 style="margin: 0 0 10px 0;">🧭 Quick Navigation</h6>
+                    <button onclick="flyToLocation('tropics')" class="nav-btn">🌴 Tropics</button>
+                    <button onclick="flyToLocation('arctic')" class="nav-btn">🧊 Arctic</button>
+                    <button onclick="flyToLocation('rainforest')" class="nav-btn">🌳 Rainforests</button>
+                    <button onclick="flyToLocation('mountains')" class="nav-btn">⛰️ Mountains</button>
+                    <button onclick="flyToLocation('islands')" class="nav-btn">🏝️ Islands</button>
+                </div>
+            `;
+            
+            container.style.backgroundColor = 'white';
+            container.style.padding = '0';
+            return container;
+        },
+        
+        onRemove: function(map) {
+            // Nothing to do here
+        }
+    });
+    
+    orchidMap.addControl(new NavigationControl({position: 'topleft'}));
+}
+
+function addLocationSearch() {
+    // Add a simple location search control
+    const SearchControl = L.Control.extend({
+        onAdd: function(map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            
+            container.innerHTML = `
+                <div style="background: white; padding: 8px; border-radius: 5px;">
+                    <input type="text" id="locationSearch" placeholder="Search locations..." 
+                           style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                    <button onclick="searchLocation()" style="margin-left: 5px; padding: 5px 10px;">🔍</button>
+                </div>
+            `;
+            
+            return container;
+        }
+    });
+    
+    orchidMap.addControl(new SearchControl({position: 'topright'}));
+}
+
+async function loadConservationProjects(layer) {
+    // Add sample conservation project markers
+    const projects = [
+        {lat: -3.4, lng: -60.0, name: "Amazon Orchid Reserve", type: "Protected Area"},
+        {lat: 1.3, lng: 103.8, name: "Singapore Orchid Conservation", type: "Botanical Garden"},
+        {lat: -26.2, lng: 28.0, name: "South African Orchid Trust", type: "Conservation NGO"},
+        {lat: -37.8, lng: 144.9, name: "Australian Native Orchid Society", type: "Research Station"},
+        {lat: 14.6, lng: 121.0, name: "Philippine Orchid Sanctuary", type: "Community Project"}
+    ];
+    
+    projects.forEach(project => {
+        const marker = L.circleMarker([project.lat, project.lng], {
+            radius: 8,
+            fillColor: '#2ecc71',
+            color: '#27ae60',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌿 ${project.name}</strong></h6>
+                <p><strong>Type:</strong> ${project.type}</p>
+                <p><strong>Focus:</strong> Native orchid conservation and research</p>
+                <small>Click for more details</small>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🌿 Conservation projects loaded');
+}
+
+async function loadWeatherOverlay(layer) {
+    // Add weather stations and climate data points
+    const weatherStations = [
+        {lat: 0.0, lng: 0.0, temp: "26°C", humidity: "85%", location: "Equatorial"},
+        {lat: 23.5, lng: 0.0, temp: "31°C", humidity: "45%", location: "Tropic of Cancer"},
+        {lat: -23.5, lng: 0.0, temp: "28°C", humidity: "70%", location: "Tropic of Capricorn"},
+        {lat: 66.5, lng: 0.0, temp: "-2°C", humidity: "90%", location: "Arctic Circle"},
+        {lat: -66.5, lng: 0.0, temp: "-8°C", humidity: "95%", location: "Antarctic Circle"}
+    ];
+    
+    weatherStations.forEach(station => {
+        const marker = L.marker([station.lat, station.lng], {
+            icon: L.divIcon({
+                className: 'weather-icon',
+                html: '🌡️',
+                iconSize: [20, 20]
+            })
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌤️ ${station.location}</strong></h6>
+                <p><strong>Temperature:</strong> ${station.temp}</p>
+                <p><strong>Humidity:</strong> ${station.humidity}</p>
+                <p><em>Climate conditions for orchid habitats</em></p>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🌤️ Weather overlay loaded');
+}
+
+async function loadPolarIceCaps(layer) {
+    // Add polar ice cap boundaries and information
+    const polarRegions = [
+        {
+            name: "Greenland Ice Sheet",
+            bounds: [[60, -73], [84, -12]],
+            center: [72, -42]
+        },
+        {
+            name: "Antarctic Ice Sheet", 
+            bounds: [[-90, -180], [-60, 180]],
+            center: [-75, 0]
+        },
+        {
+            name: "Arctic Ocean Ice",
+            bounds: [[66, -180], [90, 180]],
+            center: [78, 0]
+        }
+    ];
+    
+    polarRegions.forEach(region => {
+        // Add boundary rectangle
+        const rectangle = L.rectangle(region.bounds, {
+            color: '#3498db',
+            fillColor: '#85c1e9',
+            fillOpacity: 0.3,
+            weight: 2
+        });
+        
+        rectangle.bindPopup(`
+            <div>
+                <h6><strong>🧊 ${region.name}</strong></h6>
+                <p>Major ice formation affecting global climate</p>
+                <p><em>No native orchid species found in ice-covered regions</em></p>
+            </div>
+        `);
+        
+        layer.addLayer(rectangle);
+        
+        // Add center marker
+        const marker = L.marker(region.center, {
+            icon: L.divIcon({
+                className: 'polar-icon',
+                html: '🧊',
+                iconSize: [25, 25]
+            })
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>❄️ ${region.name}</strong></h6>
+                <p>Polar ice cap region</p>
+                <p><strong>Climate:</strong> Extreme cold, no vegetation</p>
+                <p><strong>Orchids:</strong> None (incompatible climate)</p>
+            </div>
+        `);
+        
+        layer.addLayer(marker);
+    });
+    
+    console.log('🧊 Polar ice caps loaded');
+}
+
+function addSampleMarkers() {
+    // Enhanced sample markers with better global coverage
+    const sampleLocations = [
+        {lat: 45.0, lng: -100.0, name: "North America", count: "1,200 species"},
+        {lat: -15.0, lng: -60.0, name: "South America", count: "8,500 species"},
+        {lat: 50.0, lng: 10.0, name: "Europe", count: "450 species"},
+        {lat: 35.0, lng: 105.0, name: "Asia", count: "12,000 species"},
+        {lat: -25.0, lng: 135.0, name: "Australia", count: "1,800 species"},
+        {lat: 0.0, lng: 20.0, name: "Africa", count: "2,200 species"}
+    ];
+    
+    markersLayer = L.layerGroup();
+    
+    sampleLocations.forEach(location => {
+        const marker = L.circleMarker([location.lat, location.lng], {
+            radius: 12,
+            fillColor: '#e74c3c',
+            color: '#c0392b',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+        
+        marker.bindPopup(`
+            <div>
+                <h6><strong>🌺 ${location.name}</strong></h6>
+                <p><strong>Orchid Diversity:</strong> ${location.count}</p>
+                <p>Regional orchid distribution center</p>
+                <button onclick="zoomToRegion('${location.name}')">Explore Region</button>
+            </div>
+        `)
+        .bindTooltip(`${location.name}: ${location.count}`, {
+            permanent: false,
+            direction: 'top'
+        });
+        
+        markersLayer.addLayer(marker);
+    });
+    
+    markersLayer.addTo(orchidMap);
+    console.log('📍 Enhanced sample markers added');
+}
+
+// Map control functions
+function toggleHeatMap() {
+    console.log('Toggling heat map layer...');
+    alert('Heat map feature will be available once coordinate data is expanded to include precise locations!');
+}
+
+function toggleClusters() {
+    console.log('Toggling marker clusters...');
+    if (markersLayer) {
+        if (orchidMap.hasLayer(markersLayer)) {
+            orchidMap.removeLayer(markersLayer);
+        } else {
+            markersLayer.addTo(orchidMap);
+        }
+    }
+}
+
+function fitToBounds() {
+    console.log('Fitting map to data bounds...');
+    if (markersLayer && markersLayer.getLayers().length > 0) {
+        orchidMap.fitBounds(markersLayer.getBounds(), {padding: [20, 20]});
+    }
+}
+
+function resetView() {
+    console.log('Resetting map view...');
+    orchidMap.setView([20.0, 0.0], 2);
+}
+
+// Enhanced navigation functions
+function flyToLocation(type) {
+    const locations = {
+        'tropics': {center: [0, 0], zoom: 3, name: 'Tropical Regions'},
+        'arctic': {center: [75, 0], zoom: 3, name: 'Arctic Region'},
+        'rainforest': {center: [-3, -60], zoom: 5, name: 'Amazon Rainforest'},
+        'mountains': {center: [28, 85], zoom: 6, name: 'Himalayan Mountains'},
+        'islands': {center: [1, 120], zoom: 5, name: 'Southeast Asian Islands'}
+    };
+    
+    const location = locations[type];
+    if (location) {
+        orchidMap.flyTo(location.center, location.zoom, {
+            animate: true,
+            duration: 2
+        });
+        
+        // Show temporary popup
+        const popup = L.popup()
+            .setLatLng(location.center)
+            .setContent(`<h6>🌍 ${location.name}</h6><p>Exploring orchid habitats in this region</p>`)
+            .openOn(orchidMap);
+        
+        setTimeout(() => orchidMap.closePopup(popup), 3000);
+    }
+}
+
+function searchLocation() {
+    const query = document.getElementById('locationSearch').value;
+    if (!query) return;
+    
+    // Simple geocoding simulation - in production would use real geocoding service
+    const commonLocations = {
+        'colombia': [-4.57, -74.3],
+        'ecuador': [-1.8, -78.2],
+        'madagascar': [-18.8, 47.5],
+        'borneo': [1.6, 113.0],
+        'costa rica': [9.7, -83.7],
+        'thailand': [15.8, 100.9],
+        'brazil': [-14.2, -51.9],
+        'indonesia': [-0.8, 113.9],
+        'peru': [-9.2, -75.0],
+        'philippines': [12.9, 121.8]
+    };
+    
+    const searchKey = query.toLowerCase();
+    const coords = commonLocations[searchKey];
+    
+    if (coords) {
+        orchidMap.flyTo(coords, 8, {animate: true, duration: 2});
+        
+        const popup = L.popup()
+            .setLatLng(coords)
+            .setContent(`<h6>📍 ${query}</h6><p>Major orchid diversity region</p>`)
+            .openOn(orchidMap);
+    } else {
+        alert(`Location "${query}" not found. Try: Colombia, Ecuador, Madagascar, Borneo, Costa Rica, Thailand, Brazil, Indonesia, Peru, Philippines`);
+    }
+}
+
+function zoomToRegion(regionName) {
+    const regionCoords = {
+        'North America': [45.0, -100.0],
+        'South America': [-15.0, -60.0],
+        'Europe': [50.0, 10.0],
+        'Asia': [35.0, 105.0],
+        'Australia': [-25.0, 135.0],
+        'Africa': [0.0, 20.0]
+    };
+    
+    const coords = regionCoords[regionName];
+    if (coords) {
+        orchidMap.flyTo(coords, 6, {animate: true, duration: 2});
+    }
+}
+
+function exportMap() {
+    window.open('/mapping/api/export/geojson', '_blank');
+}
+
+function shareMap() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: 'World Orchid Distribution Map',
+            text: 'Interactive map showing global orchid occurrences',
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Map URL copied to clipboard!');
+        });
+    }
+}
+
+function showAdvancedOptions() {
+    new bootstrap.Modal(document.getElementById('advancedModal')).show();
+}
+
+function applyAdvancedOptions() {
+    const limit = document.getElementById('limitSelect').value;
+    const style = document.getElementById('styleSelect').value;
+    
+    // Reload map with new options
+    const url = new URL(window.location.href);
+    url.searchParams.set('limit', limit);
+    url.searchParams.set('style', style);
+    
+    window.location.href = url.toString();
+}
+
+// Analytics tracking
+function trackMapInteraction(action) {
+    console.log(`Map interaction: ${action}`);
+    // Could integrate with analytics service
+}
+
+// Performance monitoring
+let mapLoadTime = Date.now();
+window.addEventListener('load', () => {
+    const loadTime = Date.now() - mapLoadTime;
+    console.log(`🚀 Map loaded in ${loadTime}ms`);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter Automation - FCOS Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #2E8B57, #228B22);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        .automation-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+        .newsletter-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .photo-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .photo-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        .photo-caption {
+            padding: 8px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        .generation-button {
+            background: linear-gradient(135deg, #2E8B57, #228B22);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        .generation-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 139, 87, 0.3);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #E8F5E8, #F0FFF0);
+            border-radius: 10px;
+            border: 1px solid #D4E6D4;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="container">
+            <h1><i data-feather="mail"></i> Newsletter Automation</h1>
+            <p class="lead">Automatically populate monthly newsletters with member photos and database insights</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Newsletter Generation -->
+        <div class="automation-card">
+            <h3>📰 Monthly Newsletter Generator</h3>
+            <p>Generate newsletter content automatically using member photos and database insights.</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="generation-button w-100" onclick="generateNewsletterContent()">
+                        <i data-feather="zap"></i> Generate This Month's Content
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center h-100">
+                        <div id="generationStatus" class="text-muted">
+                            Click to generate automated newsletter content
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Newsletter Preview -->
+        <div class="automation-card" id="newsletterPreview" style="display: none;">
+            <h3>📋 Newsletter Content Preview</h3>
+            <div class="newsletter-preview" id="contentPreview">
+                <!-- Generated content will appear here -->
+            </div>
+            
+            <div class="mt-3">
+                <button class="btn btn-success me-2" onclick="exportToNeonOne()">
+                    <i data-feather="send"></i> Send to Neon One
+                </button>
+                <button class="btn btn-outline-primary me-2" onclick="downloadHTML()">
+                    <i data-feather="download"></i> Download HTML
+                </button>
+                <button class="btn btn-outline-secondary" onclick="copyToClipboard()">
+                    <i data-feather="copy"></i> Copy Content
+                </button>
+            </div>
+        </div>
+
+        <!-- Featured Photos Section -->
+        <div class="automation-card" id="featuredPhotos" style="display: none;">
+            <h3>📸 Featured Member Photos</h3>
+            <div id="photoGrid" class="photo-grid">
+                <!-- Photos will be populated here -->
+            </div>
+        </div>
+
+        <!-- Database Insights -->
+        <div class="automation-card" id="databaseInsights" style="display: none;">
+            <h3>📊 Database-Driven Article</h3>
+            <div id="insightsContent" class="newsletter-preview">
+                <!-- Database insights will appear here -->
+            </div>
+        </div>
+
+        <!-- Growth Statistics -->
+        <div class="automation-card" id="growthStats" style="display: none;">
+            <h3>📈 Growth Statistics</h3>
+            <div class="stats-grid" id="statsGrid">
+                <!-- Statistics will be populated here -->
+            </div>
+        </div>
+
+        <!-- Email Campaign Integration -->
+        <div class="automation-card">
+            <h3>📧 Email Campaign Integration</h3>
+            <p>Configure how newsletter content integrates with your email campaigns:</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Neon One Campaigns</h5>
+                    <ul>
+                        <li><strong>FCOS_MONTHLY_NEWSLETTER</strong> - Main newsletter campaign</li>
+                        <li><strong>FCOS_MEMBER_HIGHLIGHTS</strong> - Member spotlight features</li>
+                        <li><strong>FCOS_DATABASE_INSIGHTS</strong> - Data-driven articles</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Automation Settings</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="autoGenerate" checked>
+                        <label class="form-check-label" for="autoGenerate">
+                            Auto-generate on 1st of each month
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="memberPhotos" checked>
+                        <label class="form-check-label" for="memberPhotos">
+                            Include member-submitted photos
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="databaseArticle" checked>
+                        <label class="form-check-label" for="databaseArticle">
+                            Generate database insights article
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Newsletter History -->
+        <div class="automation-card">
+            <h3>📜 Newsletter History</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Photos Featured</th>
+                            <th>Database Insights</th>
+                            <th>Members Reached</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="newsletterHistory">
+                        <tr>
+                            <td>August 2025</td>
+                            <td>8 member photos</td>
+                            <td>Database growth analysis</td>
+                            <td>245 members</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                <button class="btn btn-sm btn-outline-secondary">Resend</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+
+        let currentNewsletterContent = null;
+
+        function generateNewsletterContent() {
+            const button = document.querySelector('.generation-button');
+            const status = document.getElementById('generationStatus');
+            
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Generating...';
+            status.textContent = 'Generating newsletter content from database...';
+
+            fetch('/api/generate-newsletter-content')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentNewsletterContent = data.content;
+                        displayNewsletterContent(data.content);
+                        status.innerHTML = '<span class="text-success">✅ Newsletter content generated successfully!</span>';
+                    } else {
+                        status.innerHTML = '<span class="text-danger">❌ Generation failed: ' + data.error + '</span>';
+                    }
+                })
+                .catch(error => {
+                    status.innerHTML = '<span class="text-danger">❌ Error: ' + error.message + '</span>';
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.innerHTML = '<i data-feather="zap"></i> Generate This Month\'s Content';
+                    feather.replace();
+                });
+        }
+
+        function displayNewsletterContent(content) {
+            // Show preview section
+            document.getElementById('newsletterPreview').style.display = 'block';
+            
+            // Display main content preview
+            const preview = document.getElementById('contentPreview');
+            const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            preview.innerHTML = `
+                <h4>🌺 FCOS Newsletter - ${currentMonth}</h4>
+                
+                <h5>Featured Member Photos</h5>
+                <p><em>${content.featured_photos.length} beautiful orchid photos from our members this month</em></p>
+                
+                <h5>Database Insights Article</h5>
+                <div class="border-start border-success ps-3 mb-3">
+                    <h6>${content.database_insights.title}</h6>
+                    <div>${content.database_insights.content}</div>
+                </div>
+                
+                <h5>Orchid of the Month</h5>
+                <p><strong>${content.orchid_of_month.scientific_name}</strong><br>
+                ${content.orchid_of_month.description || 'Featured orchid selection'}</p>
+                
+                <h5>Growth Statistics</h5>
+                <ul>
+                    <li>Monthly uploads: ${content.growth_statistics.monthly_uploads}</li>
+                    <li>Growth rate: ${content.growth_statistics.growth_rate}%</li>
+                    <li>Total database: ${content.growth_statistics.total_database_size} orchids</li>
+                    <li>Engagement: ${content.growth_statistics.engagement_level}</li>
+                </ul>
+            `;
+
+            // Display featured photos
+            displayFeaturedPhotos(content.featured_photos);
+            
+            // Display database insights
+            displayDatabaseInsights(content.database_insights);
+            
+            // Display growth statistics
+            displayGrowthStats(content.growth_statistics);
+        }
+
+        function displayFeaturedPhotos(photos) {
+            document.getElementById('featuredPhotos').style.display = 'block';
+            const grid = document.getElementById('photoGrid');
+            
+            grid.innerHTML = photos.map(photo => `
+                <div class="photo-card">
+                    <img src="${photo.image_url}" alt="${photo.scientific_name}" loading="lazy">
+                    <div class="photo-caption">
+                        <strong>${photo.scientific_name}</strong><br>
+                        <small>${photo.caption.substring(0, 80)}...</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayDatabaseInsights(insights) {
+            document.getElementById('databaseInsights').style.display = 'block';
+            document.getElementById('insightsContent').innerHTML = insights.content;
+        }
+
+        function displayGrowthStats(stats) {
+            document.getElementById('growthStats').style.display = 'block';
+            const grid = document.getElementById('statsGrid');
+            
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <h4>${stats.monthly_uploads}</h4>
+                    <p>Monthly Uploads</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${stats.growth_rate}%</h4>
+                    <p>Growth Rate</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${stats.total_database_size}</h4>
+                    <p>Total Orchids</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${stats.engagement_level}</h4>
+                    <p>Engagement</p>
+                </div>
+            `;
+        }
+
+        function exportToNeonOne() {
+            if (!currentNewsletterContent) {
+                alert('Please generate newsletter content first');
+                return;
+            }
+            
+            alert('Newsletter content ready for Neon One! Use the FCOS_MONTHLY_NEWSLETTER campaign template.');
+        }
+
+        function downloadHTML() {
+            if (!currentNewsletterContent) {
+                alert('Please generate newsletter content first');
+                return;
+            }
+            
+            const htmlContent = document.getElementById('contentPreview').innerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FCOS-Newsletter-${new Date().getFullYear()}-${new Date().getMonth() + 1}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyToClipboard() {
+            if (!currentNewsletterContent) {
+                alert('Please generate newsletter content first');
+                return;
+            }
+            
+            const content = document.getElementById('contentPreview').innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Newsletter content copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

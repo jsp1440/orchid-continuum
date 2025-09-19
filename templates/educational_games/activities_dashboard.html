@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Activities - Gary Yong Gee Integration</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .demo-header {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 50%, #fd7e14 100%);
+            color: white;
+            padding: 3rem 0;
+        }
+        
+        .activity-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .activity-card.selected {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.2);
+            box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .activity-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+        
+        .generate-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+        
+        .generate-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+        }
+        
+        .generate-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(0, 123, 255, 0.1);
+            border-radius: 20px;
+        }
+        
+        .activity-result {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .attribution-section {
+            background: linear-gradient(135deg, #343a40, #495057);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="demo-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-2">🎓 Educational Activities Generator</h1>
+                    <p class="lead mb-0">Transform Gary Yong Gee's orchid photos into interactive learning experiences</p>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="text-white-50">
+                        <p class="mb-0">Integration Demo System</p>
+                        <p class="mb-0">Bulk Analysis → Educational Tools</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-5">
+        <!-- Instructions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h5><i data-feather="info" class="me-2"></i>How This Works</h5>
+                    <p class="mb-0">After processing orchid photos in the Bulk Analysis System, you can transform them into educational activities. Select the activities you want to generate, and the system will create interactive learning tools using the analyzed orchid data.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Selection -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-4"><i data-feather="check-square" class="me-2"></i>Select Educational Activities to Generate</h3>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Picture Matching Game -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" onclick="toggleActivity('match_picture')">
+                    <div class="text-center">
+                        <i data-feather="image" class="activity-icon mb-3"></i>
+                        <h5>Picture Matching Game</h5>
+                        <p class="text-muted">Match similar orchid pictures or genus groups</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="match_picture">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Name Matching Game -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" onclick="toggleActivity('match_name')">
+                    <div class="text-center">
+                        <i data-feather="type" class="activity-icon mb-3"></i>
+                        <h5>Picture-to-Name Matching</h5>
+                        <p class="text-muted">Match orchid photos with their scientific names</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="match_name">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trivia Cards -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" onclick="toggleActivity('trivia_cards')">
+                    <div class="text-center">
+                        <i data-feather="credit-card" class="activity-icon mb-3"></i>
+                        <h5>Interactive Trivia Cards</h5>
+                        <p class="text-muted">Flash cards with complete orchid information</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="trivia_cards">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Crossword Puzzle -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" onclick="toggleActivity('crossword')">
+                    <div class="text-center">
+                        <i data-feather="grid" class="activity-icon mb-3"></i>
+                        <h5>Crossword Puzzle</h5>
+                        <p class="text-muted">Genus names and botanical characteristics</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="crossword">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Educational Gallery -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" onclick="toggleActivity('gallery_display')">
+                    <div class="text-center">
+                        <i data-feather="camera" class="activity-icon mb-3"></i>
+                        <h5>Educational Gallery</h5>
+                        <p class="text-muted">Photos with detailed educational captions</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="gallery_display">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Link to Website -->
+            <div class="col-md-6 col-lg-4">
+                <div class="activity-card" style="background: rgba(255, 193, 7, 0.2); border-color: #ffc107;">
+                    <div class="text-center">
+                        <i data-feather="external-link" class="activity-icon mb-3" style="color: #ffc107;"></i>
+                        <h5 style="color: #ffc107;">Gary Yong Gee Website</h5>
+                        <p class="text-muted">Visit the complete orchid database</p>
+                        <a href="https://orchids.yonggee.name" target="_blank" class="btn btn-outline-warning btn-sm">
+                            Visit Website
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demo Data Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h5><i data-feather="upload" class="me-2"></i>Demo Data</h5>
+                    <p class="mb-2">For this demonstration, we'll use sample orchid analysis data. In a real scenario, you would:</p>
+                    <ol class="mb-3">
+                        <li>First use the <strong>Bulk Analysis System</strong> to process ZIP files of orchid photos</li>
+                        <li>Then use this Educational Activities Generator to create learning tools</li>
+                    </ol>
+                    <button class="btn btn-warning" onclick="loadDemoData()">
+                        <i data-feather="database" class="me-2"></i>Load Demo Analysis Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Generate Button -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <button class="generate-button" id="generateBtn" onclick="generateActivities()" disabled>
+                    <i data-feather="play" class="me-2"></i>Generate Educational Activities
+                </button>
+                <p class="text-muted mt-2">Select at least one activity and load demo data to generate</p>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <h3><i data-feather="star" class="me-2"></i>Generated Educational Activities</h3>
+            <div id="activityResults">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Attribution Section -->
+        <div class="attribution-section">
+            <h4><i data-feather="heart" class="me-2"></i>Acknowledgments & Partners</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Photo Collection Partners:</h6>
+                    <ul class="list-unstyled">
+                        <li>🌺 <strong>Gary Yong Gee</strong> - Lead Orchid Photographer</li>
+                        <li>🤝 <strong>Ralph Sawkins</strong> - Collection Partner</li>
+                        <li>🌐 <a href="https://orchids.yonggee.name" target="_blank" class="text-warning">Gary Yong Gee Orchid Database</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Database Partners:</h6>
+                    <ul class="list-unstyled">
+                        <li>🌍 <strong>GBIF</strong> - Global Biodiversity Information Facility</li>
+                        <li>🏛️ <strong>World Orchids Database</strong> - Taxonomic References</li>
+                        <li>🔬 <strong>Five Cities Orchid Society</strong> - Research Platform</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="/educational-games/attributions" class="btn btn-outline-light">
+                    <i data-feather="info" class="me-2"></i>View Full Attribution Page
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let selectedActivities = new Set();
+        let demoDataLoaded = false;
+        let analysisResults = null;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            console.log('🎓 Educational Activities Dashboard initialized');
+        });
+        
+        // Toggle activity selection
+        function toggleActivity(activityType) {
+            const checkbox = document.getElementById(activityType);
+            const card = checkbox.closest('.activity-card');
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                selectedActivities.add(activityType);
+                card.classList.add('selected');
+            } else {
+                selectedActivities.delete(activityType);
+                card.classList.remove('selected');
+            }
+            
+            updateGenerateButton();
+        }
+        
+        // Update generate button state
+        function updateGenerateButton() {
+            const generateBtn = document.getElementById('generateBtn');
+            const canGenerate = selectedActivities.size > 0 && demoDataLoaded;
+            
+            generateBtn.disabled = !canGenerate;
+            
+            if (canGenerate) {
+                generateBtn.innerHTML = '<i data-feather="play" class="me-2"></i>Generate Educational Activities';
+            } else if (selectedActivities.size === 0) {
+                generateBtn.innerHTML = '<i data-feather="square" class="me-2"></i>Select Activities First';
+            } else {
+                generateBtn.innerHTML = '<i data-feather="database" class="me-2"></i>Load Demo Data First';
+            }
+            
+            feather.replace();
+        }
+        
+        // Load demo analysis data
+        function loadDemoData() {
+            // Simulate demo orchid analysis results
+            analysisResults = [
+                {
+                    filename: 'phalaenopsis_white_01.jpg',
+                    processing_success: true,
+                    identified_genus: 'Phalaenopsis',
+                    identified_species: 'amabilis',
+                    flowering_stage: 'Full Bloom',
+                    growth_habit: 'Epiphytic',
+                    flower_color: 'white',
+                    flower_size: 'Large',
+                    special_features: 'Fragrant, waxy texture',
+                    ai_description: 'Beautiful white Phalaenopsis orchid in full bloom with characteristic moth-like flowers',
+                    ai_confidence: 0.92,
+                    photo_datetime: '2024-03-15T10:30:00',
+                    gps_location: '1.3521, 103.8198'
+                },
+                {
+                    filename: 'cattleya_purple_02.jpg',
+                    processing_success: true,
+                    identified_genus: 'Cattleya',
+                    identified_species: 'labiata',
+                    flowering_stage: 'Full Bloom',
+                    growth_habit: 'Epiphytic',
+                    flower_color: 'purple, white',
+                    flower_size: 'Large',
+                    special_features: 'Ruffled petals, fragrant',
+                    ai_description: 'Stunning purple Cattleya orchid with large, ruffled flowers and bright white lip',
+                    ai_confidence: 0.89,
+                    photo_datetime: '2024-02-28T14:45:00',
+                    gps_location: '1.3521, 103.8198'
+                },
+                {
+                    filename: 'dendrobium_yellow_03.jpg',
+                    processing_success: true,
+                    identified_genus: 'Dendrobium',
+                    identified_species: 'nobile',
+                    flowering_stage: 'Early Bloom',
+                    growth_habit: 'Epiphytic',
+                    flower_color: 'yellow, pink',
+                    flower_size: 'Medium',
+                    special_features: 'Multiple flowers per cane',
+                    ai_description: 'Yellow Dendrobium orchid with pink tips, showing the characteristic cane growth habit',
+                    ai_confidence: 0.85,
+                    photo_datetime: '2024-01-12T09:15:00',
+                    gps_location: '1.3521, 103.8198'
+                },
+                {
+                    filename: 'oncidium_dancing_04.jpg',
+                    processing_success: true,
+                    identified_genus: 'Oncidium',
+                    identified_species: 'sphacelatum',
+                    flowering_stage: 'Full Bloom',
+                    growth_habit: 'Epiphytic',
+                    flower_color: 'yellow, brown',
+                    flower_size: 'Small',
+                    special_features: 'Dancing lady appearance',
+                    ai_description: 'Classic dancing lady orchid with cascading spray of yellow and brown flowers',
+                    ai_confidence: 0.91,
+                    photo_datetime: '2024-04-05T16:20:00',
+                    gps_location: '1.3521, 103.8198'
+                }
+            ];
+            
+            demoDataLoaded = true;
+            updateGenerateButton();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success mt-3';
+            alert.innerHTML = `
+                <i data-feather="check" class="me-2"></i>
+                <strong>Demo Data Loaded!</strong> 4 orchid analysis records ready for activity generation.
+            `;
+            
+            document.querySelector('.alert-warning').after(alert);
+            feather.replace();
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+        
+        // Generate activities
+        function generateActivities() {
+            if (selectedActivities.size === 0 || !demoDataLoaded) {
+                alert('Please select activities and load demo data first.');
+                return;
+            }
+            
+            const activitiesArray = Array.from(selectedActivities);
+            
+            // Show loading
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Generating Activities...';
+            generateBtn.disabled = true;
+            feather.replace();
+            
+            // Simulate API call
+            setTimeout(() => {
+                displayResults(activitiesArray);
+                generateBtn.innerHTML = '<i data-feather="check" class="me-2"></i>Activities Generated!';
+                feather.replace();
+                
+                setTimeout(() => {
+                    generateBtn.disabled = false;
+                    updateGenerateButton();
+                }, 2000);
+            }, 2000);
+        }
+        
+        // Display results
+        function displayResults(activities) {
+            const resultsSection = document.getElementById('resultsSection');
+            const activityResults = document.getElementById('activityResults');
+            
+            let resultsHtml = '';
+            
+            activities.forEach(activity => {
+                const activityData = generateActivityData(activity);
+                resultsHtml += `
+                    <div class="activity-result">
+                        <h5><i data-feather="${activityData.icon}" class="me-2"></i>${activityData.title}</h5>
+                        <p class="text-muted">${activityData.description}</p>
+                        <div class="row">
+                            <div class="col-md-8">
+                                ${activityData.content}
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid">
+                                    <a href="${activityData.link}" class="btn btn-primary mb-2" target="_blank">
+                                        <i data-feather="external-link" class="me-2"></i>Try Activity
+                                    </a>
+                                    <button class="btn btn-outline-secondary" onclick="downloadActivity('${activity}')">
+                                        <i data-feather="download" class="me-2"></i>Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            activityResults.innerHTML = resultsHtml;
+            resultsSection.style.display = 'block';
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            
+            feather.replace();
+        }
+        
+        // Generate activity data for display
+        function generateActivityData(activity) {
+            const activities = {
+                match_picture: {
+                    title: 'Picture Matching Game',
+                    icon: 'image',
+                    description: 'Match orchid pictures by genus or similar characteristics',
+                    content: `
+                        <div class="small">
+                            <strong>Generated:</strong> 2 picture pairs from 4 orchid photos<br>
+                            <strong>Difficulty:</strong> Intermediate<br>
+                            <strong>Learning Focus:</strong> Visual pattern recognition, genus identification
+                        </div>
+                    `,
+                    link: '/educational-games/matching-game/picture'
+                },
+                match_name: {
+                    title: 'Picture-to-Name Matching',
+                    icon: 'type',
+                    description: 'Match orchid photos with their scientific names',
+                    content: `
+                        <div class="small">
+                            <strong>Generated:</strong> 8 cards (4 photos + 4 names)<br>
+                            <strong>Species:</strong> Phalaenopsis, Cattleya, Dendrobium, Oncidium<br>
+                            <strong>Learning Focus:</strong> Scientific nomenclature, taxonomy
+                        </div>
+                    `,
+                    link: '/educational-games/matching-game/name'
+                },
+                trivia_cards: {
+                    title: 'Interactive Trivia Cards',
+                    icon: 'credit-card',
+                    description: 'Comprehensive flash cards with orchid information',
+                    content: `
+                        <div class="small">
+                            <strong>Generated:</strong> 4 detailed trivia cards<br>
+                            <strong>Includes:</strong> Taxonomy, habitat, care info, fun facts<br>
+                            <strong>Learning Focus:</strong> Comprehensive orchid knowledge
+                        </div>
+                    `,
+                    link: '/educational-games/trivia-cards'
+                },
+                crossword: {
+                    title: 'Crossword Puzzle',
+                    icon: 'grid',
+                    description: 'Orchid-themed crossword with genera and characteristics',
+                    content: `
+                        <div class="small">
+                            <strong>Generated:</strong> 12 clues (6 across, 6 down)<br>
+                            <strong>Focus:</strong> Genus names, growth habits, flowering stages<br>
+                            <strong>Learning Focus:</strong> Botanical terminology, characteristics
+                        </div>
+                    `,
+                    link: '/educational-games/crossword-puzzle'
+                },
+                gallery_display: {
+                    title: 'Educational Gallery',
+                    icon: 'camera',
+                    description: 'Photos with detailed educational captions',
+                    content: `
+                        <div class="small">
+                            <strong>Generated:</strong> 4 photos with comprehensive captions<br>
+                            <strong>Includes:</strong> Scientific names, descriptions, attribution<br>
+                            <strong>Learning Focus:</strong> Detailed species information
+                        </div>
+                    `,
+                    link: '/educational-games/educational-gallery'
+                }
+            };
+            
+            return activities[activity];
+        }
+        
+        // Download activity
+        function downloadActivity(activity) {
+            // Simulate download
+            alert(`Downloading ${activity} activity data...`);
+        }
+    </script>
+</body>
+</html>

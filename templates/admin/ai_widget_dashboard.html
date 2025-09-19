@@ -1,0 +1,191 @@
+{% extends "layout.html" %}
+{% set page_title = "AI Widget Builder - Admin" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="cpu" class="me-2"></i>
+                    AI Widget Builder
+                </h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('ai_widgets.create_widget') }}" class="btn btn-success">
+                        <i data-feather="plus" class="me-1"></i>Create New Widget
+                    </a>
+                    <a href="{{ url_for('widgets.widget_showcase') }}" class="btn btn-info">
+                        <i data-feather="eye" class="me-1"></i>View All Widgets
+                    </a>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>Back to Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Capabilities Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>Create Widgets</h4>
+                            <p class="mb-0">Generate custom widgets with AI</p>
+                        </div>
+                        <i data-feather="plus-circle" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                    <a href="{{ url_for('ai_widgets.create_widget') }}" class="btn btn-light btn-sm mt-2">Get Started</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>Modify Existing</h4>
+                            <p class="mb-0">Enhance current widgets with AI</p>
+                        </div>
+                        <i data-feather="edit" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>AI Suggestions</h4>
+                            <p class="mb-0">Get improvement recommendations</p>
+                        </div>
+                        <i data-feather="lightbulb" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Widgets -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="text-light mb-3">
+                <i data-feather="grid" class="me-2"></i>Current Widgets
+            </h3>
+            
+            <div class="row g-4">
+                {% for widget_type, widget_info in widget_templates.items() %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card bg-dark text-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ widget_info.name }}</h5>
+                            <p class="card-text">{{ widget_info.description }}</p>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">Customizable Fields:</small>
+                                <div class="mt-1">
+                                    {% for field in widget_info.customizable_fields[:3] %}
+                                        <span class="badge bg-secondary me-1">{{ field }}</span>
+                                    {% endfor %}
+                                    {% if widget_info.customizable_fields|length > 3 %}
+                                        <span class="badge bg-info">+{{ widget_info.customizable_fields|length - 3 }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('ai_widgets.modify_widget', widget_type=widget_type) }}" 
+                                   class="btn btn-outline-warning btn-sm">
+                                    <i data-feather="edit" class="me-1"></i>Modify
+                                </a>
+                                <a href="/widgets/embed/{{ widget_type }}" target="_blank"
+                                   class="btn btn-outline-info btn-sm">
+                                    <i data-feather="eye" class="me-1"></i>Preview
+                                </a>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="getSuggestions('{{ widget_type }}')">
+                                    <i data-feather="lightbulb" class="me-1"></i>AI Tips
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Suggestions Modal -->
+<div class="modal fade" id="suggestionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">AI Improvement Suggestions</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="suggestionsList">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Getting AI suggestions...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getSuggestions(widgetType) {
+    document.getElementById('suggestionsList').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Getting AI suggestions...</span>
+            </div>
+            <p class="mt-2">AI is analyzing ${widgetType} widget...</p>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('suggestionsModal')).show();
+    
+    fetch(`/admin/ai-widgets/suggestions/${widgetType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('suggestionsList').innerHTML = `
+                    <h6 class="text-success mb-3">
+                        <i data-feather="cpu" class="me-2"></i>AI Analysis for ${widgetType} Widget
+                    </h6>
+                    <div class="bg-secondary p-3 rounded">
+                        <pre class="text-light mb-0" style="white-space: pre-wrap;">${data.suggestions}</pre>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/admin/ai-widgets/modify/${widgetType}" class="btn btn-primary">
+                            <i data-feather="edit" class="me-1"></i>Implement Suggestions
+                        </a>
+                    </div>
+                `;
+            } else {
+                document.getElementById('suggestionsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-circle" class="me-2"></i>Error: ${data.error}
+                    </div>
+                `;
+            }
+            feather.replace();
+        })
+        .catch(error => {
+            document.getElementById('suggestionsList').innerHTML = `
+                <div class="alert alert-danger">
+                    <i data-feather="alert-circle" class="me-2"></i>Network error: ${error.message}
+                </div>
+            `;
+            feather.replace();
+        });
+}
+</script>
+{% endblock %}

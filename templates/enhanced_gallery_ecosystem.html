@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Gallery - Ecosystem Explorer Integration{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- Enhanced Gallery Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="grid" class="me-2"></i>Enhanced Orchid Gallery & Ecosystem Explorer
+            </h1>
+            <p class="lead text-muted mb-2">Comprehensive species exploration with distribution maps, ecological relationships, and cultural information</p>
+            <p class="text-muted fst-italic">"Where orchid photos meet ecosystem science — every image tells an ecological story."</p>
+        </div>
+    </div>
+    
+    <!-- Enhanced Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('enhanced_gallery_ecosystem') }}" class="row g-3">
+                <div class="col-lg-2 col-md-3">
+                    <label for="genus" class="form-label">Genus</label>
+                    <select class="form-select" id="genus" name="genus">
+                        <option value="">All Genera</option>
+                        {% for genus in genera %}
+                            <option value="{{ genus }}" {% if current_genus == genus %}selected{% endif %}>
+                                {{ genus }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label for="climate" class="form-label">Climate Zone</label>
+                    <select class="form-select" id="climate" name="climate">
+                        <option value="">All Climates</option>
+                        <option value="cool">Cool Growing</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="warm">Warm Growing</option>
+                        <option value="hot">Hot Growing</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label for="growth_habit" class="form-label">Growth Type</label>
+                    <select class="form-select" id="growth_habit" name="growth_habit">
+                        <option value="">All Types</option>
+                        <option value="epiphytic">Epiphytic</option>
+                        <option value="terrestrial">Terrestrial</option>
+                        <option value="lithophytic">Lithophytic</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label for="pollinator" class="form-label">Pollinator Type</label>
+                    <select class="form-select" id="pollinator" name="pollinator">
+                        <option value="">All Pollinators</option>
+                        <option value="bee">Bee</option>
+                        <option value="fly">Fly</option>
+                        <option value="bird">Bird</option>
+                        <option value="moth">Moth</option>
+                        <option value="beetle">Beetle</option>
+                        <option value="wind">Wind</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3">
+                    <label for="region" class="form-label">Native Region</label>
+                    <select class="form-select" id="region" name="region">
+                        <option value="">All Regions</option>
+                        <option value="South America">South America</option>
+                        <option value="Southeast Asia">Southeast Asia</option>
+                        <option value="Africa">Africa</option>
+                        <option value="North America">North America</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Madagascar">Madagascar</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="filter" class="me-1"></i>Explore
+                        </button>
+                        <a href="{{ url_for('enhanced_gallery_ecosystem') }}" class="btn btn-outline-secondary">
+                            <i data-feather="x" class="me-1"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Distribution Map Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i data-feather="map" class="me-2"></i>Global Distribution Map
+                        <small class="opacity-75 ms-2">{{ orchids|length }} species shown</small>
+                    </h4>
+                </div>
+                <div class="card-body p-0">
+                    <div id="distributionMap" style="height: 400px; width: 100%;"></div>
+                    <div class="p-3 bg-light">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <strong class="text-success">{{ orchids|length }}</strong><br>
+                                <small class="text-muted">Species Shown</small>
+                            </div>
+                            <div class="col-md-3">
+                                <strong class="text-primary">{{ unique_regions|length }}</strong><br>
+                                <small class="text-muted">Regions Covered</small>
+                            </div>
+                            <div class="col-md-3">
+                                <strong class="text-warning">{{ unique_genera|length }}</strong><br>
+                                <small class="text-muted">Genera Represented</small>
+                            </div>
+                            <div class="col-md-3">
+                                <strong class="text-info">{{ climate_zones|length }}</strong><br>
+                                <small class="text-muted">Climate Zones</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Species Grid -->
+    <div class="row">
+        {% for orchid in orchids %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <!-- Species Image with Overlay Info -->
+                <div class="position-relative">
+                    {% if orchid.google_drive_id %}
+                        <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                             class="card-img-top" 
+                             style="height: 250px; object-fit: cover;"
+                             alt="{{ orchid.display_name }}">
+                    {% elif orchid.image_url and 'gbif.org/occurrence' not in orchid.image_url %}
+                        <img src="{{ orchid.image_url }}" 
+                             class="card-img-top" 
+                             style="height: 250px; object-fit: cover;"
+                             alt="{{ orchid.display_name }}">
+                    {% else %}
+                        <img src="/static/images/orchid_placeholder.svg" 
+                             class="card-img-top" 
+                             style="height: 250px; object-fit: cover;"
+                             alt="Placeholder">
+                    {% endif %}
+                    
+                    <!-- Climate & Growth Badge -->
+                    <div class="position-absolute top-0 start-0 m-2">
+                        {% if orchid.climate_preference %}
+                            <span class="badge bg-primary">{{ orchid.climate_preference|title }}</span>
+                        {% endif %}
+                        {% if orchid.growth_habit %}
+                            <span class="badge bg-success ms-1">{{ orchid.growth_habit|title }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Region Badge -->
+                    {% if orchid.region %}
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">
+                            <i data-feather="map-pin" style="width: 12px; height: 12px;" class="me-1"></i>{{ orchid.region }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <!-- Species Name -->
+                    <h5 class="card-title mb-2">
+                        <em>{{ orchid.scientific_name or orchid.display_name }}</em>
+                    </h5>
+                    
+                    <!-- Common Name -->
+                    {% if orchid.common_names %}
+                    <h6 class="card-subtitle mb-3 text-muted">{{ orchid.common_names }}</h6>
+                    {% endif %}
+
+                    <!-- Quick Ecosystem Facts -->
+                    <div class="row g-2 mb-3">
+                        <!-- Pollinators -->
+                        {% if orchid.pollinator_types and orchid.pollinator_types|length > 0 %}
+                        <div class="col-12">
+                            <small class="text-muted d-flex align-items-center">
+                                <i data-feather="activity" style="width: 14px; height: 14px;" class="me-1"></i>
+                                <strong>Pollinators:</strong>
+                                <span class="ms-1">{{ orchid.pollinator_types|join(', ')|title }}</span>
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Flowering Time -->
+                        {% if orchid.flowering_time %}
+                        <div class="col-12">
+                            <small class="text-muted d-flex align-items-center">
+                                <i data-feather="calendar" style="width: 14px; height: 14px;" class="me-1"></i>
+                                <strong>Blooms:</strong>
+                                <span class="ms-1">{{ orchid.flowering_time }}</span>
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Light Requirements -->
+                        {% if orchid.light_requirements %}
+                        <div class="col-12">
+                            <small class="text-muted d-flex align-items-center">
+                                <i data-feather="sun" style="width: 14px; height: 14px;" class="me-1"></i>
+                                <strong>Light:</strong>
+                                <span class="ms-1">{{ orchid.light_requirements }}</span>
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Mycorrhizal Fungi -->
+                        {% if orchid.mycorrhizal_fungi and orchid.mycorrhizal_fungi|length > 0 %}
+                        <div class="col-12">
+                            <small class="text-muted d-flex align-items-center">
+                                <i data-feather="feather" style="width: 14px; height: 14px;" class="me-1"></i>
+                                <strong>Fungi:</strong>
+                                <span class="ms-1">{{ orchid.mycorrhizal_fungi|join(', ')|truncate(30) }}</span>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- AI Description Preview -->
+                    {% if orchid.ai_description %}
+                    <p class="card-text small text-muted mb-3">
+                        {{ orchid.ai_description|truncate(120) }}
+                    </p>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm flex-fill" 
+                                onclick="showEcosystemDetails({{ orchid.id }})">
+                            <i data-feather="search" class="me-1" style="width: 14px; height: 14px;"></i>
+                            Ecosystem
+                        </button>
+                        <button class="btn btn-success btn-sm flex-fill" 
+                                onclick="showDistributionMap({{ orchid.id }})">
+                            <i data-feather="map" class="me-1" style="width: 14px; height: 14px;"></i>
+                            Distribution
+                        </button>
+                        <button class="btn btn-info btn-sm flex-fill" 
+                                onclick="showCulturalInfo({{ orchid.id }})">
+                            <i data-feather="book" class="me-1" style="width: 14px; height: 14px;"></i>
+                            Care Guide
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ecosystem Footer -->
+                <div class="card-footer bg-light">
+                    <div class="row g-1 text-center">
+                        {% if orchid.temperature_range %}
+                        <div class="col-4">
+                            <small class="text-muted">
+                                <i data-feather="thermometer" style="width: 12px; height: 12px;"></i><br>
+                                {{ orchid.temperature_range }}
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if orchid.humidity_preference %}
+                        <div class="col-4">
+                            <small class="text-muted">
+                                <i data-feather="droplet" style="width: 12px; height: 12px;"></i><br>
+                                {{ orchid.humidity_preference }}
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if orchid.water_requirements %}
+                        <div class="col-4">
+                            <small class="text-muted">
+                                <i data-feather="cloud-rain" style="width: 12px; height: 12px;"></i><br>
+                                {{ orchid.water_requirements }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if orchids %}
+    <div class="row mt-4">
+        <div class="col-12 d-flex justify-content-center">
+            <nav>
+                <ul class="pagination">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page - 1 }}&{{ request.query_string.decode() | urlencode }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ p }}&{{ request.query_string.decode() | urlencode }}">{{ p }}</a>
+                        </li>
+                        {% elif p == 4 or p == total_pages - 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page + 1 }}&{{ request.query_string.decode() | urlencode }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Enhanced Ecosystem Details Modal -->
+<div class="modal fade" id="ecosystemModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i data-feather="globe" class="me-2"></i>Ecosystem Relationships & Distribution
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="ecosystemContent">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading ecosystem data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cultural Care Modal -->
+<div class="modal fade" id="culturalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i data-feather="book-open" class="me-2"></i>Cultural & Care Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="culturalContent">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading care information...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Leaflet map
+let distributionMap;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDistributionMap();
+});
+
+function initializeDistributionMap() {
+    // Initialize the main distribution map
+    distributionMap = L.map('distributionMap').setView([20, 0], 2);
+    
+    // Add base tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(distributionMap);
+    
+    // Add orchid markers
+    const orchidData = {{ orchids_json|safe }};
+    
+    orchidData.forEach(function(orchid) {
+        if (orchid.latitude && orchid.longitude) {
+            const marker = L.marker([orchid.latitude, orchid.longitude]);
+            
+            // Enhanced popup with image and ecosystem info
+            let popupContent = `
+                <div class="orchid-map-popup" style="max-width: 300px;">
+                    <div class="text-center mb-2">
+                        ${orchid.image_url ? 
+                            `<img src="${orchid.image_url}" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px;" alt="${orchid.name}">` : 
+                            `<div style="width: 100%; height: 100px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                                <i data-feather="image" style="width: 24px; height: 24px;"></i>
+                             </div>`
+                        }
+                    </div>
+                    <h6 class="mb-2"><em>${orchid.name}</em></h6>
+                    ${orchid.region ? `<small class="text-muted">📍 ${orchid.region}</small><br>` : ''}
+                    ${orchid.pollinators ? `<small class="text-muted">🐝 ${orchid.pollinators}</small><br>` : ''}
+                    ${orchid.climate ? `<small class="text-muted">🌡️ ${orchid.climate}</small><br>` : ''}
+                    <div class="mt-2">
+                        <button class="btn btn-primary btn-sm" onclick="showEcosystemDetails(${orchid.id})">
+                            View Ecosystem
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            marker.addTo(distributionMap);
+        }
+    });
+}
+
+function showEcosystemDetails(orchidId) {
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('ecosystemModal'));
+    modal.show();
+    
+    // Load ecosystem data
+    fetch(`/api/orchid/${orchidId}/ecosystem`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('ecosystemContent').innerHTML = generateEcosystemHTML(data);
+            feather.replace();
+        })
+        .catch(error => {
+            document.getElementById('ecosystemContent').innerHTML = 
+                '<div class="alert alert-warning">Unable to load ecosystem data at this time.</div>';
+        });
+}
+
+function showDistributionMap(orchidId) {
+    // Focus map on specific orchid
+    fetch(`/api/orchid/${orchidId}/coordinates`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.latitude && data.longitude) {
+                distributionMap.setView([data.latitude, data.longitude], 8);
+            }
+        });
+}
+
+function showCulturalInfo(orchidId) {
+    // Show cultural modal
+    const modal = new bootstrap.Modal(document.getElementById('culturalModal'));
+    modal.show();
+    
+    // Load cultural data
+    fetch(`/api/orchid/${orchidId}/cultural`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('culturalContent').innerHTML = generateCulturalHTML(data);
+            feather.replace();
+        })
+        .catch(error => {
+            document.getElementById('culturalContent').innerHTML = 
+                '<div class="alert alert-warning">Unable to load cultural information at this time.</div>';
+        });
+}
+
+function generateEcosystemHTML(data) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i data-feather="activity" class="me-2"></i>Pollination Relationships</h6>
+                <div class="mb-3">
+                    ${data.pollinators && data.pollinators.length > 0 ? 
+                        data.pollinators.map(p => `<span class="badge bg-primary me-1">${p}</span>`).join('') :
+                        '<span class="text-muted">No specific pollinator data available</span>'
+                    }
+                </div>
+                
+                <h6><i data-feather="feather" class="me-2"></i>Mycorrhizal Partnerships</h6>
+                <div class="mb-3">
+                    ${data.mycorrhizal_fungi && data.mycorrhizal_fungi.length > 0 ? 
+                        data.mycorrhizal_fungi.map(f => `<span class="badge bg-success me-1">${f}</span>`).join('') :
+                        '<span class="text-muted">Mycorrhizal data being researched</span>'
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6><i data-feather="map-pin" class="me-2"></i>Native Habitat</h6>
+                <p class="small">${data.native_habitat || 'Habitat information available upon further research'}</p>
+                
+                <h6><i data-feather="users" class="me-2"></i>Companion Plants</h6>
+                <div class="mb-3">
+                    ${data.companion_plants ? 
+                        data.companion_plants.split(',').map(c => `<span class="badge bg-info me-1">${c.trim()}</span>`).join('') :
+                        '<span class="text-muted">Companion plant data being compiled</span>'
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6><i data-feather="thermometer" class="me-2"></i>Environmental Requirements</h6>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body text-center py-2">
+                                <small class="text-muted">Temperature</small><br>
+                                <strong>${data.temperature_range || 'Variable'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body text-center py-2">
+                                <small class="text-muted">Humidity</small><br>
+                                <strong>${data.humidity_preference || 'Moderate'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body text-center py-2">
+                                <small class="text-muted">Light</small><br>
+                                <strong>${data.light_requirements || 'Bright indirect'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateCulturalHTML(data) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i data-feather="droplet" class="me-2"></i>Watering</h6>
+                <p class="small">${data.water_requirements || 'Water when potting medium approaches dryness, typically weekly in growing season.'}</p>
+                
+                <h6><i data-feather="sun" class="me-2"></i>Light Requirements</h6>
+                <p class="small">${data.light_requirements || 'Bright, indirect light. East or west facing windows work well.'}</p>
+                
+                <h6><i data-feather="wind" class="me-2"></i>Air Circulation</h6>
+                <p class="small">Good air movement essential. Use fans if growing indoors.</p>
+            </div>
+            <div class="col-md-6">
+                <h6><i data-feather="tool" class="me-2"></i>Potting Media</h6>
+                <p class="small">${data.potting_media || 'Well-draining orchid bark mix with perlite and moss.'}</p>
+                
+                <h6><i data-feather="zap" class="me-2"></i>Fertilizing</h6>
+                <p class="small">${data.fertilizer_needs || 'Weekly dilute orchid fertilizer during growing season, reduce in winter.'}</p>
+                
+                <h6><i data-feather="refresh-cw" class="me-2"></i>Repotting</h6>
+                <p class="small">${data.repotting || 'Every 2-3 years or when medium breaks down. Best done in spring.'}</p>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6><i data-feather="calendar" class="me-2"></i>Seasonal Care Notes</h6>
+                    <p class="mb-0 small">
+                        <strong>Spring:</strong> Resume regular watering and fertilizing as new growth appears.<br>
+                        <strong>Summer:</strong> Peak growing season - maintain consistent moisture and feeding.<br>
+                        <strong>Fall:</strong> Reduce watering frequency as growth slows.<br>
+                        <strong>Winter:</strong> Minimal fertilizing, water only when necessary.
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Initialize Feather icons
+feather.replace();
+</script>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+.orchid-map-popup img {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.badge {
+    font-size: 0.7em;
+}
+
+.modal-xl {
+    max-width: 1200px;
+}
+
+#distributionMap {
+    border-radius: 0 0 8px 8px;
+}
+
+.leaflet-popup-content {
+    margin: 8px 12px;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+}
+</style>
+
+{% endblock %}

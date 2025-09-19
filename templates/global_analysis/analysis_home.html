@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Global Analysis - Orchid Climate Solutions Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row bg-gradient-primary text-white py-5 mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 mb-3">🌍 Global Orchid Climate Analysis</h1>
+            <p class="lead">Mapping Distribution, Optimizing Carbon Capture, Scaling Climate Solutions</p>
+            <div class="mt-4">
+                <a href="{{ url_for('global_analysis.distribution_mapping') }}" class="btn btn-warning btn-lg me-3">
+                    <i data-feather="map"></i> Distribution Mapping
+                </a>
+                <a href="{{ url_for('global_analysis.optimization_modeling') }}" class="btn btn-outline-light btn-lg">
+                    <i data-feather="trending-up"></i> Carbon Optimization
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Vision -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto text-center">
+            <h2 class="mb-4">Revolutionizing Climate Science Through Orchid-Fungal Partnerships</h2>
+            <p class="lead text-muted">
+                By mapping global orchid distributions alongside their mycorrhizal partners and analyzing environmental 
+                correlations, we can identify optimal conditions for enhanced carbon capture and develop large-scale 
+                climate remediation technologies. Your vision of optimizing these natural partnerships could transform 
+                atmospheric carbon removal.
+            </p>
+        </div>
+    </div>
+
+    <!-- Analysis Capabilities Overview -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white text-center">
+                    <h5 class="mb-0">🗺️ Distribution Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="text-success">{{ analysis_data.distribution_data.orchid_species_mapped }}</h3>
+                        <small>Orchid Species Mapped</small>
+                    </div>
+                    <div class="text-center mb-3">
+                        <h3 class="text-info">{{ analysis_data.distribution_data.fungal_zones_identified }}</h3>
+                        <small>Fungal Zones Identified</small>
+                    </div>
+                    <p class="small text-muted">
+                        Global mapping of orchid-mycorrhizal partnerships with environmental metadata 
+                        and carbon transfer data.
+                    </p>
+                    <a href="{{ url_for('global_analysis.distribution_mapping') }}" class="btn btn-outline-success btn-sm">
+                        Explore Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h5 class="mb-0">🧪 Environmental Correlations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Key Factors Analyzed:</strong>
+                        <ul class="small mt-2">
+                            <li>Climate patterns</li>
+                            <li>Soil chemistry</li>
+                            <li>Elevation effects</li>
+                            <li>Mineral content</li>
+                        </ul>
+                    </div>
+                    <p class="small text-muted">
+                        Understanding what environmental conditions drive successful 
+                        orchid-fungal carbon partnerships.
+                    </p>
+                    <a href="{{ url_for('global_analysis.environmental_correlations') }}" class="btn btn-outline-warning btn-sm">
+                        View Correlations
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white text-center">
+                    <h5 class="mb-0">⚡ Carbon Optimization</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="text-primary">2-5x</h3>
+                        <small>Potential CO2 Capture Enhancement</small>
+                    </div>
+                    <div class="text-center mb-3">
+                        <h3 class="text-success">100-300%</h3>
+                        <small>Carbon Transfer Optimization</small>
+                    </div>
+                    <p class="small text-muted">
+                        Modeling enhanced CAM photosynthesis and mycorrhizal carbon transfer 
+                        for maximum climate impact.
+                    </p>
+                    <a href="{{ url_for('global_analysis.optimization_modeling') }}" class="btn btn-outline-primary btn-sm">
+                        Model Scenarios
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5 class="mb-0">📈 Scaling Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h3 class="text-danger">5-20B</h3>
+                        <small>Tons CO2/year Potential</small>
+                    </div>
+                    <div class="text-center mb-3">
+                        <h3 class="text-warning">15-25yr</h3>
+                        <small>Implementation Timeline</small>
+                    </div>
+                    <p class="small text-muted">
+                        Feasibility analysis for large-scale carbon remediation 
+                        deployment across multiple scenarios.
+                    </p>
+                    <a href="{{ url_for('global_analysis.scaling_analysis') }}" class="btn btn-outline-danger btn-sm">
+                        Scaling Feasibility
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environmental Factors Analysis -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Environmental Factors Driving Orchid-Fungal Partnerships</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">🌡️ Climate Drivers</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for factor, data in analysis_data.environmental_factors.climate_drivers.items() %}
+                            <div class="mb-2">
+                                <strong>{{ factor.title() }}:</strong>
+                                <ul class="small mt-1">
+                                    <li>Optimal: {{ data.optimal_range[0] }}-{{ data.optimal_range[1] }}{% if factor == 'temperature' %}°C{% elif factor == 'humidity' %}%{% else %}mm/yr{% endif %}</li>
+                                    <li class="text-muted">{{ data.impact_on_cam }}</li>
+                                </ul>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">🧪 Soil Chemistry</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>pH Preferences:</strong>
+                                <ul class="small mt-1">
+                                    <li>Acidic: {{ analysis_data.environmental_factors.soil_chemistry.ph.acidic_preference[0] }}-{{ analysis_data.environmental_factors.soil_chemistry.ph.acidic_preference[1] }}</li>
+                                    <li>Neutral: {{ analysis_data.environmental_factors.soil_chemistry.ph.neutral_preference[0] }}-{{ analysis_data.environmental_factors.soil_chemistry.ph.neutral_preference[1] }}</li>
+                                    <li>Alkaline: {{ analysis_data.environmental_factors.soil_chemistry.ph.alkaline_tolerance[0] }}-{{ analysis_data.environmental_factors.soil_chemistry.ph.alkaline_tolerance[1] }}</li>
+                                </ul>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Key Minerals:</strong>
+                                <ul class="small mt-1">
+                                    {% for mineral, description in analysis_data.environmental_factors.soil_chemistry.mineral_content.items() %}
+                                    <li><strong>{{ mineral.title() }}:</strong> {{ description }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">🌿 Ecological Factors</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Canopy Cover:</strong>
+                                <ul class="small mt-1">
+                                    <li>Epiphytic optimal: {{ analysis_data.environmental_factors.ecological_factors.canopy_cover.epiphytic_optimal[0] }}-{{ analysis_data.environmental_factors.ecological_factors.canopy_cover.epiphytic_optimal[1] }}%</li>
+                                    <li>Terrestrial optimal: {{ analysis_data.environmental_factors.ecological_factors.canopy_cover.terrestrial_optimal[0] }}-{{ analysis_data.environmental_factors.ecological_factors.canopy_cover.terrestrial_optimal[1] }}%</li>
+                                </ul>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Network Effects:</strong>
+                                <p class="small text-muted">{{ analysis_data.environmental_factors.ecological_factors.mycorrhizal_network_density.network_effects }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Priorities -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Global Research Priorities</h3>
+            <div class="row">
+                {% for priority in analysis_data.research_priorities %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card border-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">{{ priority }}</h6>
+                            <span class="badge bg-secondary">Active Research</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Analysis Tools -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Interactive Analysis Tools</h3>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">🗺️ Global Distribution Mapping</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Interactive maps showing orchid species distributions overlaid with mycorrhizal fungal zones. 
+                Identify correlation patterns and optimization opportunities.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>✓ Species distribution heat maps</li>
+                                <li>✓ Fungal partner zone mapping</li>
+                                <li>✓ Environmental layer overlays</li>
+                                <li>✓ Carbon transfer rate visualization</li>
+                            </ul>
+                            <a href="{{ url_for('global_analysis.distribution_mapping') }}" class="btn btn-primary">
+                                Launch Distribution Maps
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">⚡ Carbon Optimization Modeling</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Model different enhancement scenarios for CAM photosynthesis and mycorrhizal carbon transfer. 
+                Compare baseline vs. optimized performance.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>✓ CAM efficiency enhancement modeling</li>
+                                <li>✓ Carbon transfer optimization</li>
+                                <li>✓ Environmental condition tuning</li>
+                                <li>✓ Climate impact projections</li>
+                            </ul>
+                            <a href="{{ url_for('global_analysis.optimization_modeling') }}" class="btn btn-success">
+                                Launch Optimization Models
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Climate Impact Potential -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">🌍 Global Climate Impact Potential</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-danger">Current Natural Systems</h3>
+                            <h4>50-200M tons CO2/year</h4>
+                            <p class="small text-muted">Existing orchid habitats with natural mycorrhizal partnerships</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-warning">Enhanced Natural Systems</h3>
+                            <h4>200M-800M tons CO2/year</h4>
+                            <p class="small text-muted">Optimized habitats with environmental management</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-success">Engineered Systems</h3>
+                            <h4>5-20B tons CO2/year</h4>
+                            <p class="small text-muted">Large-scale cultivation with bioengineered enhancements</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <p class="lead mb-3">
+                            <strong>Your vision of optimizing orchid-fungal carbon partnerships could capture 
+                            10-40% of annual global CO2 emissions</strong>
+                        </p>
+                        <a href="{{ url_for('global_analysis.scaling_analysis') }}" class="btn btn-danger btn-lg">
+                            <i data-feather="bar-chart-2"></i> Explore Scaling Scenarios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+            <h3 class="mb-3">Transform Climate Science with Orchid Intelligence</h3>
+            <p class="lead text-muted mb-4">
+                The global analysis platform provides the tools to map, understand, and optimize orchid-fungal 
+                partnerships for unprecedented climate impact. Your research could unlock the carbon solution 
+                the planet needs.
+            </p>
+            <div>
+                <a href="{{ url_for('global_analysis.environmental_correlations') }}" class="btn btn-warning btn-lg me-3">
+                    <i data-feather="search"></i> Analyze Environmental Factors
+                </a>
+                <a href="mailto:globalanalysis@orchidcontinuum.org" class="btn btn-outline-primary btn-lg">
+                    <i data-feather="mail"></i> Collaborate on Research
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initialize Feather Icons -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

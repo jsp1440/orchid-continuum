@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Member Show & Tell Galleries - Five Cities Orchid Society{% endblock %}
+
+{% block extra_css %}
+<style>
+.public-show-tell {
+    padding: 20px;
+}
+
+.gallery-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 40px;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.public-gallery-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.public-gallery-card:hover {
+    transform: translateY(-5px);
+}
+
+.gallery-preview {
+    position: relative;
+    height: 250px;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.gallery-mosaic {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+}
+
+.mosaic-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.single-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-info {
+    padding: 25px;
+}
+
+.gallery-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.gallery-species {
+    font-style: italic;
+    color: #7f8c8d;
+    margin-bottom: 15px;
+}
+
+.gallery-description {
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.gallery-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.view-count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.approval-date {
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #7f8c8d;
+}
+
+.empty-state-icon {
+    font-size: 5rem;
+    margin-bottom: 30px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .public-show-tell {
+        padding: 15px;
+    }
+    
+    .gallery-hero {
+        padding: 40px 20px;
+        margin-bottom: 30px;
+    }
+    
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .gallery-info {
+        padding: 20px;
+    }
+    
+    .gallery-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="public-show-tell">
+    <!-- Hero Section -->
+    <div class="gallery-hero">
+        <div class="container">
+            <h1 class="display-4 mb-3">
+                <i data-feather="camera" class="me-3"></i>
+                Member Show & Tell
+            </h1>
+            <p class="lead">
+                Discover the beautiful orchid collections from our Five Cities Orchid Society members
+            </p>
+            <p class="mb-0">
+                Featured galleries approved by our community administrators
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if galleries %}
+        <!-- Gallery Grid -->
+        <div class="gallery-grid">
+            {% for gallery in galleries %}
+            <div class="public-gallery-card">
+                <div class="gallery-preview">
+                    {% if gallery.selected_orchids %}
+                        {% if gallery.selected_orchids|length == 1 %}
+                        <!-- Single image preview -->
+                        <img src="/static/images/placeholder.png" alt="Orchid" class="single-preview">
+                        {% else %}
+                        <!-- Mosaic preview for multiple orchids -->
+                        <div class="gallery-mosaic">
+                            {% for orchid_id in gallery.selected_orchids[:9] %}
+                            <img src="/static/images/placeholder.png" alt="Orchid" class="mosaic-image">
+                            {% endfor %}
+                            
+                            <!-- Fill remaining cells if needed -->
+                            {% for i in range(9 - (gallery.selected_orchids|length if gallery.selected_orchids|length < 9 else 9)) %}
+                            <div style="background: #f8f9fa;"></div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <!-- No images placeholder -->
+                    <div class="d-flex flex-column align-items-center justify-content-center text-muted">
+                        <i data-feather="image" style="width: 64px; height: 64px; margin-bottom: 15px;"></i>
+                        <p>Gallery Preview</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="gallery-info">
+                    <h3 class="gallery-title">{{ gallery.title }}</h3>
+                    
+                    {% if gallery.genus_species %}
+                    <div class="gallery-species">{{ gallery.genus_species }}</div>
+                    {% endif %}
+                    
+                    {% if gallery.notes %}
+                    <div class="gallery-description">
+                        {{ gallery.notes[:200] }}{% if gallery.notes|length > 200 %}...{% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-success px-3 py-2">
+                            <i data-feather="check-circle" style="width: 14px; height: 14px;" class="me-1"></i>
+                            Admin Approved
+                        </span>
+                        
+                        <span class="text-muted">
+                            {{ gallery.selected_orchids|length if gallery.selected_orchids else 0 }} orchids
+                        </span>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="/show-tell/gallery/{{ gallery.id }}" class="btn btn-primary">
+                            <i data-feather="eye" class="me-2" style="width: 16px; height: 16px;"></i>
+                            View Gallery
+                        </a>
+                    </div>
+                    
+                    <div class="gallery-meta">
+                        <div class="view-count">
+                            <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                            {{ gallery.view_count or 0 }} views
+                        </div>
+                        
+                        {% if gallery.approval_date %}
+                        <div class="approval-date">
+                            Approved {{ gallery.approval_date[:10] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Call to Action -->
+        <div class="text-center mt-5 py-5" style="background: #f8f9fa; border-radius: 15px;">
+            <h3 class="mb-3">Share Your Collection</h3>
+            <p class="text-muted mb-4">
+                Are you a Five Cities Orchid Society member? Create your own Show & Tell gallery 
+                and apply for public display!
+            </p>
+            <a href="/my-collection/show-tell" class="btn btn-primary btn-lg">
+                <i data-feather="plus" class="me-2"></i>
+                Create Your Gallery
+            </a>
+        </div>
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-state-icon">📸</div>
+            <h3>No Public Galleries Yet</h3>
+            <p class="mb-4">
+                Be the first Five Cities Orchid Society member to share your collection 
+                with the public! Create a Show & Tell gallery and apply for approval.
+            </p>
+            <a href="/my-collection/show-tell" class="btn btn-primary btn-lg">
+                <i data-feather="camera" class="me-2"></i>
+                Create First Gallery
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize feather icons
+    feather.replace();
+    
+    // Track page view
+    if (window.trackWidgetInteraction) {
+        trackWidgetInteraction('show_tell_public', 'view', {
+            gallery_count: {{ galleries|length }}
+        });
+    }
+});
+</script>
+{% endblock %}

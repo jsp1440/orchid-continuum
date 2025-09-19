@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Glossary Flashcards - Five Cities Orchid Society</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .flashcard {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            margin: 20px auto;
+        }
+        
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+        
+        .flashcard-front {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .flashcard-back {
+            background: linear-gradient(135deg, #059669, #0891b2);
+            color: white;
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-term {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .flashcard-definition {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .flashcard-pronunciation {
+            font-style: italic;
+            opacity: 0.9;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
+        .flashcard-example {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 15px;
+        }
+        
+        .game-controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .game-stats {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .difficulty-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        
+        .difficulty-beginner { background: #10b981; }
+        .difficulty-intermediate { background: #f59e0b; }
+        .difficulty-advanced { background: #ef4444; }
+        
+        .category-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .flip-hint {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .flashcard {
+                height: 250px;
+            }
+            .flashcard-term {
+                font-size: 2rem;
+            }
+            .flashcard-definition {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/images/orchid_continuum_transparent_logo.png" alt="Five Cities Orchid Society" height="40">
+                Five Cities Orchid Society
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="text-center mb-4">
+                    <h1><i data-feather="book-open"></i> Orchid Glossary Flashcards</h1>
+                    <p class="lead">Master orchid terminology with interactive learning</p>
+                </div>
+
+                <!-- Game Stats -->
+                <div class="game-stats">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 id="currentCard">1</h4>
+                            <small>Current Card</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 id="totalCards">20</h4>
+                            <small>Total Cards</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 id="correctCount">0</h4>
+                            <small>Correct</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 id="score">0%</h4>
+                            <small>Score</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flashcard -->
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-inner">
+                        <div class="flashcard-front">
+                            <div class="category-badge" id="categoryBadge">Botanical</div>
+                            <div class="difficulty-badge difficulty-beginner" id="difficultyBadge">Beginner</div>
+                            <div class="flashcard-term" id="cardTerm">Loading...</div>
+                            <div class="flip-hint">Click to reveal definition</div>
+                        </div>
+                        <div class="flashcard-back">
+                            <div class="flashcard-definition" id="cardDefinition">Loading definition...</div>
+                            <div class="flashcard-pronunciation" id="cardPronunciation"></div>
+                            <div class="flashcard-example" id="cardExample"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="game-controls">
+                    <div class="btn-group mb-3" role="group">
+                        <button class="btn btn-success" onclick="markCorrect()">
+                            <i data-feather="check"></i> Got It!
+                        </button>
+                        <button class="btn btn-warning" onclick="markIncorrect()">
+                            <i data-feather="x"></i> Need Practice
+                        </button>
+                        <button class="btn btn-info" onclick="flipCard()">
+                            <i data-feather="rotate-cw"></i> Flip Card
+                        </button>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-outline-light" onclick="previousCard()" id="prevBtn">
+                            <i data-feather="chevron-left"></i> Previous
+                        </button>
+                        <button class="btn btn-outline-light" onclick="nextCard()" id="nextBtn">
+                            Next <i data-feather="chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="mt-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Difficulty Level</label>
+                            <select class="form-select" id="difficultySelect" onchange="loadCards()">
+                                <option value="all">All Levels</option>
+                                <option value="beginner" selected>Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="categorySelect" onchange="loadCards()">
+                                <option value="all">All Categories</option>
+                                <option value="botanical" selected>Botanical Terms</option>
+                                <option value="cultural">Cultural Terms</option>
+                                <option value="awards">AOS Awards</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Game state
+        let currentCardIndex = 0;
+        let flashcards = [];
+        let isFlipped = false;
+        let correctAnswers = 0;
+        let totalAnswered = 0;
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            loadCards();
+        });
+
+        // Load flashcards from API
+        async function loadCards() {
+            const difficulty = document.getElementById('difficultySelect').value;
+            const category = document.getElementById('categorySelect').value;
+            
+            try {
+                const response = await fetch(`/api/flashcards?difficulty=${difficulty}&category=${category}`);
+                flashcards = await response.json();
+                
+                if (flashcards.length > 0) {
+                    currentCardIndex = 0;
+                    correctAnswers = 0;
+                    totalAnswered = 0;
+                    updateStats();
+                    displayCard();
+                } else {
+                    // Fallback data if API not available
+                    loadFallbackCards();
+                }
+            } catch (error) {
+                console.log('Loading fallback cards...');
+                loadFallbackCards();
+            }
+        }
+
+        // Fallback cards with AOS terminology
+        function loadFallbackCards() {
+            flashcards = [
+                {
+                    front: "Pseudobulb",
+                    back: "Thickened stem structure of orchids that stores water and nutrients",
+                    pronunciation: "",
+                    example: "Cattleya pseudobulbs become wrinkled when the plant needs water",
+                    difficulty: "beginner",
+                    category: "botanical"
+                },
+                {
+                    front: "Epiphyte",
+                    back: "Plant that grows on another plant but is not parasitic",
+                    pronunciation: "EP-ih-fyte",
+                    example: "Most tropical orchids are epiphytes growing on tree branches",
+                    difficulty: "beginner",
+                    category: "botanical"
+                },
+                {
+                    front: "AM/AOS",
+                    back: "Award of Merit from American Orchid Society; given to orchids scoring 80-89 points",
+                    pronunciation: "",
+                    example: "This Cattleya received an AM/AOS for its excellent flower quality",
+                    difficulty: "intermediate",
+                    category: "awards"
+                },
+                {
+                    front: "Keiki",
+                    back: "Hawaiian word for baby; plantlet that develops on orchid flower spikes",
+                    pronunciation: "KAY-kee",
+                    example: "The Dendrobium produced several keikis that can be potted separately",
+                    difficulty: "beginner",
+                    category: "cultural"
+                },
+                {
+                    front: "Velamen",
+                    back: "Spongy outer layer of orchid roots that absorbs water and nutrients",
+                    pronunciation: "veh-LAY-men",
+                    example: "The silvery velamen on healthy roots turns green when wet",
+                    difficulty: "intermediate",
+                    category: "botanical"
+                }
+            ];
+            
+            currentCardIndex = 0;
+            correctAnswers = 0;
+            totalAnswered = 0;
+            updateStats();
+            displayCard();
+        }
+
+        // Display current card
+        function displayCard() {
+            if (flashcards.length === 0) return;
+            
+            const card = flashcards[currentCardIndex];
+            
+            document.getElementById('cardTerm').textContent = card.front;
+            document.getElementById('cardDefinition').textContent = card.back;
+            document.getElementById('cardPronunciation').textContent = card.pronunciation || '';
+            document.getElementById('cardExample').textContent = card.example || '';
+            
+            // Update badges
+            const difficultyBadge = document.getElementById('difficultyBadge');
+            difficultyBadge.textContent = card.difficulty.charAt(0).toUpperCase() + card.difficulty.slice(1);
+            difficultyBadge.className = `difficulty-badge difficulty-${card.difficulty}`;
+            
+            document.getElementById('categoryBadge').textContent = card.category.charAt(0).toUpperCase() + card.category.slice(1);
+            
+            // Reset flip state
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+            isFlipped = false;
+            
+            updateStats();
+        }
+
+        // Flip card
+        function flipCard() {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.toggle('flipped');
+            isFlipped = !isFlipped;
+        }
+
+        // Mark answer as correct
+        function markCorrect() {
+            if (!isFlipped) flipCard();
+            correctAnswers++;
+            totalAnswered++;
+            nextCard();
+        }
+
+        // Mark answer as incorrect
+        function markIncorrect() {
+            if (!isFlipped) flipCard();
+            totalAnswered++;
+            // Don't increment correctAnswers
+            nextCard();
+        }
+
+        // Next card
+        function nextCard() {
+            if (currentCardIndex < flashcards.length - 1) {
+                currentCardIndex++;
+                displayCard();
+            } else {
+                // End of deck
+                alert(`Game complete! Final score: ${Math.round((correctAnswers / totalAnswered) * 100)}%`);
+            }
+        }
+
+        // Previous card
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                displayCard();
+            }
+        }
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('currentCard').textContent = currentCardIndex + 1;
+            document.getElementById('totalCards').textContent = flashcards.length;
+            document.getElementById('correctCount').textContent = correctAnswers;
+            
+            const score = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+            document.getElementById('score').textContent = score + '%';
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentCardIndex === 0;
+            document.getElementById('nextBtn').disabled = currentCardIndex === flashcards.length - 1;
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                flipCard();
+            } else if (event.code === 'ArrowRight') {
+                nextCard();
+            } else if (event.code === 'ArrowLeft') {
+                previousCard();
+            } else if (event.code === 'Enter') {
+                markCorrect();
+            }
+        });
+    </script>
+</body>
+</html>

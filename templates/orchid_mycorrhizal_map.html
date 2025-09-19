@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid-Mycorrhizal Fungi Symbiotic Map - Five Cities Orchid Society</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .map-container {
+            height: 80vh;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 2px solid #7A4B8E;
+        }
+        
+        .legend {
+            background: rgba(13, 17, 23, 0.9);
+            border: 2px solid #7A4B8E;
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .orchid-dot { background: #B19CD9; }
+        .fungi-dot { background: #FF6B6B; }
+        .symbiotic-dot { 
+            background: linear-gradient(45deg, #B19CD9 50%, #FF6B6B 50%);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #1a1f3a 0%, #2d1b69 100%);
+            border: 1px solid #7A4B8E;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-controls {
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid #7A4B8E;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .connection-line {
+            stroke: #FFD93D;
+            stroke-width: 2;
+            stroke-opacity: 0.6;
+            stroke-dasharray: 5,5;
+        }
+        
+        .popup-content {
+            color: #fff;
+            background: #1a1f3a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .species-name {
+            font-style: italic;
+            color: #B19CD9;
+        }
+        
+        .fungi-name {
+            font-style: italic;
+            color: #FF6B6B;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="container-fluid py-3" style="background: linear-gradient(135deg, #7A4B8E 0%, #B19CD9 100%); box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <a href="/" class="text-decoration-none d-flex align-items-center">
+                        <i data-feather="map" class="me-3 text-light" style="width: 40px; height: 40px;"></i>
+                        <div>
+                            <h1 class="h3 mb-0 text-white fw-bold">Orchid-Mycorrhizal Fungi Map</h1>
+                            <p class="text-light mb-0 opacity-90">Symbiotic relationships visualization</p>
+                        </div>
+                    </a>
+                </div>
+                <a href="/" class="btn btn-light">
+                    <i data-feather="home" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Controls Column -->
+            <div class="col-lg-3">
+                <!-- Statistics -->
+                <div class="stats-card">
+                    <h5 class="text-light mb-3">
+                        <i data-feather="bar-chart-2" class="me-2" style="width: 20px; height: 20px;"></i>
+                        Dataset Statistics
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-info mb-1" id="orchid-count">0</h3>
+                            <small class="text-light">Orchids</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-danger mb-1" id="fungi-count">0</h3>
+                            <small class="text-light">Fungi</small>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <h4 class="text-warning mb-1" id="symbiotic-count">0</h4>
+                            <small class="text-light">Potential Symbiotic Pairs</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <h6 class="text-light mb-3">
+                        <i data-feather="filter" class="me-2" style="width: 18px; height: 18px;"></i>
+                        Map Layers
+                    </h6>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="show-orchids" checked>
+                        <label class="form-check-label text-light" for="show-orchids">
+                            Show Orchids
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="show-fungi" checked>
+                        <label class="form-check-label text-light" for="show-fungi">
+                            Show Mycorrhizal Fungi
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="show-connections" checked>
+                        <label class="form-check-label text-light" for="show-connections">
+                            Show Symbiotic Connections
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="distance-filter" class="form-label text-light small">
+                            Max Connection Distance (km)
+                        </label>
+                        <input type="range" class="form-range" id="distance-filter" min="1" max="100" value="50">
+                        <div class="text-light small" id="distance-value">50 km</div>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <h6 class="text-light mb-3">
+                        <i data-feather="eye" class="me-2" style="width: 18px; height: 18px;"></i>
+                        Map Legend
+                    </h6>
+                    
+                    <div class="legend-item">
+                        <div class="legend-dot orchid-dot"></div>
+                        <span class="text-light small">Orchid Species</span>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <div class="legend-dot fungi-dot"></div>
+                        <span class="text-light small">Mycorrhizal Fungi</span>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <div class="legend-dot symbiotic-dot"></div>
+                        <span class="text-light small">Co-located Species</span>
+                    </div>
+                    
+                    <div class="legend-item">
+                        <div style="width: 20px; height: 2px; background: #FFD93D; margin-right: 8px; opacity: 0.6;"></div>
+                        <span class="text-light small">Potential Connection</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Column -->
+            <div class="col-lg-9">
+                <div class="map-container" id="map"></div>
+                
+                <!-- Loading Indicator -->
+                <div id="loading" class="text-center py-4">
+                    <div class="spinner-border text-info me-3" role="status"></div>
+                    <span class="text-light">Loading orchid and fungi data...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Initialize map
+        let map = L.map('map', {
+            center: [39.8283, -98.5795], // Center of USA
+            zoom: 4,
+            zoomControl: true
+        });
+
+        // Dark theme tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Layer groups
+        let orchidLayer = L.layerGroup().addTo(map);
+        let fungiLayer = L.layerGroup().addTo(map);
+        let connectionLayer = L.layerGroup().addTo(map);
+
+        // Data storage
+        let orchidData = [];
+        let fungiData = [];
+
+        // Custom icons
+        const orchidIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: #B19CD9; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
+
+        const fungiIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: #FF6B6B; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
+
+        const symbioticIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: linear-gradient(45deg, #B19CD9 50%, #FF6B6B 50%); width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+
+        // Load orchid data
+        async function loadOrchidData() {
+            try {
+                const response = await fetch('/api/orchid-locations');
+                const data = await response.json();
+                
+                orchidData = data.filter(item => 
+                    item.decimal_latitude && 
+                    item.decimal_longitude &&
+                    Math.abs(item.decimal_latitude) <= 90 &&
+                    Math.abs(item.decimal_longitude) <= 180
+                );
+                
+                document.getElementById('orchid-count').textContent = orchidData.length;
+                
+                orchidData.forEach(orchid => {
+                    const marker = L.marker([orchid.decimal_latitude, orchid.decimal_longitude], {
+                        icon: orchidIcon
+                    });
+                    
+                    marker.bindPopup(`
+                        <div class="popup-content">
+                            <h6 class="species-name mb-2">${orchid.scientific_name}</h6>
+                            <p class="mb-1"><strong>Location:</strong> ${orchid.country || 'Unknown'}</p>
+                            <p class="mb-1"><strong>Source:</strong> ${orchid.data_source || 'N/A'}</p>
+                            ${orchid.habitat ? `<p class="mb-0"><strong>Habitat:</strong> ${orchid.habitat}</p>` : ''}
+                        </div>
+                    `);
+                    
+                    orchidLayer.addLayer(marker);
+                });
+                
+            } catch (error) {
+                console.error('Error loading orchid data:', error);
+            }
+        }
+
+        // Simulated mycorrhizal fungi data (would be loaded from GBIF)
+        async function loadFungiData() {
+            // This would eventually load from GBIF API
+            // For now, creating sample data near orchid locations
+            fungiData = [
+                {
+                    scientific_name: "Rhizoctonia sp.",
+                    genus: "Rhizoctonia", 
+                    decimal_latitude: 40.7128,
+                    decimal_longitude: -74.0060,
+                    country: "United States",
+                    habitat: "Forest floor, mycorrhizal association"
+                },
+                {
+                    scientific_name: "Tulasnella sp.",
+                    genus: "Tulasnella",
+                    decimal_latitude: 34.0522,
+                    decimal_longitude: -118.2437,
+                    country: "United States", 
+                    habitat: "Orchid root association"
+                },
+                {
+                    scientific_name: "Ceratobasidium sp.",
+                    genus: "Ceratobasidium",
+                    decimal_latitude: 25.7617,
+                    decimal_longitude: -80.1918,
+                    country: "United States",
+                    habitat: "Epiphytic orchid symbiont"
+                }
+            ];
+            
+            document.getElementById('fungi-count').textContent = fungiData.length;
+            
+            fungiData.forEach(fungi => {
+                const marker = L.marker([fungi.decimal_latitude, fungi.decimal_longitude], {
+                    icon: fungiIcon
+                });
+                
+                marker.bindPopup(`
+                    <div class="popup-content">
+                        <h6 class="fungi-name mb-2">${fungi.scientific_name}</h6>
+                        <p class="mb-1"><strong>Genus:</strong> ${fungi.genus}</p>
+                        <p class="mb-1"><strong>Location:</strong> ${fungi.country}</p>
+                        <p class="mb-0"><strong>Habitat:</strong> ${fungi.habitat}</p>
+                    </div>
+                `);
+                
+                fungiLayer.addLayer(marker);
+            });
+        }
+
+        // Calculate potential symbiotic relationships
+        function calculateSymbioticConnections() {
+            const maxDistance = parseFloat(document.getElementById('distance-filter').value);
+            connectionLayer.clearLayers();
+            
+            let connectionCount = 0;
+            
+            orchidData.forEach(orchid => {
+                fungiData.forEach(fungi => {
+                    const distance = calculateDistance(
+                        orchid.decimal_latitude, orchid.decimal_longitude,
+                        fungi.decimal_latitude, fungi.decimal_longitude
+                    );
+                    
+                    if (distance <= maxDistance) {
+                        connectionCount++;
+                        
+                        // Draw connection line
+                        const connection = L.polyline([
+                            [orchid.decimal_latitude, orchid.decimal_longitude],
+                            [fungi.decimal_latitude, fungi.decimal_longitude]
+                        ], {
+                            color: '#FFD93D',
+                            weight: 2,
+                            opacity: 0.6,
+                            dashArray: '5, 5'
+                        });
+                        
+                        connection.bindPopup(`
+                            <div class="popup-content">
+                                <h6 class="text-warning mb-2">Potential Symbiotic Relationship</h6>
+                                <p class="species-name mb-1">${orchid.scientific_name}</p>
+                                <p class="fungi-name mb-2">${fungi.scientific_name}</p>
+                                <p class="mb-0"><strong>Distance:</strong> ${distance.toFixed(1)} km</p>
+                            </div>
+                        `);
+                        
+                        connectionLayer.addLayer(connection);
+                    }
+                });
+            });
+            
+            document.getElementById('symbiotic-count').textContent = connectionCount;
+        }
+
+        // Calculate distance between two points
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Layer controls
+        document.getElementById('show-orchids').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(orchidLayer);
+            } else {
+                map.removeLayer(orchidLayer);
+            }
+        });
+
+        document.getElementById('show-fungi').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(fungiLayer);
+            } else {
+                map.removeLayer(fungiLayer);
+            }
+        });
+
+        document.getElementById('show-connections').addEventListener('change', function() {
+            if (this.checked) {
+                map.addLayer(connectionLayer);
+            } else {
+                map.removeLayer(connectionLayer);
+            }
+        });
+
+        document.getElementById('distance-filter').addEventListener('input', function() {
+            document.getElementById('distance-value').textContent = this.value + ' km';
+            if (document.getElementById('show-connections').checked) {
+                calculateSymbioticConnections();
+            }
+        });
+
+        // Initialize
+        async function init() {
+            document.getElementById('loading').style.display = 'block';
+            
+            await loadOrchidData();
+            await loadFungiData();
+            calculateSymbioticConnections();
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Start the application
+        feather.replace();
+        init();
+    </script>
+</body>
+</html>

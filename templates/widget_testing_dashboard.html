@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Widget Testing Dashboard - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-success">
+                <div class="card-header bg-success text-white">
+                    <h2 class="mb-0">
+                        <i data-feather="check-circle" class="me-2"></i>
+                        Widget Testing Dashboard - Production Readiness Verification
+                    </h2>
+                    <p class="mb-0 mt-2">Systematic testing of all platform widgets for reliability verification</p>
+                </div>
+                <div class="card-body">
+                    <!-- Overall Status -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="overall-status">Testing...</h3>
+                                    <p class="mb-0">Overall Status</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="total-widgets">0</h3>
+                                    <p class="mb-0">Total Widgets</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="working-widgets">0</h3>
+                                    <p class="mb-0">Working</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="failed-widgets">0</h3>
+                                    <p class="mb-0">Failed</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget Categories -->
+                    <div class="row">
+                        <!-- Core Widgets -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card bg-secondary">
+                                <div class="card-header">
+                                    <h4 class="mb-0">🌺 Core Orchid Widgets</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="core-widgets"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Climate & Research Widgets -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card bg-secondary">
+                                <div class="card-header">
+                                    <h4 class="mb-0">🌡️ Climate & Research Widgets</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="climate-widgets"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Widgets -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card bg-secondary">
+                                <div class="card-header">
+                                    <h4 class="mb-0">🎮 Interactive Widgets</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="interactive-widgets"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Widgets -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card bg-secondary">
+                                <div class="card-header">
+                                    <h4 class="mb-0">🔬 Analysis Widgets</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="analysis-widgets"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Logs -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card bg-dark border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h4 class="mb-0">📋 Test Execution Log</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div id="test-log" style="height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                                        <div class="text-success">🚀 Starting comprehensive widget testing...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Widget Testing System
+const widgets = {
+    core: [
+        { name: 'Recent Orchids', url: '/api/recent-orchids', type: 'api' },
+        { name: 'Orchid Gallery', url: '/gallery', type: 'page' },
+        { name: 'Search System', url: '/search', type: 'page' },
+        { name: 'Orchid Explorer', url: '/orchid-explorer', type: 'page' },
+        { name: 'Featured Orchids', url: '/api/featured-orchids', type: 'api' },
+        { name: 'Database Stats', url: '/api/database-stats', type: 'api' }
+    ],
+    climate: [
+        { name: 'Weather Patterns', url: '/api/global-weather-patterns', type: 'api' },
+        { name: 'Climate Widget', url: '/widgets/climate', type: 'page' },
+        { name: 'Climate Data API', url: '/widgets/climate-data', type: 'api' },
+        { name: 'Satellite Monitoring', url: '/api/satellite-monitoring', type: 'api' },
+        { name: '35th Parallel Globe', url: '/35th-parallel-globe', type: 'page' },
+        { name: 'Space Earth Globe', url: '/space-earth-globe', type: 'page' }
+    ],
+    interactive: [
+        { name: 'Orchid Coordinates', url: '/api/orchid-coordinates-all', type: 'api' },
+        { name: 'Orchid Genera', url: '/api/orchid-genera', type: 'api' },
+        { name: 'Ecosystem Data', url: '/api/orchid-ecosystem-data', type: 'api' },
+        { name: 'Mapping Coordinates', url: '/mapping/api/coordinates', type: 'api' },
+        { name: 'Orchid of Day', url: '/api/orchid-of-day', type: 'api' },
+        { name: 'Search API', url: '/api/search', type: 'api' }
+    ],
+    analysis: [
+        { name: 'Admin Dashboard', url: '/admin', type: 'page' },
+        { name: 'Comparison Tool', url: '/compare', type: 'page' },
+        { name: 'Care Wheel Generator', url: '/care-wheel', type: 'page' }
+    ]
+};
+
+let testResults = {
+    total: 0,
+    working: 0,
+    failed: 0,
+    details: {}
+};
+
+function logTest(message, type = 'info') {
+    const log = document.getElementById('test-log');
+    const timestamp = new Date().toLocaleTimeString();
+    const colorClass = type === 'success' ? 'text-success' : type === 'error' ? 'text-danger' : 'text-info';
+    log.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+    log.scrollTop = log.scrollHeight;
+}
+
+function updateStatus() {
+    document.getElementById('total-widgets').textContent = testResults.total;
+    document.getElementById('working-widgets').textContent = testResults.working;
+    document.getElementById('failed-widgets').textContent = testResults.failed;
+    
+    const overallStatus = testResults.failed === 0 ? 
+        `✅ ALL WORKING (${testResults.working}/${testResults.total})` : 
+        `⚠️ ${testResults.failed} ISSUES`;
+    document.getElementById('overall-status').textContent = overallStatus;
+}
+
+function renderWidgetStatus(category, widgets) {
+    const container = document.getElementById(`${category}-widgets`);
+    container.innerHTML = widgets.map(widget => {
+        const status = testResults.details[widget.name];
+        if (!status) return `<div class="badge bg-secondary me-2 mb-2">${widget.name} - Testing...</div>`;
+        
+        const badgeClass = status.working ? 'bg-success' : 'bg-danger';
+        const icon = status.working ? '✅' : '❌';
+        const responseTime = status.responseTime ? ` (${status.responseTime}ms)` : '';
+        
+        return `<div class="badge ${badgeClass} me-2 mb-2">${icon} ${widget.name}${responseTime}</div>`;
+    }).join('');
+}
+
+async function testWidget(widget) {
+    try {
+        logTest(`Testing ${widget.name}...`);
+        const startTime = Date.now();
+        
+        const response = await fetch(widget.url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json, text/html' }
+        });
+        
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+        
+        const working = response.ok;
+        testResults.details[widget.name] = { working, responseTime, status: response.status };
+        
+        if (working) {
+            testResults.working++;
+            logTest(`✅ ${widget.name} - OK (${responseTime}ms)`, 'success');
+        } else {
+            testResults.failed++;
+            logTest(`❌ ${widget.name} - Failed (${response.status})`, 'error');
+        }
+        
+    } catch (error) {
+        testResults.failed++;
+        testResults.details[widget.name] = { working: false, error: error.message };
+        logTest(`❌ ${widget.name} - Error: ${error.message}`, 'error');
+    }
+}
+
+async function runTests() {
+    logTest('🚀 Starting comprehensive widget testing system...');
+    
+    // Count total widgets
+    testResults.total = Object.values(widgets).flat().length;
+    updateStatus();
+    
+    // Test each category
+    for (const [category, widgetList] of Object.entries(widgets)) {
+        logTest(`📂 Testing ${category} widgets...`);
+        
+        for (const widget of widgetList) {
+            await testWidget(widget);
+            renderWidgetStatus(category, widgetList);
+            updateStatus();
+        }
+        
+        logTest(`✅ Completed ${category} widget tests`);
+    }
+    
+    logTest('🎉 Widget testing completed!', 'success');
+    
+    if (testResults.failed === 0) {
+        logTest('🚀 ALL WIDGETS WORKING - PLATFORM IS PRODUCTION READY!', 'success');
+    } else {
+        logTest(`⚠️ Found ${testResults.failed} issues that need attention`, 'error');
+    }
+}
+
+// Start testing when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    logTest('Widget Testing Dashboard initialized');
+    setTimeout(runTests, 1000);
+});
+
+// Auto-refresh every 60 seconds
+setInterval(() => {
+    logTest('🔄 Running scheduled health check...');
+    runTests();
+}, 60000);
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

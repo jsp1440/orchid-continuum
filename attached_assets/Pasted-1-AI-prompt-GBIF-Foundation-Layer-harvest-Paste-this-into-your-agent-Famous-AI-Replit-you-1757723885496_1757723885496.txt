@@ -1,0 +1,330 @@
+1) AI prompt — GBIF “Foundation Layer” harvest
+
+Paste this into your agent (Famous AI / Replit / your ETL runner). It’s written to be unambiguous and implementation-agnostic.
+
+GOAL
+Harvest a clean, attribution-ready “foundation layer” of GBIF occurrence records for Orchidaceae to power downstream cross-linking (pollination, symbiosis, ethnobotany).
+
+SCOPE
+- Taxon: Orchidaceae (family) including accepted names + synonyms
+- Geography: global
+- Time: all years (but keep eventDate for phenology)
+- License: ONLY records with CC0, CC BY, or CC BY-NC licenses
+- Basis of record: HUMAN_OBSERVATION, OBSERVATION, PRESERVED_SPECIMEN
+- Geospatial: must have coordinates (decimalLatitude/decimalLongitude), with coordinateUncertaintyInMeters <= 50000 if present
+- Quality: exclude records flagged as "PRESUMED_NEGATED_LONGITUDE", "PRESUMED_NEGATED_LATITUDE", "COUNTRY_COORDINATE_MISMATCH", or "ZERO_COORDINATE"; remove obvious duplicates (same scientificName, date, lat/lon rounded to 4 decimals, same datasetKey)
+
+FIELDS (Darwin Core first, then GBIF extras)
+occurrenceID, datasetKey, datasetName, license, rightsHolder, institutionCode, collectionCode,
+scientificName, acceptedScientificName (resolve), taxonRank, taxonKey, acceptedTaxonKey, kingdom, phylum, class, order, family, genus, species,
+eventDate, year, month, day, recordedBy, identifiedBy,
+decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters, geodeticDatum, elevation, minimumElevationInMeters, maximumElevationInMeters,
+country, countryCode, stateProvince, county, municipality, locality,
+basisOfRecord, establishmentMeans, occurrenceStatus,
+individualCount, lifeStage, sex,
+media (urls), references (urls),
+issue (list), modified, lastInterpreted,
+gbifID (stable key), publishingOrgKey
+
+NORMALIZATION
+- Resolve synonyms to acceptedTaxonKey/acceptedScientificName (keep verbatim scientificName + taxonomic status)
+- Normalize country/region names to ISO codes; strip bad coords; round coords to 5 decimals for de-dup
+- Store both original and normalized fields
+- Store dataset-level attribution + license for display
+
+OUTPUT
+- Partition by genus (e.g., /orchidaceae/genus=Vanilla/part-0001.parquet)
+- Provide Parquet + JSONL exports
+- Emit a catalog: datasets.json (datasetKey → {title, publisher, license, citation})
+- Emit taxa.json (taxonKey → {acceptedName, rank, synonyms[], commonNames[]})
+
+VALIDATION
+- Report totals by license, basisOfRecord, and top 20 datasetKeys
+- Sample 100 records with media links; confirm media resolves (HTTP 200)
+- Write a data dictionary (fields + types)
+
+DELIVERABLES
+- /exports/gbif_orchidaceae/{parquet,jsonl}
+- /exports/catalog/datasets.json
+- /exports/catalog/taxa.json
+- /exports/reports/quality_summary.md
+
+2) Cross-linking blueprint (pollination, symbiosis, ethnobotany)
+
+Data sources to ingest (curatable/importable)
+	•	Pollination & interactions: Global Biotic Interactions (GloBI); primary literature (DOI-tagged), museum/paper supplements; selected review datasets.
+	•	Mycorrhiza: UNITE/PlutoF mycorrhizal references; MycoPortal; literature tables.
+	•	Ethnobotany/uses: Kew resources (MPNS), Useful Tropical Plants/UPFC regional datasets, USDA ethnobotany/GRIN, peer-reviewed ethnobotanical surveys; CITES checklist for trade flags.
+	•	Taxonomy backbones: POWO/IPNI for author strings, nomenclatural details.
+
+You (or curators) decide exactly which sources to include; the model below is agnostic and supports per-record provenance.
+
+Canonical schema (JSON)
+
+Use this as your unified “Orchid Continuum” layer that sits on top of the GBIF foundation.
+
+{
+  "taxon": {
+    "acceptedTaxonKey": 12345,
+    "acceptedScientificName": "Ophrys sphegodes",
+    "synonyms": ["Ophrys aranifera"],
+    "authorship": "Mill., 1768",
+    "taxonRank": "species",
+    "powoId": "urn:lsid:ipni.org:names:XXXXX-1"
+  },
+  "distribution": {
+    "gbifOccurrenceCount": 18423,
+    "countries": ["GB", "FR", "DE"],
+    "elevation_m": {"min": 5, "p50": 220, "max": 1350},
+    "monthsObserved": [3,4,5,6],
+    "sampleOccurrences": [
+      {"gbifID":"123","eventDate":"2019-04-20","lat":51.24,"lon":-0.51,"datasetKey":"abc..."}
+    ]
+  },
+  "interactions": {
+    "pollinators": [
+      {
+        "interactionType": "flower-visitor-of",        // OBO RO term if possible
+        "pollinatorTaxon": {"name": "Andrena nigroaenea", "rank":"species", "externalIds":{"gbif":654321}},
+        "evidence": [
+          {"type":"doi","value":"10.1111/xxx.yyy","verbatim":"Author et al. 2017"},
+          {"type":"dataset","value":"globi:datasetKey123"}
+        ],
+        "confidence": "high"
+      }
+    ],
+    "mycorrhiza": [
+      {
+        "fungusTaxon": {"name":"Tulasnella sp.","rank":"genus","externalIds":{"unite":"UDBxxxx"}},
+        "relationship": "mycorrhizal-association",
+        "lifeStage": "seedling/germination",
+        "evidence": [{"type":"paper","value":"DOI:10.1000/abc123"}],
+        "confidence": "medium"
+      }
+    ],
+    "mimicry": [
+      {
+        "class": "sexual-deception",                   // controlled vocab
+        "signal": ["chemical","visual"],
+        "modelSpecies": "Andrena females",
+        "notes": "Alkane blend mimics female pheromone",
+        "evidence": [{"type":"review","value":"DOI:10.1038/..." }]
+      }
+    ]
+  },
+  "uses": {
+    "food": [
+      {
+        "part": "fruit/pod",
+        "preparation": "flavoring (vanillin)",
+        "region": ["MX","MG","ID"],
+        "evidence": [{"type":"database","value":"Kew MPNS"}, {"type":"paper","value":"DOI:10.1016/..."}]
+      }
+    ],
+    "medicine": [],
+    "trade": [{"status":"CITES Appendix II","evidence":[{"type":"cites","value":"2024 checklist"}]}]
+  },
+  "attribution": {
+    "gbifDatasets": [{"datasetKey":"abc","title":"Herbarium X","license":"CC BY 4.0"}],
+    "interactionSources": ["GloBI:datasetKey123","DOI:10.1111/xxx.yyy"],
+    "ethnobotanySources": ["Kew MPNS","UPFC 2020"],
+    "lastUpdated": "2025-08-25"
+  }
+}
+
+3) “Orchid Interaction Explorer” widget (spec + code)
+
+What it does
+	•	Search an orchid species →
+	•	Map: overlays GBIF occurrence density + clickable recent points
+	•	Interactions: lists pollinators & mycorrhiza with evidence/citations
+	•	Uses: food/medicine/trade with sources
+	•	Attribution footer auto-generates dataset citations
+
+Minimal data contract (what the widget expects)
+
+Serve a single JSON at /api/continuum/species/{acceptedTaxonKey}.json matching the schema above.
+
+Drop-in HTML (no external build tools)
+
+Copy, paste, and replace the placeholder API URL. This uses GBIF’s tile servers for the basemap + density layer and renders your merged JSON. (If your site CSP blocks external tiles, proxy them through your server.)
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Orchid Interaction Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
+    header { padding: 12px 16px; border-bottom: 1px solid #eee; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px){ .row { grid-template-columns: 2fr 1fr; } }
+    #map { height: 420px; border: 1px solid #e5e5e5; border-radius: 8px; }
+    h2 { margin: 12px 0 6px; font-size: 18px; }
+    small.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #666; }
+    .card { border: 1px solid #eee; border-radius: 8px; padding: 12px; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin:2px 4px 2px 0; font-size:12px;}
+    footer { margin-top: 16px; font-size: 12px; color: #555; }
+    a { color: #2a5bd7; text-decoration: none; }
+  </style>
+  <!-- MapLibre (lightweight, open) -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <strong>Orchid Interaction Explorer</strong>
+      <div>
+        <label>Search species (GBIF taxonKey):
+          <input id="taxonKey" placeholder="e.g., 2877955" style="width:220px" />
+        </label>
+        <button id="load">Load</button>
+        <small class="mono" id="sciName"></small>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="row">
+      <div id="map" class="card"></div>
+      <div class="card">
+        <h2>Interactions</h2>
+        <div id="pollinators"></div>
+        <h2>Mycorrhiza</h2>
+        <div id="myco"></div>
+        <h2>Uses</h2>
+        <div id="uses"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h2>References & Attribution</h2>
+      <div id="refs"></div>
+    </div>
+    <footer>
+      Built on GBIF occurrence tiles and Orchid Continuum cross-linked datasets. Always verify original sources.
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = '/api/continuum/species'; // <-- replace with your endpoint
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        "version": 8,
+        "sources": {
+          "basemap": {
+            "type": "raster",
+            "tiles": [
+              "https://tile.gbif.org/3857/omt/{z}/{x}/{y}.png?style=gbif-light"
+            ],
+            "tileSize": 256
+          }
+        },
+        "layers": [
+          { "id": "basemap", "type": "raster", "source": "basemap" }
+        ]
+      },
+      center: [0, 20],
+      zoom: 2
+    });
+
+    function addDensityLayer(taxonKey){
+      const id = 'density';
+      if (map.getSource(id)) { map.removeLayer(id); map.removeSource(id); }
+      map.addSource(id, {
+        "type": "raster",
+        "tiles": [
+          `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}.png?taxonKey=${taxonKey}&style=classic-v2.point`
+        ],
+        "tileSize": 256
+      });
+      map.addLayer({ "id": id, "type": "raster", "source": id, "paint": { "raster-opacity": 0.7 } });
+    }
+
+    function pill(text){ const span=document.createElement('span'); span.className='pill'; span.textContent=text; return span; }
+    function citeList(arr){
+      if (!arr || !arr.length) return '—';
+      return arr.map(e => {
+        if (e.type && e.value) return `<li><small>${e.type.toUpperCase()}: ${e.value}</small></li>`;
+        return `<li><small>${e}</small></li>`;
+      }).join('');
+    }
+
+    async function loadSpecies(taxonKey){
+      const res = await fetch(`${API_BASE}/${taxonKey}.json`);
+      if(!res.ok){ alert('Species JSON not found'); return; }
+      const data = await res.json();
+
+      document.getElementById('sciName').textContent = data.taxon?.acceptedScientificName || '';
+
+      // Map layer
+      addDensityLayer(taxonKey);
+
+      // Interactions
+      const pol = document.getElementById('pollinators'); pol.innerHTML = '';
+      (data.interactions?.pollinators || []).forEach(p => {
+        const div = document.createElement('div'); div.className='item';
+        const title = p.pollinatorTaxon?.name || 'Unknown pollinator';
+        div.innerHTML = `<strong>${title}</strong> <small>${p.interactionType||''}</small><ul>${citeList(p.evidence)}</ul>`;
+        pol.appendChild(div);
+      });
+      if(!(data.interactions?.pollinators || []).length) pol.textContent = 'No pollinator records linked yet.';
+
+      const my = document.getElementById('myco'); my.innerHTML = '';
+      (data.interactions?.mycorrhiza || []).forEach(m => {
+        const title = m.fungusTaxon?.name || 'Unknown fungus';
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${title}</strong> <small>${m.relationship||''} — ${m.lifeStage||''}</small><ul>${citeList(m.evidence)}</ul>`;
+        my.appendChild(div);
+      });
+      if(!(data.interactions?.mycorrhiza || []).length) my.textContent = 'No mycorrhizal records linked yet.';
+
+      const uses = document.getElementById('uses'); uses.innerHTML='';
+      (data.uses?.food || []).forEach(u => {
+        const div = document.createElement('div');
+        div.appendChild(pill('food'));
+        div.appendChild(document.createTextNode(` Part: ${u.part||'-'}; Prep: ${u.preparation||'-'}`));
+        div.innerHTML += `<ul>${citeList(u.evidence)}</ul>`;
+        uses.appendChild(div);
+      });
+      (data.uses?.medicine || []).forEach(u => {
+        const div = document.createElement('div');
+        div.appendChild(pill('medicine'));
+        div.innerHTML += `<ul>${citeList(u.evidence)}</ul>`;
+        uses.appendChild(div);
+      });
+      (data.uses?.trade || []).forEach(u => {
+        const div = document.createElement('div');
+        div.appendChild(pill('trade'));
+        div.appendChild(document.createTextNode(` ${u.status||''}`));
+        div.innerHTML += `<ul>${citeList(u.evidence)}</ul>`;
+        uses.appendChild(div);
+      });
+      if(!uses.children.length) uses.textContent = 'No ethnobotanical/trade records linked yet.';
+
+      // References & attribution
+      const refs = document.getElementById('refs');
+      const gbifList = (data.attribution?.gbifDatasets || [])
+        .map(d => `<li><small>${d.title} — ${d.license}</small></li>`).join('');
+      const intList = (data.attribution?.interactionSources || [])
+        .map(s => `<li><small>${s}</small></li>`).join('');
+      const ethList = (data.attribution?.ethnobotanySources || [])
+        .map(s => `<li><small>${s}</small></li>`).join('');
+      refs.innerHTML = `
+        <strong>GBIF datasets</strong><ul>${gbifList || '<li><small>—</small></li>'}</ul>
+        <strong>Interaction sources</strong><ul>${intList || '<li><small>—</small></li>'}</ul>
+        <strong>Ethnobotany sources</strong><ul>${ethList || '<li><small>—</small></li>'}</ul>
+      `;
+    }
+
+    document.getElementById('load').addEventListener('click', () => {
+      const k = document.getElementById('taxonKey').value.trim();
+      if (k) loadSpecies(k);
+    });
+  </script>
+</body>
+</html>

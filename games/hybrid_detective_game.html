@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Hybrid Detective Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .parent-section {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .parent-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 250px;
+            max-width: 300px;
+        }
+        .parent-image, .hybrid-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .hybrid-section {
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        .trait-matching {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+            align-items: center;
+        }
+        .trait-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .trait-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .trait-btn {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .trait-btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+        .trait-btn.selected {
+            background: #00b894;
+            color: white;
+        }
+        .trait-btn.correct {
+            background: #00b894;
+            color: white;
+        }
+        .trait-btn.incorrect {
+            background: #d63031;
+            color: white;
+        }
+        .submit-btn, .next-btn {
+            background: #e17055;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s ease;
+        }
+        .submit-btn:hover, .next-btn:hover {
+            background: #d63031;
+            transform: translateY(-2px);
+        }
+        .result-text {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        h1, h2 { text-align: center; margin-bottom: 30px; }
+        .species-name { font-style: italic; font-size: 18px; }
+        .formula { font-size: 20px; color: #fdcb6e; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🔬 Orchid Hybrid Detective</h1>
+        <p style="text-align: center; opacity: 0.9;">Study the parent plants and guess which traits the hybrid inherited!</p>
+        
+        <div id="gameArea">
+            <div class="parent-section">
+                <div class="parent-card">
+                    <h3>🌸 Pod Parent (Female)</h3>
+                    <img id="podParentImage" class="parent-image" src="" alt="Pod Parent">
+                    <div class="species-name" id="podParentName"></div>
+                    <div id="podParentTraits"></div>
+                </div>
+                
+                <div class="parent-card">
+                    <h3>🌼 Pollen Parent (Male)</h3>
+                    <img id="pollenParentImage" class="parent-image" src="" alt="Pollen Parent">
+                    <div class="species-name" id="pollenParentName"></div>
+                    <div id="pollenParentTraits"></div>
+                </div>
+            </div>
+            
+            <div class="hybrid-section">
+                <h2>🧬 The Hybrid Offspring</h2>
+                <div class="formula" id="hybridFormula"></div>
+                <img id="hybridImage" class="hybrid-image" src="" alt="Hybrid Orchid">
+                <div class="species-name" id="hybridName"></div>
+                
+                <h3>Which traits did the hybrid inherit?</h3>
+                <div class="trait-matching" id="traitMatching">
+                    <!-- Dynamic trait matching content -->
+                </div>
+                
+                <button class="submit-btn" onclick="checkAnswers()" id="submitBtn">Check My Answers</button>
+                
+                <div id="resultSection" style="display: none;">
+                    <div class="result-text" id="resultText"></div>
+                    <div class="score" id="scoreText"></div>
+                    <button class="next-btn" onclick="nextRound()">Next Hybrid →</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; opacity: 0.7;">
+            <p>Round: <span id="currentRound">1</span>/3 | Score: <span id="totalScore">0</span>/100</p>
+        </div>
+    </div>
+
+    <script>
+        // Sample hybrid data - replace with Atlas API calls
+        const hybridData = [
+            {
+                id: 1,
+                podParent: {
+                    name: "Cattleya trianae",
+                    image: "https://lh3.googleusercontent.com/d/1q-MPKVUQgmzDmcLUvvSYXVs4krh5yUb7",
+                    traits: {
+                        flowerColor: "Purple",
+                        flowerSize: "Large",
+                        lipShape: "Round",
+                        fragrance: "Strong"
+                    }
+                },
+                pollenParent: {
+                    name: "Cattleya walkeriana",
+                    image: "https://lh3.googleusercontent.com/d/1qJZQCoGBYKenVfgnJOavIZUZ8cXpJhX_",
+                    traits: {
+                        flowerColor: "Pink",
+                        flowerSize: "Medium",
+                        lipShape: "Pointed",
+                        fragrance: "Mild"
+                    }
+                },
+                hybrid: {
+                    name: "Cattleya Portia",
+                    image: "https://lh3.googleusercontent.com/d/1-lt9UlNTrjNrYeCW1_4jtpRobx6FFt9C",
+                    actualTraits: {
+                        flowerColor: "Pink",
+                        flowerSize: "Large", 
+                        lipShape: "Round",
+                        fragrance: "Strong"
+                    }
+                }
+            },
+            {
+                id: 2,
+                podParent: {
+                    name: "Dendrobium nobile",
+                    image: "https://lh3.googleusercontent.com/d/1HJFz1-1VYeuwIUXT4tTFQPJ-ZhLrtL_y",
+                    traits: {
+                        flowerColor: "White",
+                        flowerSize: "Small",
+                        lipShape: "Round",
+                        growthHabit: "Upright"
+                    }
+                },
+                pollenParent: {
+                    name: "Dendrobium wardianum",
+                    image: "https://lh3.googleusercontent.com/d/12VBk7s0ATmrKayUA38xVn8RsBRpb-_iu",
+                    traits: {
+                        flowerColor: "Yellow",
+                        flowerSize: "Medium",
+                        lipShape: "Pointed",
+                        growthHabit: "Pendulous"
+                    }
+                },
+                hybrid: {
+                    name: "Dendrobium Emma White",
+                    image: "https://lh3.googleusercontent.com/d/12v-0fASrqfdMy8kQ-QmGeUlKi8t3Sh3G",
+                    actualTraits: {
+                        flowerColor: "Yellow",
+                        flowerSize: "Medium",
+                        lipShape: "Round",
+                        growthHabit: "Upright"
+                    }
+                }
+            },
+            {
+                id: 3,
+                podParent: {
+                    name: "Phalaenopsis amabilis",
+                    image: "https://lh3.googleusercontent.com/d/13Z89kbNRgz-_hm67czu8y9g2Lv4wDY4b",
+                    traits: {
+                        flowerColor: "White",
+                        flowerSize: "Large",
+                        lipShape: "Trilobed",
+                        petalTexture: "Smooth"
+                    }
+                },
+                pollenParent: {
+                    name: "Phalaenopsis stuartiana",
+                    image: "https://lh3.googleusercontent.com/d/19bAal6wqsTCxovhZbxyHtWqymblV_mmU",
+                    traits: {
+                        flowerColor: "Spotted",
+                        flowerSize: "Medium", 
+                        lipShape: "Round",
+                        petalTexture: "Textured"
+                    }
+                },
+                hybrid: {
+                    name: "Phalaenopsis Cassandra",
+                    image: "https://lh3.googleusercontent.com/d/1K0xUdiXTMyFKs7KV1jCZUduOn7RfCtl0",
+                    actualTraits: {
+                        flowerColor: "White",
+                        flowerSize: "Large",
+                        lipShape: "Trilobed",
+                        petalTexture: "Smooth"
+                    }
+                }
+            }
+        ];
+        
+        let currentRound = 0;
+        let totalScore = 0;
+        let currentHybrid = null;
+        let userAnswers = {};
+        
+        function loadRound() {
+            if (currentRound >= hybridData.length) {
+                showFinalScore();
+                return;
+            }
+            
+            currentHybrid = hybridData[currentRound];
+            userAnswers = {};
+            
+            // Load parent images and info
+            document.getElementById('podParentImage').src = currentHybrid.podParent.image;
+            document.getElementById('podParentName').textContent = currentHybrid.podParent.name;
+            document.getElementById('pollenParentImage').src = currentHybrid.pollenParent.image;
+            document.getElementById('pollenParentName').textContent = currentHybrid.pollenParent.name;
+            
+            // Load hybrid info
+            document.getElementById('hybridImage').src = currentHybrid.hybrid.image;
+            document.getElementById('hybridName').textContent = currentHybrid.hybrid.name;
+            document.getElementById('hybridFormula').textContent = 
+                `${currentHybrid.podParent.name} × ${currentHybrid.pollenParent.name}`;
+            
+            // Display parent traits
+            document.getElementById('podParentTraits').innerHTML = formatTraits(currentHybrid.podParent.traits);
+            document.getElementById('pollenParentTraits').innerHTML = formatTraits(currentHybrid.pollenParent.traits);
+            
+            // Create trait matching interface
+            createTraitMatching();
+            
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('currentRound').textContent = currentRound + 1;
+        }
+        
+        function formatTraits(traits) {
+            return Object.entries(traits).map(([key, value]) => 
+                `<div><strong>${formatTraitName(key)}:</strong> ${value}</div>`
+            ).join('');
+        }
+        
+        function formatTraitName(key) {
+            return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        }
+        
+        function createTraitMatching() {
+            const traitContainer = document.getElementById('traitMatching');
+            const traits = currentHybrid.podParent.traits;
+            
+            let html = '';
+            
+            Object.keys(traits).forEach(traitKey => {
+                const podValue = currentHybrid.podParent.traits[traitKey];
+                const pollenValue = currentHybrid.pollenParent.traits[traitKey];
+                const options = [podValue, pollenValue];
+                
+                html += `
+                    <div class="trait-box">
+                        <h4>${formatTraitName(traitKey)}</h4>
+                        <div><strong>Pod:</strong> ${podValue}</div>
+                        <div><strong>Pollen:</strong> ${pollenValue}</div>
+                    </div>
+                    <div class="trait-box">
+                        <div class="trait-options">
+                            ${options.map(option => 
+                                `<button class="trait-btn" onclick="selectTrait('${traitKey}', '${option}')">${option}</button>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <div class="trait-box">
+                        <div id="result_${traitKey}">❓</div>
+                    </div>
+                `;
+            });
+            
+            traitContainer.innerHTML = html;
+        }
+        
+        function selectTrait(traitKey, value) {
+            userAnswers[traitKey] = value;
+            
+            // Update button styles
+            const buttons = document.querySelectorAll(`button[onclick*="${traitKey}"]`);
+            buttons.forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.textContent === value) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+        
+        function checkAnswers() {
+            if (Object.keys(userAnswers).length !== Object.keys(currentHybrid.podParent.traits).length) {
+                alert('Please select an option for each trait!');
+                return;
+            }
+            
+            let correctCount = 0;
+            const totalTraits = Object.keys(currentHybrid.hybrid.actualTraits).length;
+            
+            Object.entries(currentHybrid.hybrid.actualTraits).forEach(([traitKey, correctValue]) => {
+                const userGuess = userAnswers[traitKey];
+                const isCorrect = userGuess === correctValue;
+                
+                if (isCorrect) correctCount++;
+                
+                // Update result display
+                const resultDiv = document.getElementById(`result_${traitKey}`);
+                resultDiv.innerHTML = isCorrect ? '✓' : '✗';
+                resultDiv.style.color = isCorrect ? '#00b894' : '#d63031';
+                
+                // Update button styles
+                const buttons = document.querySelectorAll(`button[onclick*="${traitKey}"]`);
+                buttons.forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.textContent === correctValue) {
+                        btn.classList.add('correct');
+                    } else if (btn.textContent === userGuess && !isCorrect) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+            });
+            
+            const roundScore = Math.round((correctCount / totalTraits) * 100);
+            totalScore += roundScore;
+            
+            document.getElementById('resultText').innerHTML = `
+                <strong>Results:</strong> ${correctCount}/${totalTraits} traits correct<br>
+                <br>The hybrid inherited:<br>
+                ${Object.entries(currentHybrid.hybrid.actualTraits).map(([key, value]) => 
+                    `• <strong>${formatTraitName(key)}:</strong> ${value}`
+                ).join('<br>')}
+            `;
+            
+            document.getElementById('scoreText').textContent = `Round Score: ${roundScore}/100`;
+            document.getElementById('totalScore').textContent = totalScore;
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'none';
+        }
+        
+        function nextRound() {
+            currentRound++;
+            document.getElementById('submitBtn').style.display = 'block';
+            loadRound();
+        }
+        
+        function showFinalScore() {
+            document.getElementById('gameArea').innerHTML = `
+                <div style="text-align: center;">
+                    <h2>🧬 Hybridization Complete!</h2>
+                    <div class="score">Final Score: ${totalScore}/300</div>
+                    <p>${totalScore >= 250 ? '🏆 Master Hybridizer!' : 
+                         totalScore >= 200 ? '🌟 Skilled Breeder!' : 
+                         totalScore >= 150 ? '🌱 Promising Student!' : 
+                         '📚 Keep Studying Genetics!'}</p>
+                    <button class="next-btn" onclick="location.reload()">Study More Hybrids</button>
+                </div>
+            `;
+        }
+        
+        // Initialize game
+        loadRound();
+    </script>
+</body>
+</html>

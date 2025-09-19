@@ -1,0 +1,317 @@
+PROMPT 1 — “ORCHID READS” (BOOK REVIEWS + BOOK CLUB)
+
+Build a production-ready web widget named OrchidReads for the Five Cities Orchid Society (FCOS) site.
+It must embed into an existing page (responsive, mobile-first), and expose a clean <div id="orchid-reads-root"></div> mount. Provide a single bundle.js + bundle.css. No server secrets in frontend; define backend API contracts I can wire later.
+
+GOALS
+    •    Members can (1) add orchid book reviews and (2) host a book-club meeting on Zoom for a chosen book and date/time.
+    •    Pull cover/metadata for books by ISBN/title (prefer Google Books or Open Library APIs; gracefully fall back to user upload if none found).
+    •    Auto-promote scheduled book clubs (graphic + signup button).
+    •    Gamify: points toward FCOS badges for writing reviews, hosting, attending.
+
+UX REQUIREMENTS
+    1.    Header bar
+    •    Title (use the most engaging of: “Petals & Pages,” “Orchid Reads,” “Blooms & Books”). Default to Orchid Reads with a small subtitle: “Reviews & Book Clubs by FCOS.”
+    •    Tabs: Reviews, Book Clubs, Start a Review, Host a Book Club.
+    •    Search box (by title, author, keyword, genus) + filter chips (Topic, Era, Region, Difficulty).
+    2.    Reviews tab
+    •    Card grid: cover image, title, author, short excerpt (max 200 chars), rating (1–5), reviewer display name, badges earned, “Read full review,” “Schedule a club for this book,” “Suggest to FCOS Featured.”
+    3.    Book Clubs tab
+    •    Upcoming sessions list: cover, session title, date/time (America/Los_Angeles), host name, description (max 280 chars), “Sign up” button, capacity if set, badges offered, recurrence if any.
+    •    Past sessions archive (collapsed by default).
+    4.    Start a Review (form)
+    •    Fields: Book lookup (by ISBN or title/author), or manual entry; cover image (upload or URL); rating; review title; review body (min 200, max 2000 chars); relevant orchid genera (multi-select); themes (conservation, history, cultivation, hybridizing, field notes, art/photography); your name; email (for confirmations); consent to FCOS publish policy; optional Amazon URL (for users who want to include purchase link).
+    •    Live preview side-by-side.
+    •    Validation and save as Draft or Submit for Moderation.
+    5.    Host a Book Club (form)
+    •    Choose book (from an existing review or book search/manual book entry).
+    •    Session details: title, description (max 600 chars), date/time (block Second Thursday 7:00 PM PT as unavailable), duration, recurrence (none, weekly, monthly), capacity (optional), waitlist toggle.
+    •    Zoom provisioning option: “Auto-generate Zoom link via FCOS Host Account” (default) OR “I will paste my own Zoom link.”
+    •    Reading plan: chapter ranges and dates (dynamic rows).
+    •    Assets to auto-generate: promo graphic, ICS calendar file, signup link.
+    •    Consent & code of conduct checkbox.
+    •    Submit → creates a Pending event for moderator approval.
+    6.    Promo graphic auto-generator (client-side canvas)
+    •    Template: cover on left, gradient panel on right with title, date/time PT, big “Join us” ribbon + FCOS logo.
+    •    Export PNG (1200×628) and webp; downloadable & saved with event.
+    7.    Signup flow
+    •    Click “Sign up” → name + email (required), optional member ID, notify me reminders (on by default).
+    •    On success: confirmation screen with Zoom link (if public after approval) and buttons for “Add to Calendar” (ICS) and “Copy Link.”
+    •    Email confirmation + 24h and 1h reminder emails.
+    8.    Accessibility & i18n
+    •    WCAG AA: focus states, aria labels, keyboard nav.
+    •    Support US English now; i18n scaffold for future.
+
+BUSINESS RULES
+    •    Hard block: No bookings at 7:00 PM PT on the 2nd Thursday (FCOS meeting). Show conflict warning and refuse submission.
+    •    Moderation queues for: new reviews, edits, new events.
+    •    Points: submit review +10, approved review +20, host session +30, attendee +5, share promo +2. Emit points.awarded events via API.
+    •    “Featured Book” flag (one at a time). Featured is pinned first.
+
+DATA MODEL (frontend types; backend to mirro
+
+type Book = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  authors: string[];
+  isbn13?: string;
+  isbn10?: string;
+  coverUrl?: string;
+  description?: string;
+  publisher?: string;
+  publishedYear?: string;
+  googleBooksId?: string;
+  openLibraryId?: string;
+  amazonUrl?: string; // optional, user-supplied
+  tags: string[]; // e.g., ["Conservation", "Angraecum", "History"]
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Review = {
+  id: string;
+  bookId: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  rating: number; // 1-5
+  title: string;
+  body: string; // 200-2000 chars
+  status: "draft" | "pending" | "approved" | "rejected";
+  excerpt: string;
+  badgesEarned: string[];
+  pointsAwarded: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Session = {
+  id: string;
+  bookId: string;
+  hostName: string;
+  hostEmail: string;
+  title: string;
+  description: string; // <=600 chars
+  tz: "America/Los_Angeles";
+  startISO: string;
+  endISO: string;
+  recurrence?: "none" | "weekly" | "monthly";
+  capacity?: number;
+  waitlistEnabled: boolean;
+  zoomProvisioning: "fcos_auto" | "host_supplied";
+  zoomJoinUrl?: string;
+  zoomHostNotes?: string;
+  icsUrl?: string;
+  promoImageUrl?: string;
+  readingPlan: { label: string; startChapter?: string; endChapter?: string; dateISO?: string }[];
+  status: "pending" | "approved" | "cancelled" | "completed";
+  attendeesCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Signup = {
+  id: string;
+  sessionId: string;
+  name: string;
+  email: string;
+  memberId?: string;
+  waitlisted: boolean;
+  createdAt: string;
+};
+
+BACKEND API CONTRACTS (define; mock now; I’ll wire later)
+    •    GET /api/books?query=...
+    •    POST /api/books (manual create)
+    •    GET /api/reviews?status=approved&query=...&tags=...
+    •    POST /api/reviews (draft or pending)
+    •    PATCH /api/reviews/:id (update status)
+    •    GET /api/sessions?status=approved&upcoming=true
+    •    POST /api/sessions (create pending)
+    •    PATCH /api/sessions/:id (approve/cancel; attach zoomJoinUrl, promoImageUrl, icsUrl)
+    •    POST /api/sessions/:id/signups (create signup)
+    •    GET /api/me/points (returns tally)
+    •    POST /api/events/points (record points)
+
+External lookups (client-side)
+    •    Google Books/Open Library by ISBN/title. If found, hydrate Book and prefill fields. If not, require manual fields and a cover upload.
+
+Zoom provisioning (server-side, mocked in dev)
+    •    On moderator approval and if zoomProvisioning=fcos_auto, backend creates Zoom meeting and returns join URL.
+
+Email hooks (server-side, mocked in dev)
+    •    On signup: send confirmation + ICS.
+    •    T-24h and T-60m reminders.
+    •    Post-event “thanks + feedback” email.
+
+MODERATION PANEL (in-widget, admin-gated)
+    •    Queues: Reviews (pending), Sessions (pending).
+    •    One-click approve/reject; add staff notes; auto-award points.
+    •    “Featured Book” toggle.
+    •    Export CSV: reviews, sessions, signups.
+
+VALIDATION & EDGE CASES
+    •    Time conflict: reject if Second Thursday 7:00 PM PT (compute by calendar date).
+    •    Rating 1–5; review length 200–2000 chars; emails RFC-compliant.
+    •    Capacity reached → auto-waitlist if enabled; when seat opens, first-come promote from waitlist, notify by email.
+    •    If cover URL fails to load, show placeholder and prompt upload.
+
+STYLE
+    •    Minimal, elegant; large cover art; gentle shadows; readable serif for titles, system UI for body.
+    •    Dark mode toggle (persisted).
+
+DELIVERABLES
+    •    bundle.js, bundle.css, HTML snippet to mount, seed data JSON, and a fake API stub in code so I can demo instantly.
+    •    Include thorough README at top of code explaining how to swap real APIs.
+
+⸻
+
+PROMPT 2 — “GARDEN CHATS” (MEMBER-LED LIVE DISCUSSIONS)
+
+Build a sibling widget named GardenChats sharing the same technical stack and styling as OrchidReads, mount at <div id="garden-chats-root"></div>. Purpose: casual member-led Zoom chats (not tied to a book).
+
+GOALS
+    •    Any member can propose a themed chat (e.g., “Growing outdoors in Los Osos,” “Semi-hydro basics,” “Fragrant orchids”).
+    •    Auto-generate Zoom link (or accept host’s own), create signup page, send reminders, award badges.
+    •    Support recurring series (weekly/monthly) with simple management for consistent hosts.
+
+UX REQUIREMENTS
+    1.    Header
+    •    Title: Garden Chats — subtitle: “Member-led orchid conversations.”
+    •    Tabs: Upcoming, Start a Chat, Recurring Series, Archive.
+    •    Search + filters: Topic, Skill Level, Format (Q&A, Panel, Show-and-Tell), Region/Climate.
+    2.    Upcoming
+    •    Cards with: session title, topic chips, date/time PT, host name, short description, signup button, badges, recurrence tag.
+    3.    Start a Chat (form)
+    •    Fields: Title, Topic(s) (chips), Skill level (Beginner/Intermediate/Advanced), Description (<=600), date/time PT, duration, recurrence (none/weekly/monthly with weekday), capacity, waitlist toggle.
+    •    Zoom provisioning (auto vs host link).
+    •    Optional: upload a header image (or pick from stock orchid images).
+    •    Code of conduct checkbox; consent to be recorded (optional toggle).
+    •    Submit → Pending moderation.
+    4.    Recurring Series
+    •    Hosts can define a named series (e.g., “Coastal Growers Hour”), choose recurrence pattern, preferred weekday/time, default description/cover, and the system generates future instances they can edit individually.
+    5.    Archive
+    •    Past chats with notes, links shared, optional recording link (if host provided), key takeaways bullets (host can add after the event).
+
+BUSINESS RULES
+    •    Same hard block of Second Thursday 7:00 PM PT.
+    •    Points: host +25 per chat (+10 bonus when part of an approved series), attendee +5, moderator +2 per approved event, share promo +2.
+    •    Optional “Chat Leader” status for hosts with ≥3 approved sessions → unlocks ability to create “instant chats” (skip moderation but still blocked by the 2nd-Thursday rule).
+
+DATA MODEL
+
+Reuse Session and Signup types from Prompt 1, but with:
+
+type ChatSession = Session & {
+  mode: "chat";
+  topics: string[]; // e.g., ["Semi-hydro", "Outdoors on the Coast"]
+  skillLevel: "Beginner" | "Intermediate" | "Advanced";
+  seriesId?: string;
+};
+
+type ChatSeries = {
+  id: string;
+  name: string;
+  hostName: string;
+  hostEmail: string;
+  description: string;
+  weekday: 0|1|2|3|4|5|6; // Sun..Sat
+  timeHHmm: string; // e.g., "18:30"
+  tz: "America/Los_Angeles";
+  recurrence: "weekly" | "monthly";
+  defaultCapacity?: number;
+  imageUrl?: string;
+  status: "active" | "paused";
+  createdAt: string;
+  updatedAt: string;
+};
+
+BACKEND API CONTRACTS
+    •    GET /api/chats?upcoming=true
+    •    POST /api/chats (create pending chat)
+    •    PATCH /api/chats/:id (approve/cancel/update)
+    •    POST /api/chats/:id/signups
+    •    GET /api/series
+    •    POST /api/series
+    •    PATCH /api/series/:id (pause/resume)
+    •    Reuse points and email endpoints from Prompt 1.
+
+PROMO GRAPHIC AUTO-GEN
+    •    Same canvas engine; template says “Garden Chat,” session title, date/time PT, host, FCOS logo; orchid background image (user upload or stock).
+
+EMAIL TEMPLATES (both widgets)
+
+Confirmation
+Subject: “You’re in: {{title}} — {{datePretty}}”
+Body:
+    •    Thanks {{name}}!
+    •    When: {{datePretty}} ({{tz}})
+    •    Where: Zoom {{zoomJoinUrl}}
+    •    Add to calendar (ICS link)
+    •    Reading Plan / Topics (if provided)
+    •    Code of Conduct link
+    •    Unsubscribe from reminders link
+
+Reminder 24h & 60m
+Subject: “Reminder: {{title}} starts {{when}}”
+Body: includes join link and quick tips.
+
+Host Approval Notice
+Subject: “Your {{type}} was approved: {{title}}”
+Body: links to promo graphic, signup page, and shareable text snippet.
+
+MODERATION PANEL
+    •    Combined queue for OrchidReads Sessions and GardenChats.
+    •    Quick approve/reject; edit times; attach Zoom link if auto-provisioning.
+    •    Analytics: attendance, show-rate, top topics, badge points leaderboard.
+
+VALIDATIONS & EDGE CASES
+    •    Time block rule (2nd Thursday 7pm PT).
+    •    Recurring series: generate next N=6 events; prevent conflicts; allow skip exceptions.
+    •    Capacity & waitlist logic identical to Prompt 1.
+    •    Image safety: basic file type/size checks; fallback image.
+
+STYLE & DELIVERY
+    •    Match OrchidReads theme; both widgets share a small design system (buttons, cards, tag chips).
+    •    Provide bundled assets and a mock API so I can demo right away.
+
+SUCCESS CRITERIA (FOR BOTH)
+    •    I can: submit a review; approve it; schedule a book club; get a promo image; sign up; receive mock emails; add ICS; see points increase; start a Garden Chat; create a recurring series; see the 2nd-Thursday block working; export
+
+
+You are Replit AI. Create a complete Node.js + Express backend project called "orchid-community-backend".  
+
+Requirements:  
+1. Include `package.json` with dependencies: express, cors, dayjs, nanoid, fs-extra.  
+2. Create `server.js` that starts Express on port 3000, uses CORS + JSON, and loads routes from `src/routes`.  
+3. Implement the following routes in `src/routes`:  
+   - /api/books → GET all books, GET by id  
+   - /api/reviews → POST new review, GET by book id  
+   - /api/sessions → POST new OrchidReads book club session, GET list  
+   - /api/chats → POST new GardenChat, GET list  
+   - /api/series → POST new recurring GardenChat series, GET list  
+   - /api/events/points → POST to award points, GET to fetch total  
+   - /api/moderation → GET pending reviews/sessions/chats, PATCH approve/reject  
+   - /api/export → GET CSV export of reviews, sessions, chats  
+4. Implement mock utilities in `src/utils`:  
+   - datastore.js → read/write JSON to `data/db.json`  
+   - email.js → write “emails” as .txt files into `/outbox`  
+   - zoom.js → return fake Zoom join URLs  
+   - ics.js → generate fake .ics calendar files  
+   - promo.js → generate placeholder PNG files in `/public/promo`  
+5. Seed `data/db.json` with these orchid books:  
+   - **Angraecoid Orchids** (Joyce Stewart, Johan Hermans, Bob Campbell, Timber Press, with 1 review by Jeffery Parham)  
+   - **Illustrated Dictionary of Orchid Genera** (Peggy Alrich & Wesley Higgins, Comstock / Cornell)  
+   - **The Plant Hunters** (Tyler Whittle, Garden Classic)  
+   - **Fundamentals of Orchid Biology** (Joseph Arditti, Wiley & Sons)  
+6. Create a `HOWTO.md` file that explains:  
+   - How to run: `npm install` then `npm start`  
+   - How to test endpoints (list books, add review, schedule chat)  
+   - Where mock emails and calendar files are saved  
+   - That seed orchid books are preloaded in `data/db.json`  
+   - Contact: **Jeffery Parham, President, Five Cities Orchid Society**  
+
+Deliverables:  
+- Full file structure scaffolded  
+- `server.js`, `src/`, `data/db.json`, `public/`, `outbox/`, `HOWTO.md`  
+- Project runs immediately with `npm install && npm start`

@@ -1,0 +1,104 @@
+# orchid_continuum.py
+import os
+import requests
+from bs4 import BeautifulSoup
+from flask import Flask, render_template, request
+from google.oauth2.service_account import Credentials
+import gspread
+from googleapiclient.discovery import build
+import openai
+from urllib.parse import urljoin
+from io import BytesIO
+from PIL import Image
+
+# -------- CONFIG --------
+SERVICE_ACCOUNT_FILE = 'service_account.json'
+GOOGLE_SHEET_NAME = 'OrchidContinuumDB'
+GOOGLE_DRIVE_FOLDER_ID = 'YOUR_DRIVE_FOLDER_ID'  # folder to save images
+openai.api_key = 'YOUR_OPENAI_API_KEY'
+SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
+
+# -------- UTILITIES --------
+def get_gspread_client():
+    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    client = gspread.authorize(creds)
+    return client
+
+def open_sheet(sheet_name):
+    client = get_gspread_client()
+    sheet = client.open(sheet_name).sheet1
+    return sheet
+
+def upload_image_to_drive(image_bytes, filename):
+    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    drive_service = build('drive', 'v3', credentials=creds)
+    file_metadata = {'name': filename, 'parents': [GOOGLE_DRIVE_FOLDER_ID]}
+    media = {'mimeType': 'image/jpeg', 'body': image_bytes}
+    # Create file
+    file = drive_service.files().create(body=file_metadata, media_body=BytesIO(image_bytes), fields='id').execute()
+    return f"https://drive.google.com/uc?id={file['id']}"
+
+# -------- SCRAPER --------
+def scrape_svo_hybrids(base_url='https://sunsetvalleyorchids.com/htm/offerings_sarcochilus.html'):
+    sheet = open_sheet(GOOGLE_SHEET_NAME)
+    hybrids = []
+    page = requests.get(base_url)
+    soup = BeautifulSoup(page.text, 'html.parser')
+    
+    # Iterate over all hybrid entries (adjust selectors for actual SVO HTML)
+    for entry in soup.select('td.plantListRow'):
+        try:
+            name = entry.select_one('b').text.strip()
+            parent_info = entry.get_text().split('\n')[1].strip()
+            img_tag = entry.find('img')
+            img_url = urljoin(base_url, img_tag['src']) if img_tag else ''
+            
+            # Download image and upload to Google Drive
+            if img_url:
+                img_response = requests.get(img_url)
+                drive_url = upload_image_to_drive(img_response.content, f"{name}.jpg")
+            else:
+                drive_url = ''
+            
+            # Append to Google Sheet
+            sheet.append_row([name, parent_info, drive_url])
+            hybrids.append({'name': name, 'parents': parent_info, 'image': drive_url})
+        except Exception as e:
+            print(f"Skipped an entry due to error: {e}")
+    return hybrids
+
+# -------- AI ANALYSIS --------
+def analyze_image(image_url, breeder_notes=""):
+    prompt = f"""
+    Analyze this orchid image: {image_url}.
+    Compare traits with breeder notes: {breeder_notes}.
+    Predict inheritance patterns, including color, size, shape, flowering, and vigor.
+    Discuss patterns observed vs breeder intent.
+    """
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response['choices'][0]['message']['content']
+
+# -------- FLASK APP --------
+app = Flask(__name__)
+
+@app.route('/')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/update_database')
+def update_database():
+    hybrids = scrape_svo_hybrids()
+    return f"Database updated with {len(hybrids)} hybrids."
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    image_url = request.form['image_url']
+    breeder_notes = request.form.get('breeder_notes', "")
+    result = analyze_image(image_url, breeder_notes)
+    return result
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=3000)

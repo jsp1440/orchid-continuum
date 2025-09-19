@@ -1,0 +1,667 @@
+<!-- Photo Flagging Interface Component -->
+<!-- Add this next to every orchid photo for member feedback -->
+
+<div class="photo-flag-interface" data-orchid-id="{{ orchid.id }}">
+    <!-- Flag Button (appears next to every photo) -->
+    <button class="btn btn-outline-warning btn-sm photo-flag-btn" 
+            data-bs-toggle="tooltip" 
+            title="Report an issue with this photo or data">
+        <i data-feather="flag" width="16" height="16"></i>
+        <span class="d-none d-md-inline">Report Issue</span>
+    </button>
+
+    <!-- Flag Modal (appears when button clicked) -->
+    <div class="modal fade photo-flag-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i data-feather="flag"></i>
+                        Report Issue - {{ orchid.genus }} {{ orchid.species }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Photo Preview -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <img src="{{ orchid.image_url or url_for('static', filename='images/placeholder-orchid.jpg') }}" 
+                                     class="card-img-top" 
+                                     style="height: 200px; object-fit: cover;"
+                                     alt="{{ orchid.genus }} {{ orchid.species }}">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Current Data:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Scientific Name:</strong> {{ orchid.genus }} {{ orchid.species }}</li>
+                                <li><strong>Common Name:</strong> {{ orchid.common_name or 'Not specified' }}</li>
+                                <li><strong>Country:</strong> {{ orchid.country or 'Unknown' }}</li>
+                                <li><strong>Habitat:</strong> {{ orchid.habitat or 'Not specified' }}</li>
+                                <li><strong>Data Source:</strong> {{ orchid.data_source or 'Unknown' }}</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Issue Reporting Form -->
+                    <form class="photo-flag-form">
+                        <input type="hidden" name="orchid_id" value="{{ orchid.id }}">
+                        
+                        <!-- Issue Type -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">What type of issue are you reporting?</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="wrong_species" id="wrong_species">
+                                        <label class="form-check-label" for="wrong_species">
+                                            <strong>Photo shows different species</strong><br>
+                                            <small class="text-muted">The image doesn't match the identified species</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="mislabeled" id="mislabeled">
+                                        <label class="form-check-label" for="mislabeled">
+                                            <strong>Name or label incorrect</strong><br>
+                                            <small class="text-muted">Scientific or common name is wrong</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="poor_quality" id="poor_quality">
+                                        <label class="form-check-label" for="poor_quality">
+                                            <strong>Image quality issues</strong><br>
+                                            <small class="text-muted">Too blurry, dark, or unclear</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="duplicate" id="duplicate">
+                                        <label class="form-check-label" for="duplicate">
+                                            <strong>Duplicate image</strong><br>
+                                            <small class="text-muted">This photo appears elsewhere in the database</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="data_error" id="data_error">
+                                        <label class="form-check-label" for="data_error">
+                                            <strong>Other data error</strong><br>
+                                            <small class="text-muted">Habitat, location, or other information is incorrect</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flag_reason" value="inappropriate" id="inappropriate">
+                                        <label class="form-check-label" for="inappropriate">
+                                            <strong>Inappropriate content</strong><br>
+                                            <small class="text-muted">Content violates community guidelines</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confidence Level -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">How confident are you about this issue?</label>
+                            <select class="form-select" name="confidence_level" required>
+                                <option value="">Select confidence level...</option>
+                                <option value="high">High - I'm an expert in this area</option>
+                                <option value="medium">Medium - I'm reasonably sure</option>
+                                <option value="low">Low - I'm not completely certain</option>
+                            </select>
+                        </div>
+
+                        <!-- Expert Notes -->
+                        <div class="mb-3">
+                            <label for="expert_notes" class="form-label fw-bold">Detailed explanation:</label>
+                            <textarea class="form-control" name="expert_notes" rows="4" 
+                                      placeholder="Please provide specific details about the issue. Include:&#10;- What you believe is correct&#10;- Why you think the current data is wrong&#10;- Any references or sources you recommend&#10;- Your expertise in this area"></textarea>
+                        </div>
+
+                        <!-- Suggested Correction (conditional) -->
+                        <div class="mb-3 correction-section" style="display: none;">
+                            <label for="suggested_correction" class="form-label fw-bold">Suggested correction:</label>
+                            <textarea class="form-control" name="suggested_correction" rows="2" 
+                                      placeholder="What should the correct identification/information be?"></textarea>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="alert alert-info">
+                            <strong>Expert Member Verification:</strong> As a Five Cities Orchid Society member, your feedback is valuable for maintaining data accuracy. All reports are reviewed by our expert team and may trigger AI-assisted corrections.
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning submit-flag-btn">
+                        <i data-feather="send" width="16" height="16"></i>
+                        Submit Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Chat Feedback Window -->
+<div class="modal fade" id="enhancedFeedbackModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i data-feather="message-circle"></i>
+                    Enhanced Member Feedback System
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Feedback Form -->
+                    <div class="col-md-8">
+                        <form id="enhancedFeedbackForm">
+                            <!-- Feedback Type -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Type of Feedback:</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="feedback_type" value="photo_mismatch" id="photo_mismatch_feedback">
+                                            <label class="form-check-label" for="photo_mismatch_feedback">Photo/Species Mismatch</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="feedback_type" value="data_error" id="data_error_feedback">
+                                            <label class="form-check-label" for="data_error_feedback">Scientific Data Error</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="feedback_type" value="widget_bug" id="widget_bug_feedback">
+                                            <label class="form-check-label" for="widget_bug_feedback">Widget/System Bug</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="feedback_type" value="general" id="general_feedback">
+                                            <label class="form-check-label" for="general_feedback">General Suggestion</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Severity -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Priority Level:</label>
+                                <select class="form-select" name="severity" required>
+                                    <option value="">Select priority...</option>
+                                    <option value="critical">Critical - Affects core functionality</option>
+                                    <option value="high">High - Important accuracy issue</option>
+                                    <option value="medium">Medium - Notable improvement needed</option>
+                                    <option value="low">Low - Minor suggestion</option>
+                                </select>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-3">
+                                <label for="feedback_description" class="form-label fw-bold">Detailed Description:</label>
+                                <textarea class="form-control" name="description" rows="5" required
+                                          placeholder="Please provide a detailed description of the issue or suggestion. Include:&#10;- What you observed&#10;- What you expected&#10;- Steps to reproduce (if applicable)&#10;- Your expertise/background in this area"></textarea>
+                            </div>
+
+                            <!-- Suggested Correction -->
+                            <div class="mb-3">
+                                <label for="suggested_correction_detailed" class="form-label fw-bold">Suggested Solution (Optional):</label>
+                                <textarea class="form-control" name="suggested_correction" rows="3"
+                                          placeholder="If you have a specific suggestion for how to fix this issue, please describe it here."></textarea>
+                            </div>
+
+                            <!-- Context Information -->
+                            <input type="hidden" name="page_url" id="current_page_url">
+                            <input type="hidden" name="widget_type" id="current_widget_type">
+                            <input type="hidden" name="orchid_id" id="feedback_orchid_id">
+                        </form>
+                    </div>
+                    
+                    <!-- AI Assistant Preview -->
+                    <div class="col-md-4">
+                        <div class="card bg-light h-100">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i data-feather="cpu"></i>
+                                    AI Assistant Preview
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="aiAssistantPreview">
+                                    <div class="text-center text-muted py-4">
+                                        <i data-feather="cpu" width="48" height="48"></i>
+                                        <p class="mt-2">Fill out the form to see AI-powered suggestions and potential automatic fixes.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="text-start flex-grow-1">
+                    <small class="text-muted">
+                        <i data-feather="shield" width="16" height="16"></i>
+                        Your feedback helps maintain the accuracy of our orchid database for the entire community.
+                    </small>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitEnhancedFeedback">
+                    <i data-feather="send" width="16" height="16"></i>
+                    Submit Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-flag-interface {
+    position: relative;
+    display: inline-block;
+}
+
+.photo-flag-btn {
+    transition: all 0.2s ease;
+    border: 1px solid #ffc107;
+}
+
+.photo-flag-btn:hover {
+    background-color: #ffc107;
+    color: #000;
+    transform: translateY(-1px);
+}
+
+.correction-section {
+    border-left: 4px solid #28a745;
+    padding-left: 1rem;
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+.photo-flag-modal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.form-check-input:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+#aiAssistantPreview {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ai-suggestion {
+    background: rgba(23, 162, 184, 0.1);
+    border-left: 4px solid #17a2b8;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border-radius: 0 6px 6px 0;
+}
+
+.feedback-success {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid #28a745;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+}
+</style>
+
+<script>
+// Photo Flagging Interface JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    initializePhotoFlagging();
+});
+
+function initializePhotoFlagging() {
+    // Initialize all photo flag buttons
+    document.querySelectorAll('.photo-flag-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const orchidId = this.closest('.photo-flag-interface').getAttribute('data-orchid-id');
+            openPhotoFlagModal(orchidId, this);
+        });
+    });
+
+    // Handle flag reason changes to show/hide correction section
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'flag_reason') {
+            const correctionSection = e.target.closest('form').querySelector('.correction-section');
+            if (['wrong_species', 'mislabeled', 'data_error'].includes(e.target.value)) {
+                correctionSection.style.display = 'block';
+            } else {
+                correctionSection.style.display = 'none';
+            }
+        }
+    });
+
+    // Handle feedback type changes for AI preview
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'feedback_type' || e.target.name === 'description') {
+            updateAIAssistantPreview();
+        }
+    });
+
+    // Set page context
+    document.getElementById('current_page_url').value = window.location.href;
+    
+    // Detect widget context
+    if (window.location.pathname.includes('/widget/')) {
+        const widgetType = window.location.pathname.split('/widget/')[1];
+        document.getElementById('current_widget_type').value = widgetType;
+    }
+}
+
+function openPhotoFlagModal(orchidId, buttonElement) {
+    const flagInterface = buttonElement.closest('.photo-flag-interface');
+    const modal = flagInterface.querySelector('.photo-flag-modal');
+    const bootstrapModal = new bootstrap.Modal(modal);
+    
+    // Set up form submission
+    const form = modal.querySelector('.photo-flag-form');
+    const submitBtn = modal.querySelector('.submit-flag-btn');
+    
+    submitBtn.addEventListener('click', function() {
+        submitPhotoFlag(form, bootstrapModal);
+    });
+    
+    bootstrapModal.show();
+}
+
+async function submitPhotoFlag(form, modal) {
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    
+    // Validation
+    if (!data.flag_reason) {
+        alert('Please select the type of issue you are reporting.');
+        return;
+    }
+    
+    if (!data.confidence_level) {
+        alert('Please select your confidence level.');
+        return;
+    }
+    
+    if (!data.expert_notes || data.expert_notes.trim().length < 10) {
+        alert('Please provide detailed notes about the issue (at least 10 characters).');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        const submitBtn = form.closest('.modal').querySelector('.submit-flag-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Submitting...';
+        submitBtn.disabled = true;
+        
+        const response = await fetch('/api/submit-photo-flag', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success message
+            showFlagSuccess(result, modal);
+        } else {
+            throw new Error(result.error || 'Unknown error occurred');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting photo flag:', error);
+        alert('Error submitting report: ' + error.message);
+        
+        // Reset button state
+        const submitBtn = form.closest('.modal').querySelector('.submit-flag-btn');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+function showFlagSuccess(result, modal) {
+    const modalBody = modal.querySelector('.modal-body');
+    
+    let successMessage = `
+        <div class="feedback-success text-center">
+            <h5><i data-feather="check-circle" class="text-success"></i> Report Submitted Successfully!</h5>
+            <p>Thank you for helping us maintain data accuracy. Your report has been received and will be reviewed by our expert team.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <strong>Report ID:</strong> ${result.flag_id}<br>
+                    <strong>Status:</strong> Under Review
+                </div>
+                <div class="col-md-6">
+                    ${result.ai_attempted ? `
+                        <div class="alert alert-info">
+                            <strong>AI Analysis:</strong> Our AI system has automatically reviewed this report.
+                            ${result.ai_suggestion ? `<br><strong>Suggested species:</strong> ${result.ai_suggestion}` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <p class="mt-3 text-muted">
+                You can track the progress of this report in your member dashboard. 
+                We'll notify you when it's resolved.
+            </p>
+        </div>
+    `;
+    
+    modalBody.innerHTML = successMessage;
+    
+    // Update modal footer
+    const modalFooter = modal.querySelector('.modal-footer');
+    modalFooter.innerHTML = `
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="openEnhancedFeedbackModal()">Submit Additional Feedback</button>
+    `;
+    
+    // Replace feather icons
+    feather.replace();
+}
+
+function openEnhancedFeedbackModal() {
+    const modal = new bootstrap.Modal(document.getElementById('enhancedFeedbackModal'));
+    modal.show();
+}
+
+function updateAIAssistantPreview() {
+    const feedbackType = document.querySelector('input[name="feedback_type"]:checked')?.value;
+    const description = document.querySelector('textarea[name="description"]')?.value;
+    
+    const previewDiv = document.getElementById('aiAssistantPreview');
+    
+    if (!feedbackType || !description || description.length < 20) {
+        previewDiv.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i data-feather="cpu" width="48" height="48"></i>
+                <p class="mt-2">Fill out the form to see AI-powered suggestions and potential automatic fixes.</p>
+            </div>
+        `;
+        feather.replace();
+        return;
+    }
+    
+    // Simulate AI analysis based on feedback type
+    let aiContent = '';
+    
+    switch (feedbackType) {
+        case 'photo_mismatch':
+            aiContent = `
+                <div class="ai-suggestion">
+                    <h6><i data-feather="eye"></i> AI Visual Analysis</h6>
+                    <p>I can analyze the photo using computer vision to suggest possible species matches.</p>
+                </div>
+                <div class="ai-suggestion">
+                    <h6><i data-feather="database"></i> Database Cross-Reference</h6>
+                    <p>I'll check our taxonomy database for similar species and potential misidentifications.</p>
+                </div>
+            `;
+            break;
+        case 'data_error':
+            aiContent = `
+                <div class="ai-suggestion">
+                    <h6><i data-feather="search"></i> Data Validation</h6>
+                    <p>I can verify the scientific data against authoritative botanical databases.</p>
+                </div>
+                <div class="ai-suggestion">
+                    <h6><i data-feather="edit"></i> Auto-Correction</h6>
+                    <p>If high confidence, I may automatically apply corrections and notify administrators.</p>
+                </div>
+            `;
+            break;
+        case 'widget_bug':
+            aiContent = `
+                <div class="ai-suggestion">
+                    <h6><i data-feather="code"></i> Technical Analysis</h6>
+                    <p>I'll analyze the technical issue and may apply immediate fixes for common problems.</p>
+                </div>
+                <div class="ai-suggestion">
+                    <h6><i data-feather="alert-triangle"></i> Priority Escalation</h6>
+                    <p>Critical bugs will be immediately escalated to the development team.</p>
+                </div>
+            `;
+            break;
+        default:
+            aiContent = `
+                <div class="ai-suggestion">
+                    <h6><i data-feather="message-square"></i> Feedback Processing</h6>
+                    <p>Your feedback will be categorized and routed to the appropriate team for review.</p>
+                </div>
+            `;
+    }
+    
+    previewDiv.innerHTML = aiContent;
+    feather.replace();
+}
+
+// Enhanced feedback form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submitEnhancedFeedback');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', submitEnhancedFeedback);
+    }
+});
+
+async function submitEnhancedFeedback() {
+    const form = document.getElementById('enhancedFeedbackForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    
+    // Validation
+    if (!data.feedback_type) {
+        alert('Please select a feedback type.');
+        return;
+    }
+    
+    if (!data.severity) {
+        alert('Please select a priority level.');
+        return;
+    }
+    
+    if (!data.description || data.description.trim().length < 20) {
+        alert('Please provide a detailed description (at least 20 characters).');
+        return;
+    }
+    
+    try {
+        const submitBtn = document.getElementById('submitEnhancedFeedback');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Processing...';
+        submitBtn.disabled = true;
+        
+        const response = await fetch('/api/submit-member-feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showEnhancedFeedbackSuccess(result);
+        } else {
+            throw new Error(result.error || 'Unknown error occurred');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        alert('Error submitting feedback: ' + error.message);
+        
+        const submitBtn = document.getElementById('submitEnhancedFeedback');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+function showEnhancedFeedbackSuccess(result) {
+    const modal = document.getElementById('enhancedFeedbackModal');
+    const modalBody = modal.querySelector('.modal-body');
+    
+    modalBody.innerHTML = `
+        <div class="feedback-success text-center">
+            <h4><i data-feather="check-circle" class="text-success"></i> Feedback Submitted Successfully!</h4>
+            <p class="lead">Thank you for helping us improve the Five Cities Orchid Society platform.</p>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Feedback Details</h6>
+                            <strong>ID:</strong> ${result.feedback_id}<br>
+                            <strong>Priority:</strong> ${document.querySelector('[name="severity"]').value}<br>
+                            <strong>Type:</strong> ${document.querySelector('[name="feedback_type"]:checked').value.replace('_', ' ')}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Expected Resolution</h6>
+                            <p class="mb-0">${result.estimated_resolution || 'Within 2-3 business days'}</p>
+                            ${result.ai_attempted ? '<small class="text-info">AI analysis completed</small>' : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <strong>What happens next:</strong>
+                <ul class="mb-0 text-start">
+                    <li>Our expert team will review your feedback</li>
+                    <li>High-priority issues may receive immediate AI-assisted fixes</li>
+                    <li>You'll be notified when your feedback is addressed</li>
+                    <li>Critical issues are escalated immediately</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    // Update modal footer
+    const modalFooter = modal.querySelector('.modal-footer');
+    modalFooter.innerHTML = `
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+        <a href="/admin/monitoring" class="btn btn-outline-primary">View Admin Dashboard</a>
+    `;
+    
+    feather.replace();
+}
+</script>

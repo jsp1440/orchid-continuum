@@ -1,0 +1,365 @@
+Yes—great idea. Let’s add a Botany Lab → “Stats & Imports” tool that lets people:
+    •    bring their own datasets (paste CSV, choose columns, or give a Google Drive/Dropbox link),
+    •    run basic statistics (summary stats, correlations, tests),
+    •    do image-based helpers (EXIF read, simple color histogram for bloom color, leaf/flower area approximation),
+    •    and optionally save only pointers (e.g., Google Drive URLs) so you don’t have to copy everything into the Continuum.
+
+Below is a copy-paste extension you can drop into the single-file app I gave you (orchid_continuum_poc.js). It adds a new nav item “Botany Lab (Stats & Imports)” with a full client-side stats panel (no extra server setup).
+
+⸻
+
+1) Add a nav link (search for the <nav> in the HTML and add this anchor)
+
+<a href="#" id="nav-stats">Botany Lab (Stats & Imports)</a>
+
+And add the click handler right below the existing ones:
+
+document.getElementById("nav-stats").onclick = (e)=>{ e.preventDefault(); renderStatsLab(); };
+
+2) Paste this entire block near the other renderer functions (e.g., after renderLabEditor)
+
+// =======================================================
+// BOTANY LAB: Stats & Imports (client-side tools)
+// =======================================================
+function renderStatsLab(){
+  const root = el("div");
+  view.replaceChildren(root);
+
+  // State
+  let rawCSV = "";
+  let table = null;      // parsed rows [{col:val,...}]
+  let cols = [];         // column names
+  let chosenX = null;
+  let chosenY = null;
+
+  root.append(
+    el("div",{class:"panel"},
+      el("h1",{},"Botany Lab — Stats & Imports"),
+      el("p",{},"Bring your own data (CSV paste or URL), pick columns, and run quick analyses. Nothing is uploaded unless you choose to save within an experiment."),
+    ),
+    el("div",{class:"panel"},
+      el("h2",{},"1) Load data"),
+      el("details",{},
+        el("summary",{},"Paste CSV"),
+        el("textarea",{style:"height:120px", oninput:e=>rawCSV=e.target.value}, ""),
+        el("div",{class:"actions"}, el("button",{class:"btn", onclick:parseCSV},"Parse CSV"))
+      ),
+      el("details",{},
+        el("summary",{},"Or pull from a URL (CSV/TSV)"),
+        el("input",{placeholder:"https://... (Google Drive share link, Dropbox raw, GitHub raw)"}),
+        el("div",{class:"actions"}, el("button",{class:"btn", onclick:fetchURL},"Fetch & Parse"))
+      ),
+      el("p",{class:"note"},"Tip: For Google Drive, set link to 'Anyone with the link → Viewer' and use the direct export format if possible.")
+    ),
+    el("div",{class:"panel", id:"dataPreview"}),
+    el("div",{class:"panel"},
+      el("h2",{},"2) Pick columns"),
+      el("div",{id:"pickers"}),
+      el("p",{class:"note"},"Choose Y (response/dependent) and X (predictor/independent).")
+    ),
+    el("div",{class:"panel"},
+      el("h2",{},"3) Run analyses"),
+      el("div",{class:"row"},
+        el("button",{class:"btn", onclick:runSummary},"Summary stats (mean/median/std)"),
+        el("button",{class:"btn", onclick:runSpearman},"Correlation (Spearman ρ)"),
+        el("button",{class:"btn", onclick:runWelchT},"Welch t-test (Y by group in X)"),
+        el("button",{class:"btn", onclick:runChiSquare},"Chi-square (contingency)")
+      ),
+      el("div",{class:"row", style:"margin-top:8px"},
+        el("button",{class:"btn secondary", onclick:runRegression},"Simple linear regression (Y ~ X)")
+      ),
+      el("div",{id:"results", style:"margin-top:10px"})
+    ),
+    el("div",{class:"panel"},
+      el("h2",{},"4) Image helpers (optional)"),
+      el("p",{},"Provide an image URL (flower shot) to compute a quick color histogram and EXIF date (if present)."),
+      el("input",{id:"imgUrl", placeholder:"https://... .jpg .png"}),
+      el("div",{class:"actions"},
+        el("button",{class:"btn", onclick:analyzeImage},"Analyze image")
+      ),
+      el("div",{id:"imgOut"})
+    ),
+    el("div",{class:"panel"},
+      el("h2",{},"Save pointer (no upload)"),
+      el("p",{},"Store a pointer to your dataset (e.g., Google Drive or Dropbox link) inside a Lab Experiment."),
+      el("input",{id:"saveUrl", placeholder:"Paste dataset URL to save pointer"}),
+      el("div",{class:"actions"},
+        el("button",{class:"btn", onclick:savePointer},"Save dataset pointer to a new Experiment")
+      ),
+      el("div",{id:"saveOut"})
+    )
+  );
+
+  // ------ handlers
+  async function fetchURL(){
+    const input = root.querySelector('details:nth-of-type(2) input');
+    const url = input.value.trim();
+    if (!url) return alert("Enter a URL");
+    try {
+      const r = await fetch(url);
+      const txt = await r.text();
+      rawCSV = txt;
+      parseCSV();
+    } catch (e) {
+      alert("Fetch failed (CORS or invalid URL). Try downloading and pasting CSV.");
+    }
+  }
+
+  function parseCSV(){
+    if (!rawCSV.trim()) return alert("Paste CSV first");
+    const { rows, headers } = simpleCSVParse(rawCSV);
+    table = rows; cols = headers;
+    chosenX = cols[0] || null;
+    chosenY = cols[1] || null;
+    renderPreview(); renderPickers();
+  }
+
+  function renderPreview(){
+    const prev = root.querySelector("#dataPreview");
+    if (!table || !table.length) { prev.replaceChildren(el("p",{},"No data parsed yet.")); return; }
+    const first = table.slice(0, 20);
+    const head = el("tr",{}, ...cols.map(c=>el("th",{}, c)));
+    const body = first.map(r => el("tr",{}, ...cols.map(c=>el("td",{}, String(r[c] ?? "")))));
+    prev.replaceChildren(
+      el("h3",{},"Preview"),
+      el("table",{class:"grid"}, el("thead",{}, head), el("tbody",{}, ...body))
+    );
+  }
+
+  function renderPickers(){
+    const picks = root.querySelector("#pickers");
+    if (!cols.length) { picks.replaceChildren(el("p",{},"No columns yet.")); return; }
+    const selX = el("select", { onchange:e=>chosenX=e.target.value }, ...cols.map(c=>opt(c, c===chosenX)));
+    const selY = el("select", { onchange:e=>chosenY=e.target.value }, ...cols.map(c=>opt(c, c===chosenY)));
+    picks.replaceChildren(
+      el("div",{class:"row"},
+        el("div",{}, el("label",{},"X (predictor)"), selX),
+        el("div",{}, el("label",{},"Y (response)"), selY)
+      ),
+      el("p",{class:"note"},"For tests: Spearman needs numeric X & Y; Welch t-test expects Y numeric, X = two groups; Chi-square expects categorical X & Y.")
+    );
+    function opt(v, sel){ const o = el("option",{}, v); if (sel) o.selected = true; return o; }
+  }
+
+  // ------ stats runners
+  function runSummary(){
+    const out = root.querySelector("#results");
+    if (!guardXY(out)) return;
+    const y = colToNum(table, chosenY);
+    const s = summary(y);
+    out.replaceChildren(
+      el("h3",{},"Summary of Y = "+chosenY),
+      el("pre",{}, JSON.stringify(s, null, 2))
+    );
+  }
+  function runSpearman(){
+    const out = root.querySelector("#results");
+    if (!guardXY(out)) return;
+    const x = colToNum(table, chosenX), y = colToNum(table, chosenY);
+    const r = spearman(x, y);
+    out.replaceChildren(el("h3",{},"Spearman ρ (X ~ Y)"),
+      el("pre",{}, JSON.stringify(r, null, 2)));
+  }
+  function runWelchT(){
+    const out = root.querySelector("#results");
+    if (!guardXY(out)) return;
+    // Expect Y numeric, X categorical with 2 groups
+    const groups = groupBy(table, chosenX);
+    const keys = Object.keys(groups);
+    if (keys.length !== 2) return out.replaceChildren(el("p",{},"Welch t-test requires exactly 2 groups in X."));
+    const y1 = colToNum(groups[keys[0]], chosenY);
+    const y2 = colToNum(groups[keys[1]], chosenY);
+    const r = welchT(y1, y2);
+    out.replaceChildren(el("h3",{},"Welch t-test (Y by "+chosenX+")"),
+      el("pre",{}, JSON.stringify({ groups: keys, ...r }, null, 2)));
+  }
+  function runChiSquare(){
+    const out = root.querySelector("#results");
+    if (!guardXY(out)) return;
+    // Build contingency table
+    const { table: ct, rows: rL, cols: cL } = contingency(table, chosenY, chosenX);
+    const r = chiSquare(ct);
+    out.replaceChildren(el("h3",{},"Chi-square (Y by X)"),
+      el("pre",{}, JSON.stringify({ rows:rL, cols:cL, chi2:r.chi2, dof:r.dof, pApprox:r.p }, null, 2)));
+  }
+  function runRegression(){
+    const out = root.querySelector("#results");
+    if (!guardXY(out)) return;
+    const x = colToNum(table, chosenX), y = colToNum(table, chosenY);
+    const r = simpleLinearRegression(x, y);
+    out.replaceChildren(el("h3",{},"Linear regression Y ~ X"),
+      el("pre",{}, JSON.stringify(r, null, 2)));
+  }
+
+  function guardXY(out){
+    if (!table || !cols.length) { out.replaceChildren(el("p",{},"Load data first.")); return false; }
+    if (!chosenX || !chosenY) { out.replaceChildren(el("p",{},"Pick X and Y columns.")); return false; }
+    return true;
+  }
+
+  // ------ image helpers
+  async function analyzeImage(){
+    const url = root.querySelector("#imgUrl").value.trim();
+    const out = root.querySelector("#imgOut");
+    if (!url) return alert("Enter image URL");
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = ()=>{
+        const canvas = document.createElement("canvas");
+        const w = 400, h = Math.round(img.height * (400/img.width));
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const { histogram, dominant } = colorHistogram(ctx.getImageData(0,0,w,h).data);
+        out.replaceChildren(
+          el("p",{},"Dominant color (approx): "+dominant),
+          canvas
+        );
+      };
+      img.onerror = ()=> out.replaceChildren(el("p",{},"Could not load image (CORS or invalid URL)."));
+      img.src = url;
+    } catch (e) {
+      alert("Image analysis failed: "+e.message);
+    }
+  }
+
+  // ------ save pointer to a new experiment
+  async function savePointer(){
+    const url = root.querySelector("#saveUrl").value.trim();
+    const out = root.querySelector("#saveOut");
+    if (!url) return alert("Paste a URL first");
+    const r = await api("/lab/experiments","POST",{
+      title: "Dataset pointer",
+      ownerUserId: "user",
+      hypothesis: { question:"", statement:"", variables:{independent:[],dependent:[],controls:[]} },
+      dataset: { filters:{ externalUrl:url }, sampleSize:0, sampleIds:[] },
+      analysis: { charts:[], stats:{} },
+      report: { background:"External dataset pointer saved for later use.", methods:"", results:"", discussion:"", references:[], notes:"" }
+    });
+    out.replaceChildren(el("p",{},"Saved to experiment ID: "+r.id+" — open in Online Orchid Lab."));
+  }
+
+  // ------ small utils: CSV, stats, images
+  function simpleCSVParse(txt){
+    // simple tolerant CSV/TSV (split lines, split by comma or tab)
+    const lines = txt.replace(/\r/g,"").split("\n").filter(Boolean);
+    if (!lines.length) return { headers:[], rows:[] };
+    const delimiter = (lines[0].includes("\t") ? "\t" : ",");
+    const headers = lines[0].split(delimiter).map(s=>s.trim());
+    const rows = lines.slice(1).map(line=>{
+      const parts = line.split(delimiter);
+      const obj = {};
+      headers.forEach((h,i)=> obj[h] = (parts[i] ?? "").trim());
+      return obj;
+    });
+    return { headers, rows };
+  }
+  function colToNum(rows, key){
+    return rows.map(r=> parseFloat(String(r[key]).replace(/[^0-9eE\.\-\+]/g,"")) ).filter(v=>Number.isFinite(v));
+  }
+  function groupBy(rows, key){
+    const m = {};
+    for (const r of rows) { const k = String(r[key]); (m[k]??= []).push(r); }
+    return m;
+  }
+  function summary(arr){
+    if (!arr.length) return { n:0 };
+    const n = arr.length;
+    const mean = arr.reduce((a,b)=>a+b,0)/n;
+    const sorted = [...arr].sort((a,b)=>a-b);
+    const median = (n%2? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2);
+    const sd = Math.sqrt(arr.reduce((s,v)=>s+(v-mean)**2,0)/(n-1 || 1));
+    return { n, mean, median, sd, min:sorted[0], max:sorted[n-1] };
+    }
+  function rank(arr){
+    const sorted = [...arr].map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+    const ranks = Array(arr.length);
+    for (let i=0;i<sorted.length;i++){
+      let j=i; while (j+1<sorted.length && sorted[j+1].v===sorted[i].v) j++;
+      const r = (i+j)/2 + 1;
+      for (let k=i;k<=j;k++) ranks[sorted[k].i]=r;
+      i=j;
+    }
+    return ranks;
+  }
+  function spearman(x,y){
+    const n = Math.min(x.length, y.length);
+    if (n<3) return { n, rho:null, note:"Need n>=3" };
+    const rx = rank(x.slice(0,n)), ry = rank(y.slice(0,n));
+    const d2 = rx.map((r,i)=> (r-ry[i])**2 ).reduce((a,b)=>a+b,0);
+    const rho = 1 - (6*d2)/(n*(n*n-1));
+    return { n, rho };
+  }
+  function welchT(a,b){
+    const sa = summary(a), sb = summary(b);
+    const se = Math.sqrt( (sa.sd**2/sa.n) + (sb.sd**2/sb.n) );
+    const t = (sa.mean - sb.mean) / se;
+    const df = ((sa.sd**2/sa.n) + (sb.sd**2/sb.n))**2 /
+              ( (sa.sd**4 / (sa.n*sa.n*(sa.n-1||1))) + (sb.sd**4 / (sb.n*sb.n*(sb.n-1||1))) );
+    return { n1:sa.n, n2:sb.n, mean1:sa.mean, mean2:sb.mean, t, df };
+  }
+  function contingency(rows, rowKey, colKey){
+    const rVals = Array.from(new Set(rows.map(r=>String(r[rowKey]))));
+    const cVals = Array.from(new Set(rows.map(r=>String(r[colKey]))));
+    const table = rVals.map(()=> cVals.map(()=>0));
+    rows.forEach(r=>{
+      const ri = rVals.indexOf(String(r[rowKey]));
+      const ci = cVals.indexOf(String(r[colKey]));
+      if (ri>=0 && ci>=0) table[ri][ci]++;
+    });
+    return { table, rows:rVals, cols:cVals };
+  }
+  function chiSquare(table){
+    const R = table.length, C = table[0]?.length || 0;
+    const rowS = table.map(row=>row.reduce((a,b)=>a+b,0));
+    const colS = Array.from({length:C}, (_,j)=> table.reduce((a,row)=>a+row[j],0));
+    const N = rowS.reduce((a,b)=>a+b,0);
+    let chi2 = 0;
+    for (let i=0;i<R;i++){
+      for (let j=0;j<C;j++){
+        const exp = (rowS[i]*colS[j])/N || 0;
+        if (exp>0) chi2 += (table[i][j]-exp)**2 / exp;
+      }
+    }
+    const dof = (R-1)*(C-1);
+    // p-value approx omitted (needs gamma); report chi2 & dof
+    return { chi2, dof, p: "approximate; compare to chi-square critical" };
+  }
+  function simpleLinearRegression(x, y){
+    const n = Math.min(x.length, y.length);
+    if (n<2) return { n, slope:null, intercept:null, r2:null };
+    const xm = x.reduce((a,b)=>a+b,0)/n, ym = y.reduce((a,b)=>a+b,0)/n;
+    let num=0, den=0, ssTot=0, ssRes=0;
+    for (let i=0;i<n;i++){ num += (x[i]-xm)*(y[i]-ym); den += (x[i]-xm)**2; }
+    const slope = den===0 ? 0 : num/den;
+    const intercept = ym - slope*xm;
+    for (let i=0;i<n;i++){ const yhat = intercept + slope*x[i]; ssTot+=(y[i]-ym)**2; ssRes+=(y[i]-yhat)**2; }
+    const r2 = ssTot===0 ? 0 : 1 - ssRes/ssTot;
+    return { n, slope, intercept, r2 };
+  }
+  function colorHistogram(rgba){
+    const bins = new Array(12).fill(0); // 12-bin hue-ish approximation
+    for (let i=0;i<rgba.length;i+=4){
+      const r = rgba[i], g = rgba[i+1], b = rgba[i+2];
+      const h = rgbToHue(r,g,b);
+      const bin = Math.max(0, Math.min(11, Math.floor((h/360)*12)));
+      bins[bin]++;
+    }
+    const max = Math.max(...bins);
+    const idx = bins.indexOf(max);
+    const hueRange = `${Math.round(idx*30)}–${Math.round((idx+1)*30)}°`;
+    return { histogram: bins, dominant: `hue ${hueRange}` };
+  }
+  function rgbToHue(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h, d = max-min;
+    if (d===0) h=0;
+    else if (max===r) h=((g-b)/d)%6;
+    else if (max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h = Math.round(h*60); if (h<0) h+=360;
+    return h;
+  }
+}

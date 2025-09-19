@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Science Lab - Full Scientific Method Integration</title>
+    {% if standalone %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    {% endif %}
+    <style>
+        .science-lab-container {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(44, 90, 160, 0.3);
+            font-family: 'Arial', sans-serif;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .scientific-method-progress {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .progress-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stage-progress {
+            font-size: 1.1rem;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .progress-bar-container {
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            height: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        
+        .current-stage {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .workflow-sections {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .workflow-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .observation-form {
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .generated-hypotheses {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.5);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .research-questions {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .observations-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .observation-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .observation-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        
+        .observation-item.ready-for-hypothesis {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .integration-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .integration-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .integration-btn:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+        }
+        
+        .ai-hypothesis-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .ai-hypothesis-btn:hover {
+            background: linear-gradient(45deg, #FFA500, #FF8C00);
+            color: #000;
+        }
+        
+        .quality-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .quality-excellent { background: #28a745; }
+        .quality-good { background: #17a2b8; }
+        .quality-fair { background: #ffc107; color: #000; }
+        .quality-poor { background: #dc3545; }
+        
+        @media (max-width: 768px) {
+            .science-lab-container {
+                padding: 15px;
+            }
+            
+            .integration-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="science-lab-container">
+        <!-- Scientific Method Progress Tracker -->
+        <div class="scientific-method-progress">
+            <div class="progress-header">
+                <h3 class="progress-title">
+                    <i data-feather="trending-up" style="width: 24px; height: 24px; margin-right: 10px;"></i>
+                    Scientific Method Progress
+                </h3>
+                <div class="stage-progress" id="progressPercentage">0%</div>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            
+            <div class="current-stage" id="currentStageDisplay">
+                <strong>Current Stage:</strong> <span id="currentStageName">Observation</span>
+                <br><small>Collect field observations to begin your research</small>
+            </div>
+        </div>
+        
+        <div class="workflow-sections">
+            <!-- User Profile Setup -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="user" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    1. Researcher Profile & Credentials
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="name" placeholder="Full Name *" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="affiliation" placeholder="Institution/Organization">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="credentials" placeholder="Degrees/Credentials">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control mb-2" name="email" placeholder="Email Address">
+                            </div>
+                        </div>
+                        
+                        <textarea class="form-control mb-2" name="research_interests" placeholder="Research interests and areas of expertise..." rows="2"></textarea>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i data-feather="save" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Save Profile
+                        </button>
+                    </form>
+                    
+                    <div id="profileMessage" style="display: none; margin-top: 10px;"></div>
+                    <div id="currentProfile" style="display: none; margin-top: 15px; padding: 10px; background: rgba(40, 167, 69, 0.2); border-radius: 6px;">
+                        <strong>Current Profile:</strong> <span id="profileDisplay"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Search Integration -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="search" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    2. Search Orchid Database
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="searchForm">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="genus" placeholder="Genus">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="species" placeholder="Species">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control mb-2" name="location" placeholder="Location">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="has_image" id="hasImage">
+                                    <label class="form-check-label" for="hasImage">
+                                        Only show records with images
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select mb-2" name="limit">
+                                    <option value="25">25 results</option>
+                                    <option value="50" selected>50 results</option>
+                                    <option value="100">100 results</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-info w-100">
+                            <i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Search Database (5,963 records)
+                        </button>
+                    </form>
+                    
+                    <div id="searchResults" style="display: none; margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- Observation Collection with File Upload -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="camera" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    3. Field Observation Collection & File Upload
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="observationForm" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <select class="form-select mb-2" name="type" required>
+                                    <option value="">Select Observation Type</option>
+                                    <option value="flowering_observation">Flowering Observation</option>
+                                    <option value="habitat_conditions">Habitat Conditions</option>
+                                    <option value="phenotype_measurement">Phenotype Measurement</option>
+                                    <option value="geographic_sighting">Geographic Sighting</option>
+                                    <option value="cultivation_experiment">Cultivation Experiment</option>
+                                    <option value="pollinator_interaction">Pollinator Interaction</option>
+                                    <option value="environmental_data">Environmental Data</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="location" placeholder="Location" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="scientific_name" placeholder="Scientific Name (optional)">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="coordinates" placeholder="Lat,Lng (optional)">
+                            </div>
+                        </div>
+                        
+                        <textarea class="form-control mb-2" name="description" placeholder="Detailed description of observation..." rows="3" required></textarea>
+                        
+                        <!-- File Upload Section -->
+                        <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                            <label class="form-label"><i data-feather="upload" style="width: 16px; height: 16px; margin-right: 4px;"></i>Upload Files (Images, Data, Documents)</label>
+                            <input type="file" class="form-control" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.csv,.xlsx,.docx">
+                            <small class="text-muted">Supported: Images (JPG, PNG), PDFs, Text files, Excel, Word (Max 16MB each)</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i data-feather="plus-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Submit Observation with Files
+                        </button>
+                    </form>
+                    
+                    <div id="submitMessage" style="display: none; margin-top: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- Enhanced AI Hypothesis Generation -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="lightbulb" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    5. AI Hypothesis Generation & Research Questions
+                </h4>
+                
+                <div class="observation-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="hypothesisType">
+                                <option value="pattern_analysis">Pattern Analysis Hypotheses</option>
+                                <option value="geographic_patterns">Geographic Distribution Patterns</option>
+                                <option value="ecological_patterns">Ecological Relationship Hypotheses</option>
+                                <option value="phylogenetic_patterns">Evolutionary/Phylogenetic Hypotheses</option>
+                                <option value="breeding_analysis">Breeding & Genetic Hypotheses</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="analysisScope">
+                                <option value="all_data">All Database Records</option>
+                                <option value="selected_orchids">Selected Orchids Only</option>
+                                <option value="genus_filter">Filter by Genus</option>
+                                <option value="region_filter">Filter by Region</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-warning w-100 mb-3" onclick="generateAIHypotheses()">
+                        <i data-feather="cpu" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Generate AI Research Hypotheses
+                    </button>
+                    
+                    <div id="researchQuestions" class="research-questions" style="display: none;">
+                        <h6><i data-feather="lightbulb" style="width: 16px; height: 16px; margin-right: 8px;"></i>Suggested Research Questions</h6>
+                        <ul id="questionsList"></ul>
+                    </div>
+                    
+                    <div id="generatedHypotheses" class="generated-hypotheses" style="display: none;">
+                        <h6><i data-feather="cpu" style="width: 16px; height: 16px; margin-right: 8px;"></i>AI-Generated Hypotheses</h6>
+                        <div id="hypothesesContent"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Experiment Design Interface -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="activity" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    6. Experiment Design & Methodology
+                </h4>
+                
+                <div class="observation-form">
+                    <form id="experimentForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <select class="form-select mb-2" name="experiment_type" required>
+                                    <option value="">Select Experiment Type</option>
+                                    <option value="field_study">Field Study/Observation</option>
+                                    <option value="controlled_experiment">Controlled Experiment</option>
+                                    <option value="cultivation_trial">Cultivation Trial</option>
+                                    <option value="pollination_study">Pollination Study</option>
+                                    <option value="habitat_comparison">Habitat Comparison</option>
+                                    <option value="breeding_cross">Breeding Cross Analysis</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control mb-2" name="sample_size" placeholder="Sample Size" min="1">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="control_group" placeholder="Control Group Description">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control mb-2" name="variables" placeholder="Variables to Measure">
+                            </div>
+                        </div>
+                        
+                        <textarea class="form-control mb-2" name="methodology" placeholder="Detailed methodology and procedures..." rows="3"></textarea>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i data-feather="clipboard" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Save Experiment Design
+                        </button>
+                    </form>
+                    
+                    <div id="experimentMessage" style="display: none; margin-top: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- Statistical Analysis Tools -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="bar-chart-2" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    7. Statistical Analysis & Data Processing
+                </h4>
+                
+                <div class="observation-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="analysisType">
+                                <option value="descriptive">Descriptive Statistics</option>
+                                <option value="correlation">Correlation Analysis</option>
+                                <option value="t_test">T-Test Comparison</option>
+                                <option value="anova">ANOVA Analysis</option>
+                                <option value="chi_square">Chi-Square Test</option>
+                                <option value="regression">Regression Analysis</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="dataSource">
+                                <option value="observation_data">My Observation Data</option>
+                                <option value="database_subset">Database Subset</option>
+                                <option value="external_upload">Upload External Data</option>
+                                <option value="combined_sources">Combined Sources</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Upload for Analysis -->
+                    <div id="dataUploadSection" style="display: none; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                        <label class="form-label"><i data-feather="upload" style="width: 16px; height: 16px; margin-right: 4px;"></i>Upload Analysis Data</label>
+                        <input type="file" class="form-control" id="analysisDataFile" accept=".csv,.xlsx,.txt">
+                        <small class="text-muted">Supported: CSV, Excel, Text files</small>
+                    </div>
+                    
+                    <button class="btn btn-info w-100 mb-3" onclick="runStatisticalAnalysis()">
+                        <i data-feather="trending-up" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Run Statistical Analysis
+                    </button>
+                    
+                    <div id="analysisResults" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Research Writing & Literature Integration -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="edit-3" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    8. Research Writing & Literature Review
+                </h4>
+                
+                <div class="observation-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="writingTask">
+                                <option value="literature_review">Literature Review</option>
+                                <option value="methods_section">Methods Section</option>
+                                <option value="results_section">Results Section</option>
+                                <option value="discussion">Discussion</option>
+                                <option value="abstract">Abstract</option>
+                                <option value="full_paper">Complete Paper (IMRaD)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="citationStyle">
+                                <option value="apa">APA Style</option>
+                                <option value="nature">Nature Style</option>
+                                <option value="science">Science Style</option>
+                                <option value="bibtex">BibTeX Format</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <textarea class="form-control mb-2" id="researchContent" placeholder="Start writing your research content here..." rows="4"></textarea>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-info w-100 mb-2" onclick="searchLiterature()">
+                                <i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                Search Literature
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-success w-100 mb-2" onclick="generateCitations()">
+                                <i data-feather="bookmark" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                Generate Citations
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100" onclick="assistWriting()">
+                        <i data-feather="feather" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        AI Writing Assistant
+                    </button>
+                    
+                    <div id="writingResults" style="display: none; margin-top: 15px;"></div>
+                </div>
+            </div>
+            
+            <!-- Current Observations with Export Options -->
+            <div class="workflow-section">
+                <h4 class="section-title">
+                    <i data-feather="database" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    4. Your Observations & Export Options
+                </h4>
+                
+                <div class="observations-list" id="observationsList">
+                    <p style="text-align: center; opacity: 0.7;">No observations recorded yet.</p>
+                </div>
+                
+                <!-- Export Options -->
+                <div id="exportOptions" style="display: none; margin-top: 15px; padding: 15px; background: rgba(255, 193, 7, 0.2); border-radius: 6px;">
+                    <h6><i data-feather="download" style="width: 16px; height: 16px; margin-right: 8px;"></i>Export Data</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-select mb-2" id="exportFormat">
+                                <option value="text">Text Report (.txt)</option>
+                                <option value="csv">CSV Spreadsheet (.csv)</option>
+                                <option value="json">JSON Data (.json)</option>
+                                <option value="word">Word Document (.docx) *</option>
+                                <option value="pdf">PDF Report (.pdf) *</option>
+                                <option value="jpeg">Image Export (.jpg) *</option>
+                            </select>
+                            <small class="text-muted">* Requires additional setup</small>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select mb-2" id="exportObservation">
+                                <option value="">Select observation to export</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-100" onclick="exportObservationData()">
+                        <i data-feather="download" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Export Selected Observation
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Integration with Other Systems -->
+        <div class="integration-buttons">
+            <a href="/research-lab" class="integration-btn">
+                <i data-feather="activity" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                Research Lab
+            </a>
+            <a href="/research-lab/literature-review" class="integration-btn">
+                <i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                Literature Review
+            </a>
+            <a href="/admin/ai-analysis" class="integration-btn">
+                <i data-feather="cpu" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                AI Analysis
+            </a>
+            <a href="/botany-lab" class="integration-btn">
+                <i data-feather="bar-chart-2" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                Botany Lab Stats
+            </a>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; opacity: 0.7; font-size: 0.85rem;">
+            <i data-feather="link" style="width: 14px; height: 14px; margin-right: 4px;"></i>
+            Integrated with Scientific Method Platform • AI-Enhanced • 5,963+ Orchid Records
+        </div>
+    </div>
+    
+    <script>
+        // Initialize
+        {% if standalone %}
+        feather.replace();
+        {% endif %}
+        
+        let workflowStatus = {};
+        let selectedOrchids = [];
+        
+        // Load data on page load
+        loadWorkflowStatus();
+        loadUserProfile();
+        
+        async function loadWorkflowStatus() {
+            try {
+                const response = await fetch('/api/research-workflow-status');
+                workflowStatus = await response.json();
+                updateProgressDisplay();
+                updateObservationsList();
+                updateResearchQuestions();
+            } catch (error) {
+                console.error('Error loading workflow status:', error);
+            }
+        }
+        
+        function updateProgressDisplay() {
+            const percentage = workflowStatus.progress_percentage || 0;
+            const currentStage = workflowStatus.current_stage || 'observation';
+            
+            document.getElementById('progressPercentage').textContent = Math.round(percentage) + '%';
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('currentStageName').textContent = currentStage.charAt(0).toUpperCase() + currentStage.slice(1);
+            
+            // Update stage description
+            const stageDescriptions = {
+                'observation': 'Collect field observations to begin your research',
+                'hypothesis': 'Generate testable hypotheses from your observations',
+                'experiment': 'Design controlled experiments to test hypotheses',
+                'data': 'Collect and organize experimental data',
+                'analysis': 'Analyze data using statistical methods',
+                'conclusion': 'Draw conclusions and evaluate hypotheses',
+                'communicate': 'Write and share your research findings'
+            };
+            
+            const description = stageDescriptions[currentStage] || 'Continue your research';
+            document.querySelector('.current-stage small').textContent = description;
+        }
+        
+        function updateResearchQuestions() {
+            const questions = workflowStatus.suggested_questions || [];
+            if (questions.length > 0) {
+                const questionsDiv = document.getElementById('researchQuestions');
+                const questionsList = document.getElementById('questionsList');
+                
+                questionsList.innerHTML = questions.map(q => `<li>${q}</li>`).join('');
+                questionsDiv.style.display = 'block';
+            }
+        }
+        
+        function updateObservationsList() {
+            const observations = workflowStatus.workflow_status?.observations_collected || [];
+            const listDiv = document.getElementById('observationsList');
+            
+            if (observations.length === 0) {
+                listDiv.innerHTML = '<p style="text-align: center; opacity: 0.7;">No observations recorded yet.</p>';
+                return;
+            }
+            
+            listDiv.innerHTML = observations.map(obs => {
+                const readyClass = obs.ready_for_hypothesis ? 'ready-for-hypothesis' : '';
+                return `
+                    <div class="observation-item ${readyClass}" onclick="selectObservation('${obs.id}')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${obs.type.replace('_', ' ').toUpperCase()}</strong>
+                            <span class="quality-badge quality-${obs.quality_score >= 80 ? 'excellent' : obs.quality_score >= 60 ? 'good' : obs.quality_score >= 40 ? 'fair' : 'poor'}">
+                                ${obs.quality_score}%
+                            </span>
+                        </div>
+                        <div style="font-size: 0.9rem; margin-top: 5px;">${obs.description.substring(0, 100)}...</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 5px;">
+                            ${obs.matched_orchids} orchid matches • ${new Date(obs.timestamp).toLocaleDateString()}
+                            ${obs.ready_for_hypothesis ? '<br><span style="color: #28a745;">✓ Ready for hypothesis generation</span>' : ''}
+                        </div>
+                        ${obs.ready_for_hypothesis ? `
+                            <button class="ai-hypothesis-btn" onclick="generateHypothesis('${obs.id}', event)">
+                                <i data-feather="cpu" style="width: 14px; height: 14px; margin-right: 4px;"></i>
+                                Generate AI Hypothesis
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            feather.replace();
+        }
+        
+        // Enhanced Scientific Method Functions
+        
+        async function generateAIHypotheses() {
+            const hypothesisType = document.getElementById('hypothesisType').value;
+            const analysisScope = document.getElementById('analysisScope').value;
+            
+            try {
+                // Show loading
+                document.getElementById('generatedHypotheses').style.display = 'block';
+                document.getElementById('hypothesesContent').innerHTML = `
+                    <div class="text-center">
+                        <i data-feather="loader" style="width: 24px; height: 24px; animation: spin 1s linear infinite;"></i>
+                        <p>Generating AI hypotheses...</p>
+                    </div>
+                `;
+                feather.replace();
+                
+                const response = await fetch('/api/generate-enhanced-hypotheses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hypothesis_type: hypothesisType,
+                        analysis_scope: analysisScope,
+                        selected_orchids: selectedOrchids
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let hypothesesHtml = `
+                        <div class="alert alert-success">
+                            <strong>Generated ${result.hypotheses.length} Research Hypotheses</strong>
+                        </div>
+                    `;
+                    
+                    result.hypotheses.forEach((hypothesis, index) => {
+                        hypothesesHtml += `
+                            <div class="hypothesis-item" style="border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 15px; margin: 10px 0;">
+                                <h6><strong>Hypothesis ${index + 1}:</strong> ${hypothesis.statement}</h6>
+                                <p><strong>Prediction:</strong> ${hypothesis.prediction}</p>
+                                <p><strong>Data Needed:</strong> ${hypothesis.data_needed}</p>
+                                <p><strong>Statistical Test:</strong> ${hypothesis.statistical_test}</p>
+                                <p><strong>Biological Rationale:</strong> ${hypothesis.rationale}</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="useHypothesis('${hypothesis.statement}')">
+                                    Use This Hypothesis
+                                </button>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('hypothesesContent').innerHTML = hypothesesHtml;
+                } else {
+                    throw new Error(result.error || 'Failed to generate hypotheses');
+                }
+            } catch (error) {
+                document.getElementById('hypothesesContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+            
+            feather.replace();
+        }
+        
+        function useHypothesis(hypothesis) {
+            // Auto-fill experiment form with selected hypothesis
+            console.log('Using hypothesis:', hypothesis);
+            alert('Hypothesis selected! This will auto-fill your experiment design.');
+        }
+        
+        async function runStatisticalAnalysis() {
+            const analysisType = document.getElementById('analysisType').value;
+            const dataSource = document.getElementById('dataSource').value;
+            
+            try {
+                const response = await fetch('/api/run-statistical-analysis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        analysis_type: analysisType,
+                        data_source: dataSource,
+                        selected_orchids: selectedOrchids
+                    })
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('analysisResults');
+                
+                if (result.success) {
+                    let analysisHtml = `
+                        <div class="alert alert-success">
+                            <h6><i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>Analysis Complete</h6>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px;">
+                            <h6>Results Summary:</h6>
+                            <p><strong>Sample Size:</strong> ${result.sample_size}</p>
+                            <p><strong>Analysis Type:</strong> ${result.analysis_type}</p>
+                    `;
+                    
+                    if (result.statistics) {
+                        analysisHtml += `<p><strong>Key Statistics:</strong> ${JSON.stringify(result.statistics, null, 2)}</p>`;
+                    }
+                    
+                    if (result.p_value) {
+                        analysisHtml += `<p><strong>P-value:</strong> ${result.p_value} ${result.significant ? '(Significant)' : '(Not Significant)'}</p>`;
+                    }
+                    
+                    analysisHtml += `
+                            <p><strong>Interpretation:</strong> ${result.interpretation}</p>
+                        </div>
+                    `;
+                    
+                    resultsDiv.innerHTML = analysisHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                document.getElementById('analysisResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Error: ${error.message}
+                    </div>
+                `;
+                document.getElementById('analysisResults').style.display = 'block';
+                feather.replace();
+            }
+        }
+        
+        async function searchLiterature() {
+            const content = document.getElementById('researchContent').value;
+            
+            try {
+                const response = await fetch('/api/search-literature', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        search_terms: content.substring(0, 200), // Use first 200 chars as search terms
+                        selected_orchids: selectedOrchids
+                    })
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('writingResults');
+                
+                if (result.success) {
+                    let literatureHtml = `
+                        <div class="alert alert-info">
+                            <h6><i data-feather="book-open" style="width: 16px; height: 16px; margin-right: 8px;"></i>Literature Search Results</h6>
+                        </div>
+                    `;
+                    
+                    result.references.forEach(ref => {
+                        literatureHtml += `
+                            <div style="border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 10px; margin: 8px 0;">
+                                <p><strong>${ref.title}</strong></p>
+                                <p><small>${ref.authors} (${ref.year}). ${ref.journal}</small></p>
+                                <button class="btn btn-sm btn-outline-success" onclick="addCitation('${ref.id}')">Add Citation</button>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsDiv.innerHTML = literatureHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i data-feather="info" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            No literature found. Try different search terms.
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Literature search error:', error);
+            }
+        }
+        
+        async function generateCitations() {
+            const citationStyle = document.getElementById('citationStyle').value;
+            
+            try {
+                const response = await fetch('/api/generate-citations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        citation_style: citationStyle,
+                        selected_orchids: selectedOrchids
+                    })
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('writingResults');
+                
+                if (result.success) {
+                    let citationHtml = `
+                        <div class="alert alert-success">
+                            <h6><i data-feather="bookmark" style="width: 16px; height: 16px; margin-right: 8px;"></i>Generated Citations (${citationStyle})</h6>
+                        </div>
+                        <textarea class="form-control" rows="6" readonly>${result.citations.join('\n\n')}</textarea>
+                    `;
+                    
+                    resultsDiv.innerHTML = citationHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Citation generation error:', error);
+            }
+        }
+        
+        async function assistWriting() {
+            const content = document.getElementById('researchContent').value;
+            const writingTask = document.getElementById('writingTask').value;
+            
+            try {
+                const response = await fetch('/api/assist-writing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        writing_task: writingTask,
+                        selected_orchids: selectedOrchids
+                    })
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('writingResults');
+                
+                if (result.success) {
+                    let writingHtml = `
+                        <div class="alert alert-success">
+                            <h6><i data-feather="feather" style="width: 16px; height: 16px; margin-right: 8px;"></i>AI Writing Assistance</h6>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px;">
+                            <h6>Suggestions:</h6>
+                            <div>${result.suggestions}</div>
+                            <hr>
+                            <h6>Improved Text:</h6>
+                            <textarea class="form-control" rows="8">${result.improved_text}</textarea>
+                        </div>
+                    `;
+                    
+                    resultsDiv.innerHTML = writingHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Writing assistance error:', error);
+            }
+        }
+        
+        function addCitation(referenceId) {
+            console.log('Adding citation:', referenceId);
+            alert('Citation added to your reference list!');
+        }
+        
+        // Show data upload section when external upload is selected
+        document.getElementById('dataSource').addEventListener('change', function() {
+            const uploadSection = document.getElementById('dataUploadSection');
+            if (this.value === 'external_upload') {
+                uploadSection.style.display = 'block';
+            } else {
+                uploadSection.style.display = 'none';
+            }
+        });
+        
+        // Experiment form submission
+        document.getElementById('experimentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('experimentMessage');
+            const formData = new FormData(this);
+            const experimentData = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/api/save-experiment-design', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(experimentData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.innerHTML = `
+                        <i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Experiment design saved successfully!
+                    `;
+                    this.reset();
+                } else {
+                    throw new Error(result.error || 'Failed to save experiment design');
+                }
+            } catch (error) {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                    Error: ${error.message}
+                `;
+            }
+            
+            messageDiv.style.display = 'block';
+            feather.replace();
+        });
+
+        async function generateHypothesis(observationId, event) {
+            event.stopPropagation();
+            
+            try {
+                const response = await fetch('/api/generate-hypothesis-from-observation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ observation_id: observationId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const hypothesesDiv = document.getElementById('generatedHypotheses');
+                    const content = document.getElementById('hypothesesContent');
+                    
+                    content.innerHTML = `
+                        <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-top: 10px;">
+                            <strong>Generated for observation ${observationId}:</strong><br>
+                            <pre style="white-space: pre-wrap; font-size: 0.9rem; margin-top: 10px;">${result.generated_hypotheses}</pre>
+                        </div>
+                    `;
+                    
+                    hypothesesDiv.style.display = 'block';
+                    
+                    // Reload workflow status
+                    loadWorkflowStatus();
+                }
+            } catch (error) {
+                console.error('Error generating hypothesis:', error);
+                alert('Error generating hypothesis. Please try again.');
+            }
+        }
+        
+        function selectObservation(observationId) {
+            console.log('Selected observation:', observationId);
+            
+            // Update export options
+            const exportSelect = document.getElementById('exportObservation');
+            if (exportSelect) {
+                // Add to export dropdown if not already there
+                const option = document.createElement('option');
+                option.value = observationId;
+                option.textContent = `Observation ${observationId}`;
+                exportSelect.appendChild(option);
+                exportSelect.value = observationId;
+                
+                // Show export options
+                document.getElementById('exportOptions').style.display = 'block';
+            }
+        }
+        
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/get-user-profile');
+                const result = await response.json();
+                
+                if (result.success && result.profile && result.profile.name) {
+                    const profileDiv = document.getElementById('currentProfile');
+                    const profileDisplay = document.getElementById('profileDisplay');
+                    
+                    profileDisplay.textContent = `${result.profile.name}${result.profile.affiliation ? ' (' + result.profile.affiliation + ')' : ''}`;
+                    profileDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        }
+        
+        async function exportObservationData() {
+            const observationId = document.getElementById('exportObservation').value;
+            const format = document.getElementById('exportFormat').value;
+            
+            if (!observationId) {
+                alert('Please select an observation to export');
+                return;
+            }
+            
+            if (!format) {
+                alert('Please select an export format');
+                return;
+            }
+            
+            try {
+                // Create download link
+                const downloadUrl = `/api/export-observation/${observationId}/${format}`;
+                
+                // Create hidden download link and click it
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `observation_${observationId}.${format}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log(`Exporting observation ${observationId} as ${format}`);
+                
+            } catch (error) {
+                console.error('Error exporting observation:', error);
+                alert('Error exporting observation. Please try again.');
+            }
+        }
+        
+        // Profile form submission
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('profileMessage');
+            const formData = new FormData(this);
+            const profileData = Object.fromEntries(formData);
+            
+            try {
+                messageDiv.style.display = 'none';
+                
+                const response = await fetch('/api/save-user-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profileData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.innerHTML = `
+                        <i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Profile saved successfully!
+                    `;
+                    
+                    // Show current profile
+                    loadUserProfile();
+                } else {
+                    throw new Error(result.error || 'Failed to save profile');
+                }
+            } catch (error) {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                    Error: ${error.message}
+                `;
+            }
+            
+            messageDiv.style.display = 'block';
+            feather.replace();
+        });
+        
+        // Database search form submission
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const searchData = Object.fromEntries(formData);
+            
+            // Convert checkbox
+            searchData.has_image = formData.get('has_image') === 'on';
+            searchData.limit = parseInt(searchData.limit);
+            
+            try {
+                const response = await fetch('/api/search-orchid-database', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(searchData)
+                });
+                
+                const result = await response.json();
+                const resultsDiv = document.getElementById('searchResults');
+                
+                if (result.success && result.results.length > 0) {
+                    let resultsHtml = `
+                        <h6><i data-feather="search" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Found ${result.total_found} orchids</h6>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                    `;
+                    
+                    result.results.forEach(orchid => {
+                        resultsHtml += `
+                            <div class="observation-item" onclick="selectOrchidRecord('${orchid.id}', '${orchid.scientific_name}')" style="cursor: pointer;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>${orchid.scientific_name}</strong>
+                                    ${orchid.has_image ? '<span class="badge bg-success">📷 Image</span>' : ''}
+                                </div>
+                                <div style="font-size: 0.9rem; margin-top: 5px;">
+                                    ${orchid.location || 'Location not specified'}
+                                </div>
+                                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 3px;">
+                                    ${orchid.description ? orchid.description.substring(0, 150) + '...' : 'No description available'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsHtml += '</div>';
+                    resultsDiv.innerHTML = resultsHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <i data-feather="info" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                            No orchids found matching your search criteria.
+                        </div>
+                    `;
+                }
+                
+                resultsDiv.style.display = 'block';
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Error searching database:', error);
+                document.getElementById('searchResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Error searching database: ${error.message}
+                    </div>
+                `;
+                document.getElementById('searchResults').style.display = 'block';
+                feather.replace();
+            }
+        });
+        
+        function selectOrchidRecord(orchidId, scientificName) {
+            selectedOrchids.push({id: orchidId, name: scientificName});
+            console.log('Selected orchid:', scientificName);
+            
+            // Add visual feedback
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                <i data-feather="check" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                Selected: ${scientificName}
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+            
+            feather.replace();
+        }
+        
+        // Observation form submission with file upload
+        document.getElementById('observationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('submitMessage');
+            const formData = new FormData(this);
+            
+            // Handle file uploads
+            const hasFiles = formData.getAll('files').some(file => file.size > 0);
+            
+            try {
+                messageDiv.style.display = 'none';
+                
+                let response;
+                
+                if (hasFiles) {
+                    // Use multipart form data for file uploads
+                    response = await fetch('/api/upload-observation-files', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Use JSON for text-only observations
+                    const observationData = Object.fromEntries(formData);
+                    response = await fetch('/api/submit-observation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(observationData)
+                    });
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    messageDiv.className = 'alert alert-success';
+                    let successMessage = `
+                        <i data-feather="check-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                        Observation submitted! Matched ${result.matched_records} orchid records.
+                    `;
+                    
+                    if (result.files_uploaded > 0) {
+                        successMessage += `<br><small>📎 ${result.files_uploaded} files uploaded successfully</small>`;
+                    }
+                    
+                    if (result.export_available) {
+                        successMessage += `<br><small>📊 Data ready for export</small>`;
+                    }
+                    
+                    messageDiv.innerHTML = successMessage;
+                    this.reset();
+                    
+                    // Reload workflow status
+                    setTimeout(loadWorkflowStatus, 1000);
+                } else {
+                    throw new Error(result.error || 'Submission failed');
+                }
+            } catch (error) {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i data-feather="alert-circle" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                    Error: ${error.message}
+                `;
+            }
+            
+            messageDiv.style.display = 'block';
+            feather.replace();
+        });
+        
+        console.log('🔬 Enhanced Science Lab with Scientific Method Integration initialized');
+    </script>
+</body>
+</html>

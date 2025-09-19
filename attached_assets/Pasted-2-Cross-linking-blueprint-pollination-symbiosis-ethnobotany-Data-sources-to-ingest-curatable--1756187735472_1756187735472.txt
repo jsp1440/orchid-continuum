@@ -1,0 +1,82 @@
+2) Cross-linking blueprint (pollination, symbiosis, ethnobotany)
+
+Data sources to ingest (curatable/importable)
+	•	Pollination & interactions: Global Biotic Interactions (GloBI); primary literature (DOI-tagged), museum/paper supplements; selected review datasets.
+	•	Mycorrhiza: UNITE/PlutoF mycorrhizal references; MycoPortal; literature tables.
+	•	Ethnobotany/uses: Kew resources (MPNS), Useful Tropical Plants/UPFC regional datasets, USDA ethnobotany/GRIN, peer-reviewed ethnobotanical surveys; CITES checklist for trade flags.
+	•	Taxonomy backbones: POWO/IPNI for author strings, nomenclatural details.
+
+You (or curators) decide exactly which sources to include; the model below is agnostic and supports per-record provenance.
+
+Canonical schema (JSON)
+
+Use this as your unified “Orchid Continuum” layer that sits on top of the GBIF foundation.
+
+{
+  "taxon": {
+    "acceptedTaxonKey": 12345,
+    "acceptedScientificName": "Ophrys sphegodes",
+    "synonyms": ["Ophrys aranifera"],
+    "authorship": "Mill., 1768",
+    "taxonRank": "species",
+    "powoId": "urn:lsid:ipni.org:names:XXXXX-1"
+  },
+  "distribution": {
+    "gbifOccurrenceCount": 18423,
+    "countries": ["GB", "FR", "DE"],
+    "elevation_m": {"min": 5, "p50": 220, "max": 1350},
+    "monthsObserved": [3,4,5,6],
+    "sampleOccurrences": [
+      {"gbifID":"123","eventDate":"2019-04-20","lat":51.24,"lon":-0.51,"datasetKey":"abc..."}
+    ]
+  },
+  "interactions": {
+    "pollinators": [
+      {
+        "interactionType": "flower-visitor-of",        // OBO RO term if possible
+        "pollinatorTaxon": {"name": "Andrena nigroaenea", "rank":"species", "externalIds":{"gbif":654321}},
+        "evidence": [
+          {"type":"doi","value":"10.1111/xxx.yyy","verbatim":"Author et al. 2017"},
+          {"type":"dataset","value":"globi:datasetKey123"}
+        ],
+        "confidence": "high"
+      }
+    ],
+    "mycorrhiza": [
+      {
+        "fungusTaxon": {"name":"Tulasnella sp.","rank":"genus","externalIds":{"unite":"UDBxxxx"}},
+        "relationship": "mycorrhizal-association",
+        "lifeStage": "seedling/germination",
+        "evidence": [{"type":"paper","value":"DOI:10.1000/abc123"}],
+        "confidence": "medium"
+      }
+    ],
+    "mimicry": [
+      {
+        "class": "sexual-deception",                   // controlled vocab
+        "signal": ["chemical","visual"],
+        "modelSpecies": "Andrena females",
+        "notes": "Alkane blend mimics female pheromone",
+        "evidence": [{"type":"review","value":"DOI:10.1038/..." }]
+      }
+    ]
+  },
+  "uses": {
+    "food": [
+      {
+        "part": "fruit/pod",
+        "preparation": "flavoring (vanillin)",
+        "region": ["MX","MG","ID"],
+        "evidence": [{"type":"database","value":"Kew MPNS"}, {"type":"paper","value":"DOI:10.1016/..."}]
+      }
+    ],
+    "medicine": [],
+    "trade": [{"status":"CITES Appendix II","evidence":[{"type":"cites","value":"2024 checklist"}]}]
+  },
+  "attribution": {
+    "gbifDatasets": [{"datasetKey":"abc","title":"Herbarium X","license":"CC BY 4.0"}],
+    "interactionSources": ["GloBI:datasetKey123","DOI:10.1111/xxx.yyy"],
+    "ethnobotanySources": ["Kew MPNS","UPFC 2020"],
+    "lastUpdated": "2025-08-25"
+  }
+}

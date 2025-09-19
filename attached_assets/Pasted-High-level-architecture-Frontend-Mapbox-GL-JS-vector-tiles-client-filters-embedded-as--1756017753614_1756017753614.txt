@@ -1,0 +1,170 @@
+High-level architecture
+    •    Frontend: Mapbox GL JS (vector tiles + client filters) embedded as a widget on FCOS.org (Neon One).
+    •    APIs: A lightweight GraphQL/REST service (Node/Express or Python/FastAPI) that:
+    •    serves feature tiles (via tippecanoe/tileserver-GL or Mapbox tilesets),
+    •    exposes search/aggregate endpoints for facets/correlations.
+    •    DB: PostgreSQL + PostGIS (ideal for geospatial + timeseries filtering).
+    •    Ingestion: EXIF parser → reverse geocoding → taxonomy matcher → trait enricher → tiles builder.
+    •    Privacy: automatic coordinate fuzzing (e.g., ±3–10 km) for sensitive sites; exact coords protected behind a role flag.
+
+⸻
+
+Data model (tables)
+
+
+Prompt for Famous AI – Orchid Map Widget
+
+We want to create an interactive map widget integrated with our orchid database. The map should be able to display orchids by their location data and allow users to apply filters to explore patterns.
+
+Core Features:
+    1.    Database Integration
+    •    Pull location data from our orchid database (country, region, coordinates if available).
+    •    Each orchid photo should carry location metadata when possible.
+    2.    Interactive Map Display
+    •    World map view with ability to zoom into regions or countries.
+    •    Toggle layers on/off (orchids by country, region, or habitat).
+    3.    Filter Control Panel
+    •    User-friendly panel to apply multiple filters such as:
+    •    Pollinator type (e.g., hummingbirds, hawkmoths).
+    •    Flowering time (day/night bloomers).
+    •    Traits (fragrance, growth habit, warm/cool growers, etc.).
+    •    Country/region of origin.
+    •    Time (historic vs recent photo collection, spanning 30+ years).
+    •    Filters can be combined to show correlations and patterns.
+    4.    Thematic Maps
+    •    Ability to generate thematic layers, e.g.:
+    •    “Show all orchids pollinated by hummingbirds.”
+    •    “Show all fragrant orchids in South America.”
+    •    “Show orchids photographed in the 1980s vs 2020s.”
+    •    Useful for research projects such as “orchids along the 35th parallel.”
+    5.    Advanced Data Integration
+    •    Support for attaching and mapping mycelial associations:
+    •    Fungal genera/species linked to orchids.
+    •    Display where these associations are found.
+    •    Enable correlation studies (e.g., fungus distribution vs orchid traits).
+    6.    Output & Exploration
+    •    Allow toggling of different datasets (orchids, fungi, traits).
+    •    Enable export or snapshot of filtered maps for use in articles, like “orchids of the 35th parallel.”
+
+Overall Goal:
+A dynamic, filterable, and visually rich world map where orchid enthusiasts and researchers can explore ecological, geographic, pollinator, and fungal associations through time and space.
+
+
+Prompt for Famous AI – Orchid Map Widget
+
+We want to create an interactive map widget integrated with our orchid database. The map should be able to display orchids by their location data and allow users to apply filters to explore patterns.
+
+Core Features:
+    1.    Database Integration
+    •    Pull location data from our orchid database (country, region, coordinates if available).
+    •    Each orchid photo should carry location metadata when possible.
+    2.    Interactive Map Display
+    •    World map view with ability to zoom into regions or countries.
+    •    Toggle layers on/off (orchids by country, region, or habitat).
+    3.    Filter Control Panel
+    •    User-friendly panel to apply multiple filters such as:
+    •    Pollinator type (e.g., hummingbirds, hawkmoths).
+    •    Flowering time (day/night bloomers).
+    •    Traits (fragrance, growth habit, warm/cool growers, etc.).
+    •    Country/region of origin.
+    •    Time (historic vs recent photo collection, spanning 30+ years).
+    •    Filters can be combined to show correlations and patterns.
+    4.    Thematic Maps
+    •    Ability to generate thematic layers, e.g.:
+    •    “Show all orchids pollinated by hummingbirds.”
+    •    “Show all fragrant orchids in South America.”
+    •    “Show orchids photographed in the 1980s vs 2020s.”
+    •    Useful for research projects such as “orchids along the 35th parallel.”
+    5.    Advanced Data Integration
+    •    Support for attaching and mapping mycelial associations:
+    •    Fungal genera/species linked to orchids.
+    •    Display where these associations are found.
+    •    Enable correlation studies (e.g., fungus distribution vs orchid traits).
+    6.    Output & Exploration
+    •    Allow toggling of different datasets (orchids, fungi, traits).
+    •    Enable export or snapshot of filtered maps for use in articles, like “orchids of the 35th parallel.”
+
+Overall Goal:
+A dynamic, filterable, and visually rich world map where orchid enthusiasts and researchers can explore ecological, geographic, pollinator, and fungal associations through time and space.
+
+
+Orchid Map Widget – Control Panel Wireframe
+
+Layout
+
+A collapsible sidebar panel on the left (or floating panel on the right). Each section can expand/collapse.
+
+⸻
+
+1. Search & Location
+    •    🔍 Search bar: [Enter country / region / orchid name]
+    •    🌍 Dropdown: Select country/region
+    •    🗺️ Zoom to region button
+
+⸻
+
+2. Orchid Traits (Checkboxes)
+    •    ☐ Fragrant
+    •    ☐ Night-blooming
+    •    ☐ Day-blooming
+    •    ☐ Cool grower
+    •    ☐ Warm grower
+    •    ☐ Epiphytic
+    •    ☐ Terrestrial
+    •    ☐ Lithophytic
+
+⸻
+
+3. Pollinators (Multi-select)
+    •    ☐ Bees
+    •    ☐ Hummingbirds
+    •    ☐ Hawkmoths
+    •    ☐ Flies
+    •    ☐ Ants
+    •    ☐ Butterflies
+    •    ☐ Other
+
+⸻
+
+4. Time Filter (Slider)
+    •    📅 Timeline slider: [1980] ——●———— [2025]
+    •    Toggle: ☐ “Show all decades” ☐ “Compare decades”
+    •    Option: play button ▶️ for animated “time lapse” of orchid records
+
+⸻
+
+5. Thematic Map Generator
+    •    Dropdown: “Generate thematic map by…”
+    •    ▸ Pollinator
+    •    ▸ Trait
+    •    ▸ Country/Region
+    •    ▸ Climate type (cool/warm growers)
+    •    ▸ Mycorrhizal fungi association
+    •    Button: [Generate]
+
+⸻
+
+6. Mycorrhizal Associations
+    •    ☐ Show fungi data layer
+    •    Dropdown: “Filter by fungal genus/species”
+    •    Toggle: ☐ Overlay with orchid host locations
+
+⸻
+
+7. Export & Share
+    •    📸 Download snapshot (PNG/JPEG of current map view)
+    •    📊 Export dataset (CSV/JSON of filtered orchids)
+    •    🔗 Share map view (link with filters embedded)
+
+⸻
+
+Example Control Panel Flow
+    1.    User selects “South America” in location.
+    2.    Checks “Fragrant” + “Hummingbird-pollinated.”
+    3.    Slides timeline 1980–2025 to show change.
+    4.    Toggles on fungal partners to see overlaps.
+    5.    Generates a thematic map and exports results.
+
+⸻
+
+👉 This control panel can be styled with FCOS branding (lavender + orchid-purple tones, l

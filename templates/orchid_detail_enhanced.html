@@ -1,0 +1,315 @@
+{% extends "layout.html" %}
+{% set page_title = orchid.display_name or orchid.scientific_name %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Orchid Information -->
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h4 mb-0">
+                        <i data-feather="star" class="me-2"></i>
+                        {{ orchid.display_name or orchid.scientific_name }}
+                    </h2>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-outline-light btn-sm">
+                            <i data-feather="eye" class="me-1"></i>Standard View
+                        </a>
+                        <button class="btn btn-outline-success btn-sm" onclick="refreshBotanicalAnalysis()">
+                            <i data-feather="refresh-cw" class="me-1"></i>Refresh Analysis
+                        </button>
+                    </div>
+                </div>
+                
+                {% if orchid.image_url %}
+                <div class="card-img-top-container">
+                    <img src="{{ orchid.image_url }}" 
+                         alt="{{ orchid.display_name }}" 
+                         class="card-img-top orchid-image"
+                         style="height: 400px; object-fit: cover;">
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Basic Information</h5>
+                            <table class="table table-dark table-sm">
+                                {% if orchid.scientific_name %}
+                                <tr>
+                                    <td><strong>Scientific Name:</strong></td>
+                                    <td><em>{{ orchid.scientific_name }}</em></td>
+                                </tr>
+                                {% endif %}
+                                {% if orchid.genus %}
+                                <tr>
+                                    <td><strong>Genus:</strong></td>
+                                    <td>{{ orchid.genus }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if orchid.species %}
+                                <tr>
+                                    <td><strong>Species:</strong></td>
+                                    <td>{{ orchid.species }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Growing Conditions</h5>
+                            <table class="table table-dark table-sm">
+                                {% if orchid.temperature_range %}
+                                <tr>
+                                    <td><strong>Temperature:</strong></td>
+                                    <td>{{ orchid.temperature_range }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if orchid.light_requirements %}
+                                <tr>
+                                    <td><strong>Light:</strong></td>
+                                    <td>{{ orchid.light_requirements }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if orchid.water_requirements %}
+                                <tr>
+                                    <td><strong>Water:</strong></td>
+                                    <td>{{ orchid.water_requirements }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botanical Database Analysis Panel -->
+        <div class="col-lg-4">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">
+                        <i data-feather="database" class="me-2"></i>
+                        Botanical Database Analysis
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if botanical_analysis %}
+                    
+                    <!-- Confidence Score -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><strong>Overall Confidence:</strong></span>
+                            <span class="badge {% if botanical_analysis.confidence_assessment.overall_confidence > 0.8 %}bg-success{% elif botanical_analysis.confidence_assessment.overall_confidence > 0.6 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ "%.0f"|format(botanical_analysis.confidence_assessment.overall_confidence * 100) }}%
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar {% if botanical_analysis.confidence_assessment.overall_confidence > 0.8 %}bg-success{% elif botanical_analysis.confidence_assessment.overall_confidence > 0.6 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ botanical_analysis.confidence_assessment.overall_confidence * 100 }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sources Found -->
+                    <div class="mb-3">
+                        <h6><i data-feather="check-circle" class="me-1"></i>Sources Found:</h6>
+                        <div class="small">
+                            {% for source in botanical_analysis.botanical_databases.sources_searched %}
+                            <span class="badge bg-success me-1 mb-1">{{ source.title() }}</span>
+                            {% endfor %}
+                            {% if botanical_analysis.rhs_data.get('found') %}
+                            <span class="badge bg-primary me-1 mb-1">RHS Registry</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Scientific Name Consensus -->
+                    {% if botanical_analysis.metadata_synthesis.scientific_name_consensus %}
+                    <div class="mb-3">
+                        <h6><i data-feather="award" class="me-1"></i>Verified Name:</h6>
+                        <div class="small text-success">
+                            <em>{{ botanical_analysis.metadata_synthesis.scientific_name_consensus }}</em>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Cultivation Recommendations -->
+                    {% if botanical_analysis.cultivation_recommendations %}
+                    <div class="mb-3">
+                        <h6><i data-feather="sun" class="me-1"></i>Growing Tips:</h6>
+                        <div class="small">
+                            {% if botanical_analysis.cultivation_recommendations.temperature %}
+                            <div><strong>Temperature:</strong> {{ botanical_analysis.cultivation_recommendations.temperature }}</div>
+                            {% endif %}
+                            {% if botanical_analysis.cultivation_recommendations.light %}
+                            <div><strong>Light:</strong> {{ botanical_analysis.cultivation_recommendations.light }}</div>
+                            {% endif %}
+                            {% if botanical_analysis.cultivation_recommendations.humidity %}
+                            <div><strong>Humidity:</strong> {{ botanical_analysis.cultivation_recommendations.humidity }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Data Quality Score -->
+                    <div class="mb-3">
+                        <h6><i data-feather="bar-chart" class="me-1"></i>Data Quality:</h6>
+                        <div class="small">
+                            Score: {{ "%.2f"|format(botanical_analysis.metadata_synthesis.data_quality_score) }} / 1.00
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <!-- No Analysis Available -->
+                    <div class="text-center py-4">
+                        <i data-feather="loader" class="mb-3" style="width: 48px; height: 48px;"></i>
+                        <p>Botanical analysis not yet performed</p>
+                        <button class="btn btn-primary btn-sm" onclick="performBotanicalAnalysis()">
+                            <i data-feather="play" class="me-1"></i>Start Analysis
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Database Coverage Check -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h3 class="h6 mb-0">
+                        <i data-feather="grid" class="me-2"></i>
+                        Database Coverage
+                    </h3>
+                </div>
+                <div class="card-body" id="databaseCoverage">
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="small mt-2">Checking database coverage...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if botanical_analysis and botanical_analysis.botanical_databases.data_found %}
+    <!-- Detailed Analysis Results -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">
+                        <i data-feather="layers" class="me-2"></i>
+                        Detailed Database Results
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for source, data in botanical_analysis.botanical_databases.data_found.items() %}
+                        {% if data.get('found') %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h6 class="text-success">
+                                    <i data-feather="check" class="me-1"></i>
+                                    {{ source.title().replace('_', ' ') }}
+                                </h6>
+                                {% if data.get('cultivation') %}
+                                <div class="small mb-2">
+                                    <strong>Cultivation Info:</strong> Available
+                                </div>
+                                {% endif %}
+                                {% if data.get('distribution') %}
+                                <div class="small mb-2">
+                                    <strong>Distribution:</strong> {{ data.distribution|length }} regions
+                                </div>
+                                {% endif %}
+                                {% if data.get('url') %}
+                                <a href="{{ data.url }}" target="_blank" class="btn btn-outline-light btn-sm">
+                                    <i data-feather="external-link" class="me-1"></i>View Source
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Load database coverage on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDatabaseCoverage();
+});
+
+function loadDatabaseCoverage() {
+    fetch('/api/orchid/{{ orchid.id }}/quick-botanical-check')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDatabaseCoverage(data);
+            } else {
+                document.getElementById('databaseCoverage').innerHTML = 
+                    '<div class="text-danger small">Error loading coverage data</div>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('databaseCoverage').innerHTML = 
+                '<div class="text-warning small">Coverage check unavailable</div>';
+        });
+}
+
+function displayDatabaseCoverage(data) {
+    const coverage = data.database_coverage;
+    const totalSources = data.total_sources;
+    const sourcesFound = data.sources_found;
+    const coveragePercent = Math.round((sourcesFound / totalSources) * 100);
+    
+    let html = `
+        <div class="mb-2">
+            <div class="d-flex justify-content-between">
+                <span class="small">Coverage:</span>
+                <span class="small">${sourcesFound}/${totalSources} sources</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-info" style="width: ${coveragePercent}%"></div>
+            </div>
+        </div>
+        <div class="small">
+    `;
+    
+    for (const [source, info] of Object.entries(coverage)) {
+        const status = info.found ? 'text-success' : 'text-muted';
+        const icon = info.found ? 'check' : 'x';
+        html += `
+            <div class="${status}">
+                <i data-feather="${icon}" style="width: 12px; height: 12px;"></i>
+                ${source.charAt(0).toUpperCase() + source.slice(1).replace('_', ' ')}
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    document.getElementById('databaseCoverage').innerHTML = html;
+    
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+function refreshBotanicalAnalysis() {
+    window.location.reload();
+}
+
+function performBotanicalAnalysis() {
+    window.location.href = '/enhanced-analysis/{{ orchid.id }}';
+}
+</script>
+{% endblock %}

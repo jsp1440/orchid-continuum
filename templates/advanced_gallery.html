@@ -1,0 +1,759 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Orchid Gallery - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i data-feather="filter" class="me-2"></i>
+                        Advanced Orchid Gallery
+                    </h1>
+                    <p class="text-muted mb-1">
+                        Multi-criteria filtering with real-time updates
+                        {% if total_orchids %}
+                        - {{ total_orchids }} orchids available
+                        {% endif %}
+                    </p>
+                    <p class="text-muted fst-italic small mb-0">"Where every orchid has a story — and every photo has a home."</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
+                        <i data-feather="grid" style="width: 16px; height: 16px;"></i>
+                        Simple Gallery
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#savedFiltersModal">
+                        <i data-feather="bookmark" style="width: 16px; height: 16px;"></i>
+                        Saved Filters
+                    </button>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#photoModal">
+                        <i data-feather="camera" style="width: 16px; height: 16px;"></i>
+                        Photo Policy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filters Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-0">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="sliders" class="me-2" style="width: 18px; height: 18px;"></i>
+                        Advanced Filters
+                        <span class="badge bg-primary ms-2" id="activeFiltersCount">
+                            {{ current_filters|length }} active
+                        </span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="advancedFiltersForm">
+                        <div class="row g-3">
+                            <!-- Geographic Filters -->
+                            <div class="col-md-6 col-lg-4">
+                                <h6 class="text-warning">
+                                    <i data-feather="map" style="width: 16px; height: 16px;"></i>
+                                    Geographic
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Country</label>
+                                    <select class="form-select form-select-sm" name="country" id="countryFilter">
+                                        <option value="">Any Country</option>
+                                        {% for country in filter_suggestions.get('country', []) %}
+                                        <option value="{{ country }}" 
+                                                {% if current_filters.get('country') == country %}selected{% endif %}>
+                                            {{ country }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Province/State</label>
+                                    <input type="text" class="form-control form-control-sm" 
+                                           name="province" id="provinceFilter"
+                                           value="{{ current_filters.get('province', '') }}"
+                                           placeholder="e.g., California, Minas Gerais">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label small">Min Elevation (m)</label>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               name="elevation_min" id="elevationMinFilter"
+                                               value="{{ current_filters.get('elevation_min', '') }}"
+                                               placeholder="0">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Max Elevation (m)</label>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               name="elevation_max" id="elevationMaxFilter"
+                                               value="{{ current_filters.get('elevation_max', '') }}"
+                                               placeholder="3000">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Taxonomic Filters -->
+                            <div class="col-md-6 col-lg-4">
+                                <h6 class="text-warning">
+                                    <i data-feather="layers" style="width: 16px; height: 16px;"></i>
+                                    Taxonomic
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Genus</label>
+                                    <select class="form-select form-select-sm" name="genus" id="genusFilter">
+                                        <option value="">Any Genus</option>
+                                        {% for genus in filter_suggestions.get('genus', []) %}
+                                        <option value="{{ genus }}" 
+                                                {% if current_filters.get('genus') == genus %}selected{% endif %}>
+                                            {{ genus }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Species</label>
+                                    <input type="text" class="form-control form-control-sm" 
+                                           name="species" id="speciesFilter"
+                                           value="{{ current_filters.get('species', '') }}"
+                                           placeholder="e.g., labiata, amabilis">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Type</label>
+                                    <select class="form-select form-select-sm" name="hybrid_type" id="hybridTypeFilter">
+                                        <option value="">Species & Hybrids</option>
+                                        <option value="species" 
+                                                {% if current_filters.get('hybrid_type') == 'species' %}selected{% endif %}>
+                                            Species Only
+                                        </option>
+                                        <option value="hybrid" 
+                                                {% if current_filters.get('hybrid_type') == 'hybrid' %}selected{% endif %}>
+                                            Hybrids Only
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Morphological & Ecological Filters -->
+                            <div class="col-md-6 col-lg-4">
+                                <h6 class="text-warning">
+                                    <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                                    Characteristics
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Flower Color</label>
+                                    <select class="form-select form-select-sm" name="flower_color" id="colorFilter">
+                                        <option value="">Any Color</option>
+                                        {% for color in filter_suggestions.get('flower_color', []) %}
+                                        <option value="{{ color }}" 
+                                                {% if current_filters.get('flower_color') == color %}selected{% endif %}>
+                                            {{ color.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Growth Habit</label>
+                                    <select class="form-select form-select-sm" name="growth_habit" id="growthHabitFilter">
+                                        <option value="">Any Habit</option>
+                                        {% for habit in filter_suggestions.get('growth_habit', []) %}
+                                        <option value="{{ habit }}" 
+                                                {% if current_filters.get('growth_habit') == habit %}selected{% endif %}>
+                                            {{ habit.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Pollinator</label>
+                                    <select class="form-select form-select-sm" name="pollinator" id="pollinatorFilter">
+                                        <option value="">Any Pollinator</option>
+                                        {% for pollinator in filter_suggestions.get('pollinator', []) %}
+                                        <option value="{{ pollinator }}" 
+                                                {% if current_filters.get('pollinator') == pollinator %}selected{% endif %}>
+                                            {{ pollinator.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Temporal Filters -->
+                            <div class="col-md-6 col-lg-4">
+                                <h6 class="text-warning">
+                                    <i data-feather="calendar" style="width: 16px; height: 16px;"></i>
+                                    Temporal
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Bloom Month</label>
+                                    <select class="form-select form-select-sm" name="bloom_month" id="bloomMonthFilter">
+                                        <option value="">Any Month</option>
+                                        <option value="january" {% if current_filters.get('bloom_month') == 'january' %}selected{% endif %}>January</option>
+                                        <option value="february" {% if current_filters.get('bloom_month') == 'february' %}selected{% endif %}>February</option>
+                                        <option value="march" {% if current_filters.get('bloom_month') == 'march' %}selected{% endif %}>March</option>
+                                        <option value="april" {% if current_filters.get('bloom_month') == 'april' %}selected{% endif %}>April</option>
+                                        <option value="may" {% if current_filters.get('bloom_month') == 'may' %}selected{% endif %}>May</option>
+                                        <option value="june" {% if current_filters.get('bloom_month') == 'june' %}selected{% endif %}>June</option>
+                                        <option value="july" {% if current_filters.get('bloom_month') == 'july' %}selected{% endif %}>July</option>
+                                        <option value="august" {% if current_filters.get('bloom_month') == 'august' %}selected{% endif %}>August</option>
+                                        <option value="september" {% if current_filters.get('bloom_month') == 'september' %}selected{% endif %}>September</option>
+                                        <option value="october" {% if current_filters.get('bloom_month') == 'october' %}selected{% endif %}>October</option>
+                                        <option value="november" {% if current_filters.get('bloom_month') == 'november' %}selected{% endif %}>November</option>
+                                        <option value="december" {% if current_filters.get('bloom_month') == 'december' %}selected{% endif %}>December</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label small">From Date</label>
+                                        <input type="date" class="form-control form-control-sm" 
+                                               name="date_from" id="dateFromFilter"
+                                               value="{{ current_filters.get('date_from', '') }}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">To Date</label>
+                                        <input type="date" class="form-control form-control-sm" 
+                                               name="date_to" id="dateToFilter"
+                                               value="{{ current_filters.get('date_to', '') }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quality Filters -->
+                            <div class="col-md-6 col-lg-4">
+                                <h6 class="text-warning">
+                                    <i data-feather="camera" style="width: 16px; height: 16px;"></i>
+                                    Quality
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small">Min AI Confidence</label>
+                                    <select class="form-select form-select-sm" name="min_confidence" id="confidenceFilter">
+                                        <option value="">Any Confidence</option>
+                                        <option value="0.8" {% if current_filters.get('min_confidence') == '0.8' %}selected{% endif %}>80%+</option>
+                                        <option value="0.6" {% if current_filters.get('min_confidence') == '0.6' %}selected{% endif %}>60%+</option>
+                                        <option value="0.4" {% if current_filters.get('min_confidence') == '0.4' %}selected{% endif %}>40%+</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Filter Actions -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button type="button" class="btn btn-warning" id="applyFiltersBtn">
+                                        <i data-feather="search" style="width: 16px; height: 16px;"></i>
+                                        Apply Filters
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="clearFiltersBtn">
+                                        <i data-feather="x" style="width: 16px; height: 16px;"></i>
+                                        Clear All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" id="saveFiltersBtn">
+                                        <i data-feather="bookmark" style="width: 16px; height: 16px;"></i>
+                                        Save Combination
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Attribution Blurb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-dark border-secondary mb-0 text-center">
+                <small class="text-muted">
+                    Photos in the Orchid Continuum are shared by our members, partners, and open sources. 
+                    Contributors keep ownership and receive full credit. 
+                    <a href="#" class="text-warning text-decoration-none" data-bs-toggle="modal" data-bs-target="#photoModal">
+                        <strong>Read More →</strong>
+                    </a>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Filtering orchids...</p>
+            </div>
+
+            <!-- Results grid -->
+            <div id="resultsContainer">
+                {% if orchids %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        {{ pagination.total }} orchids found
+                        {% if current_filters %}
+                        with {{ current_filters|length }} filters applied
+                        {% endif %}
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="viewMode" id="gridView" autocomplete="off" checked>
+                        <label class="btn btn-outline-light" for="gridView">
+                            <i data-feather="grid" style="width: 16px; height: 16px;"></i>
+                        </label>
+                        <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off">
+                        <label class="btn btn-outline-light" for="listView">
+                            <i data-feather="list" style="width: 16px; height: 16px;"></i>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row g-4" id="orchidsGrid">
+                    {% for orchid in orchids %}
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card bg-dark text-white border-1 border-secondary h-100 orchid-card">
+                            <div class="position-relative">
+                                {% if orchid.google_drive_id %}
+                                <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                                     class="card-img-top" alt="{{ orchid.display_name }}"
+                                     style="height: 250px; object-fit: cover;"
+                                     onerror="this.src='/static/images/orchid_placeholder.svg';">
+                                {% elif orchid.image_url and orchid.image_url != '/static/images/orchid_placeholder.svg' %}
+                                <img src="{{ orchid.image_url }}" 
+                                     class="card-img-top" alt="{{ orchid.display_name }}"
+                                     style="height: 250px; object-fit: cover;"
+                                     onerror="this.src='/static/images/orchid_placeholder.svg';">
+                                {% else %}
+                                <div class="card-img-top d-flex align-items-center justify-content-center bg-secondary" style="height: 250px;">
+                                    <i data-feather="image" style="width: 48px; height: 48px; color: #6c757d;"></i>
+                                </div>
+                                {% endif %}
+                                
+                                {% if orchid.ai_confidence %}
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-info">
+                                        {{ (orchid.ai_confidence * 100)|round }}%
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="card-body">
+                                <h6 class="card-title text-warning">
+                                    {% if orchid.genus and orchid.species %}
+                                        <em>{{ orchid.genus }} {{ orchid.species }}</em>
+                                    {% elif orchid.scientific_name %}
+                                        <em>{{ orchid.scientific_name }}</em>
+                                    {% else %}
+                                        {{ orchid.display_name or "Unknown Orchid" }}
+                                    {% endif %}
+                                </h6>
+                                
+                                <div class="small text-muted mb-2">
+                                    {% if orchid.genus and orchid.species %}
+                                    <i data-feather="tag" style="width: 14px; height: 14px;"></i>
+                                    <strong>{{ orchid.genus }}</strong> • <strong>{{ orchid.species }}</strong>
+                                    {% elif orchid.genus %}
+                                    <i data-feather="tag" style="width: 14px; height: 14px;"></i>
+                                    <strong>{{ orchid.genus }}</strong>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if orchid.native_habitat %}
+                                <div class="small text-muted mb-2">
+                                    <i data-feather="map-pin" style="width: 14px; height: 14px;"></i>
+                                    {{ orchid.native_habitat[:50] }}{% if orchid.native_habitat|length > 50 %}...{% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex gap-2 mt-3">
+                                    <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-warning btn-sm flex-fill">
+                                        <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <nav aria-label="Gallery pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-light border-secondary" href="#" data-page="{{ pagination.current_page - 1 }}">
+                                <i data-feather="chevron-left" style="width: 16px; height: 16px;"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in range(1, pagination.pages + 1) %}
+                        {% if page == pagination.current_page %}
+                        <li class="page-item active">
+                            <span class="page-link bg-warning text-dark border-warning">{{ page }}</span>
+                        </li>
+                        {% elif page <= 3 or page >= pagination.pages - 2 or (page >= pagination.current_page - 1 and page <= pagination.current_page + 1) %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-light border-secondary" href="#" data-page="{{ page }}">{{ page }}</a>
+                        </li>
+                        {% elif page == 4 or page == pagination.pages - 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link bg-dark text-muted border-secondary">...</span>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark text-light border-secondary" href="#" data-page="{{ pagination.current_page + 1 }}">
+                                <i data-feather="chevron-right" style="width: 16px; height: 16px;"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i data-feather="search" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                    <h4 class="text-muted">No orchids found</h4>
+                    <p class="text-muted">Try adjusting your filters or clearing them to see more results.</p>
+                    <button class="btn btn-outline-warning" id="clearFiltersBtn2">
+                        <i data-feather="x" style="width: 16px; height: 16px;"></i>
+                        Clear All Filters
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Filters Modal -->
+<div class="modal fade" id="savedFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-feather="bookmark" class="me-2"></i>
+                    Saved Filter Combinations
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-warning mb-3">Predefined Combinations</h6>
+                        <div id="predefinedCombinations">
+                            {% for key, combo in saved_combinations.items() %}
+                            <div class="card bg-secondary mb-2">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-1">{{ combo.name }}</h6>
+                                    <p class="card-text small text-muted mb-2">{{ combo.description }}</p>
+                                    <button class="btn btn-warning btn-sm apply-saved-filter" 
+                                            data-filters="{{ combo.filters|tojson }}">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning mb-3">Your Saved Combinations</h6>
+                        <div id="userCombinations">
+                            <p class="text-muted">No saved combinations yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Filter Combination Modal -->
+<div class="modal fade" id="saveFilterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Filter Combination</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="saveFilterForm">
+                    <div class="mb-3">
+                        <label for="combinationName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="combinationName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="combinationDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="combinationDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="saveCombinationBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('advancedFiltersForm');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    // Real-time filtering
+    function applyFilters(page = 1) {
+        loadingIndicator.style.display = 'block';
+        resultsContainer.style.opacity = '0.5';
+        
+        const formData = new FormData(form);
+        formData.append('page', page);
+        
+        const params = new URLSearchParams();
+        for (let [key, value] of formData.entries()) {
+            if (value.trim()) {
+                params.append(key, value);
+            }
+        }
+        
+        fetch('/advanced_gallery/api/filter_orchids?' + params.toString())
+            .then(response => response.json())
+            .then(data => {
+                updateResults(data);
+                updateActiveFiltersCount();
+                loadingIndicator.style.display = 'none';
+                resultsContainer.style.opacity = '1';
+            })
+            .catch(error => {
+                console.error('Filter error:', error);
+                loadingIndicator.style.display = 'none';
+                resultsContainer.style.opacity = '1';
+            });
+    }
+    
+    function updateResults(data) {
+        // Update results would be implemented here
+        // For now, we'll reload the page with new parameters
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        for (let [key, value] of formData.entries()) {
+            if (value.trim()) {
+                params.append(key, value);
+            }
+        }
+        
+        window.location.href = '{{ url_for("advanced_gallery.advanced_gallery") }}?' + params.toString();
+    }
+    
+    function updateActiveFiltersCount() {
+        const formData = new FormData(form);
+        let activeCount = 0;
+        
+        for (let [key, value] of formData.entries()) {
+            if (value.trim()) {
+                activeCount++;
+            }
+        }
+        
+        document.getElementById('activeFiltersCount').textContent = activeCount + ' active';
+    }
+    
+    // Apply filters button
+    document.getElementById('applyFiltersBtn').addEventListener('click', function() {
+        applyFilters();
+    });
+    
+    // Clear filters button
+    document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+        form.reset();
+        window.location.href = '{{ url_for("advanced_gallery.advanced_gallery") }}';
+    });
+    
+    document.getElementById('clearFiltersBtn2').addEventListener('click', function() {
+        form.reset();
+        window.location.href = '{{ url_for("advanced_gallery.advanced_gallery") }}';
+    });
+    
+    // Save filters button
+    document.getElementById('saveFiltersBtn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('saveFilterModal'));
+        modal.show();
+    });
+    
+    // Save combination
+    document.getElementById('saveCombinationBtn').addEventListener('click', function() {
+        const name = document.getElementById('combinationName').value;
+        const description = document.getElementById('combinationDescription').value;
+        
+        if (!name.trim()) {
+            alert('Please enter a name for this filter combination.');
+            return;
+        }
+        
+        const formData = new FormData(form);
+        const filters = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (value.trim()) {
+                filters[key] = value;
+            }
+        }
+        
+        fetch('/advanced_gallery/api/save_filter_combination', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                filters: filters
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('saveFilterModal'));
+                modal.hide();
+                alert('Filter combination saved successfully!');
+            } else {
+                alert('Error saving filter combination: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Save error:', error);
+            alert('Error saving filter combination.');
+        });
+    });
+    
+    // Apply saved filters
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('apply-saved-filter')) {
+            const filters = JSON.parse(e.target.getAttribute('data-filters'));
+            
+            // Apply filters to form
+            form.reset();
+            for (let [key, value] of Object.entries(filters)) {
+                const field = form.querySelector('[name="' + key + '"]');
+                if (field) {
+                    field.value = value;
+                }
+            }
+            
+            // Close modal and apply filters
+            const modal = bootstrap.Modal.getInstance(document.getElementById('savedFiltersModal'));
+            modal.hide();
+            
+            setTimeout(() => applyFilters(), 300);
+        }
+    });
+    
+    // Pagination
+    document.addEventListener('click', function(e) {
+        if (e.target.hasAttribute('data-page') || e.target.closest('[data-page]')) {
+            e.preventDefault();
+            const page = e.target.getAttribute('data-page') || e.target.closest('[data-page]').getAttribute('data-page');
+            applyFilters(page);
+        }
+    });
+    
+    // Initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    // Update active filters count on page load
+    updateActiveFiltersCount();
+});
+</script>
+
+<!-- Photo Policy Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    <i data-feather="camera" class="me-2"></i>Photo Policy
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <h6 class="text-warning">The Orchid Continuum is built on community trust.</h6>
+                </div>
+                
+                <p>Every photo in this gallery is contributed by orchid lovers, researchers, or shared under open licenses.</p>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <span class="me-2">📷</span>
+                            <div>
+                                <strong>Contributors always retain ownership</strong> of their images.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <span class="me-2">🌱</span>
+                            <div>
+                                <strong>Every photo is credited</strong> to its source.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <span class="me-2">✨</span>
+                            <div>
+                                <strong>Sharing your photos</strong> helps expand orchid knowledge, supports education, and strengthens conservation efforts.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <span class="me-2">🚫</span>
+                            <div>
+                                <strong>We do not scrape or republish</strong> copyrighted images without permission.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <p class="text-muted mb-3">Together, we are creating a living gallery of orchids for everyone to enjoy.</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-warning">
+                        <i data-feather="upload" class="me-2"></i>Contribute Your Photos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

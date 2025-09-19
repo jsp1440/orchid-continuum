@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orchid Philosophy: {{ result.philosophy_data.badge_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .result-header {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .badge-display {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .philosophy-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .action-buttons {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .btn-share {
+            background: linear-gradient(45deg, #10b981, #059669);
+            border: none;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-retake {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+            border: none;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+            border-radius: 25px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn-share:hover, .btn-retake:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+            color: white;
+        }
+        .members-notice {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid #8b5cf6;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .philosophy-stats {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="result-header">
+            <div class="badge-display">
+                <img src="{{ result.philosophy_data.badge_link }}" 
+                     alt="{{ result.philosophy }} Badge" 
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.3);"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/badges/fallback.svg') }}'">
+            </div>
+            <h1 class="display-4 mb-3">{{ result.philosophy }}</h1>
+            <h2 class="h5 text-muted mb-4">Your Orchid Philosophy</h2>
+            <p class="lead">{{ result.philosophy_data.life_philosophy }}</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="philosophy-card">
+                    <h3 class="mb-3"><i data-feather="book-open"></i> Your Growing Philosophy</h3>
+                    <p class="lead">{{ result.philosophy_data.orchid_reflection }}</p>
+                    
+                    <div class="mt-3 text-center">
+                        <div class="haiku-display" style="font-style: italic; font-size: 1.1rem; line-height: 1.6; color: #e0e7ff; padding: 1rem; border-left: 3px solid #8b5cf6;">
+                            {{ result.philosophy_data.haiku|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5><i data-feather="settings"></i> Practical Growing</h5>
+                        <p>{{ result.philosophy_data.practical }}</p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h5><i data-feather="zap"></i> Science Insight</h5>
+                        <p>{{ result.philosophy_data.science }}</p>
+                    </div>
+                    
+                    <div class="philosophy-stats">
+                        <h5><i data-feather="users"></i> Community Connection</h5>
+                        <p class="mb-0">You've joined the community of <strong>{{ result.philosophy }}</strong> growers in the Five Cities Orchid Society. Connect with others who share your growing philosophy through our member portal!</p>
+                    </div>
+                </div>
+
+                {% if session.get('user_id') %}
+                <div class="members-notice">
+                    <h4><i data-feather="award"></i> Badge Earned!</h4>
+                    <p>Your <strong>{{ result.philosophy }}</strong> badge has been added to your member profile. This unlocks specialized growing recommendations and connects you with like-minded orchid enthusiasts.</p>
+                    <div class="text-center mt-3">
+                        <img src="{{ result.philosophy_data.badge_link }}" 
+                             alt="{{ result.philosophy }} Badge" 
+                             style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/badges/fallback.svg') }}'">
+                    </div>
+                    <p class="mb-0"><strong>Points Earned:</strong> 50 philosophy points added to your leaderboard score!</p>
+                </div>
+                {% else %}
+                <div class="members-notice">
+                    <h4><i data-feather="key"></i> Want to Save Your Results?</h4>
+                    <p>Join the Five Cities Orchid Society to save your philosophy badge, earn leaderboard points, and get personalized growing recommendations based on your style!</p>
+                    <a href="https://fivecitiesorchidsociety.app.neoncrm.com/forms/12" target="_blank" class="btn btn-share">Join the Society</a>
+                </div>
+                {% endif %}
+
+                <div class="action-buttons">
+                    <a href="{{ url_for('philosophy_quiz') }}" class="btn btn-retake">
+                        <i data-feather="refresh-cw"></i> Retake Quiz
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-share">
+                        <i data-feather="gamepad"></i> More Games
+                    </a>
+                    <a href="{{ url_for('gallery') }}" class="btn btn-share">
+                        <i data-feather="camera"></i> Explore Gallery
+                    </a>
+                </div>
+                
+                <!-- Newsletter Subscription -->
+                <div class="newsletter-section mt-4">
+                    <div class="philosophy-card text-center">
+                        <h5><i data-feather="mail"></i> Stay Connected</h5>
+                        <p class="mb-3">Get monthly orchid growing tips, philosophy insights, and community updates delivered to your inbox.</p>
+                        <a href="https://fivecitiesorchidsociety.app.neoncrm.com/subscribe.jsp?subscription=6" target="_blank" class="btn btn-share">
+                            <i data-feather="mail"></i> Subscribe to FCOS Newsletter
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <h5>Share Your Philosophy</h5>
+                    <div class="mt-3">
+                        <button class="btn btn-share" onclick="shareResult()">
+                            <i data-feather="share-2"></i> Share Results
+                        </button>
+                        <button class="btn btn-share" onclick="copyResult()">
+                            <i data-feather="copy"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+        
+        function shareResult() {
+            const text = `I just discovered my orchid growing philosophy: {{ result.philosophy_data.badge_name }} {{ result.philosophy_data.badge_emoji }}\n\n"{{ result.philosophy_data.growing_style }}"\n\nTake the quiz yourself at the Five Cities Orchid Society!`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Orchid Philosophy',
+                    text: text,
+                    url: window.location.origin + '/philosophy-quiz'
+                });
+            } else {
+                // Fallback for browsers without Web Share API
+                navigator.clipboard.writeText(text + '\n\n' + window.location.origin + '/philosophy-quiz').then(() => {
+                    alert('Result copied to clipboard!');
+                });
+            }
+        }
+        
+        function copyResult() {
+            const url = window.location.origin + '/philosophy-quiz';
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-feather="check"></i> Copied!';
+                feather.replace();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    feather.replace();
+                }, 2000);
+            });
+        }
+        
+        // Celebration animation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add sparkle effect
+            createSparkles();
+        });
+        
+        function createSparkles() {
+            const resultHeader = document.querySelector('.result-header');
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.innerHTML = '✨';
+                    sparkle.style.position = 'absolute';
+                    sparkle.style.left = Math.random() * resultHeader.offsetWidth + 'px';
+                    sparkle.style.top = Math.random() * resultHeader.offsetHeight + 'px';
+                    sparkle.style.fontSize = '1.5rem';
+                    sparkle.style.animation = 'fadeInOut 2s ease-in-out forwards';
+                    sparkle.style.pointerEvents = 'none';
+                    resultHeader.style.position = 'relative';
+                    resultHeader.appendChild(sparkle);
+                    
+                    setTimeout(() => {
+                        if (sparkle.parentNode) {
+                            sparkle.parentNode.removeChild(sparkle);
+                        }
+                    }, 2000);
+                }, i * 100);
+            }
+        }
+        
+        // Add CSS for sparkle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: scale(0) translateY(0); }
+                50% { opacity: 1; transform: scale(1) translateY(-20px); }
+                100% { opacity: 0; transform: scale(0.5) translateY(-40px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

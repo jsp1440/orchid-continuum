@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Satellite World Map - Five Cities Orchid Society</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        #satellite-map { 
+            height: 80vh; 
+            width: 100%; 
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+        
+        .control-button {
+            background: linear-gradient(135deg, #7A4B8E, #9B59B6);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            margin: 3px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .orchid-marker {
+            background: radial-gradient(circle, #ff6b6b, #ee5a52);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .space-view-header {
+            background: linear-gradient(135deg, #0f3460 0%, #16537e 50%, #1e6fa7 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .satellite-info {
+            background: rgba(15, 52, 96, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        
+        .zoom-guide {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 12px;
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="space-view-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="globe" class="me-3" style="width: 40px; height: 40px;"></i>
+                        <div>
+                            <h1 class="display-5 fw-bold mb-2">🛰️ Enhanced Satellite World Map</h1>
+                            <p class="lead mb-0">Explore orchid habitats from space - zoom from continents to individual locations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-light">
+                        <i data-feather="home" class="me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-fluid">
+        <!-- Satellite Info Panel -->
+        <div class="satellite-info">
+            <h4><i data-feather="satellite" class="me-2"></i>Real Satellite Imagery</h4>
+            <p>This map uses actual satellite imagery from space. Start zoomed out to see Earth from orbit, then zoom in to explore specific continents, countries, and orchid habitats. The satellite view shows real land masses, oceans, and terrain features.</p>
+        </div>
+        
+        <!-- Map Container with Overlays -->
+        <div style="position: relative;">
+            <div id="satellite-map"></div>
+            
+            <!-- Map Controls -->
+            <div class="map-controls">
+                <h6 class="text-white mb-3"><i data-feather="settings" class="me-2"></i>Map Controls</h6>
+                <div class="mb-3">
+                    <button class="control-button" onclick="resetView()">🌍 Global View</button>
+                    <button class="control-button" onclick="showOrchidHotspots()">🌺 Orchid Hotspots</button>
+                </div>
+                <div class="mb-3">
+                    <button class="control-button" onclick="toggleLayer('hybrid')">🛰️ Satellite</button>
+                    <button class="control-button" onclick="toggleLayer('terrain')">🏔️ Terrain</button>
+                </div>
+                <div>
+                    <button class="control-button" onclick="focusContinent('asia')">🏯 Asia</button>
+                    <button class="control-button" onclick="focusContinent('americas')">🌎 Americas</button>
+                    <button class="control-button" onclick="focusContinent('africa')">🌍 Africa</button>
+                </div>
+            </div>
+            
+            <!-- Zoom Guide -->
+            <div class="zoom-guide">
+                <strong>🔍 Zoom Guide:</strong><br>
+                • Scroll to zoom in/out<br>
+                • Double-click to zoom in<br>
+                • Drag to pan around<br>
+                • Use +/- buttons<br>
+                <hr>
+                <strong>Current View:</strong><br>
+                <span id="zoom-level">Global (Zoom: 2)</span>
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <h6><i data-feather="map-pin" class="me-2"></i>Legend</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="orchid-marker me-2" style="width: 12px; height: 12px; animation: none;"></div>
+                    <span>Orchid Locations</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <div style="background: #2ecc71; width: 12px; height: 12px; border-radius: 2px;" class="me-2"></div>
+                    <span>High Diversity Areas</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="background: #f39c12; width: 12px; height: 12px; border-radius: 2px;" class="me-2"></div>
+                    <span>Research Sites</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary">
+                    <div class="card-body text-center">
+                        <h3 id="orchid-count">{{ orchid_count or '230+' }}</h3>
+                        <p class="mb-0">Orchid Locations</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success">
+                    <div class="card-body text-center">
+                        <h3>47</h3>
+                        <p class="mb-0">Countries</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h3>7</h3>
+                        <p class="mb-0">Continents</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-dark">
+                    <div class="card-body text-center">
+                        <h3>21</h3>
+                        <p class="mb-0">35°N Parallel</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let map;
+        let orchidMarkers = [];
+        let currentLayer = 'satellite';
+        
+        // Initialize the satellite map
+        function initSatelliteMap() {
+            // Create map starting with global view (like seeing Earth from space)
+            map = L.map('satellite-map', {
+                center: [20, 0], // Global center
+                zoom: 2, // Space view
+                zoomControl: true,
+                worldCopyJump: true
+            });
+            
+            // Satellite imagery layer (Google Satellite alternative)
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri, Satellite Imagery',
+                maxZoom: 18,
+                id: 'satellite'
+            });
+            
+            // Terrain layer
+            const terrainLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri, Terrain',
+                maxZoom: 18,
+                id: 'terrain'
+            });
+            
+            // Hybrid layer (satellite with labels)
+            const hybridLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri, Hybrid',
+                maxZoom: 18,
+                id: 'hybrid'
+            });
+            
+            // Start with satellite view
+            satelliteLayer.addTo(map);
+            
+            // Track zoom level
+            map.on('zoomend', function() {
+                updateZoomLevel();
+            });
+            
+            // Load orchid data
+            loadOrchidLocations();
+            
+            console.log('🛰️ Enhanced satellite map initialized');
+        }
+        
+        // Load real orchid locations from the database
+        async function loadOrchidLocations() {
+            try {
+                const response = await fetch('/mapping/api/coordinates');
+                const data = await response.json();
+                
+                if (data.coordinates && data.coordinates.length > 0) {
+                    data.coordinates.forEach(orchid => {
+                        if (orchid.lat && orchid.lng) {
+                            const marker = L.circleMarker([orchid.lat, orchid.lng], {
+                                radius: 6,
+                                fillColor: '#ff6b6b',
+                                color: '#fff',
+                                weight: 2,
+                                opacity: 1,
+                                fillOpacity: 0.8,
+                                className: 'orchid-marker'
+                            });
+                            
+                            marker.bindPopup(`
+                                <div style="color: #333; font-size: 14px;">
+                                    <h6>${orchid.name || 'Orchid Location'}</h6>
+                                    <p><strong>Location:</strong> ${orchid.location || 'Unknown'}</p>
+                                    <p><strong>Coordinates:</strong> ${orchid.lat.toFixed(4)}, ${orchid.lng.toFixed(4)}</p>
+                                    ${orchid.image ? `<img src="${orchid.image}" style="width: 150px; height: 100px; object-fit: cover; border-radius: 5px;">` : ''}
+                                </div>
+                            `);
+                            
+                            marker.addTo(map);
+                            orchidMarkers.push(marker);
+                        }
+                    });
+                    
+                    console.log(`🌺 Loaded ${orchidMarkers.length} orchid locations on satellite map`);
+                } else {
+                    // Add sample hotspots for demonstration
+                    addSampleOrchidHotspots();
+                }
+            } catch (error) {
+                console.error('Error loading orchid locations:', error);
+                addSampleOrchidHotspots();
+            }
+        }
+        
+        // Add sample orchid hotspots
+        function addSampleOrchidHotspots() {
+            const hotspots = [
+                { lat: -22.9068, lng: -43.1729, name: "Brazilian Atlantic Forest", country: "Brazil" },
+                { lat: 7.8731, lng: 80.7718, name: "Sri Lankan Highlands", country: "Sri Lanka" },
+                { lat: -6.2088, lng: 106.8456, name: "Indonesian Rainforests", country: "Indonesia" },
+                { lat: 14.5995, lng: 120.9842, name: "Philippine Archipelago", country: "Philippines" },
+                { lat: -25.2744, lng: 133.7751, name: "Australian Outback", country: "Australia" },
+                { lat: 9.7489, lng: 83.7534, name: "Costa Rican Cloud Forest", country: "Costa Rica" },
+                { lat: 35.8617, lng: 104.1954, name: "Chinese Mountainous Regions", country: "China" },
+                { lat: -18.7669, lng: 46.8691, name: "Madagascar Orchid Haven", country: "Madagascar" }
+            ];
+            
+            hotspots.forEach(spot => {
+                const marker = L.circleMarker([spot.lat, spot.lng], {
+                    radius: 8,
+                    fillColor: '#ff6b6b',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8,
+                    className: 'orchid-marker'
+                });
+                
+                marker.bindPopup(`
+                    <div style="color: #333;">
+                        <h6>${spot.name}</h6>
+                        <p><strong>Country:</strong> ${spot.country}</p>
+                        <p><strong>Coordinates:</strong> ${spot.lat.toFixed(4)}, ${spot.lng.toFixed(4)}</p>
+                        <p><em>High orchid biodiversity area</em></p>
+                    </div>
+                `);
+                
+                marker.addTo(map);
+                orchidMarkers.push(marker);
+            });
+            
+            console.log('🌺 Added sample orchid hotspots to satellite map');
+        }
+        
+        // Control functions
+        function resetView() {
+            map.setView([20, 0], 2);
+            updateZoomLevel();
+        }
+        
+        function showOrchidHotspots() {
+            if (orchidMarkers.length > 0) {
+                const group = new L.featureGroup(orchidMarkers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        function toggleLayer(layerType) {
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            let newLayer;
+            if (layerType === 'satellite') {
+                newLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri, Satellite',
+                    maxZoom: 18
+                });
+            } else if (layerType === 'terrain') {
+                newLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri, Terrain',
+                    maxZoom: 18
+                });
+            } else if (layerType === 'hybrid') {
+                newLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri, Hybrid',
+                    maxZoom: 18
+                });
+            }
+            
+            newLayer.addTo(map);
+            currentLayer = layerType;
+        }
+        
+        function focusContinent(continent) {
+            const coordinates = {
+                'asia': [34.0479, 100.6197],
+                'americas': [8.7832, -55.4915],
+                'africa': [-8.7832, 34.5085],
+                'europe': [54.526, 15.2551],
+                'oceania': [-25.2744, 133.7751],
+                'antarctica': [-82.8628, 135.0000]
+            };
+            
+            if (coordinates[continent]) {
+                map.setView(coordinates[continent], 4);
+                updateZoomLevel();
+            }
+        }
+        
+        function updateZoomLevel() {
+            const zoom = map.getZoom();
+            let viewType = 'Global';
+            
+            if (zoom >= 3 && zoom < 5) viewType = 'Continental';
+            else if (zoom >= 5 && zoom < 8) viewType = 'Regional';
+            else if (zoom >= 8 && zoom < 12) viewType = 'Local';
+            else if (zoom >= 12) viewType = 'Detailed';
+            
+            document.getElementById('zoom-level').textContent = `${viewType} (Zoom: ${zoom})`;
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initSatelliteMap();
+            feather.replace();
+        });
+    </script>
+</body>
+</html>

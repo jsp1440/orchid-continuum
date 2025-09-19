@@ -1,0 +1,56 @@
+Goal: Build a self-contained “Orchid of the Day” widget that reads from my existing Orchid Continuum database (metadata + images), formats scientific names correctly, shows one entry per day without repeats, and embeds on a Neon One (FCOS.org) page with one <script> tag + one <div>. Senior-friendly, accessible, and FCOS-branded.
+
+Data (use my existing Orchid Continuum)
+
+Do NOT invent data or fetch other sites. Use MY database only.
+Create a small, swappable Data Connector that supports any one of these (I will choose at build time by setting DATA_SOURCE.type):
+	1.	Google Sheets (my master sheet)
+
+	•	Read-only public CSV export URL I’ll provide (e.g., https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<GID>).
+	•	Expect headers (case-insensitive, map flexibly):
+genus, species, variety, hybrid, grex, clonal_name, infraspecific_rank, orchid_group, title, caption, image_url, photographer, credit, license, license_url, native_range, habitat, elevation_m, blooming_season, culture_notes, date, tags, accession_id
+	•	Treat blank fields gracefully.
+
+	2.	JSON/REST (my API / static JSON file)
+
+	•	GET a JSON array at a URL I’ll provide. Same fields as above; tolerate extras.
+
+	3.	Local JSON (embedded file for demo)
+
+	•	Include a sample-data.json and point to it if DATA_SOURCE.type === 'local'.
+
+Data rules
+	•	Name formatting:
+	•	Title = Genus species (italicized) + optional infraspecific rank & epithet (e.g., var. alba) + hybrid/grex/clonal name in single quotes if present.
+	•	If hybrid or grex exists and no species, show hybrid/grex title; keep italics only for valid botanical epithets.
+	•	If orchid_group present (e.g., “Cattleya”, “Intergeneric”), show as a small chip.
+	•	Caption: Prefer caption; else auto-compose from available fields (native range, habitat, elevation, blooming season, interesting culture notes). Never exceed ~55 words.
+	•	Image: use image_url directly (already hosted in my Continuum). Add alt = concise scientific name + one key detail.
+	•	Credit & license: Show credit (or photographer) under image. If license present, render a small label with a link to license_url.
+	•	Tags: ignore for display, but keep for future filters.
+
+Rotation logic
+	•	Show one orchid per calendar day (local time America/Los_Angeles).
+	•	Deterministic selection: hash the date → index into the full set filtered to “eligible” rows (image_url present).
+	•	No repeats until all entries are used: keep a simple localStorage ledger of last N shown indices; if collision, increment index (wrap).
+	•	If dataset is tiny (<7), allow repeats but avoid yesterday’s entry.
+
+Rendering & style
+	•	Embed with one line: I paste a <script src=".../orchid-of-the-day.js" defer></script> and place <div id="orchid-of-the-day"></div> anywhere.
+	•	The script creates a shadow root on #orchid-of-the-day to avoid Neon One CSS conflicts.
+	•	Layout (responsive, single card):
+	•	Title (H1): Genus species (italic), optional adornments per rules above.
+	•	Subline chips (small): orchid_group, blooming_season (if available).
+	•	Image (max-width 560px; full-width on mobile; lazy-load).
+	•	Caption paragraph (~2–4 sentences).
+	•	Credit line (small).
+	•	Typography: Senior-friendly: base 18px, line-height 1.6.
+	•	Color: background #f4fff4; title #2e7d32; body text #111; chip border #2e7d32.
+	•	A11y:
+	•	Meets WCAG AA color contrast; focus states for any links; aria-live="polite" on container.
+	•	alt text from data; fallback “Orchid photograph for ”.
+	•	Fallback: if no data, render a friendly placeholder card: “Today’s orchid will appear here soon.”
+
+Configuration (top of file)
+
+Provide a single CONFIG object the editor can adjust:

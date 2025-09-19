@@ -1,0 +1,272 @@
+# === Orchid Continuum quick installer ===
+# This creates a new lab project page, a weather widget, a photo metadata extractor,
+# and appends a Flask route so the page is reachable.
+
+mkdir -p templates/lab widgets scripts
+
+# 1) Create the GA3 Sarcochilus project page (HTML)
+cat > templates/lab/ga3_sarcochilus.html <<'HTML'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GA₃ vs Orchid–Mycorrhiza in Sarcochilus</title>
+  <style>
+    :root { --fg:#222; --muted:#666; --accent:#2a7; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; padding:0; color:var(--fg); }
+    .wrap { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+    h1 { margin: 0 0 6px 0; font-size: 28px; }
+    .sub { color: var(--muted); margin-bottom: 18px; }
+    section { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+    .badge { display:inline-block; padding:4px 8px; background:#f4f8f6; border:1px solid #e4eee8; border-radius:999px; font-size:12px; margin-right:6px; }
+    ul { margin: 8px 0 8px 22px; }
+    .kv { display:grid; grid-template-columns: 160px 1fr; gap:8px 16px; }
+    .kv div.k { color:var(--muted); }
+    footer { margin:28px 0; color:var(--muted); font-size: 13px; }
+    .wxbox { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>GA₃ vs Orchid–Mycorrhiza in <em>Sarcochilus</em></h1>
+    <div class="sub">Project ID: GA3-Sarcochilus-001 • Status: proposed</div>
+
+    <section class="kv">
+      <div class="k">Hypothesis</div>
+      <div>H1: Low-dose GA₃ applied pre-induction increases spiking/flowering.<br>H2: The same GA₃ reduces orchid–mycorrhiza (OM) root colonization.</div>
+
+      <div class="k">Why it matters</div>
+      <div>Growers may coax blooms, but at a cost to beneficial fungal partners that support nutrition and resilience.</div>
+
+      <div class="k">Design (5–6 weeks)</div>
+      <div>
+        <ul>
+          <li>Groups (n≈10 plants/group):
+            <ul>
+              <li><strong>Control</strong>: water + 0.05% non-ionic surfactant</li>
+              <li><strong>GA-Low</strong>: GA₃ 50 mg/L</li>
+              <li><strong>GA-Med</strong>: GA₃ 125 mg/L</li>
+            </ul>
+          </li>
+          <li>Foliar spray weekly ×3 (AM); keep all else constant.</li>
+          <li>Record: days to visible spike, % plants spiking, spikes/plant, flowers/spike, flower diameter; note phytotoxicity.</li>
+          <li>Optional OM check: clear &amp; stain roots (ink–vinegar), estimate % colonization.</li>
+        </ul>
+      </div>
+
+      <div class="k">Plants</div>
+      <div>Prefer same clone/cross, uniform size/age (≥30 plants total). If 2 crosses are used, treat “Cross” as a block (aim 60 plants).</div>
+
+      <div class="k">Timing</div>
+      <div>Start ~3–4 weeks before typical induction for your climate (e.g., mid-March for April initiation in SLO).</div>
+
+      <div class="k">Data/Outputs</div>
+      <div>Upload CSV + 3–5 photos, link any microscope images. Optional: save duplicate root segments (RNAlater or frozen) for future DNA/RNA assays.</div>
+
+      <div class="k">Contact</div>
+      <div><a href="mailto:fcospresident@gmail.com">fcospresident@gmail.com</a></div>
+    </section>
+
+    <section>
+      <div class="badge">Tags: physiology</div>
+      <div class="badge">gibberellin</div>
+      <div class="badge">mycorrhiza</div>
+      <div class="badge">Sarcochilus</div>
+    </section>
+
+    <section>
+      <h3>Weather at Photo Capture</h3>
+      <p class="sub">This badge shows the temperature, humidity and VPD when a study photo was taken.</p>
+      <div id="wx-here" class="wxbox">Loading weather…</div>
+    </section>
+
+    <footer>Orchid Continuum • GA₃ Sarcochilus Study Card</footer>
+  </div>
+
+  <script src="/widgets/weather_widget.js"></script>
+  <script>
+    // Example values — replace per-photo with the actual time and coordinates
+    if (window.orchidWeatherBadge) {
+      orchidWeatherBadge({
+        container: document.getElementById('wx-here'),
+        lat: 35.310, lon: -120.832,        // your greenhouse/site
+        isoTime: '2025-04-10T10:15:00Z'    // photo capture time (UTC)
+      });
+    }
+  </script>
+</body>
+</html>
+HTML
+
+# 2) Install the weather widget (historic weather + VPD badge)
+cat > widgets/weather_widget.js <<'JS'
+/**
+ * Orchid Continuum Weather Badge
+ * Given timestamp (ISO 8601) and lat/lon, fetch historical weather & render a small badge.
+ * Uses Open-Meteo archive (no API key). https://open-meteo.com/
+ */
+async function orchidWeatherBadge({container, lat, lon, isoTime}) {
+  if (!container) return;
+  try {
+    const dt = new Date(isoTime);
+    const date = dt.toISOString().slice(0,10);
+    const hour = dt.getUTCHours();
+    const url = new URL('https://archive-api.open-meteo.com/v1/archive');
+    url.searchParams.set('latitude', lat);
+    url.searchParams.set('longitude', lon);
+    url.searchParams.set('start_date', date);
+    url.searchParams.set('end_date', date);
+    url.searchParams.set('hourly', 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m');
+    url.searchParams.set('timezone', 'UTC');
+    const resp = await fetch(url.toString());
+    const data = await resp.json();
+    const idx = hour; // hour-of-day in UTC
+    const T = data.hourly?.temperature_2m?.[idx];
+    const RH = data.hourly?.relative_humidity_2m?.[idx];
+    const DP = data.hourly?.dew_point_2m?.[idx];
+    const P  = data.hourly?.pressure_msl?.[idx];
+    const W  = data.hourly?.wind_speed_10m?.[idx];
+
+    function vpd_kpa_c(Tc, RHp) {
+      const es = 0.6108 * Math.exp((17.27*Tc)/(Tc+237.3)); // kPa
+      return es * (1 - (RHp/100));
+    }
+    const vpd = (T!=null && RH!=null) ? vpd_kpa_c(T, RH).toFixed(2) : '—';
+
+    const badge = document.createElement('div');
+    badge.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    badge.style.fontSize = '12px';
+    badge.style.border = '1px solid #ddd';
+    badge.style.borderRadius = '8px';
+    badge.style.padding = '8px 10px';
+    badge.style.display = 'inline-flex';
+    badge.style.gap = '10px';
+    badge.style.alignItems = 'center';
+    badge.style.background = '#fafafa';
+
+    badge.innerHTML = `
+      <strong>Weather @ capture</strong>
+      <span>Temp: ${T!=null?T.toFixed(1)+'°C':'—'}</span>
+      <span>RH: ${RH!=null?RH+'%':'—'}</span>
+      <span>VPD: ${vpd} kPa</span>
+      <span>Pressure: ${P!=null?P.toFixed(0)+' hPa':'—'}</span>
+      <span>Wind: ${W!=null?W.toFixed(1)+' m/s':'—'}</span>
+    `;
+    container.replaceChildren(badge);
+  } catch (e) {
+    container.textContent = 'Weather unavailable';
+    console.error('Weather badge error', e);
+  }
+}
+window.orchidWeatherBadge = orchidWeatherBadge;
+JS
+
+# 3) Save a photo metadata extractor (so you can see what fields auto-fill today)
+cat > scripts/photo_metadata_extractor.py <<'PY'
+#!/usr/bin/env python3
+# Extract EXIF + basic image features; outputs a CSV showing filled fields per photo.
+import os, sys, csv
+from PIL import Image, ExifTags
+
+def exif_dict(img_path):
+  try:
+    img = Image.open(img_path)
+    exif = img._getexif() or {}
+    return {ExifTags.TAGS.get(k,k):v for k,v in exif.items()}
+  except Exception:
+    return {}
+
+def parse_dt(exif):
+  raw = exif.get('DateTimeOriginal') or exif.get('DateTime')
+  if not raw: return ''
+  raw = raw.replace(':','-',2)  # 2024-05-02 14:33:10
+  return raw
+
+def dominant_color(img_path, resize=128):
+  try:
+    img = Image.open(img_path).convert('RGB').resize((resize, resize))
+    from collections import Counter
+    (r,g,b),_ = Counter(list(img.getdata())).most_common(1)[0]
+    return f"({r},{g},{b})"
+  except Exception:
+    return ''
+
+def main(folder):
+  out_csv = os.path.join(folder, 'photo_metadata_extracted.csv')
+  fields = ['file','capture_datetime_local','gps_lat','gps_lon','width','height','orientation','fnumber','iso','exposure_time','dominant_color_rgb','filled_count','total_possible']
+  total_possible = len(fields)-2
+  with open(out_csv,'w',newline='',encoding='utf-8') as f:
+    w = csv.DictWriter(f, fieldnames=fields); w.writeheader()
+    for name in os.listdir(folder):
+      if not name.lower().endswith(('.jpg','.jpeg','.png','.tif','.tiff')): continue
+      p = os.path.join(folder,name)
+      row = {k:'' for k in fields}; row['file']=name
+      ex = exif_dict(p)
+      row['capture_datetime_local'] = parse_dt(ex)
+      gps = ex.get('GPSInfo') or {}
+      def gps_coord(r):
+        try:
+          d=r[0][0]/r[0][1]; m=r[1][0]/r[1][1]; s=r[2][0]/r[2][1]; return d+m/60+s/3600
+        except: return None
+      lat = lon = None
+      if gps:
+        gl=gps.get(2); gr=gps.get(1); gL=gps.get(4); gR=gps.get(3)
+        if gl and gL:
+          lat=gps_coord(gl); lon=gps_coord(gL)
+          if gr in ['S','s']: lat=-lat
+          if gR in ['W','w']: lon=-lon
+      row['gps_lat'] = f"{lat:.6f}" if isinstance(lat,float) else ''
+      row['gps_lon'] = f"{lon:.6f}" if isinstance(lon,float) else ''
+      try:
+        with Image.open(p) as im: row['width'],row['height']=im.size
+      except: pass
+      row['orientation'] = ex.get('Orientation','')
+      row['fnumber']     = ex.get('FNumber','')
+      row['iso']         = ex.get('ISOSpeedRatings','')
+      row['exposure_time']=ex.get('ExposureTime','')
+      row['dominant_color_rgb']=dominant_color(p)
+      filled = sum(1 for k in fields if k not in ['file','filled_count','total_possible'] and row.get(k) not in ['',None])
+      row['filled_count']=filled; row['total_possible']=total_possible
+      w.writerow(row)
+  print("Wrote:", out_csv)
+
+if __name__ == '__main__':
+  if len(sys.argv)<2:
+    print("Usage: python scripts/photo_metadata_extractor.py /path/to/photos"); sys.exit(1)
+  main(sys.argv[1])
+PY
+
+# 4) Append a new Flask route so the page loads at /lab/ga3_sarcochilus
+python - <<'PY'
+import os
+route_block = """
+@app.route("/lab/ga3_sarcochilus")
+def ga3_sarcochilus():
+    return render_template("lab/ga3_sarcochilus.html")
+"""
+candidates = ["lab_routes.py","routes.py","app.py"]
+found = None
+for p in candidates:
+    if os.path.exists(p):
+        found = p; break
+if not found:
+    print("Could not find lab_routes.py/routes.py/app.py. Tell me the file name that defines your @app routes.")
+else:
+    s = open(found,'r',encoding='utf-8',errors='ignore').read()
+    if "ga3_sarcochilus" in s:
+        print("Route already present in", found)
+    else:
+        with open(found,'a',encoding='utf-8') as f: f.write("\n\n"+route_block+"\n")
+        print("Added route to", found)
+PY
+
+echo
+echo "=== NEXT STEP (1 minute) ==="
+echo "Add this line to your lab index page (e.g., templates/research_lab.html) so it shows in the list:"
+echo '<li><a href="/lab/ga3_sarcochilus">GA₃ vs Orchid–Mycorrhiza in <em>Sarcochilus</em></a></li>'
+echo
+echo "Test the new page at:  /lab/ga3_sarcochilus"
+echo "To see what metadata fields auto-fill today, run:"
+echo "  pip install pillow"
+echo "  python scripts/photo_metadata_extractor.py uploads   # or another photo folder"

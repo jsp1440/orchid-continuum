@@ -1,0 +1,724 @@
+{% extends "base.html" %}
+
+{% block title %}Education Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="book-open" class="me-2"></i>
+                            Education Hub
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-dark btn-sm" onclick="switchTab('glossary')">
+                                <i data-feather="book" class="me-1"></i>Glossary
+                            </button>
+                            <button type="button" class="btn btn-outline-dark btn-sm" onclick="switchTab('crossword')">
+                                <i data-feather="grid" class="me-1"></i>Crossword
+                            </button>
+                            <button type="button" class="btn btn-outline-dark btn-sm" onclick="switchTab('flashcards')">
+                                <i data-feather="layers" class="me-1"></i>Flashcards
+                            </button>
+                            <button type="button" class="btn btn-outline-dark btn-sm" onclick="switchTab('learning')">
+                                <i data-feather="trending-up" class="me-1"></i>Learning
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Comprehensive botanical terminology and interactive learning tools</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Tab Content Container -->
+                    <div id="education-content" style="min-height: 600px;">
+                        <!-- Content will be loaded dynamically based on tab -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'glossary';
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update URL without refresh
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-dark');
+        btn.classList.add('btn-outline-dark');
+    });
+    event.target.classList.remove('btn-outline-dark');
+    event.target.classList.add('btn-dark');
+    
+    // Load content for tab
+    loadTabContent(tab);
+    
+    // Emit event for embed integration
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_education_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('education-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-warning" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'glossary':
+                await renderGlossaryTab();
+                break;
+            case 'crossword':
+                await renderCrosswordTab();
+                break;
+            case 'flashcards':
+                await renderFlashcardsTab();
+                break;
+            case 'learning':
+                await renderLearningTab();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderGlossaryTab() {
+    document.getElementById('education-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- Search and Filters -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Search Botanical Terms</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="Search terms..." id="glossary-search" onkeyup="searchGlossary()">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Category</label>
+                                <select class="form-select" id="category-filter" onchange="filterGlossary()">
+                                    <option value="all">All Categories</option>
+                                    <option value="morphology">Morphology</option>
+                                    <option value="growth">Growth Types</option>
+                                    <option value="botanical">Botanical</option>
+                                    <option value="cultural">Cultural</option>
+                                    <option value="awards">AOS Awards</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Difficulty</label>
+                                <select class="form-select" id="difficulty-filter" onchange="filterGlossary()">
+                                    <option value="all">All Levels</option>
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-warning" onclick="loadRandomTerm()">Random Term</button>
+                                <a href="https://www.aos.org/orchids/orchid-basics/orchid-glossary" target="_blank" class="btn btn-outline-warning">
+                                    <i data-feather="external-link" class="me-1"></i>AOS.org Extended Glossary
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Categories -->
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Quick Access</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-warning btn-sm" onclick="loadCategory('morphology')">Flower Parts</button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="loadCategory('growth')">Growth Types</button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="loadCategory('cultural')">Growing Terms</button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="loadCategory('awards')">AOS Awards</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <!-- Glossary Display -->
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Botanical Terms Dictionary</h6>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-warning" onclick="viewMode = 'list'; renderGlossaryList()">List</button>
+                                <button class="btn btn-outline-warning" onclick="viewMode = 'cards'; renderGlossaryCards()">Cards</button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                            <div id="glossary-display">
+                                <!-- Sample Terms -->
+                                <div class="glossary-entry mb-3 border-bottom pb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="text-warning">Pseudobulb</h5>
+                                            <p class="mb-1">Swollen stem that stores water and nutrients</p>
+                                            <small class="text-muted">
+                                                <span class="badge bg-info me-1">Morphology</span>
+                                                <span class="badge bg-warning me-1">Medium</span>
+                                                <span class="badge bg-secondary">10 letters</span>
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-outline-warning btn-sm" onclick="addToStudyList('pseudobulb')">
+                                            <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="glossary-entry mb-3 border-bottom pb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="text-warning">Lip</h5>
+                                            <p class="mb-1">Modified petal that serves as landing platform for pollinators</p>
+                                            <small class="text-muted">
+                                                <span class="badge bg-info me-1">Morphology</span>
+                                                <span class="badge bg-success me-1">Easy</span>
+                                                <span class="badge bg-secondary">3 letters</span>
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-outline-warning btn-sm" onclick="addToStudyList('lip')">
+                                            <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="glossary-entry mb-3 border-bottom pb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="text-warning">Column</h5>
+                                            <p class="mb-1">Fused reproductive structure containing stamens and pistil</p>
+                                            <small class="text-muted">
+                                                <span class="badge bg-info me-1">Morphology</span>
+                                                <span class="badge bg-warning me-1">Medium</span>
+                                                <span class="badge bg-secondary">6 letters</span>
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-outline-warning btn-sm" onclick="addToStudyList('column')">
+                                            <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="glossary-entry mb-3 border-bottom pb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="text-warning">Epiphyte</h5>
+                                            <p class="mb-1">Plant growing on another plant without being parasitic</p>
+                                            <small class="text-muted">
+                                                <span class="badge bg-success me-1">Growth</span>
+                                                <span class="badge bg-warning me-1">Medium</span>
+                                                <span class="badge bg-secondary">8 letters</span>
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-outline-warning btn-sm" onclick="addToStudyList('epiphyte')">
+                                            <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+async function renderCrosswordTab() {
+    document.getElementById('education-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <!-- Crossword Settings -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Crossword Generator</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Difficulty</label>
+                                <select class="form-select" id="crossword-difficulty">
+                                    <option value="beginner">Beginner (Easy terms)</option>
+                                    <option value="intermediate" selected>Intermediate</option>
+                                    <option value="advanced">Advanced (Hard terms)</option>
+                                    <option value="mixed">Mixed Difficulty</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Theme</label>
+                                <select class="form-select" id="crossword-theme">
+                                    <option value="all">All Terms</option>
+                                    <option value="morphology">Flower Parts</option>
+                                    <option value="growth">Growth & Habitat</option>
+                                    <option value="cultural">Growing Tips</option>
+                                    <option value="awards">AOS Awards</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Size</label>
+                                <select class="form-select" id="crossword-size">
+                                    <option value="small">Small (10x10)</option>
+                                    <option value="medium" selected>Medium (15x15)</option>
+                                    <option value="large">Large (20x20)</option>
+                                </select>
+                            </div>
+                            <div class="d-grid gap-2 mb-3">
+                                <button class="btn btn-warning" onclick="generateNewCrossword()">
+                                    <i data-feather="refresh-cw" class="me-1"></i>Generate New Puzzle
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="validateCrossword()">
+                                    <i data-feather="check-circle" class="me-1"></i>Check Answers
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="showSolution()">
+                                    <i data-feather="eye" class="me-1"></i>Show Solution
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="small">Progress</h6>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-warning" style="width: 35%" id="crossword-progress">7/20 completed</div>
+                                </div>
+                                <small class="text-muted">35% complete</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <!-- Crossword Grid -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Interactive Crossword Puzzle</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="crossword-grid" style="height: 400px; overflow: auto;">
+                                <!-- Crossword grid will be generated here -->
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="text-center">
+                                        <i data-feather="grid" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                        <p class="text-muted">Click "Generate New Puzzle" to create a crossword</p>
+                                        <p class="small text-muted">Uses your AOS botanical terms glossary</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <!-- Clues -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Clues</h6>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            <div id="crossword-clues">
+                                <h6 class="text-warning">Across</h6>
+                                <div class="mb-3">
+                                    <small>
+                                        <strong>1.</strong> Swollen stem that stores water (10)<br>
+                                        <strong>5.</strong> Plant growing on another plant (8)<br>
+                                        <strong>7.</strong> Modified petal landing platform (3)<br>
+                                        <strong>9.</strong> Outer whorl of flower parts (5)<br>
+                                        <strong>12.</strong> Waxy pollen masses (8)<br>
+                                    </small>
+                                </div>
+                                
+                                <h6 class="text-warning">Down</h6>
+                                <div>
+                                    <small>
+                                        <strong>2.</strong> Fused reproductive structure (6)<br>
+                                        <strong>3.</strong> Part of stamen containing pollen (6)<br>
+                                        <strong>4.</strong> Horizontal underground stem (7)<br>
+                                        <strong>6.</strong> Inner whorl of flower parts (5)<br>
+                                        <strong>8.</strong> Hollow projection from lip (4)<br>
+                                        <strong>10.</strong> Spongy layer on aerial roots (7)<br>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderFlashcardsTab() {
+    document.getElementById('education-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Flashcard Settings</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Study Set</label>
+                                <select class="form-select" id="flashcard-set">
+                                    <option value="basics">Orchid Basics (20 cards)</option>
+                                    <option value="morphology">Flower Morphology (15 cards)</option>
+                                    <option value="growth">Growth Types (12 cards)</option>
+                                    <option value="awards">AOS Awards (25 cards)</option>
+                                    <option value="custom">My Study List (0 cards)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Mode</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="flashcard-mode" value="term-to-def" checked>
+                                    <label class="form-check-label">Term → Definition</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="flashcard-mode" value="def-to-term">
+                                    <label class="form-check-label">Definition → Term</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="flashcard-mode" value="mixed">
+                                    <label class="form-check-label">Mixed Mode</label>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-warning" onclick="startFlashcards()">Start Study Session</button>
+                                <button class="btn btn-outline-warning" onclick="shuffleCards()">Shuffle Cards</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Flashcard Study</h6>
+                            <div class="badge bg-warning text-dark">Card 1 of 20</div>
+                        </div>
+                        <div class="card-body">
+                            <div id="flashcard-display" style="height: 300px;">
+                                <div class="flashcard bg-dark border border-warning rounded p-4 h-100 d-flex flex-column justify-content-center text-center position-relative" onclick="flipCard()">
+                                    <div class="flashcard-front">
+                                        <h3 class="text-warning mb-3">Pseudobulb</h3>
+                                        <p class="text-muted">Click to reveal definition</p>
+                                    </div>
+                                    <div class="flashcard-back" style="display: none;">
+                                        <h5 class="text-warning mb-3">Definition</h5>
+                                        <p>Swollen stem that stores water and nutrients, characteristic of sympodial orchids</p>
+                                        <small class="text-muted">Category: Morphology | Difficulty: Medium</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-danger" onclick="markDifficult()">
+                                            <i data-feather="x" class="me-1"></i>Need Practice
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-success" onclick="markKnown()">
+                                            <i data-feather="check" class="me-1"></i>I Know This
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-3">
+                                <button class="btn btn-outline-warning" onclick="previousCard()" disabled>
+                                    <i data-feather="chevron-left" class="me-1"></i>Previous
+                                </button>
+                                <button class="btn btn-warning" onclick="nextCard()">
+                                    Next<i data-feather="chevron-right" class="ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderLearningTab() {
+    document.getElementById('education-content').innerHTML = `
+        <div class="p-3">
+            <h4>Learning Progress & Analytics</h4>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card bg-secondary mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Your Learning Journey</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3 text-center">
+                                    <h4 class="text-warning">127</h4>
+                                    <small class="text-muted">Terms Mastered</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h4 class="text-success">15</h4>
+                                    <small class="text-muted">Crosswords Completed</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h4 class="text-info">8</h4>
+                                    <small class="text-muted">Study Sessions</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h4 class="text-primary">92%</h4>
+                                    <small class="text-muted">Accuracy Rate</small>
+                                </div>
+                            </div>
+                            
+                            <h6>Progress by Category</h6>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Morphology</span>
+                                    <span>85%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Growth Types</span>
+                                    <span>72%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: 72%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Cultural Terms</span>
+                                    <span>68%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: 68%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>AOS Awards</span>
+                                    <span>45%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-danger" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-secondary mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Recommended Study</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="text-warning">Focus Areas</h6>
+                                <div class="badge bg-danger me-1 mb-1">AOS Awards</div>
+                                <div class="badge bg-warning me-1 mb-1">Advanced Terms</div>
+                                <div class="badge bg-info me-1 mb-1">Cultural Practices</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-warning btn-sm" onclick="startRecommendedStudy()">Start Recommended Session</button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="reviewDifficult()">Review Difficult Terms</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Study Streaks</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h3 class="text-warning">7</h3>
+                                <p class="text-muted mb-0">Day Streak</p>
+                                <small class="text-muted">Keep it up!</small>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Longest Streak</span>
+                                <span class="badge bg-warning">12 days</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>This Week</span>
+                                <span class="badge bg-success">5 sessions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+// Glossary functions
+function searchGlossary() {
+    const searchTerm = document.getElementById('glossary-search').value.toLowerCase();
+    console.log('Searching for:', searchTerm);
+    // Implement search functionality
+}
+
+function filterGlossary() {
+    const category = document.getElementById('category-filter').value;
+    const difficulty = document.getElementById('difficulty-filter').value;
+    console.log('Filtering:', { category, difficulty });
+    // Implement filter functionality
+}
+
+function loadRandomTerm() {
+    console.log('Loading random term');
+    // Implement random term loading
+}
+
+function loadCategory(category) {
+    document.getElementById('category-filter').value = category;
+    filterGlossary();
+}
+
+function addToStudyList(term) {
+    console.log('Adding to study list:', term);
+    // Implement study list functionality
+}
+
+// Crossword functions
+function generateNewCrossword() {
+    const difficulty = document.getElementById('crossword-difficulty').value;
+    const theme = document.getElementById('crossword-theme').value;
+    const size = document.getElementById('crossword-size').value;
+    
+    console.log('Generating crossword:', { difficulty, theme, size });
+    
+    // Show loading state
+    document.getElementById('crossword-grid').innerHTML = `
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+                <div class="spinner-border text-warning mb-3" role="status"></div>
+                <p>Generating your crossword puzzle...</p>
+            </div>
+        </div>
+    `;
+    
+    // Simulate crossword generation
+    setTimeout(() => {
+        // This would call the actual crossword generator API
+        fetch('/api/generate-crossword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ difficulty, theme, size })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Crossword generated:', data);
+            // Render the crossword grid
+        })
+        .catch(error => {
+            console.error('Error generating crossword:', error);
+            document.getElementById('crossword-grid').innerHTML = `
+                <div class="alert alert-warning">Error generating crossword. Please try again.</div>
+            `;
+        });
+    }, 1500);
+}
+
+function validateCrossword() {
+    console.log('Validating crossword answers');
+    // Implement validation
+}
+
+function showSolution() {
+    console.log('Showing crossword solution');
+    // Implement solution display
+}
+
+// Flashcard functions
+function startFlashcards() {
+    console.log('Starting flashcard session');
+    // Implement flashcard logic
+}
+
+function flipCard() {
+    const front = document.querySelector('.flashcard-front');
+    const back = document.querySelector('.flashcard-back');
+    
+    if (front.style.display !== 'none') {
+        front.style.display = 'none';
+        back.style.display = 'block';
+    } else {
+        front.style.display = 'block';
+        back.style.display = 'none';
+    }
+}
+
+function nextCard() {
+    console.log('Next flashcard');
+    // Implement next card logic
+}
+
+function previousCard() {
+    console.log('Previous flashcard');
+    // Implement previous card logic
+}
+
+function markKnown() {
+    console.log('Marking as known');
+    nextCard();
+}
+
+function markDifficult() {
+    console.log('Marking as difficult');
+    nextCard();
+}
+
+// Learning progress functions
+function startRecommendedStudy() {
+    console.log('Starting recommended study session');
+    switchTab('flashcards');
+}
+
+function reviewDifficult() {
+    console.log('Reviewing difficult terms');
+    switchTab('flashcards');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    // Set active button
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

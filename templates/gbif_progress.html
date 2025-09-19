@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% set title = "GBIF Collection Progress" %}
+
+{% block extra_head %}
+<style>
+.progress-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.progress-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+}
+
+.progress-bar {
+    height: 25px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00d4aa 0%, #00a085 50%, #00d4aa 100%);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.status-log {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.status-item {
+    margin-bottom: 8px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+}
+
+.status-setup { background: rgba(0, 123, 255, 0.2); }
+.status-collecting { background: rgba(255, 193, 7, 0.2); }
+.status-processing { background: rgba(40, 167, 69, 0.2); }
+.status-complete { background: rgba(40, 167, 69, 0.3); }
+.status-error { background: rgba(220, 53, 69, 0.3); }
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00d4aa;
+}
+
+.gbif-logo {
+    color: #00d4aa;
+    font-size: 2rem;
+    text-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="progress-container">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <div class="gbif-logo mb-3">🌍 <strong>GBIF Collection in Progress</strong></div>
+            <p class="text-muted">Collecting {{ max_records }} orchid records from {{ country }}</p>
+        </div>
+
+        <!-- Progress Card -->
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="progress-card">
+                    <!-- Progress Bar -->
+                    <div class="progress-bar mb-3">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressText">Initializing collection...</span>
+                        <br>
+                        <strong id="progressPercent">0%</strong>
+                    </div>
+
+                    <!-- Status Log -->
+                    <div class="mt-4">
+                        <h5><i data-feather="activity"></i> Collection Log</h5>
+                        <div class="status-log" id="statusLog">
+                            <div class="status-item status-setup">
+                                🚀 Starting GBIF collection process...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics (Hidden initially) -->
+                    <div class="mt-4 d-none" id="statsSection">
+                        <h5><i data-feather="bar-chart"></i> Collection Statistics</h5>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number" id="statProcessed">0</div>
+                                <div>Records Processed</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="statSaved">0</div>
+                                <div>New Records Saved</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="statDuplicates">0</div>
+                                <div>Duplicates Skipped</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="statErrors">0</div>
+                                <div>Errors</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons (Hidden initially) -->
+                    <div class="text-center mt-4 d-none" id="actionButtons">
+                        <a href="{{ url_for('gbif.gbif_dashboard') }}" class="btn btn-primary">
+                            <i data-feather="eye"></i> View Results
+                        </a>
+                        <a href="{{ url_for('gbif.collect_orchids') }}" class="btn btn-outline-light ml-3">
+                            <i data-feather="refresh-cw"></i> Collect More
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Description -->
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <div class="progress-card">
+                    <h4 class="mb-3">What We're Collecting</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Scientific Names:</strong> Taxonomic classification from authoritative sources</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Geographic Data:</strong> Precise coordinates and collection locations</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Collection Info:</strong> Dates, collectors, and field numbers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Institution Data:</strong> Museum codes and catalog numbers</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Common Names:</strong> Vernacular names where available</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> <strong>Quality Assurance:</strong> Verified specimens from research collections</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Server-Sent Events for real-time progress
+const eventSource = new EventSource(`{{ url_for('gbif.collect_progress') }}?max_records={{ max_records }}&country={{ country if country != 'Worldwide' else '' }}`);
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const progressPercent = document.getElementById('progressPercent');
+const statusLog = document.getElementById('statusLog');
+const statsSection = document.getElementById('statsSection');
+const actionButtons = document.getElementById('actionButtons');
+
+eventSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    
+    // Update progress bar
+    progressFill.style.width = data.progress + '%';
+    progressPercent.textContent = data.progress + '%';
+    progressText.textContent = data.message;
+    
+    // Add to status log
+    const statusItem = document.createElement('div');
+    statusItem.className = `status-item status-${data.type}`;
+    statusItem.textContent = data.message;
+    statusLog.appendChild(statusItem);
+    statusLog.scrollTop = statusLog.scrollHeight;
+    
+    // Handle completion
+    if (data.type === 'complete' && data.stats) {
+        document.getElementById('statProcessed').textContent = data.stats.processed;
+        document.getElementById('statSaved').textContent = data.stats.saved;
+        document.getElementById('statDuplicates').textContent = data.stats.duplicates || 0;
+        document.getElementById('statErrors').textContent = data.stats.errors || 0;
+        
+        statsSection.classList.remove('d-none');
+        actionButtons.classList.remove('d-none');
+        eventSource.close();
+    }
+    
+    // Handle errors
+    if (data.type === 'error') {
+        actionButtons.classList.remove('d-none');
+        eventSource.close();
+    }
+};
+
+eventSource.onerror = function(event) {
+    console.error('EventSource failed:', event);
+    progressText.textContent = '❌ Connection lost. Please refresh to try again.';
+};
+
+// Initialize Feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

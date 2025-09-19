@@ -1,0 +1,809 @@
+{% extends "base.html" %}
+
+{% block title %}Climate Research Lab - AI & Data Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Research Lab Header -->
+    <div class="row bg-gradient-primary text-white py-4 mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5 mb-2">🔬 Climate Research Lab</h1>
+                    <p class="lead mb-0">AI-Powered Research & Statistical Analysis Platform</p>
+                </div>
+                <div class="text-end">
+                    <div class="badge bg-success fs-6 mb-2">AI ASSISTANT ACTIVE</div><br>
+                    <small>Enhanced with statistical analysis tools</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Tools Dashboard -->
+    <div class="row mb-4">
+        <!-- Literature Search -->
+        <div class="col-lg-3 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📚 Literature Search</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Multi-database scientific literature search across CrossRef, PubMed, and Semantic Scholar.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Databases:</strong>
+                        <ul class="small mt-2">
+                            <li>165M+ research papers (CrossRef)</li>
+                            <li>39M+ biomedical citations (PubMed)</li>
+                            <li>40M+ AI-enhanced papers</li>
+                            <li>Automated relevance scoring</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-sm me-2" onclick="searchLiterature()">
+                        <i data-feather="search" class="me-1" style="width: 14px;"></i>
+                        Search Papers
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="searchOrchidLiterature()">
+                        <i data-feather="book" class="me-1" style="width: 14px;"></i>
+                        Orchid Research
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Climate Data -->
+        <div class="col-lg-3 mb-3">
+            <div class="card border-secondary h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">🌡️ Climate History</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Historical weather data analysis from 1940-present with trend analysis and comparisons.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Features:</strong>
+                        <ul class="small mt-2">
+                            <li>85+ years of historical data</li>
+                            <li>Climate trend analysis</li>
+                            <li>Period comparisons</li>
+                            <li>Orchid habitat suitability</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-secondary btn-sm me-2" onclick="analyzeClimate()">
+                        <i data-feather="bar-chart" class="me-1" style="width: 14px;"></i>
+                        Analyze Trends
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="compareClimate()">
+                        <i data-feather="calendar" class="me-1" style="width: 14px;"></i>
+                        Compare Periods
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Research Assistant -->
+        <div class="col-lg-3 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">🤖 AI Assistant</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Intelligent analysis of research data, experiment suggestions, and scientific insights powered by advanced AI.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Capabilities:</strong>
+                        <ul class="small mt-2">
+                            <li>Pattern detection in research data</li>
+                            <li>Experiment design suggestions</li>
+                            <li>Statistical interpretation</li>
+                            <li>Research hypothesis generation</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-info btn-sm me-2" onclick="analyzeWithAI()">
+                        <i data-feather="cpu" class="me-1" style="width: 14px;"></i>
+                        Analyze Data
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="suggestExperiments()">
+                        <i data-feather="lightbulb" class="me-1" style="width: 14px;"></i>
+                        Suggest Experiments
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistical Analysis -->
+        <div class="col-lg-3 mb-3">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">📈 Statistical Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">Advanced statistical tools for correlation analysis, regression modeling, and hypothesis testing.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Analysis Types:</strong>
+                        <ul class="small mt-2">
+                            <li>Correlation analysis</li>
+                            <li>Linear/multiple regression</li>
+                            <li>ANOVA and t-tests</li>
+                            <li>Chi-square tests</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-warning btn-sm me-2" onclick="runCorrelation()">
+                        <i data-feather="trending-up" class="me-1" style="width: 14px;"></i>
+                        Correlation
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="runRegression()">
+                        <i data-feather="activity" class="me-1" style="width: 14px;"></i>
+                        Regression
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Science Lab Integration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🔬 Science Lab Integration</h5>
+                </div>
+                <div class="card-body">
+                    <p>Seamlessly connect with existing science lab tools for comprehensive research workflows.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-light mb-3">
+                                <div class="card-body text-center">
+                                    <i data-feather="search" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6>Enhanced Science Lab</h6>
+                                    <p class="small">Advanced AI-powered analysis tools</p>
+                                    <a href="/enhanced-science-lab" class="btn btn-primary btn-sm">
+                                        Launch Lab
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-light mb-3">
+                                <div class="card-body text-center">
+                                    <i data-feather="layers" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6>Compare & Analyze</h6>
+                                    <p class="small">Side-by-side analysis and comparison</p>
+                                    <a href="/comparison" class="btn btn-success btn-sm">
+                                        Compare Data
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-light mb-3">
+                                <div class="card-body text-center">
+                                    <i data-feather="upload-cloud" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6>Bulk Analyzer</h6>
+                                    <p class="small">Process multiple samples at once</p>
+                                    <a href="/bulk-analyzer/bulk-upload" class="btn btn-info btn-sm">
+                                        Bulk Analysis
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis Interface -->
+    <div class="row mb-4" id="ai-analysis-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">🤖 AI Research Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Analysis Type</h6>
+                            <select class="form-select mb-3" id="analysisType">
+                                <option value="comprehensive">Comprehensive Analysis</option>
+                                <option value="pattern_detection">Pattern Detection</option>
+                                <option value="optimization">Optimization Focus</option>
+                            </select>
+                            
+                            <h6>Research Data</h6>
+                            <textarea class="form-control mb-3" id="researchData" rows="6" 
+                                      placeholder="Enter research data (JSON format or description)..."></textarea>
+                            
+                            <button class="btn btn-info" onclick="runAIAnalysis()">
+                                <i data-feather="play" class="me-2" style="width: 16px;"></i>
+                                Run AI Analysis
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>AI Insights</h6>
+                            <div id="aiInsights" class="border rounded p-3 bg-light" style="min-height: 200px;">
+                                <p class="text-muted">AI insights will appear here after analysis...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistical Analysis Interface -->
+    <div class="row mb-4" id="stats-analysis-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">📈 Statistical Analysis Tools</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Analysis Configuration</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Experiment ID</label>
+                                <input type="text" class="form-control" id="experimentId" 
+                                       placeholder="Enter experiment ID...">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Analysis Type</label>
+                                <select class="form-select" id="statsAnalysisType">
+                                    <option value="correlation">Correlation Analysis</option>
+                                    <option value="regression">Regression Analysis</option>
+                                </select>
+                            </div>
+                            
+                            <div id="correlationInputs">
+                                <div class="mb-3">
+                                    <label class="form-label">Variable 1</label>
+                                    <input type="text" class="form-control" id="variable1" 
+                                           placeholder="e.g., carbon_transfer_rate">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Variable 2</label>
+                                    <input type="text" class="form-control" id="variable2" 
+                                           placeholder="e.g., soil_ph">
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-warning" onclick="runStatisticalAnalysis()">
+                                <i data-feather="bar-chart-2" class="me-2" style="width: 16px;"></i>
+                                Run Analysis
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Statistical Results</h6>
+                            <div id="statsResults" class="border rounded p-3 bg-light" style="min-height: 250px;">
+                                <p class="text-muted">Statistical results will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Literature Search Interface -->
+    <div class="row mb-4" id="literature-search-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📚 Scientific Literature Search</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Search Query</h6>
+                            <input type="text" class="form-control mb-3" id="literatureQuery" 
+                                   placeholder="e.g., orchid mycorrhizal climate adaptation...">
+                            
+                            <h6>Search Type</h6>
+                            <select class="form-select mb-3" id="literatureType">
+                                <option value="general">General Literature</option>
+                                <option value="orchid">Orchid-Specific Research</option>
+                                <option value="mycorrhizal">Mycorrhizal Research</option>
+                                <option value="climate">Climate Research</option>
+                            </select>
+                            
+                            <button class="btn btn-primary" onclick="runLiteratureSearch()">
+                                <i data-feather="search" class="me-2" style="width: 16px;"></i>
+                                Search Literature
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Search Results</h6>
+                            <div id="literatureResults" class="border rounded p-3 bg-light" style="min-height: 200px;">
+                                <p class="text-muted">Literature search results will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Climate Analysis Interface -->
+    <div class="row mb-4" id="climate-analysis-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">🌡️ Historical Climate Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Location</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <input type="number" class="form-control mb-3" id="climateLatitude" 
+                                           placeholder="Latitude" step="0.001">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control mb-3" id="climateLongitude" 
+                                           placeholder="Longitude" step="0.001">
+                                </div>
+                            </div>
+                            
+                            <h6>Analysis Type</h6>
+                            <select class="form-select mb-3" id="climateAnalysisType">
+                                <option value="summary">Comprehensive Summary</option>
+                                <option value="trends">Trend Analysis</option>
+                                <option value="comparison">Period Comparison</option>
+                                <option value="orchid_habitat">Orchid Habitat Suitability</option>
+                            </select>
+                            
+                            <button class="btn btn-secondary" onclick="runClimateAnalysis()">
+                                <i data-feather="bar-chart" class="me-2" style="width: 16px;"></i>
+                                Analyze Climate
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Climate Analysis Results</h6>
+                            <div id="climateResults" class="border rounded p-3 bg-light" style="min-height: 250px;">
+                                <p class="text-muted">Climate analysis results will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Research Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Recent Research Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Activity Type</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentActivity">
+                                <tr>
+                                    <td>2025-09-08 15:30</td>
+                                    <td><span class="badge bg-primary">Literature</span></td>
+                                    <td>Searched 200+ papers on orchid-fungal partnerships</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025-09-08 15:15</td>
+                                    <td><span class="badge bg-secondary">Climate</span></td>
+                                    <td>85-year climate trend analysis for Costa Rica</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025-09-08 14:30</td>
+                                    <td><span class="badge bg-info">AI Analysis</span></td>
+                                    <td>Pattern detection in mycorrhizal data</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2025-09-08 13:45</td>
+                                    <td><span class="badge bg-warning">Statistical</span></td>
+                                    <td>Correlation: carbon_rate vs soil_ph</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Research Lab Interface Functions
+function searchLiterature() {
+    document.getElementById('literature-search-section').style.display = 'block';
+    document.getElementById('climate-analysis-section').style.display = 'none';
+    document.getElementById('ai-analysis-section').style.display = 'none';
+    document.getElementById('stats-analysis-section').style.display = 'none';
+    
+    // Scroll to section
+    document.getElementById('literature-search-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function searchOrchidLiterature() {
+    searchLiterature();
+    document.getElementById('literatureType').value = 'orchid';
+    document.getElementById('literatureQuery').value = 'orchid mycorrhizal symbiosis';
+}
+
+function analyzeClimate() {
+    document.getElementById('climate-analysis-section').style.display = 'block';
+    document.getElementById('literature-search-section').style.display = 'none';
+    document.getElementById('ai-analysis-section').style.display = 'none';
+    document.getElementById('stats-analysis-section').style.display = 'none';
+    
+    // Scroll to section
+    document.getElementById('climate-analysis-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function compareClimate() {
+    analyzeClimate();
+    document.getElementById('climateAnalysisType').value = 'comparison';
+}
+
+function analyzeWithAI() {
+    document.getElementById('ai-analysis-section').style.display = 'block';
+    document.getElementById('literature-search-section').style.display = 'none';
+    document.getElementById('climate-analysis-section').style.display = 'none';
+    document.getElementById('stats-analysis-section').style.display = 'none';
+    
+    // Scroll to analysis section
+    document.getElementById('ai-analysis-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function suggestExperiments() {
+    // Call AI experiment suggestion API
+    fetch('/ai-research/suggest-experiments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            research_goal: 'Optimize orchid-fungal carbon capture',
+            current_data: {
+                partnerships_count: 28,
+                efficiency_range: '15-85%',
+                env_factors: ['pH', 'temperature', 'humidity']
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`AI suggested ${data.experiments.length} new experiments! Check the results panel for details.`);
+        }
+    });
+}
+
+function createExperiment() {
+    // Redirect to experiment creation
+    window.location.href = '/research-data/';
+}
+
+function viewData() {
+    // Open data management interface
+    window.location.href = '/research-data/';
+}
+
+function runCorrelation() {
+    document.getElementById('stats-analysis-section').style.display = 'block';
+    document.getElementById('ai-analysis-section').style.display = 'none';
+    document.getElementById('statsAnalysisType').value = 'correlation';
+    
+    // Scroll to analysis section
+    document.getElementById('stats-analysis-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function runRegression() {
+    document.getElementById('stats-analysis-section').style.display = 'block';
+    document.getElementById('literature-search-section').style.display = 'none';
+    document.getElementById('climate-analysis-section').style.display = 'none';
+    document.getElementById('ai-analysis-section').style.display = 'none';
+    document.getElementById('statsAnalysisType').value = 'regression';
+    
+    // Scroll to analysis section
+    document.getElementById('stats-analysis-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function runLiteratureSearch() {
+    const query = document.getElementById('literatureQuery').value;
+    const searchType = document.getElementById('literatureType').value;
+    
+    if (!query.trim()) {
+        alert('Please enter a search query');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('literatureResults');
+    resultsDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Searching...</span></div> <span class="text-primary">Searching scientific literature...</span>';
+    
+    let endpoint;
+    let requestData = {};
+    
+    if (searchType === 'orchid') {
+        endpoint = '/literature/search/orchid';
+        // Extract genus/species if possible
+        const words = query.split(' ');
+        requestData = {
+            genus: words[0] || '',
+            species: words[1] || ''
+        };
+    } else if (searchType === 'mycorrhizal') {
+        endpoint = '/literature/search/mycorrhizal';
+    } else if (searchType === 'climate') {
+        endpoint = '/literature/search/climate';
+    } else {
+        endpoint = '/literature/search';
+        requestData = {
+            query: query,
+            max_results: 30
+        };
+    }
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const results = data.results;
+            let html = `<h6 class="text-success">Found ${results.total_results} Papers</h6>`;
+            html += `<small class="text-muted">Sources: ${results.search_sources.join(', ')}</small><br><br>`;
+            
+            results.papers.slice(0, 5).forEach(paper => {
+                html += `
+                    <div class="mb-3 p-2 border rounded">
+                        <h6 class="text-primary">${paper.title}</h6>
+                        <p class="small mb-1"><strong>Authors:</strong> ${paper.authors.join(', ')}</p>
+                        <p class="small mb-1"><strong>Journal:</strong> ${paper.journal} (${paper.publication_date})</p>
+                        <p class="small mb-1"><strong>Citations:</strong> ${paper.citation_count} | <strong>Source:</strong> ${paper.source}</p>
+                        ${paper.abstract ? `<p class="small">${paper.abstract.substring(0, 200)}...</p>` : ''}
+                        ${paper.url ? `<a href="${paper.url}" target="_blank" class="btn btn-sm btn-outline-primary">View Paper</a>` : ''}
+                    </div>
+                `;
+            });
+            
+            if (results.papers.length > 5) {
+                html += `<p class="text-muted">Showing first 5 of ${results.total_results} results...</p>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">Search failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+function runClimateAnalysis() {
+    const latitude = parseFloat(document.getElementById('climateLatitude').value);
+    const longitude = parseFloat(document.getElementById('climateLongitude').value);
+    const analysisType = document.getElementById('climateAnalysisType').value;
+    
+    if (!latitude || !longitude) {
+        alert('Please enter valid latitude and longitude');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('climateResults');
+    resultsDiv.innerHTML = '<div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Analyzing...</span></div> <span class="text-secondary">Analyzing climate data...</span>';
+    
+    let endpoint;
+    let requestData = { latitude, longitude };
+    
+    if (analysisType === 'trends') {
+        endpoint = '/historical-climate/trends';
+        requestData.years_back = 30;
+    } else if (analysisType === 'comparison') {
+        endpoint = '/historical-climate/compare';
+        requestData.historical_start = '1990-01-01';
+        requestData.historical_end = '2000-12-31';
+        requestData.current_start = '2015-01-01';
+        requestData.current_end = '2024-12-31';
+    } else {
+        endpoint = '/historical-climate/analyze';
+    }
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<h6 class="text-success">Climate Analysis Complete</h6>';
+            
+            if (analysisType === 'trends' && data.trends) {
+                html += '<h6>Climate Trends:</h6>';
+                Object.keys(data.trends.trends || {}).forEach(param => {
+                    const trend = data.trends.trends[param];
+                    html += `
+                        <div class="mb-2">
+                            <strong>${param.replace('_', ' ').toUpperCase()}:</strong> 
+                            ${trend.direction} (${trend.rate_per_year.toFixed(3)}/year)
+                            <br><small class="text-muted">${trend.description}</small>
+                        </div>
+                    `;
+                });
+            } else if (analysisType === 'comparison' && data.comparisons) {
+                html += '<h6>Period Comparison:</h6>';
+                data.comparisons.forEach(comp => {
+                    html += `
+                        <div class="mb-2">
+                            <strong>${comp.parameter.replace('_', ' ').toUpperCase()}:</strong>
+                            ${comp.change_percentage.toFixed(1)}% change (${comp.change_significance})
+                            <br><small class="text-muted">Historical: ${comp.historical_average.toFixed(2)} → Recent: ${comp.current_average.toFixed(2)}</small>
+                        </div>
+                    `;
+                });
+            } else if (data.analysis) {
+                html += '<h6>Analysis Summary:</h6>';
+                html += `<p class="small">${JSON.stringify(data.analysis, null, 2)}</p>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">Analysis failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+function runAIAnalysis() {
+    const analysisType = document.getElementById('analysisType').value;
+    const researchData = document.getElementById('researchData').value;
+    
+    const resultsDiv = document.getElementById('aiInsights');
+    resultsDiv.innerHTML = '<div class="spinner-border text-info" role="status"><span class="visually-hidden">Analyzing...</span></div> <span class="text-info">AI is analyzing your data...</span>';
+    
+    fetch('/ai-research/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            analysis_type: analysisType,
+            data: JSON.parse(researchData || '{}')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<h6 class="text-success">AI Analysis Complete</h6>';
+            data.insights.forEach(insight => {
+                html += `
+                    <div class="mb-3 p-3 border rounded">
+                        <h6 class="text-primary">${insight.title}</h6>
+                        <p class="small">${insight.description}</p>
+                        <div class="text-muted small">
+                            Confidence: ${(insight.confidence_score * 100).toFixed(1)}% | 
+                            Priority: ${insight.priority}
+                        </div>
+                    </div>
+                `;
+            });
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">Analysis failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+function runStatisticalAnalysis() {
+    const analysisType = document.getElementById('statsAnalysisType').value;
+    const experimentId = document.getElementById('experimentId').value;
+    
+    const resultsDiv = document.getElementById('statsResults');
+    resultsDiv.innerHTML = '<div class="spinner-border text-warning" role="status"><span class="visually-hidden">Computing...</span></div> <span class="text-warning">Running statistical analysis...</span>';
+    
+    let requestData = { experiment_id: experimentId };
+    
+    if (analysisType === 'correlation') {
+        requestData.variable1 = document.getElementById('variable1').value;
+        requestData.variable2 = document.getElementById('variable2').value;
+    }
+    
+    fetch(`/research-data/analyze/${analysisType}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const result = data.result;
+            let html = `
+                <h6 class="text-success">Statistical Analysis Complete</h6>
+                <div class="mb-3 p-3 border rounded">
+                    <h6 class="text-primary">Results</h6>
+            `;
+            
+            if (analysisType === 'correlation') {
+                html += `
+                    <p><strong>Correlation Coefficient:</strong> ${result.correlation_coefficient.toFixed(3)}</p>
+                    <p><strong>P-value:</strong> ${result.p_value.toFixed(6)}</p>
+                    <p><strong>Method:</strong> ${result.method}</p>
+                    <p><strong>Effect Size:</strong> ${result.effect_size.toFixed(3)}</p>
+                `;
+            } else if (analysisType === 'regression') {
+                html += `
+                    <p><strong>R-squared:</strong> ${result.r_squared.toFixed(3)}</p>
+                    <p><strong>P-value:</strong> ${result.p_value.toFixed(6)}</p>
+                `;
+            }
+            
+            html += `
+                    <div class="mt-3">
+                        <h6>Interpretation:</h6>
+                        <p class="small">${result.interpretation}</p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<div class="alert alert-warning">Analysis failed: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+    });
+}
+
+// Initialize Feather Icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+</script>
+{% endblock %}

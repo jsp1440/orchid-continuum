@@ -1,0 +1,429 @@
+# === FCOS / Orchid Continuum one-shot setup ===
+# Use: paste this whole block into your terminal (Replit Shell) and run.
+# It will create a monorepo scaffold, build widgets with esbuild,
+# and start a local preview server.
+
+set -euo pipefail
+
+echo "▶  Creating folders…"
+mkdir -p scripts \
+         apps/website \
+         packages/widget-orchid-of-the-day/src \
+         packages/widget-weather-habitat/src \
+         packages/widget-show-and-tell/src \
+         packages/widget-games/src \
+         dist/widgets
+
+echo "▶  Writing root package.json…"
+cat > package.json <<'JSON'
+{
+  "name": "orchid-continuum",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*", "scripts"],
+  "scripts": {
+    "build": "node scripts/build-all.mjs && npm -w apps/website run build",
+    "dev": "npm -w apps/website run dev",
+    "preview": "npm -w apps/website run preview"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0"
+  }
+}
+JSON
+
+echo "▶  Writing scripts/build-all.mjs…"
+cat > scripts/build-all.mjs <<'JS'
+// scripts/build-all.mjs
+import { build } from 'esbuild';
+import { mkdir, rm } from 'fs/promises';
+
+const widgets = [
+  { name: 'orchid-of-the-day', entry: 'packages/widget-orchid-of-the-day/src/index.js', out: 'dist/widgets/orchid-of-the-day.js' },
+  { name: 'weather-habitat',   entry: 'packages/widget-weather-habitat/src/index.js',   out: 'dist/widgets/weather-habitat.js' },
+  { name: 'show-and-tell',     entry: 'packages/widget-show-and-tell/src/index.js',     out: 'dist/widgets/show-and-tell.js' },
+  { name: 'games',             entry: 'packages/widget-games/src/index.js',             out: 'dist/widgets/games.js' }
+];
+
+const outdir = 'dist/widgets';
+
+async function main() {
+  await rm(outdir, { recursive: true, force: true });
+  await mkdir(outdir, { recursive: true });
+
+  for (const w of widgets) {
+    console.log(`Bundling ${w.name}…`);
+    await build({
+      entryPoints: [w.entry],
+      bundle: true,
+      format: 'iife',
+      target: ['es2020'],
+      minify: true,
+      legalComments: 'inline',
+      outfile: w.out,
+      banner: {
+        js:
+`/**
+ * FCOS Widget: ${w.name}
+ * Embed:
+ *   <script src="https://YOUR-SITE.netlify.app/widgets/${w.name}.js" defer></script>
+ *   <div id="${w.name}"></div>
+ * Shadow DOM + no external deps recommended.
+ */`
+      }
+    });
+  }
+  console.log('✔  All widgets built to dist/widgets/');
+}
+main().catch((e) => { console.error(e); process.exit(1); });
+JS
+
+echo "▶  Writing apps/website package.json…"
+cat > apps/website/package.json <<'JSON'
+{
+  "name": "fcos-site",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node dev.mjs",
+    "preview": "node dev.mjs"
+  }
+}
+JSON
+
+echo "▶  Writing apps/website/build.mjs…"
+cat > apps/website/build.mjs <<'JS'
+// Simple static copy into /apps/website/dist
+import { mkdir, rm, copyFile, readFile, writeFile } from 'fs/promises';
+import { join } from 'path';
+
+const root = 'apps/website';
+const dist = join(root, 'dist');
+
+async function main() {
+  await rm(dist, { recursive: true, force: true });
+  await mkdir(dist, { recursive: true });
+
+  await copyFile(join(root, 'index.html'), join(dist, 'index.html'));
+  try { await copyFile(join(root, 'styles.css'), join(dist, 'styles.css')); } catch {}
+
+  const htmlPath = join(dist, 'index.html');
+  const html = await readFile(htmlPath, 'utf8');
+  const out = html.replace(/%BUILD_DATE%/g, new Date().toISOString().slice(0,10));
+  await writeFile(htmlPath, out, 'utf8');
+
+  console.log('✔  Site built to apps/website/dist');
+}
+main().catch(err => { console.error(err); process.exit(1); });
+JS
+
+echo "▶  Writing apps/website/dev.mjs…"
+cat > apps/website/dev.mjs <<'JS'
+// Tiny static server for local preview
+import http from 'http';
+import { readFile } from 'fs/promises';
+import { join, extname } from 'path';
+import { existsSync } from 'fs';
+
+const dist = 'apps/website/dist';
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
+
+const server = http.createServer(async (req, res) => {
+  const url = req.url === '/' ? '/index.html' : req.url;
+  const filePath = join(dist, url.split('?')[0]);
+  if (!existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return; }
+  const data = await readFile(filePath);
+  res.setHeader('Content-Type', mime[extname(filePath)] || 'application/octet-stream');
+  res.writeHead(200); res.end(data);
+});
+
+const port = process.env.PORT || 3000;
+server.listen(port, () => console.log(`▶  Preview: http://localhost:${port}`));
+JS
+
+echo "▶  Writing apps/website/index.html…"
+cat > apps/website/index.html <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Five Cities Orchid Society — FCOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Five Cities Orchid Society</h1>
+    <nav class="top-nav">
+      <a href="#learn">Learn</a>
+      <a href="#explore">Explore</a>
+      <a href="#grow">Grow</a>
+      <a href="#community">Community</a>
+      <a href="#join">Join</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="hero">
+      <h2>Orchid of the Day</h2>
+      <div id="orchid-of-the-day"></div>
+    </section>
+
+    <section id="grow">
+      <h2>Weather vs. Habitat</h2>
+      <div id="weather-habitat"></div>
+    </section>
+
+    <section id="explore">
+      <h2>Show &amp; Tell — Monthly Contest</h2>
+      <div id="show-and-tell"></div>
+    </section>
+
+    <section id="learn">
+      <h2>Orchid Learning Games</h2>
+      <div id="games"></div>
+    </section>
+
+    <section id="join">
+      <h2>Member Benefits</h2>
+      <div id="member-benefits"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; %BUILD_DATE% Five Cities Orchid Society — Local Roots, Global Blooms.</p>
+  </footer>
+
+  <!-- In local preview we load from ../../dist; on Netlify replace with https://<site>.netlify.app/widgets/*.js -->
+  <script src="../../dist/widgets/orchid-of-the-day.js" defer></script>
+  <script src="../../dist/widgets/weather-habitat.js" defer></script>
+  <script src="../../dist/widgets/show-and-tell.js" defer></script>
+  <script src="../../dist/widgets/games.js" defer></script>
+
+  <!-- Inline Member Benefits (one-page summary) -->
+  <script>
+  (function mountBenefits() {
+    const el = document.getElementById('member-benefits');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="benefits-card" role="region" aria-label="FCOS Member Benefits">
+        <h3>Why Join FCOS?</h3>
+        <ul>
+          <li><strong>Local expertise</strong> for Central Coast growing.</li>
+          <li><strong>Monthly speakers</strong> &amp; Zoom access.</li>
+          <li><strong>Show & Tell</strong> contests, badges &amp; prizes.</li>
+          <li><strong>Orchid of the Day</strong> archive &amp; learning games.</li>
+          <li><strong>Member gallery</strong> &amp; community events.</li>
+          <li><strong>Care tools</strong>: Weather vs. Habitat, Diagnosis Wizard (beta).</li>
+        </ul>
+        <h4>Membership Options</h4>
+        <table class="benefits-table" aria-label="Membership Options">
+          <thead><tr><th>Tier</th><th>Best for</th><th>Includes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Local Member</strong></td><td>Meetings & shows</td><td>All perks + in-person events</td></tr>
+            <tr><td><strong>Digital-only</strong></td><td>Out-of-area</td><td>Zoom talks, tools, contests, newsletters</td></tr>
+            <tr><td><strong>Affiliate Society</strong></td><td>Partner orgs</td><td>Shared widgets & learning tools</td></tr>
+          </tbody>
+        </table>
+        <p><a class="cta" href="#join-now">Join or Renew</a></p>
+      </div>`;
+  })();
+  </script>
+</body>
+</html>
+HTML
+
+echo "▶  Writing apps/website/styles.css…"
+cat > apps/website/styles.css <<'CSS'
+:root { --bg:#f4fff4; --green:#2e7d32; --text:#111; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color: var(--text); background:#fff; }
+.site-header { background: var(--bg); border-bottom: 2px solid var(--green); padding: 16px; }
+.site-header h1 { margin: 0 0 8px 0; color: var(--green); }
+.top-nav a { margin-right: 12px; text-decoration: none; color: var(--green); }
+main { padding: 16px; font-size: 18px; line-height: 1.6; }
+section { margin: 24px 0; }
+.site-footer { padding: 24px 16px; background: var(--bg); border-top: 2px solid var(--green); }
+.benefits-card { border: 2px solid var(--green); border-radius: 8px; padding: 16px; background: var(--bg); }
+.benefits-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.benefits-table th, .benefits-table td { border: 1px solid #cce0cc; padding: 8px; text-align: left; }
+.cta { display: inline-block; padding: 10px 16px; background: var(--green); color: #fff; border-radius: 6px; text-decoration: none; }
+.cta:focus { outline: 3px solid #000; outline-offset: 2px; }
+CSS
+
+echo "▶  Writing widget stubs (Shadow DOM pattern)…"
+
+# Orchid of the Day stub (you will paste your real logic later)
+cat > packages/widget-orchid-of-the-day/src/index.js <<'JS'
+/**
+ * Orchid of the Day + Archive/Calendar (stub)
+ * Replace fetchData() and renderCard()/renderArchive() with your real logic.
+ * Embed (local dev):
+ *   <script src="../../dist/widgets/orchid-of-the-day.js" defer></script>
+ *   <div id="orchid-of-the-day"></div>
+ */
+(function(){
+  const CONFIG = {
+    timezone: 'America/Los_Angeles',
+    DATA_SOURCE: { type: 'local', url: '' },
+    brand: { bg:'#f4fff4', title:'#2e7d32', text:'#111' },
+    archive: { enabled: true, defaultMode:'today' }
+  };
+
+  const SAMPLE = [
+    { genus:'Cattleya', species:'walkeriana', caption:'Fragrant beauty native to Brazil.', image_url:'https://upload.wikimedia.org/wikipedia/commons/0/0a/Cattleya_walkeriana.jpg', credit:'Wikimedia' },
+    { genus:'Paphiopedilum', species:'rothschildianum', caption:'The King of Paphs.', image_url:'https://upload.wikimedia.org/wikipedia/commons/7/76/Paphiopedilum_rothschildianum.jpg', credit:'Wikimedia' },
+    { genus:'Laelia', species:'anceps', caption:'A winter-blooming classic.', image_url:'https://upload.wikimedia.org/wikipedia/commons/9/92/Laelia_anceps.jpg', credit:'Wikimedia' }
+  ];
+
+  function mount() {
+    const host = document.getElementById('orchid-of-the-day');
+    if (!host) return;
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = `
+      <style>
+        :host { all: initial; }
+        .wrap { background:${CONFIG.brand.bg}; color:${CONFIG.brand.text}; border:2px solid ${CONFIG.brand.title}; border-radius:8px; padding:12px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+        h1 { margin: 0 0 8px; color:${CONFIG.brand.title}; font-size:22px; }
+        img { max-width: 560px; width: 100%; height: auto; display:block; border-radius:6px; }
+        .cap { margin-top:8px; font-size:18px; line-height:1.6; }
+        .credit { font-size:14px; opacity:.8; margin-top:6px; }
+        .bar { margin:8px 0 12px; display:flex; gap:8px; flex-wrap:wrap; }
+        button { font-size:16px; padding:6px 10px; border:1px solid ${CONFIG.brand.title}; background:#fff; border-radius:6px; cursor:pointer; }
+        button:focus { outline:3px solid #000; outline-offset:2px; }
+      </style>
+      <div class="wrap" aria-live="polite">
+        <div class="bar">
+          <button data-mode="today">Today</button>
+          <button data-mode="week">Week</button>
+          <button data-mode="month">Month</button>
+          <button data-mode="year">Year</button>
+        </div>
+        <div id="view"></div>
+      </div>
+    `;
+    const view = root.getElementById('view');
+    const buttons = root.querySelectorAll('button');
+    buttons.forEach(b=>b.addEventListener('click', ()=>render(b.dataset.mode)));
+
+    function pickToday(list){
+      const d = new Date().toISOString().slice(0,10);
+      const i = Math.abs([...d].reduce((a,c)=>((a<<5)-a + c.charCodeAt(0))|0,0)) % list.length;
+      return list[i];
+    }
+
+    function renderCard(o){
+      view.innerHTML = `
+        <h1><i>${o.genus||''} ${o.species||''}</i></h1>
+        <img alt="Orchid photograph for ${o.genus||''} ${o.species||''}" src="${o.image_url||''}">
+        <p class="cap">${o.caption||''}</p>
+        <div class="credit">${o.credit?`Photo: ${o.credit}`:''}</div>
+      `;
+    }
+
+    function render(mode){
+      // Stub modes; today shows one card; others show thumbnails
+      const data = SAMPLE;
+      if (mode==='today') {
+        renderCard(pickToday(data));
+      } else {
+        view.innerHTML = data.map(o=>`
+          <div style="display:inline-block; width:120px; margin:6px; text-align:center;">
+            <img alt="${o.genus} ${o.species}" src="${o.image_url}" style="width:120px;height:120px;object-fit:cover;border-radius:6px;">
+            <div style="font-size:14px; margin-top:4px;"><i>${o.genus} ${o.species}</i></div>
+          </div>
+        `).join('');
+      }
+    }
+
+    render(CONFIG.archive.defaultMode || 'today');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount);
+  } else {
+    mount();
+  }
+})();
+JS
+
+# Weather vs. Habitat stub
+cat > packages/widget-weather-habitat/src/index.js <<'JS'
+/**
+ * Weather vs. Habitat (stub)
+ * Replace with real OpenWeather + habitat JSON comparison.
+ */
+(function(){
+  function mount(){
+    const host = document.getElementById('weather-habitat'); if (!host) return;
+    const root = host.attachShadow({mode:'open'});
+    root.innerHTML = `
+      <style>
+        .card{border:2px solid #2e7d32;border-radius:8px;padding:12px;background:#f4fff4;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+        h3{margin:0 0 8px;color:#2e7d32}
+      </style>
+      <div class="card">
+        <h3>Weather vs. Habitat</h3>
+        <p>Stub widget. Configure API + habitat profiles to compare conditions.</p>
+      </div>
+    `;
+  }
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',mount):mount();
+})();
+JS
+
+# Show & Tell stub
+cat > packages/widget-show-and-tell/src/index.js <<'JS'
+/**
+ * Show & Tell (stub)
+ */
+(function(){
+  function mount(){
+    const host = document.getElementById('show-and-tell'); if (!host) return;
+    const root = host.attachShadow({mode:'open'});
+    root.innerHTML = `
+      <style>
+        .card{border:2px solid #2e7d32;border-radius:8px;padding:12px;background:#f4fff4;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+        h3{margin:0 0 8px;color:#2e7d32}
+      </style>
+      <div class="card">
+        <h3>Show &amp; Tell — Monthly Contest</h3>
+        <p>Stub gallery. Wire to your submission sheet + voting.</p>
+      </div>
+    `;
+  }
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',mount):mount();
+})();
+JS
+
+# Games stub
+cat > packages/widget-games/src/index.js <<'JS'
+/**
+ * Games (stub)
+ */
+(function(){
+  function mount(){
+    const host = document.getElementById('games'); if (!host) return;
+    const root = host.attachShadow({mode:'open'});
+    root.innerHTML = `
+      <style>
+        .card{border:2px solid #2e7d32;border-radius:8px;padding:12px;background:#f4fff4;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+        h3{margin:0 0 8px;color:#2e7d32}
+      </style>
+      <div class="card">
+        <h3>Orchid Learning Games</h3>
+        <p>Stub launcher for crossword / trivia / word search.</p>
+      </div>
+    `;
+  }
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',mount):mount();
+})();
+JS
+
+echo "▶  Installing dependencies (esbuild)…"
+npm install
+
+echo "▶  Building widgets and site…"
+npm run build
+
+echo "▶  Starting local preview server…"
+npm run preview

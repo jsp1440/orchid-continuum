@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Orchid of the Day - Above the Fold Hero - FCOS Branding -->
+{% if orchid_of_day %}
+<div class="orchid-of-day-hero py-5 mb-4" style="background: linear-gradient(135deg, #E6D8FF 0%, #C8A2FF 35%, #B19CD9 70%, #7A4B8E 100%); min-height: 60vh;">
+    <div class="container">
+        <!-- FCOS Logo positioned top-right -->
+        <div class="position-relative mb-4">
+            <img src="/static/images/orchid_continuum_transparent_logo.png" 
+                 alt="Five Cities Orchid Society" 
+                 class="position-absolute top-0 end-0"
+                 style="width: 80px; height: auto; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); z-index: 10;">
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-12 col-xl-10">
+                <!-- Main Content Card with Semi-transparent White Background -->
+                <div class="card border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                    <div class="row g-0">
+                        <!-- Orchid Photo - Above the fold, full height -->
+                        <div class="col-lg-6">
+                            <div class="position-relative h-100" style="min-height: 450px;">
+                                {% if orchid_of_day.google_drive_id %}
+                                <img src="/api/drive-photo/{{ orchid_of_day.google_drive_id }}" 
+                                     alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                                     class="card-img h-100"
+                                     style="object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;"
+                                     onerror="this.onerror=null; this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon'; console.error('Orchid of Day failed to load:', '/api/drive-photo/{{ orchid_of_day.google_drive_id }}');"
+                                     onload="console.log('✅ Orchid of Day loaded successfully');">
+                                {% elif orchid_of_day.image_url and orchid_of_day.image_url != '/static/images/orchid_placeholder.svg' %}
+                                <img src="{{ orchid_of_day.image_url }}" 
+                                     alt="Orchid of the Day - {{ orchid_of_day.display_name or orchid_of_day.scientific_name }}" 
+                                     class="card-img h-100"
+                                     style="object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;"
+                                     onerror="this.src='/static/images/fcos_placeholder_rect.png'; this.alt='Orchid photo coming soon';">
+                                {% else %}
+                                <img src="/static/images/fcos_placeholder_rect.png" 
+                                     alt="Orchid photo coming soon" 
+                                     class="card-img h-100"
+                                     style="object-fit: cover; border-top-left-radius: .375rem; border-bottom-left-radius: .375rem;">
+                                {% endif %}
+                                <div class="position-absolute top-0 start-0 m-3">
+                                    <span class="badge px-3 py-2 fw-bold" style="background: rgba(122, 75, 142, 0.9); color: white; font-size: 0.9rem;">
+                                        <i data-feather="star" style="width: 16px; height: 16px;" class="me-1"></i>
+                                        Featured Today
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Content Area with FCOS Color Scheme -->
+                        <div class="col-lg-6">
+                            <div class="card-body p-4" style="color: #333333;">
+                                <!-- Header with FCOS Colors -->
+                                <div class="mb-4">
+                                    <h5 class="fw-bold mb-2" style="color: #7A4B8E; font-size: 1.1rem; letter-spacing: 0.5px;">
+                                        <i data-feather="star" class="me-2" style="width: 20px; height: 20px;"></i>
+                                        ORCHID OF THE DAY
+                                    </h5>
+                                    <h3 class="fw-bold mb-0" style="color: #7A4B8E; line-height: 1.2;">
+                                        {% if orchid_of_day.genus and orchid_of_day.species %}
+                                            <em>{{ orchid_of_day.genus }} {{ orchid_of_day.species }}</em>
+                                        {% elif orchid_of_day.scientific_name %}
+                                            <em>{{ orchid_of_day.scientific_name }}</em>
+                                        {% elif orchid_of_day_enhanced and orchid_of_day_enhanced.orchid.expanded_display_name %}
+                                            <em>{{ orchid_of_day_enhanced.orchid.expanded_display_name }}</em>
+                                        {% else %}
+                                            {{ orchid_of_day.display_name }}
+                                        {% endif %}
+                                    </h3>
+                                </div>
+                                
+                                <!-- Enhanced Metadata Display -->
+                                <div class="row g-2 mb-3 small">
+                                    <!-- Country/Region -->
+                                    {% if orchid_of_day_enhanced and orchid_of_day_enhanced.expanded_info and orchid_of_day_enhanced.expanded_info.geography %}
+                                    <div class="col-12 mb-2">
+                                        <i data-feather="globe" class="me-1" style="width: 14px; height: 14px; color: #7A4B8E;"></i>
+                                        <strong style="color: #7A4B8E;">Country:</strong> 
+                                        <span style="color: #333333;">{{ orchid_of_day_enhanced.expanded_info.geography.distribution or orchid_of_day_enhanced.expanded_info.geography.native_habitat }}</span>
+                                    </div>
+                                    {% elif orchid_of_day.region %}
+                                    <div class="col-12 mb-2">
+                                        <i data-feather="map-pin" class="me-1" style="width: 14px; height: 14px; color: #7A4B8E;"></i>
+                                        <strong style="color: #7A4B8E;">Origin:</strong> 
+                                        <span style="color: #333333;">{{ orchid_of_day.region.title() }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Year/Date if available -->
+                                    {% if orchid_of_day.date_photographed %}
+                                    <div class="col-12 mb-2">
+                                        <i data-feather="calendar" class="me-1" style="width: 14px; height: 14px; color: #7A4B8E;"></i>
+                                        <strong style="color: #7A4B8E;">Year:</strong> 
+                                        <span style="color: #333333;">{{ orchid_of_day.date_photographed.year }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Habitat -->
+                                    {% if orchid_of_day.native_habitat %}
+                                    <div class="col-12 mb-2">
+                                        <i data-feather="tree" class="me-1" style="width: 14px; height: 14px; color: #7A4B8E;"></i>
+                                        <strong style="color: #7A4B8E;">Habitat:</strong> 
+                                        <span style="color: #333333;">{{ orchid_of_day.native_habitat[:50] }}{% if orchid_of_day.native_habitat|length > 50 %}...{% endif %}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Growth Type -->
+                                    {% if orchid_of_day_enhanced and orchid_of_day_enhanced.expanded_info and orchid_of_day_enhanced.expanded_info.characteristics and orchid_of_day_enhanced.expanded_info.characteristics.growth_habit %}
+                                    <div class="col-12 mb-2">
+                                        <i data-feather="trending-up" class="me-1" style="width: 14px; height: 14px; color: #7A4B8E;"></i>
+                                        <strong style="color: #7A4B8E;">Growth Type:</strong> 
+                                        <span style="color: #333333;">{{ orchid_of_day_enhanced.expanded_info.characteristics.growth_habit.title() }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- About This Orchid -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.story %}
+                                <div class="mb-3">
+                                    <h6 class="fw-bold mb-2" style="color: #7A4B8E;">
+                                        <i data-feather="book-open" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        About This Orchid
+                                    </h6>
+                                    <p class="small mb-0" style="line-height: 1.5; color: #333333;">
+                                        {{ orchid_of_day_enhanced.story }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Creative Reflections (Haiku, Poems, Quotes) -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.creative_reflection %}
+                                <div class="mb-3">
+                                    <h6 class="fw-bold mb-2" style="color: #7A4B8E;">
+                                        <i data-feather="feather" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        {{ orchid_of_day_enhanced.creative_reflection.type.title() }}
+                                    </h6>
+                                    <div class="text-center py-3 px-3 rounded" style="background: rgba(122, 75, 142, 0.1); border-left: 3px solid #7A4B8E;">
+                                        <em class="small" style="line-height: 1.6; white-space: pre-line; color: #333333;">{{ orchid_of_day_enhanced.creative_reflection.content }}</em>
+                                    </div>
+                                </div>
+                                {% elif orchid_of_day_enhanced and orchid_of_day_enhanced.haiku %}
+                                <div class="mb-3">
+                                    <h6 class="fw-bold mb-2" style="color: #7A4B8E;">
+                                        <i data-feather="feather" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Haiku
+                                    </h6>
+                                    <div class="text-center py-3 px-3 rounded" style="background: rgba(122, 75, 142, 0.1); border-left: 3px solid #7A4B8E;">
+                                        <em class="small" style="line-height: 1.6; white-space: pre-line; color: #333333;">{{ orchid_of_day_enhanced.haiku }}</em>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Notable Features (if available) -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.fun_facts %}
+                                <div class="mb-3">
+                                    <h6 class="fw-bold mb-2" style="color: #7A4B8E;">
+                                        <i data-feather="info" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Notable Features
+                                    </h6>
+                                    <p class="small mb-0" style="line-height: 1.4; color: #333333;">
+                                        {{ orchid_of_day_enhanced.fun_facts[0] if orchid_of_day_enhanced.fun_facts else 'Discover the unique characteristics that make this orchid special.' }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Historical Notes -->
+                                {% if orchid_of_day_enhanced and orchid_of_day_enhanced.discovery_history %}
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-2" style="color: #7A4B8E;">
+                                        <i data-feather="clock" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Historical Notes
+                                    </h6>
+                                    <p class="small mb-0" style="line-height: 1.4; color: #333333;">
+                                        {{ orchid_of_day_enhanced.discovery_history }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- More Info Button -->
+                                <div class="d-grid">
+                                    <a href="{{ url_for('orchid_detail', id=orchid_of_day.id) }}" 
+                                       class="btn fw-bold py-3" 
+                                       style="background: #7A4B8E; color: white; border: none;">
+                                        <i data-feather="arrow-right" class="me-2" style="width: 18px; height: 18px;"></i>
+                                        More Info & Full Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Rest of the page content would continue here -->

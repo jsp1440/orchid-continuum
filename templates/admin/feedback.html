@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Management - Admin - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i data-feather="message-circle" class="me-2"></i>
+                    Feedback Management
+                </h2>
+                <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Admin
+                </a>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ total_feedback }}</h4>
+                                    <p class="mb-0">Total Feedback</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i data-feather="message-square" width="36" height="36"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ new_feedback }}</h4>
+                                    <p class="mb-0">New/Pending</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i data-feather="clock" width="36" height="36"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ bug_reports }}</h4>
+                                    <p class="mb-0">Bug Reports</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i data-feather="bug" width="36" height="36"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ feature_requests }}</h4>
+                                    <p class="mb-0">Feature Requests</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i data-feather="lightbulb" width="36" height="36"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="all" {{ 'selected' if status_filter == 'all' }}>All Status</option>
+                                <option value="new" {{ 'selected' if status_filter == 'new' }}>New</option>
+                                <option value="reviewed" {{ 'selected' if status_filter == 'reviewed' }}>Reviewed</option>
+                                <option value="resolved" {{ 'selected' if status_filter == 'resolved' }}>Resolved</option>
+                                <option value="closed" {{ 'selected' if status_filter == 'closed' }}>Closed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Type</label>
+                            <select name="type" id="type" class="form-select">
+                                <option value="all" {{ 'selected' if type_filter == 'all' }}>All Types</option>
+                                <option value="bug_report" {{ 'selected' if type_filter == 'bug_report' }}>Bug Report</option>
+                                <option value="feature_request" {{ 'selected' if type_filter == 'feature_request' }}>Feature Request</option>
+                                <option value="general_feedback" {{ 'selected' if type_filter == 'general_feedback' }}>General Feedback</option>
+                                <option value="content_improvement" {{ 'selected' if type_filter == 'content_improvement' }}>Content Improvement</option>
+                                <option value="ui_ux_feedback" {{ 'selected' if type_filter == 'ui_ux_feedback' }}>UI/UX Feedback</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i data-feather="filter" class="me-1"></i>Filter
+                            </button>
+                            <a href="{{ url_for('admin_feedback') }}" class="btn btn-outline-secondary">
+                                <i data-feather="x" class="me-1"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Feedback List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Feedback Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if feedback_items.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Subject</th>
+                                        <th>From</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in feedback_items.items %}
+                                    <tr data-feedback-id="{{ item.id }}">
+                                        <td>
+                                            <span class="badge bg-secondary">#{{ item.id }}</span>
+                                        </td>
+                                        <td>
+                                            {% if item.feedback_type == 'bug_report' %}
+                                                <span class="badge bg-danger">🐛 Bug Report</span>
+                                            {% elif item.feedback_type == 'feature_request' %}
+                                                <span class="badge bg-success">💡 Feature Request</span>
+                                            {% elif item.feedback_type == 'general_feedback' %}
+                                                <span class="badge bg-info">💬 General</span>
+                                            {% elif item.feedback_type == 'content_improvement' %}
+                                                <span class="badge bg-warning">📖 Content</span>
+                                            {% elif item.feedback_type == 'ui_ux_feedback' %}
+                                                <span class="badge bg-primary">🎨 UI/UX</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ item.subject[:50] }}{% if item.subject|length > 50 %}...{% endif %}</strong>
+                                        </td>
+                                        <td>
+                                            {{ item.name }}<br>
+                                            <small class="text-muted">{{ item.email }}</small>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm status-select" data-feedback-id="{{ item.id }}">
+                                                <option value="new" {{ 'selected' if item.status == 'new' }}>New</option>
+                                                <option value="reviewed" {{ 'selected' if item.status == 'reviewed' }}>Reviewed</option>
+                                                <option value="resolved" {{ 'selected' if item.status == 'resolved' }}>Resolved</option>
+                                                <option value="closed" {{ 'selected' if item.status == 'closed' }}>Closed</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewFeedback({{ item.id }})">
+                                                <i data-feather="eye" width="14" height="14"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if feedback_items.pages > 1 %}
+                        <div class="card-footer">
+                            <nav aria-label="Feedback pagination">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if feedback_items.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_feedback', page=feedback_items.prev_num, status=status_filter, type=type_filter) }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in feedback_items.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != feedback_items.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('admin_feedback', page=page_num, status=status_filter, type=type_filter) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if feedback_items.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin_feedback', page=feedback_items.next_num, status=status_filter, type=type_filter) }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="inbox" width="48" height="48" class="text-muted mb-3"></i>
+                            <h5 class="text-muted">No feedback items found</h5>
+                            <p class="text-muted">No feedback matching your current filters.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Detail Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Feedback Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveFeedbackNotes()">Save Notes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFeedbackId = null;
+
+// Handle status changes
+document.querySelectorAll('.status-select').forEach(select => {
+    select.addEventListener('change', function() {
+        const feedbackId = this.dataset.feedbackId;
+        const newStatus = this.value;
+        
+        updateFeedbackStatus(feedbackId, newStatus);
+    });
+});
+
+function updateFeedbackStatus(feedbackId, status) {
+    fetch(`/admin/feedback/${feedbackId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success feedback
+            showToast('Status updated successfully', 'success');
+        } else {
+            showToast('Failed to update status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
+        showToast('Error updating status', 'error');
+    });
+}
+
+function viewFeedback(feedbackId) {
+    currentFeedbackId = feedbackId;
+    
+    // Find the feedback item data from the table
+    const row = document.querySelector(`tr[data-feedback-id="${feedbackId}"]`);
+    
+    // For now, we'll show a simple modal. In a full implementation,
+    // you'd fetch the full feedback details via an API call
+    const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    
+    // You would typically load full feedback details here
+    document.querySelector('#feedbackModal .modal-body').innerHTML = `
+        <div class="alert alert-info">
+            <strong>Note:</strong> This is a placeholder. In a full implementation, 
+            this would load complete feedback details including the full message, 
+            browser info, and admin notes.
+        </div>
+        <p>Feedback ID: #${feedbackId}</p>
+        <div class="mb-3">
+            <label for="adminNotes" class="form-label">Admin Notes</label>
+            <textarea class="form-control" id="adminNotes" rows="4" 
+                      placeholder="Add internal notes about this feedback..."></textarea>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function saveFeedbackNotes() {
+    const notes = document.getElementById('adminNotes').value;
+    
+    if (currentFeedbackId && notes.trim()) {
+        fetch(`/admin/feedback/${currentFeedbackId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ admin_notes: notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Notes saved successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('feedbackModal')).hide();
+            } else {
+                showToast('Failed to save notes', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving notes:', error);
+            showToast('Error saving notes', 'error');
+        });
+    }
+}
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close float-end" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

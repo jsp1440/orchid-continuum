@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observation Stage - Research Lab</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .research-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .stage-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .observation-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .observation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+        }
+        
+        .data-preview {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+        
+        .nav-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .stage-nav-btn {
+            padding: 12px 24px;
+            border-radius: 25px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-next {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-save {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-dashboard {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .stage-nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .progress-indicator {
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .step.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .step.pending {
+            background: #7f8c8d;
+            color: white;
+        }
+        
+        .step-line {
+            height: 2px;
+            background: #7f8c8d;
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .example-observations {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid #27ae60;
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Research Stage Header -->
+    <div class="research-header">
+        <div class="container">
+            <div class="stage-content">
+                <div class="d-flex align-items-center">
+                    <div class="stage-icon me-3" style="width: 50px; height: 50px; background: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i data-feather="eye" style="width: 25px; height: 25px;"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-2">Stage 1: Make Observations</h1>
+                        <p class="mb-0">Study the orchid data to identify interesting patterns and phenomena</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <div class="stage-content">
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-steps">
+                    <div class="step active">1</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">2</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">3</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">4</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">5</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">6</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">7</div>
+                </div>
+                <div class="text-center">
+                    <small><strong>Observation</strong> → Hypothesis → Methods → Data → Analysis → Conclusions → Paper</small>
+                </div>
+            </div>
+            
+            <!-- Current Database Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 class="text-primary mb-1">230+</h3>
+                        <p class="mb-0 small">Orchid Specimens</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 class="text-success mb-1">40+</h3>
+                        <p class="mb-0 small">Different Genera</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 class="text-warning mb-1">15+</h3>
+                        <p class="mb-0 small">Geographic Regions</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h3 class="text-danger mb-1">Mixed</h3>
+                        <p class="mb-0 small">Wild & Cultivated</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Observation Recording -->
+            <div class="observation-card">
+                <h3><i data-feather="clipboard" class="me-2"></i>Record Your Observations</h3>
+                <p class="text-muted">What patterns, differences, or interesting phenomena do you notice in the orchid data?</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">What did you observe? <small class="text-muted">(patterns, differences, trends)</small></label>
+                        <textarea class="form-control mb-3" id="observationNotes" rows="6" placeholder="Example: I noticed that Cymbidium orchids from different regions seem to flower at different times of the year, with Asian specimens blooming earlier than California specimens..."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Why is this interesting? <small class="text-muted">(significance, implications)</small></label>
+                        <textarea class="form-control mb-3" id="significance" rows="6" placeholder="This could be important because flowering time affects pollination success, conservation planning, and cultivation practices..."></textarea>
+                    </div>
+                </div>
+                
+                <label class="form-label">Related factors to investigate:</label>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_location" value="geographic_location">
+                            <label class="form-check-label" for="factor_location">Geographic location</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_elevation" value="elevation">
+                            <label class="form-check-label" for="factor_elevation">Elevation</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_climate" value="climate">
+                            <label class="form-check-label" for="factor_climate">Climate zone</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_size" value="flower_size">
+                            <label class="form-check-label" for="factor_size">Flower size</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_growth" value="growth_habit">
+                            <label class="form-check-label" for="factor_growth">Growth habit</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_season" value="bloom_season">
+                            <label class="form-check-label" for="factor_season">Bloom season</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_wild" value="wild_vs_cultivated">
+                            <label class="form-check-label" for="factor_wild">Wild vs cultivated</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_genus" value="genus_species">
+                            <label class="form-check-label" for="factor_genus">Genus/species</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="factor_photo" value="photo_timing">
+                            <label class="form-check-label" for="factor_photo">Photo timing</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Access Links -->
+            <div class="data-preview">
+                <h4><i data-feather="database" class="me-2"></i>Explore the Data First</h4>
+                <p class="mb-3">Before forming hypotheses, explore our orchid database to make informed observations:</p>
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="/gallery" class="btn btn-outline-primary w-100 mb-2" target="_blank">
+                            <i data-feather="grid" class="me-2"></i>Browse Gallery
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/enhanced-mapping" class="btn btn-outline-success w-100 mb-2" target="_blank">
+                            <i data-feather="map" class="me-2"></i>World Map
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/search" class="btn btn-outline-warning w-100 mb-2" target="_blank">
+                            <i data-feather="search" class="me-2"></i>Advanced Search
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/compare" class="btn btn-outline-info w-100 mb-2" target="_blank">
+                            <i data-feather="shuffle" class="me-2"></i>Compare Orchids
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Example Observations -->
+            <div class="example-observations">
+                <h5><i data-feather="lightbulb" class="me-2"></i>Good Observation Examples</h5>
+                <ul class="mb-0">
+                    <li><strong>Pattern:</strong> "Epiphytic orchids tend to have smaller flowers than terrestrial orchids in our database"</li>
+                    <li><strong>Geographic:</strong> "Orchids from tropical regions show more diverse flower colors than temperate species"</li>
+                    <li><strong>Seasonal:</strong> "Most Asian Cymbidium species flower in late winter/early spring in cultivation"</li>
+                    <li><strong>Morphological:</strong> "Orchids with pseudobulbs seem to have different water requirements than those without"</li>
+                    <li><strong>Ecological:</strong> "Wild-collected specimens show greater size variation than cultivated ones"</li>
+                </ul>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            <div class="card bg-info">
+                <div class="card-body">
+                    <h5><i data-feather="trending-up" class="me-2"></i>Current Data Highlights</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Most Common Genus:</strong> Cymbidium (40+ specimens)</p>
+                            <p class="mb-1"><strong>Geographic Spread:</strong> Asia, Americas, Australia</p>
+                            <p class="mb-1"><strong>Growth Habits:</strong> Epiphytic, terrestrial, lithophytic</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Photo Sources:</strong> Wild collections, gardens, shows</p>
+                            <p class="mb-1"><strong>AI Analysis:</strong> 95%+ specimens have detailed metadata</p>
+                            <p class="mb-1"><strong>Time Span:</strong> Photos from multiple seasons and years</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+        <button class="stage-nav-btn btn-dashboard" onclick="backToDashboard()">
+            <i data-feather="cpu" class="me-2"></i>Dashboard
+        </button>
+        <button class="stage-nav-btn" onclick="window.location.href='/'" style="background: rgba(108, 117, 125, 0.8);">
+            <i data-feather="home" class="me-2"></i>Home
+        </button>
+        <button class="stage-nav-btn btn-save" onclick="saveProgress()">
+            <i data-feather="save" class="me-2"></i>Save Progress
+        </button>
+        <button class="stage-nav-btn btn-next" onclick="nextStage()">
+            Next<i data-feather="arrow-right" class="ms-2"></i>
+        </button>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            loadSavedData();
+            console.log('🔬 Observation stage initialized');
+        });
+        
+        // Navigation functions
+        function backToDashboard() {
+            window.location.href = '/research-lab/';
+        }
+        
+        function nextStage() {
+            if (validateObservations()) {
+                saveCurrentData();
+                window.location.href = '/research-lab/stage/hypothesis';
+            }
+        }
+        
+        function saveProgress() {
+            saveCurrentData();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 1000;';
+            alert.innerHTML = '<i data-feather="check"></i> Progress saved!';
+            document.body.appendChild(alert);
+            
+            feather.replace();
+            
+            setTimeout(() => alert.remove(), 3000);
+        }
+        
+        // Data management
+        function saveCurrentData() {
+            const selectedFactors = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            
+            const observationData = {
+                observation_notes: document.getElementById('observationNotes').value,
+                significance: document.getElementById('significance').value,
+                related_factors: selectedFactors,
+                completed_at: new Date().toISOString()
+            };
+            
+            // Save to localStorage (in production this would go to server)
+            let projectData = JSON.parse(localStorage.getItem('currentResearchProject') || '{}');
+            projectData.observation = { data: observationData };
+            localStorage.setItem('currentResearchProject', JSON.stringify(projectData));
+            
+            console.log('💾 Observation data saved');
+        }
+        
+        function loadSavedData() {
+            const projectData = JSON.parse(localStorage.getItem('currentResearchProject') || '{}');
+            
+            if (projectData.observation && projectData.observation.data) {
+                const data = projectData.observation.data;
+                document.getElementById('observationNotes').value = data.observation_notes || '';
+                document.getElementById('significance').value = data.significance || '';
+                
+                // Restore checkboxes
+                if (data.related_factors) {
+                    data.related_factors.forEach(factor => {
+                        const checkbox = document.querySelector(`input[value="${factor}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            }
+        }
+        
+        function validateObservations() {
+            const notes = document.getElementById('observationNotes').value.trim();
+            const significance = document.getElementById('significance').value.trim();
+            
+            if (!notes || notes.length < 50) {
+                alert('⚠️ Please provide detailed observations (at least 50 characters)');
+                return false;
+            }
+            
+            if (!significance || significance.length < 30) {
+                alert('⚠️ Please explain why these observations are interesting (at least 30 characters)');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Auto-save while typing
+        let saveTimeout;
+        ['observationNotes', 'significance'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveCurrentData, 2000); // Auto-save after 2 seconds of inactivity
+            });
+        });
+        
+        // Auto-save on checkbox change
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                setTimeout(saveCurrentData, 500);
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveProgress();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextStage();
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        backToDashboard();
+                        break;
+                }
+            }
+        });
+        
+        // Helpful tips
+        function showTip(element) {
+            const tips = {
+                'observationNotes': 'Describe specific patterns or differences you noticed. Be detailed and scientific.',
+                'significance': 'Explain why this observation matters for orchid biology, conservation, or cultivation.',
+            };
+            
+            const tip = tips[element.id];
+            if (tip) {
+                element.setAttribute('title', tip);
+            }
+        }
+        
+        // Add tooltips to form elements
+        document.querySelectorAll('#observationNotes, #significance').forEach(element => {
+            element.addEventListener('focus', () => showTip(element));
+        });
+    </script>
+</body>
+</html>

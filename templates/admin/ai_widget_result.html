@@ -1,0 +1,242 @@
+{% extends "layout.html" %}
+{% set page_title = "AI Widget Result - Admin" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="check-circle" class="me-2"></i>
+                    {% if action == 'create' %}Widget Created{% else %}Widget Modified{% endif %}
+                </h1>
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="previewWidget()">
+                        <i data-feather="eye" class="me-1"></i>Preview Widget
+                    </button>
+                    <button class="btn btn-primary" onclick="implementWidget()">
+                        <i data-feather="download" class="me-1"></i>Implement Widget
+                    </button>
+                    <a href="{{ url_for('ai_widgets.ai_widget_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5 class="mb-2">
+                    <i data-feather="message-square" class="me-2"></i>Your Request
+                </h5>
+                <p class="mb-0">"{{ request_text }}"</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- AI Response -->
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="cpu" class="me-2"></i>AI Generated Code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="codeTabContent">
+                        <!-- Raw AI Response -->
+                        <div class="mb-4">
+                            <h6 class="text-success mb-3">AI Response:</h6>
+                            <div class="bg-secondary p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                                <pre class="text-light mb-0" style="white-space: pre-wrap;">{{ result.raw_response }}</pre>
+                            </div>
+                        </div>
+
+                        {% if result.widget_config %}
+                        <!-- Widget Configuration -->
+                        <div class="mb-4">
+                            <h6 class="text-primary mb-3">Widget Configuration:</h6>
+                            <div class="bg-dark border p-3 rounded">
+                                <pre class="text-light mb-0">{{ result.widget_config | tojson(indent=2) }}</pre>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="text-warning mb-3">Next Steps:</h6>
+                        <ol class="text-light">
+                            <li>Review the AI-generated code above</li>
+                            <li>Click "Preview Widget" to see how it looks</li>
+                            <li>Make any necessary adjustments</li>
+                            <li>Click "Implement Widget" to add it to your system</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Panel -->
+        <div class="col-lg-4">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">Implementation Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-outline-success" onclick="previewWidget()">
+                            <i data-feather="eye" class="me-2"></i>Preview Widget
+                            <br><small>See how your widget looks</small>
+                        </button>
+                        
+                        <button class="btn btn-outline-primary" onclick="implementWidget()">
+                            <i data-feather="download" class="me-2"></i>Implement Widget
+                            <br><small>Add to widget system</small>
+                        </button>
+                        
+                        <button class="btn btn-outline-warning" onclick="editWidget()">
+                            <i data-feather="edit" class="me-2"></i>Edit Further
+                            <br><small>Make more modifications</small>
+                        </button>
+                        
+                        <button class="btn btn-outline-info" onclick="copyEmbedCode()">
+                            <i data-feather="clipboard" class="me-2"></i>Copy Embed Code
+                            <br><small>For external websites</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget Info -->
+            <div class="card bg-secondary text-light mt-3">
+                <div class="card-body">
+                    <h6 class="text-success">
+                        <i data-feather="info" class="me-2"></i>Widget Details
+                    </h6>
+                    {% if result.widget_config %}
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Type:</strong> {{ result.widget_config.get('widget_type', 'Custom') }}</li>
+                        {% if result.widget_config.get('description') %}
+                        <li><strong>Description:</strong> {{ result.widget_config.description[:100] }}...</li>
+                        {% endif %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">Widget Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Generating preview...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const widgetConfig = {{ result.widget_config | tojson if result.widget_config else '{}' }};
+
+function previewWidget() {
+    document.getElementById('previewContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Generating preview...</span>
+            </div>
+            <p class="mt-2">Generating widget preview...</p>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+    
+    fetch('/admin/ai-widgets/preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            widget_config: widgetConfig
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('previewContent').innerHTML = data.preview_html;
+        } else {
+            document.getElementById('previewContent').innerHTML = `
+                <div class="alert alert-danger">
+                    Error generating preview: ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('previewContent').innerHTML = `
+            <div class="alert alert-danger">
+                Network error: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function implementWidget() {
+    if (confirm('This will implement the widget into your system. Continue?')) {
+        fetch('/admin/ai-widgets/implement', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                widget_config: widgetConfig
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Widget implementation ready!\n\n${data.implementation_steps.join('\n')}`);
+            } else {
+                alert('Error implementing widget: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Network error: ' + error.message);
+        });
+    }
+}
+
+function editWidget() {
+    {% if action == 'create' %}
+    window.location.href = '{{ url_for("ai_widgets.create_widget") }}';
+    {% else %}
+    window.location.href = '{{ url_for("ai_widgets.modify_widget", widget_type=widget_type) }}';
+    {% endif %}
+}
+
+function copyEmbedCode() {
+    const embedCode = `<iframe src="/widgets/embed/${widgetConfig.widget_type || 'custom'}" width="100%" height="400" frameborder="0"></iframe>`;
+    
+    navigator.clipboard.writeText(embedCode).then(() => {
+        alert('Embed code copied to clipboard!');
+    }).catch(() => {
+        prompt('Copy this embed code:', embedCode);
+    });
+}
+</script>
+{% endblock %}

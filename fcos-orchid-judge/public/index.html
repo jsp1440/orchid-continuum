@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCOS Orchid Judge - Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 400px 1fr;
+            }
+        }
+        
+        .widget-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            height: 600px;
+            overflow-y: auto;
+        }
+        
+        .controls-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        
+        .control-group button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .control-group button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .status-success { background: #10b981; }
+        .status-warning { background: #f59e0b; }
+        .status-error { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>FCOS Orchid Judge</h1>
+            <p>Mobile-First Educational Orchid Judging Widget</p>
+        </div>
+        
+        <div class="demo-grid">
+            <!-- Widget Container -->
+            <div class="widget-container">
+                <div id="fcos-orchid-judge"></div>
+            </div>
+            
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <h3>Demo Controls</h3>
+                
+                <div class="control-group">
+                    <label>Theme</label>
+                    <select id="theme-select">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Text Size</label>
+                    <select id="text-size-select">
+                        <option value="normal">Normal</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Language</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ja">Japanese</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>AI Provider</label>
+                    <select id="ai-provider-select">
+                        <option value="openai">OpenAI</option>
+                        <option value="webhook">Custom Webhook</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Cloud Sync</label>
+                    <div>
+                        <input type="text" id="webapp-url" placeholder="Webapp URL" style="margin-bottom: 0.5rem;">
+                        <input type="text" id="webapp-secret" placeholder="Secret Key">
+                    </div>
+                    <button onclick="updateCloudConfig()">Update Cloud Config</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>Widget Actions</label>
+                    <div>
+                        <button onclick="remountWidget()">Remount Widget</button>
+                        <button onclick="toggleDevMode()">Dev Mode</button>
+                        <button onclick="clearStorage()">Clear Storage</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Status</label>
+                    <div id="status-display">
+                        <div><span class="status-indicator status-success"></span>Widget: Loaded</div>
+                        <div><span class="status-indicator status-warning"></span>Cloud: Not configured</div>
+                        <div><span class="status-indicator status-error"></span>AI: Not configured</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the widget -->
+    <script src="./fcos-orchid-judge.umd.js"></script>
+    <script>
+        let currentWidget = null;
+        
+        // Initialize widget
+        function initWidget() {
+            const config = {
+                theme: document.getElementById('theme-select').value,
+                largeText: document.getElementById('text-size-select').value === 'large',
+                language: document.getElementById('language-select').value,
+                aiProvider: {
+                    mode: document.getElementById('ai-provider-select').value,
+                    webhookUrl: null
+                },
+                cloud: {
+                    webappUrl: document.getElementById('webapp-url').value || undefined,
+                    secret: document.getElementById('webapp-secret').value || undefined
+                }
+            };
+            
+            try {
+                currentWidget = FCOSOrchidJudge.mount('#fcos-orchid-judge', config);
+                updateStatus();
+                console.log('Widget mounted successfully', config);
+            } catch (error) {
+                console.error('Failed to mount widget:', error);
+                document.getElementById('fcos-orchid-judge').innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: red;">Failed to load widget: ' + error.message + '</div>';
+            }
+        }
+        
+        function remountWidget() {
+            if (currentWidget) {
+                FCOSOrchidJudge.unmount(currentWidget);
+            }
+            initWidget();
+        }
+        
+        function updateCloudConfig() {
+            if (currentWidget) {
+                const config = currentWidget.getConfig();
+                config.cloud = {
+                    webappUrl: document.getElementById('webapp-url').value || undefined,
+                    secret: document.getElementById('webapp-secret').value || undefined
+                };
+                currentWidget.updateConfig(config);
+                updateStatus();
+            }
+        }
+        
+        function clearStorage() {
+            if (confirm('Clear all stored data?')) {
+                localStorage.clear();
+                if ('indexedDB' in window) {
+                    indexedDB.deleteDatabase('fcos_orchid_judge');
+                }
+                alert('Storage cleared');
+            }
+        }
+        
+        function toggleDevMode() {
+            const container = document.querySelector('.widget-container');
+            if (container.style.height === '800px') {
+                container.style.height = '600px';
+            } else {
+                container.style.height = '800px';
+            }
+        }
+        
+        function updateStatus() {
+            const status = document.getElementById('status-display');
+            const config = currentWidget ? currentWidget.getConfig() : null;
+            
+            status.innerHTML = `
+                <div><span class="status-indicator ${currentWidget ? 'status-success' : 'status-error'}"></span>Widget: ${currentWidget ? 'Loaded' : 'Failed'}</div>
+                <div><span class="status-indicator ${config?.cloud?.webappUrl ? 'status-success' : 'status-warning'}"></span>Cloud: ${config?.cloud?.webappUrl ? 'Configured' : 'Not configured'}</div>
+                <div><span class="status-indicator ${window.OPENAI_API_KEY ? 'status-success' : 'status-error'}"></span>AI: ${window.OPENAI_API_KEY ? 'Configured' : 'Not configured'}</div>
+            `;
+        }
+        
+        // Set up control listeners
+        document.getElementById('theme-select').addEventListener('change', remountWidget);
+        document.getElementById('text-size-select').addEventListener('change', remountWidget);
+        document.getElementById('language-select').addEventListener('change', remountWidget);
+        document.getElementById('ai-provider-select').addEventListener('change', remountWidget);
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if widget is available
+            if (typeof FCOSOrchidJudge === 'undefined') {
+                document.getElementById('fcos-orchid-judge').innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: red;">Widget script not loaded. Make sure fcos-orchid-judge.umd.js is built and available.</div>';
+                return;
+            }
+            
+            initWidget();
+        });
+    </script>
+</body>
+</html>

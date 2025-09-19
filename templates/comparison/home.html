@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Comparison System | Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-white">
+                <div class="card-header">
+                    <h1 class="card-title mb-0">
+                        <i data-feather="layers"></i> 
+                        Orchid Comparison System
+                    </h1>
+                    <p class="text-muted mb-0">Compare orchid specimens side-by-side with detailed analysis</p>
+                </div>
+                
+                <div class="card-body">
+                    {% if candidates %}
+                        <h3 class="mb-4">
+                            <i data-feather="search"></i> 
+                            Research-Ready Orchid Groups
+                        </h3>
+                        
+                        <div class="row">
+                            {% for candidate in candidates %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card bg-secondary">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ candidate.name }}</h5>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                Research Score: {{ candidate.research_score }}
+                                            </small>
+                                        </p>
+                                        <p class="card-text">
+                                            📊 {{ candidate.specimen_count }} specimens<br>
+                                            📸 {{ candidate.photos_count }} with photos<br>
+                                            👥 {{ candidate.photographers_count }} different growers<br>
+                                            🔬 {{ candidate.scientific_names_count }} with scientific names
+                                        </p>
+                                        <a href="/comparison/compare/{{ candidate.name|urlencode }}" 
+                                           class="btn btn-primary">
+                                            <i data-feather="eye"></i> Compare Specimens
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="search" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                            <h3 class="text-muted">No Comparison Candidates Available</h3>
+                            <p class="text-muted">
+                                Comparison groups will appear here when we have multiple specimens of the same orchid species.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+{% endblock %}

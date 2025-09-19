@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Discovery Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body { 
+            background: #1a1a1a; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .discovery-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .search-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .search-input {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: #fff;
+            font-size: 16px;
+            width: 100%;
+        }
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+        .tool-button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tool-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        .tool-button.active {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        .orchid-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .orchid-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .orchid-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.2);
+        }
+        .orchid-image {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(45deg, #4CAF50, #2196F3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .featured-section {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .identifier-drop-zone {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .identifier-drop-zone:hover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .identifier-drop-zone.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+        .filter-chip {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin: 2px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-chip:hover {
+            background: #4CAF50;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="discovery-container">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="mb-2">🔍 Orchid Discovery Center</h2>
+                <p class="text-muted">Search, browse, identify, and explore the Five Cities collection</p>
+            </div>
+
+            <!-- Featured Orchid Section -->
+            <div class="featured-section">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4><i data-feather="star"></i> Featured Orchid</h4>
+                        <h5>Cattleya trianae - Colombia's National Flower</h5>
+                        <p>This magnificent orchid blooms during Christmas season and represents one of the most beautiful species in the world. Known for its vibrant colors and intoxicating fragrance.</p>
+                        <div class="filter-chip">Cattleya</div>
+                        <div class="filter-chip">Epiphyte</div>
+                        <div class="filter-chip">Fragrant</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="orchid-image" style="height: 150px;">
+                            <span style="font-size: 4em;">🌺</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discovery Tools -->
+            <div class="search-section">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-8">
+                        <input type="text" class="search-input" placeholder="Search by name, genus, species, or characteristics..." id="search-input">
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="tool-button active" onclick="setMode('search')" id="search-btn">
+                            <i data-feather="search"></i> Search
+                        </button>
+                        <button class="tool-button" onclick="setMode('browse')" id="browse-btn">
+                            <i data-feather="grid"></i> Browse
+                        </button>
+                        <button class="tool-button" onclick="setMode('identify')" id="identify-btn">
+                            <i data-feather="camera"></i> Identify
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="mb-3">
+                    <span class="me-2">Quick Filters:</span>
+                    <div class="filter-chip" onclick="quickFilter('Cattleya')">Cattleya</div>
+                    <div class="filter-chip" onclick="quickFilter('Phalaenopsis')">Phalaenopsis</div>
+                    <div class="filter-chip" onclick="quickFilter('Dendrobium')">Dendrobium</div>
+                    <div class="filter-chip" onclick="quickFilter('epiphyte')">Epiphytes</div>
+                    <div class="filter-chip" onclick="quickFilter('terrestrial')">Terrestrial</div>
+                    <div class="filter-chip" onclick="quickFilter('fragrant')">Fragrant</div>
+                </div>
+            </div>
+
+            <!-- Search Mode -->
+            <div id="search-mode" class="mode-content">
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-number">247</div>
+                        <div>Total Orchids</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">42</div>
+                        <div>Genera</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">189</div>
+                        <div>Species</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">156</div>
+                        <div>With Photos</div>
+                    </div>
+                </div>
+
+                <div class="orchid-grid" id="results-grid">
+                    <!-- Search results will be populated here -->
+                    <div class="orchid-card" onclick="selectOrchid('cattleya')">
+                        <div class="orchid-image">
+                            <span style="font-size: 3em;">🌺</span>
+                        </div>
+                        <h6>Cattleya trianae</h6>
+                        <small class="text-muted">Colombia's National Flower</small>
+                    </div>
+                    <div class="orchid-card" onclick="selectOrchid('phalaenopsis')">
+                        <div class="orchid-image">
+                            <span style="font-size: 3em;">🌸</span>
+                        </div>
+                        <h6>Phalaenopsis amabilis</h6>
+                        <small class="text-muted">Moth Orchid</small>
+                    </div>
+                    <div class="orchid-card" onclick="selectOrchid('dendrobium')">
+                        <div class="orchid-image">
+                            <span style="font-size: 3em;">💜</span>
+                        </div>
+                        <h6>Dendrobium nobile</h6>
+                        <small class="text-muted">Noble Dendrobium</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browse Mode -->
+            <div id="browse-mode" class="mode-content" style="display: none;">
+                <h5>Browse by Category</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="orchid-card" onclick="browseCategory('growth-habit')">
+                            <h6><i data-feather="tree"></i> Growth Habit</h6>
+                            <p>Epiphyte, Terrestrial, Lithophyte</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="orchid-card" onclick="browseCategory('flower-color')">
+                            <h6><i data-feather="aperture"></i> Flower Color</h6>
+                            <p>Purple, White, Pink, Yellow, Red</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="orchid-card" onclick="browseCategory('blooming-season')">
+                            <h6><i data-feather="calendar"></i> Blooming Season</h6>
+                            <p>Spring, Summer, Fall, Winter</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Identify Mode -->
+            <div id="identify-mode" class="mode-content" style="display: none;">
+                <div class="identifier-drop-zone" onclick="uploadPhoto()" id="drop-zone">
+                    <i data-feather="camera" style="width: 50px; height: 50px; margin-bottom: 20px;"></i>
+                    <h5>AI-Powered Orchid Identification</h5>
+                    <p>Upload a photo or drag and drop to identify your orchid</p>
+                    <button class="tool-button">
+                        <i data-feather="upload"></i> Choose Photo
+                    </button>
+                    <input type="file" id="photo-input" accept="image/*" style="display: none;">
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Recent Identifications</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="orchid-card">
+                                <strong>Phalaenopsis hybrid</strong> (95% confidence)<br>
+                                <small>Identified 2 hours ago</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="orchid-card">
+                                <strong>Cattleya intermedia</strong> (87% confidence)<br>
+                                <small>Identified yesterday</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setMode(mode) {
+            // Hide all modes
+            document.querySelectorAll('.mode-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tool-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected mode and activate button
+            document.getElementById(mode + '-mode').style.display = 'block';
+            document.getElementById(mode + '-btn').classList.add('active');
+        }
+
+        function quickFilter(term) {
+            document.getElementById('search-input').value = term;
+            // Simulate search
+            console.log('Filtering by:', term);
+        }
+
+        function selectOrchid(id) {
+            console.log('Selected orchid:', id);
+            // Could open modal or navigate to detail page
+        }
+
+        function browseCategory(category) {
+            console.log('Browsing category:', category);
+            setMode('search');
+        }
+
+        function uploadPhoto() {
+            document.getElementById('photo-input').click();
+        }
+
+        // File upload handling
+        document.getElementById('photo-input').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                console.log('Photo uploaded:', e.target.files[0].name);
+                // Simulate AI identification
+                setTimeout(() => {
+                    alert('AI Identification: Cattleya hybrid (92% confidence)');
+                }, 2000);
+            }
+        });
+
+        // Drag and drop
+        const dropZone = document.getElementById('drop-zone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                console.log('File dropped:', e.dataTransfer.files[0].name);
+            }
+        });
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            console.log('Searching for:', query);
+            // Real search would filter results here
+        });
+
+        // Initialize Feather icons
+        feather.replace();
+    </script>
+</body>
+</html>

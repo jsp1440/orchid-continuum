@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+{% set page_title = "Processing Log" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 text-light">
+                        <i data-feather="file-text" class="me-2"></i>
+                        Processing Log
+                    </h1>
+                    <p class="text-muted mb-0">Detailed processing activity and error logs</p>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-light" id="refreshLogBtn">
+                        <i data-feather="refresh-cw" class="me-1"></i>Refresh
+                    </button>
+                    <a href="{{ url_for('processing.processing_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label for="logLevel" class="form-label">Log Level</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="logLevel">
+                                <option value="all">All Levels</option>
+                                <option value="ERROR">Errors Only</option>
+                                <option value="WARNING">Warnings & Errors</option>
+                                <option value="INFO">Info & Above</option>
+                                <option value="DEBUG">Debug & Above</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateFilter" class="form-label">Date Range</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="dateFilter">
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week">Past Week</option>
+                                <option value="month">Past Month</option>
+                                <option value="all">All Time</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="searchFilter" class="form-label">Search</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" 
+                                   id="searchFilter" placeholder="Search log messages...">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-primary w-100" id="applyFiltersBtn">
+                                <i data-feather="filter" class="me-1"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Entries -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="list" class="me-2"></i>Log Entries
+                    </h5>
+                    <span class="badge bg-info" id="logCount">{{ log_entries|length }} entries</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 180px;">Timestamp</th>
+                                    <th style="width: 80px;">Level</th>
+                                    <th>Message</th>
+                                    <th style="width: 120px;">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                                {% if log_entries %}
+                                    {% for entry in log_entries %}
+                                    <tr class="log-entry" data-level="{{ entry.level.lower() }}">
+                                        <td class="font-monospace small">
+                                            {{ entry.timestamp[:19] }}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if entry.level == 'ERROR' %}bg-danger{% elif entry.level == 'WARNING' %}bg-warning text-dark{% elif entry.level == 'INFO' %}bg-info{% else %}bg-secondary{% endif %}">
+                                                {{ entry.level }}
+                                            </span>
+                                        </td>
+                                        <td class="font-monospace small">
+                                            {{ entry.message }}
+                                        </td>
+                                        <td class="text-muted small">
+                                            Processing
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5">
+                                            <i data-feather="file-text" class="mb-3 text-muted" style="width: 64px; height: 64px;"></i>
+                                            <h6 class="text-muted">No Log Entries</h6>
+                                            <p class="text-muted">No processing logs available yet. Run some processing operations to generate logs.</p>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if log_entries and log_entries|length > 50 %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing last 50 entries. Use filters to narrow results.
+                        </small>
+                        <button class="btn btn-outline-light btn-sm" onclick="loadMoreLogs()">
+                            <i data-feather="more-horizontal" class="me-1"></i>Load More
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Log filtering functionality
+function applyLogFilters() {
+    const level = document.getElementById('logLevel').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const searchText = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('.log-entry');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        // Level filter
+        if (level !== 'all') {
+            const rowLevel = row.dataset.level.toUpperCase();
+            const filterLevels = {
+                'ERROR': ['ERROR'],
+                'WARNING': ['ERROR', 'WARNING'],
+                'INFO': ['ERROR', 'WARNING', 'INFO'],
+                'DEBUG': ['ERROR', 'WARNING', 'INFO', 'DEBUG']
+            };
+            if (!filterLevels[level].includes(rowLevel)) {
+                show = false;
+            }
+        }
+        
+        // Search filter
+        if (searchText && show) {
+            const message = row.cells[2].textContent.toLowerCase();
+            if (!message.includes(searchText)) {
+                show = false;
+            }
+        }
+        
+        // Show/hide row
+        row.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+    
+    // Update count
+    document.getElementById('logCount').textContent = `${visibleCount} entries`;
+}
+
+function loadMoreLogs() {
+    // In a real implementation, this would fetch more log entries via AJAX
+    alert('Load more functionality would fetch additional log entries from the server.');
+}
+
+// Event listeners
+document.getElementById('applyFiltersBtn').addEventListener('click', applyLogFilters);
+document.getElementById('refreshLogBtn').addEventListener('click', () => {
+    location.reload();
+});
+
+// Auto-apply filters on input change
+document.getElementById('logLevel').addEventListener('change', applyLogFilters);
+document.getElementById('searchFilter').addEventListener('input', applyLogFilters);
+document.getElementById('dateFilter').addEventListener('change', applyLogFilters);
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    // In production, this would update via AJAX
+    console.log('Auto-refresh would update log entries');
+}, 30000);
+</script>
+{% endblock %}

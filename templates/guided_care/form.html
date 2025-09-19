@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Guided Orchid Care Assistant{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                <div class="card-header text-center" style="background: linear-gradient(135deg, #0f3460, #0e6b7d); border: none;">
+                    <h2 class="text-light mb-0">
+                        <i data-feather="clipboard" class="me-2"></i>
+                        🌺 Guided Orchid Care Assistant
+                    </h2>
+                    <p class="text-light opacity-75 mt-2 mb-0">Step-by-step guidance to solve your orchid problems</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Guided Care Form -->
+                    <form id="guidedCareForm">
+                        <!-- Step 1: Orchid Selection -->
+                        <div class="mb-4">
+                            <h5 class="text-light mb-3">
+                                <i data-feather="search" class="me-2"></i>
+                                Step 1: Tell us about your orchid
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="genusSelect" class="form-label text-light">
+                                        <i data-feather="flower" class="me-2"></i>
+                                        Orchid Genus *
+                                    </label>
+                                    <select class="form-control bg-dark text-light border-secondary" id="genusSelect" name="genus" required>
+                                        <option value="">Select genus...</option>
+                                        {% for genus in genera %}
+                                        <option value="{{ genus.genus }}">
+                                            {{ genus.genus }} 
+                                            {% if genus.common_names %}({{ genus.common_names|join(', ') }}){% endif %}
+                                            - {{ genus.count }} in database
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="speciesSelect" class="form-label text-light">
+                                        <i data-feather="leaf" class="me-2"></i>
+                                        Species (optional)
+                                    </label>
+                                    <select class="form-control bg-dark text-light border-secondary" id="speciesSelect" name="species" disabled>
+                                        <option value="">First select a genus...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Problem Selection -->
+                        <div class="mb-4">
+                            <h5 class="text-light mb-3">
+                                <i data-feather="alert-triangle" class="me-2"></i>
+                                Step 2: What problems are you seeing? *
+                            </h5>
+                            
+                            <div class="row">
+                                {% for category in problems %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card bg-dark border-secondary">
+                                        <div class="card-header bg-secondary text-light py-2">
+                                            <h6 class="mb-0">{{ category.category }}</h6>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            {% for problem in category.problems %}
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input problem-checkbox" type="checkbox" 
+                                                       value="{{ problem }}" id="problem_{{ loop.index0 }}_{{ loop.index }}">
+                                                <label class="form-check-label text-light" for="problem_{{ loop.index0 }}_{{ loop.index }}">
+                                                    {{ problem }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Location -->
+                        <div class="mb-4">
+                            <h5 class="text-light mb-3">
+                                <i data-feather="map-pin" class="me-2"></i>
+                                Step 3: Where are you located?
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="locationSelect" class="form-label text-light">Choose from common locations</label>
+                                    <select class="form-control bg-dark text-light border-secondary" id="locationSelect">
+                                        <option value="">Select your location...</option>
+                                        {% for location_group in locations %}
+                                        <optgroup label="{{ location_group.category }}">
+                                            {% for location in location_group.locations %}
+                                            <option value="{{ location }}">{{ location }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="customLocation" class="form-label text-light">Or enter custom location</label>
+                                    <input type="text" class="form-control bg-dark text-light border-secondary" 
+                                           id="customLocation" name="location" placeholder="e.g., Austin, TX or Berlin, Germany">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Additional Details -->
+                        <div class="mb-4">
+                            <h5 class="text-light mb-3">
+                                <i data-feather="edit-3" class="me-2"></i>
+                                Step 4: Additional details (optional)
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="additionalDetails" class="form-label text-light">Problem details</label>
+                                    <textarea class="form-control bg-dark text-light border-secondary" 
+                                              id="additionalDetails" name="additional_details" rows="3"
+                                              placeholder="When did the problem start? How severe is it? Any other details..."></textarea>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="careHistory" class="form-label text-light">Care routine</label>
+                                    <textarea class="form-control bg-dark text-light border-secondary" 
+                                              id="careHistory" name="care_history" rows="3"
+                                              placeholder="How often do you water? What light does it get? What fertilizer do you use?"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="getCareAdviceBtn" 
+                                    style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 8px;">
+                                <i data-feather="search" class="me-2"></i>
+                                Get Expert Care Advice
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" id="loadingSpinner"></span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Results Area -->
+                    <div id="adviceResults" class="mt-4 d-none">
+                        <div class="card bg-dark border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i data-feather="check-circle" class="me-2"></i>
+                                    Expert Care Advice
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6 class="text-info">Your Question:</h6>
+                                    <div id="structuredQuestion" class="text-light bg-secondary p-2 rounded"></div>
+                                </div>
+                                <div id="adviceContent" class="text-light"></div>
+                                <div class="text-end mt-3">
+                                    <small class="text-muted">
+                                        <i data-feather="clock" class="me-1"></i>
+                                        <span id="adviceTimestamp"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Area -->
+                    <div id="errorResults" class="mt-4 d-none">
+                        <div class="alert alert-danger">
+                            <i data-feather="alert-triangle" class="me-2"></i>
+                            <span id="errorContent"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Handle genus selection to load species
+document.getElementById('genusSelect').addEventListener('change', async function() {
+    const genus = this.value;
+    const speciesSelect = document.getElementById('speciesSelect');
+    
+    if (!genus) {
+        speciesSelect.disabled = true;
+        speciesSelect.innerHTML = '<option value="">First select a genus...</option>';
+        return;
+    }
+    
+    try {
+        speciesSelect.disabled = true;
+        speciesSelect.innerHTML = '<option value="">Loading species...</option>';
+        
+        const response = await fetch(`/guided-care/api/species/${genus}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            speciesSelect.innerHTML = '<option value="">Select species (optional)...</option>';
+            data.species.forEach(species => {
+                const option = document.createElement('option');
+                option.value = species.scientific_name;
+                option.textContent = `${species.display_name} (${species.count} in database)`;
+                speciesSelect.appendChild(option);
+            });
+            speciesSelect.disabled = false;
+        } else {
+            speciesSelect.innerHTML = '<option value="">Error loading species</option>';
+        }
+    } catch (error) {
+        console.error('Error loading species:', error);
+        speciesSelect.innerHTML = '<option value="">Error loading species</option>';
+    }
+});
+
+// Handle location dropdown
+document.getElementById('locationSelect').addEventListener('change', function() {
+    const customLocation = document.getElementById('customLocation');
+    if (this.value) {
+        customLocation.value = this.value;
+    }
+});
+
+// Handle custom location input
+document.getElementById('customLocation').addEventListener('input', function() {
+    const locationSelect = document.getElementById('locationSelect');
+    if (this.value) {
+        locationSelect.value = '';
+    }
+});
+
+// Handle form submission
+document.getElementById('guidedCareForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Collect form data
+    const genus = document.getElementById('genusSelect').value;
+    const species = document.getElementById('speciesSelect').value;
+    const location = document.getElementById('customLocation').value;
+    const additionalDetails = document.getElementById('additionalDetails').value;
+    const careHistory = document.getElementById('careHistory').value;
+    
+    // Collect selected problems
+    const problemCheckboxes = document.querySelectorAll('.problem-checkbox:checked');
+    const problems = Array.from(problemCheckboxes).map(cb => cb.value);
+    
+    // Validate required fields
+    if (!genus) {
+        showError('Please select an orchid genus');
+        return;
+    }
+    
+    if (problems.length === 0) {
+        showError('Please select at least one problem you are experiencing');
+        return;
+    }
+    
+    const btn = document.getElementById('getCareAdviceBtn');
+    const spinner = document.getElementById('loadingSpinner');
+    const resultsDiv = document.getElementById('adviceResults');
+    const errorDiv = document.getElementById('errorResults');
+    
+    // Show loading state
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    resultsDiv.classList.add('d-none');
+    errorDiv.classList.add('d-none');
+    
+    try {
+        const response = await fetch('/guided-care/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                genus: genus,
+                species: species,
+                problems: problems,
+                location: location,
+                additional_details: additionalDetails,
+                care_history: careHistory
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAdvice(data.advice, data.structured_question, data.timestamp);
+        } else {
+            showError(data.error || 'Unable to get advice at this time.');
+        }
+        
+    } catch (error) {
+        console.error('Error getting advice:', error);
+        showError('Connection error. Please try again.');
+    } finally {
+        // Hide loading state
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    }
+});
+
+function showAdvice(advice, structuredQuestion, timestamp) {
+    const content = document.getElementById('adviceContent');
+    const questionEl = document.getElementById('structuredQuestion');
+    const timestampEl = document.getElementById('adviceTimestamp');
+    const resultsDiv = document.getElementById('adviceResults');
+    
+    // Show the structured question
+    questionEl.textContent = structuredQuestion;
+    
+    // Format the advice text with line breaks
+    content.innerHTML = advice.replace(/\n/g, '<br>');
+    
+    // Format timestamp
+    const date = new Date(timestamp);
+    timestampEl.textContent = date.toLocaleString();
+    
+    resultsDiv.classList.remove('d-none');
+    resultsDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showError(message) {
+    const errorContent = document.getElementById('errorContent');
+    const errorDiv = document.getElementById('errorResults');
+    
+    errorContent.textContent = message;
+    errorDiv.classList.remove('d-none');
+    errorDiv.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

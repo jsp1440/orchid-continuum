@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% set page_title = "Create Widget with AI - Admin" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="plus-circle" class="me-2"></i>
+                    Create Widget with AI
+                </h1>
+                <a href="{{ url_for('ai_widgets.ai_widget_dashboard') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Creation Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i data-feather="cpu" class="me-2"></i>AI Widget Generator
+                    </h4>
+                    <p class="text-muted mb-0">Describe your widget idea and AI will generate the code</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="widget_request" class="form-label">Describe Your Widget</label>
+                            <textarea class="form-control form-control-lg" 
+                                    id="widget_request" 
+                                    name="widget_request" 
+                                    rows="6" 
+                                    placeholder="Examples:&#10;&#10;• Create a widget that shows orchids from a specific region with weather comparisons&#10;&#10;• I want a widget that displays recent orchid uploads with AI confidence scores&#10;&#10;• Make a widget that lets users compare two orchids side by side with detailed characteristics&#10;&#10;• Create a care reminder widget for orchid enthusiasts&#10;&#10;• Build a widget that shows orchid of the week with growing tips"
+                                    required></textarea>
+                            <div class="form-text">Be as detailed as possible. Include desired features, layout, colors, and functionality.</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="widget_type" class="form-label">Base Widget Type (Optional)</label>
+                            <select class="form-select" id="widget_type" name="widget_type">
+                                <option value="">Let AI decide</option>
+                                {% for widget_type, widget_info in widget_templates.items() %}
+                                <option value="{{ widget_type }}">{{ widget_info.name }} - {{ widget_info.description }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select a base widget type or let AI choose the best approach</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="zap" class="me-2"></i>Generate Widget with AI
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Ideas -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="text-light mb-3">
+                <i data-feather="lightbulb" class="me-2"></i>Widget Ideas
+            </h4>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6 class="text-primary">Care Assistant Widget</h6>
+                            <p class="small text-light mb-2">A widget that provides personalized orchid care recommendations based on user location and orchid collection</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="fillExample(this)">Use This Idea</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6 class="text-success">Blooming Calendar Widget</h6>
+                            <p class="small text-light mb-2">Shows when different orchids are expected to bloom based on species and growing conditions</p>
+                            <button class="btn btn-outline-success btn-sm" onclick="fillExample(this)">Use This Idea</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6 class="text-warning">Price Tracker Widget</h6>
+                            <p class="small text-light mb-2">Tracks orchid prices from various sources and shows price trends for different species</p>
+                            <button class="btn btn-outline-warning btn-sm" onclick="fillExample(this)">Use This Idea</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillExample(button) {
+    const card = button.closest('.card-body');
+    const title = card.querySelector('h6').textContent;
+    const description = card.querySelector('p').textContent;
+    
+    document.getElementById('widget_request').value = `Create a ${title.toLowerCase()}. ${description}
+
+Please include:
+- Responsive design that works on mobile and desktop
+- Clean, modern styling that matches the orchid theme
+- Interactive features where appropriate
+- Integration with our orchid database
+- Easy configuration options`;
+}
+
+// Auto-expand textarea
+document.getElementById('widget_request').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+});
+</script>
+{% endblock %}

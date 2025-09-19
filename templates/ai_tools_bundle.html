@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+
+{% block title %}AI Tools Bundle - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="cpu" class="me-2"></i>
+                            AI Tools Bundle
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('breeding')">
+                                <i data-feather="git-branch" class="me-1"></i>Breeding Assistant
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('identify')">
+                                <i data-feather="search" class="me-1"></i>AI Identification
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('compare')">
+                                <i data-feather="shuffle" class="me-1"></i>Compare & Analyze
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Advanced AI-powered tools for orchid breeding, identification, and analysis</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Tab Content Container -->
+                    <div id="ai-tools-content" style="min-height: 600px;">
+                        <!-- Content will be loaded dynamically based on tab -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'breeding';
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update URL without refresh
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    // Load content for tab
+    loadTabContent(tab);
+    
+    // Emit event for embed integration
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_ai_tools_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('ai-tools-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-primary" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'breeding':
+                await renderBreedingAssistant();
+                break;
+            case 'identify':
+                await renderAIIdentification();
+                break;
+            case 'compare':
+                await renderCompareAnalyze();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderBreedingAssistant() {
+    document.getElementById('ai-tools-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- Parent Selection -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Select Parent Orchids</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small">Pod Parent (Female)</label>
+                                <input type="text" class="form-control" placeholder="Search orchid..." id="pod-parent">
+                                <div class="mt-2">
+                                    <div class="selected-orchid bg-dark border rounded p-2" style="display: none;" id="pod-parent-display">
+                                        <div class="d-flex align-items-center">
+                                            <img src="/static/images/orchid_placeholder.svg" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-2">
+                                            <div>
+                                                <strong class="orchid-name">Cattleya warscewiczii</strong><br>
+                                                <small class="text-muted orchid-details">Species, Purple, Large flowers</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Pollen Parent (Male)</label>
+                                <input type="text" class="form-control" placeholder="Search orchid..." id="pollen-parent">
+                                <div class="mt-2">
+                                    <div class="selected-orchid bg-dark border rounded p-2" style="display: none;" id="pollen-parent-display">
+                                        <div class="d-flex align-items-center">
+                                            <img src="/static/images/orchid_placeholder.svg" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-2">
+                                            <div>
+                                                <strong class="orchid-name">Cattleya aurea</strong><br>
+                                                <small class="text-muted orchid-details">Species, Yellow, Fragrant</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small">Breeding Goals</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="goal-color">
+                                    <label class="form-check-label small">Color variation</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="goal-size">
+                                    <label class="form-check-label small">Larger flowers</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="goal-fragrance">
+                                    <label class="form-check-label small">Enhanced fragrance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="goal-form">
+                                    <label class="form-check-label small">Improved form</label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button class="btn btn-primary" onclick="analyzeBreeding()">
+                                    <i data-feather="cpu" class="me-1"></i>AI Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <!-- AI Analysis Results -->
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">AI Breeding Analysis</h6>
+                            <span class="badge bg-primary">Powered by GPT-4</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="breeding-analysis">
+                                <div class="text-center py-5">
+                                    <i data-feather="git-branch" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                    <h5>AI Breeding Assistant</h5>
+                                    <p class="text-muted">Select parent orchids and breeding goals to get AI-powered predictions and recommendations</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Breeding History -->
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Recent Breeding Analyses</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <div class="card bg-dark">
+                                        <div class="card-body p-2">
+                                            <small>
+                                                <strong>C. warscewiczii × C. aurea</strong><br>
+                                                <span class="text-success">85% success rate</span> | 
+                                                <span class="text-warning">Yellow-purple gradient</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <div class="card bg-dark">
+                                        <div class="card-body p-2">
+                                            <small>
+                                                <strong>Phal. stuartiana × Phal. schilleriana</strong><br>
+                                                <span class="text-success">92% success rate</span> | 
+                                                <span class="text-info">Enhanced patterns</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+async function renderAIIdentification() {
+    document.getElementById('ai-tools-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Image Upload -->
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Upload Orchid Photo</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="upload-area border border-primary rounded p-4 text-center mb-3" style="border-style: dashed !important;">
+                                <i data-feather="camera" style="width: 48px; height: 48px;" class="text-primary mb-3"></i>
+                                <h6>Drop your orchid photo here</h6>
+                                <p class="text-muted mb-3">Or click to browse and select files</p>
+                                <input type="file" id="orchid-photo" accept="image/*" style="display: none;" onchange="handlePhotoUpload()">
+                                <button class="btn btn-primary" onclick="document.getElementById('orchid-photo').click()">
+                                    Choose Photo
+                                </button>
+                            </div>
+                            
+                            <div id="photo-preview" style="display: none;">
+                                <img id="preview-image" class="img-fluid rounded mb-3" style="max-height: 300px;">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="identifyOrchid()">
+                                        <i data-feather="search" class="me-1"></i>Identify This Orchid
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="clearPhoto()">
+                                        <i data-feather="x" class="me-1"></i>Clear Photo
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6 class="small">Photo Tips for Best Results</h6>
+                                <ul class="small text-muted">
+                                    <li>Clear, well-lit photos work best</li>
+                                    <li>Include the entire flower if possible</li>
+                                    <li>Multiple angles can improve accuracy</li>
+                                    <li>Avoid extreme close-ups or distant shots</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <!-- Identification Results -->
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">AI Identification Results</h6>
+                            <span class="badge bg-primary">OpenAI Vision</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="identification-results">
+                                <div class="text-center py-5">
+                                    <i data-feather="eye" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                    <h6>Ready for Analysis</h6>
+                                    <p class="text-muted">Upload a photo to begin AI identification</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Identification History -->
+                    <div class="card bg-secondary mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Recent Identifications</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="/static/images/orchid_placeholder.svg" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-3">
+                                <div>
+                                    <strong>Cattleya warscewiczii</strong><br>
+                                    <small class="text-muted">95% confidence • 2 days ago</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="/static/images/orchid_placeholder.svg" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-3">
+                                <div>
+                                    <strong>Phalaenopsis amabilis</strong><br>
+                                    <small class="text-muted">88% confidence • 1 week ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+async function renderCompareAnalyze() {
+    document.getElementById('ai-tools-content').innerHTML = `
+        <div class="p-3">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Orchid Selection for Comparison -->
+                    <div class="card bg-secondary mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Select Orchids to Compare</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div class="card bg-dark">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Orchid A</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div id="orchid-a-placeholder">
+                                                <i data-feather="plus" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                                <p class="text-muted">Click to select orchid</p>
+                                                <button class="btn btn-outline-primary btn-sm" onclick="selectOrchid('a')">Select Orchid</button>
+                                            </div>
+                                            <div id="orchid-a-selected" style="display: none;">
+                                                <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded mb-2" style="max-height: 150px;">
+                                                <h6>Cattleya warscewiczii</h6>
+                                                <small class="text-muted">Purple species orchid</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <i data-feather="shuffle" style="width: 32px; height: 32px;" class="text-primary"></i>
+                                        <p class="small text-muted mt-2">VS</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-5">
+                                    <div class="card bg-dark">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Orchid B</h6>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div id="orchid-b-placeholder">
+                                                <i data-feather="plus" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                                <p class="text-muted">Click to select orchid</p>
+                                                <button class="btn btn-outline-primary btn-sm" onclick="selectOrchid('b')">Select Orchid</button>
+                                            </div>
+                                            <div id="orchid-b-selected" style="display: none;">
+                                                <img src="/static/images/orchid_placeholder.svg" class="img-fluid rounded mb-2" style="max-height: 150px;">
+                                                <h6>Cattleya aurea</h6>
+                                                <small class="text-muted">Yellow species orchid</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <button class="btn btn-primary" onclick="compareOrchids()" disabled id="compare-btn">
+                                    <i data-feather="shuffle" class="me-1"></i>Compare & Analyze
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comparison Results -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card bg-secondary">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">AI Comparison Analysis</h6>
+                            <span class="badge bg-primary">Advanced Analytics</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="comparison-results">
+                                <div class="text-center py-5">
+                                    <i data-feather="bar-chart-2" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                                    <h6>Ready for Comparison</h6>
+                                    <p class="text-muted">Select two orchids to begin detailed AI analysis and comparison</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analysis Tools -->
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Analysis Types</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="analysis-morphology" checked>
+                                <label class="form-check-label">Morphological Comparison</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="analysis-genetics" checked>
+                                <label class="form-check-label">Genetic Relationship</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="analysis-culture">
+                                <label class="form-check-label">Cultural Requirements</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="analysis-breeding">
+                                <label class="form-check-label">Breeding Potential</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Similarity Metrics</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="small">Color Similarity</span>
+                                    <span class="badge bg-success">85%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="small">Size Similarity</span>
+                                    <span class="badge bg-warning">72%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" style="width: 72%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="small">Form Similarity</span>
+                                    <span class="badge bg-info">68%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: 68%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-secondary">
+                        <div class="card-header">
+                            <h6 class="mb-0">Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="exportComparison()">
+                                    <i data-feather="download" class="me-1"></i>Export Analysis
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="saveComparison()">
+                                    <i data-feather="bookmark" class="me-1"></i>Save Comparison
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="shareComparison()">
+                                    <i data-feather="share-2" class="me-1"></i>Share Results
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+// AI Tools Functions
+function analyzeBreeding() {
+    console.log('Starting AI breeding analysis');
+    
+    const analysisDiv = document.getElementById('breeding-analysis');
+    analysisDiv.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>AI is analyzing genetic compatibility and predicting offspring characteristics...</p>
+        </div>
+    `;
+    
+    // Simulate AI analysis
+    setTimeout(() => {
+        analysisDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Breeding Prediction</h6>
+                    <div class="alert alert-success">
+                        <strong>High Success Rate: 85%</strong><br>
+                        This cross shows excellent genetic compatibility
+                    </div>
+                    
+                    <h6 class="small mb-2">Expected Offspring Traits:</h6>
+                    <div class="mb-2">
+                        <span class="badge bg-warning me-1">Yellow-Purple Gradient</span>
+                        <span class="badge bg-info me-1">Large Flowers</span>
+                        <span class="badge bg-success me-1">Fragrant</span>
+                    </div>
+                    
+                    <h6 class="small mb-2">Genetic Analysis:</h6>
+                    <ul class="small">
+                        <li>Color genes: 70% yellow dominance expected</li>
+                        <li>Size: Large flower inheritance likely</li>
+                        <li>Fragrance: Strong inheritance from C. aurea</li>
+                        <li>Form: Intermediate between parents</li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="text-primary">Breeding Recommendations</h6>
+                    <div class="alert alert-info">
+                        <strong>Timing:</strong> Spring crossing recommended<br>
+                        <strong>Method:</strong> Standard hand pollination
+                    </div>
+                    
+                    <h6 class="small mb-2">Considerations:</h6>
+                    <ul class="small">
+                        <li>Both parents are vigorous growers</li>
+                        <li>Similar cultural requirements</li>
+                        <li>Good pod set probability</li>
+                        <li>Expected germination: 6-8 months</li>
+                    </ul>
+                    
+                    <h6 class="small mb-2">Similar Successful Crosses:</h6>
+                    <div class="small text-muted">
+                        • C. warscewiczii × C. dowiana (92% success)<br>
+                        • C. aurea × C. lueddemanniana (88% success)<br>
+                        • C. warscewiczii × C. rex (85% success)
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 2000);
+}
+
+function handlePhotoUpload() {
+    const file = document.getElementById('orchid-photo').files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('photo-preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function identifyOrchid() {
+    console.log('Starting AI orchid identification');
+    
+    const resultsDiv = document.getElementById('identification-results');
+    resultsDiv.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>AI is analyzing your orchid photo...</p>
+        </div>
+    `;
+    
+    // Simulate AI identification
+    setTimeout(() => {
+        resultsDiv.innerHTML = `
+            <div class="mb-3">
+                <h6 class="text-primary">Top Identification Matches</h6>
+                
+                <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                    <div class="me-3">
+                        <span class="badge bg-success">95%</span>
+                    </div>
+                    <div>
+                        <strong>Cattleya warscewiczii</strong><br>
+                        <small class="text-muted">Colombian species, large purple flowers</small>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                    <div class="me-3">
+                        <span class="badge bg-warning">78%</span>
+                    </div>
+                    <div>
+                        <strong>Cattleya rex</strong><br>
+                        <small class="text-muted">Similar species, slightly different lip pattern</small>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                    <div class="me-3">
+                        <span class="badge bg-info">65%</span>
+                    </div>
+                    <div>
+                        <strong>Cattleya warscewiczii var. alba</strong><br>
+                        <small class="text-muted">White form of the same species</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-success">
+                <strong>Primary Identification: Cattleya warscewiczii</strong><br>
+                High confidence match based on flower morphology, color patterns, and lip characteristics.
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary btn-sm" onclick="viewOrchidDetails()">View Full Details</button>
+                <button class="btn btn-outline-primary btn-sm" onclick="addToCollection()">Add to My Collection</button>
+            </div>
+        `;
+    }, 3000);
+}
+
+function clearPhoto() {
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('orchid-photo').value = '';
+}
+
+function selectOrchid(position) {
+    console.log('Selecting orchid for position:', position);
+    // Simulate orchid selection
+    document.getElementById(`orchid-${position}-placeholder`).style.display = 'none';
+    document.getElementById(`orchid-${position}-selected`).style.display = 'block';
+    
+    // Enable compare button if both orchids selected
+    const aSelected = document.getElementById('orchid-a-selected').style.display !== 'none';
+    const bSelected = document.getElementById('orchid-b-selected').style.display !== 'none';
+    
+    if (aSelected && bSelected) {
+        document.getElementById('compare-btn').disabled = false;
+    }
+}
+
+function compareOrchids() {
+    console.log('Starting orchid comparison');
+    
+    const resultsDiv = document.getElementById('comparison-results');
+    resultsDiv.innerHTML = `
+        <div class="text-center py-3">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>AI is performing detailed comparison analysis...</p>
+        </div>
+    `;
+    
+    setTimeout(() => {
+        resultsDiv.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Morphological Comparison</h6>
+                    <table class="table table-sm table-dark">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>C. warscewiczii</th>
+                                <th>C. aurea</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Flower Size</td>
+                                <td>15-20cm</td>
+                                <td>12-15cm</td>
+                            </tr>
+                            <tr>
+                                <td>Primary Color</td>
+                                <td>Purple/Magenta</td>
+                                <td>Golden Yellow</td>
+                            </tr>
+                            <tr>
+                                <td>Lip Shape</td>
+                                <td>Broad, ruffled</td>
+                                <td>Narrow, smooth</td>
+                            </tr>
+                            <tr>
+                                <td>Fragrance</td>
+                                <td>Light</td>
+                                <td>Strong, sweet</td>
+                            </tr>
+                            <tr>
+                                <td>Blooming Season</td>
+                                <td>Fall/Winter</td>
+                                <td>Spring/Summer</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6 class="text-primary">Breeding Compatibility</h6>
+                    <div class="alert alert-success">
+                        <strong>Excellent Compatibility: 92%</strong><br>
+                        Both species are closely related Cattleyas
+                    </div>
+                    
+                    <h6 class="small mb-2">Predicted Hybrid Characteristics:</h6>
+                    <ul class="small">
+                        <li>Size: Medium to large (13-18cm)</li>
+                        <li>Color: Yellow with purple influence</li>
+                        <li>Fragrance: Moderately fragrant</li>
+                        <li>Season: Extended blooming period</li>
+                        <li>Form: Improved substance and shape</li>
+                    </ul>
+                    
+                    <h6 class="small mb-2">Growing Considerations:</h6>
+                    <ul class="small">
+                        <li>Similar temperature requirements</li>
+                        <li>Both prefer bright light</li>
+                        <li>Intermediate to warm growing</li>
+                        <li>Standard Cattleya care applies</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }, 2500);
+}
+
+function exportComparison() {
+    console.log('Exporting comparison analysis');
+}
+
+function saveComparison() {
+    console.log('Saving comparison to collection');
+}
+
+function shareComparison() {
+    console.log('Sharing comparison results');
+}
+
+function viewOrchidDetails() {
+    window.open('/orchid/cattleya-warscewiczii', '_blank');
+}
+
+function addToCollection() {
+    console.log('Adding orchid to collection');
+    alert('Orchid added to your collection!');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    // Set active button
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

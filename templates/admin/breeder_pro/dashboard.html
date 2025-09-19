@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Breeder Pro+ Orchestrator - Orchid Continuum</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .pipeline-card {
+            border-left: 4px solid #6c5ce7;
+            transition: all 0.3s ease;
+        }
+        .pipeline-card:hover {
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .progress-thin {
+            height: 6px;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .btn-orchid {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            border: none;
+            color: white;
+        }
+        .btn-orchid:hover {
+            background: linear-gradient(135deg, #5f4fcf, #9085e5);
+            color: white;
+        }
+        .orchestrator-status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .status-available {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status-unavailable {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .real-time-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-seedling me-2"></i>
+                Orchid Continuum - Breeder Pro+
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Admin
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <!-- Orchestrator Status -->
+        <div class="orchestrator-status {% if stats.orchestrator_available %}status-available{% else %}status-unavailable{% endif %}">
+            <div class="d-flex align-items-center">
+                <i class="fas {% if stats.orchestrator_available %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} me-2 fs-5"></i>
+                <div>
+                    <strong>Orchestrator Status:</strong>
+                    {% if stats.orchestrator_available %}
+                        <span class="text-success">Available and Ready</span>
+                        <small class="d-block">All dependencies loaded successfully</small>
+                    {% else %}
+                        <span class="text-danger">Unavailable</span>
+                        <small class="d-block">Missing dependencies - check orchestrator_health_system.py</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-play-circle fa-2x mb-2"></i>
+                        <h3 class="card-title mb-1">{{ stats.total_runs }}</h3>
+                        <p class="card-text">Total Runs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h3 class="card-title mb-1">{{ stats.successful_runs }}</h3>
+                        <p class="card-text">Successful</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-times-circle fa-2x mb-2"></i>
+                        <h3 class="card-title mb-1">{{ stats.failed_runs }}</h3>
+                        <p class="card-text">Failed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-percentage fa-2x mb-2"></i>
+                        <h3 class="card-title mb-1">{{ "%.1f"|format(stats.success_rate) }}%</h3>
+                        <p class="card-text">Success Rate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-rocket me-2"></i>
+                            Pipeline Actions
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button class="btn btn-orchid btn-lg w-100 mb-2" onclick="startQuickPipeline()" {% if not stats.orchestrator_available %}disabled{% endif %}>
+                                    <i class="fas fa-play me-2"></i>
+                                    Start Quick Pipeline
+                                </button>
+                                <small class="text-muted">Run with default settings</small>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="showCustomPipelineModal()" {% if not stats.orchestrator_available %}disabled{% endif %}>
+                                    <i class="fas fa-cog me-2"></i>
+                                    Custom Pipeline
+                                </button>
+                                <small class="text-muted">Configure advanced options</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Pipelines -->
+        {% if active_runs %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock real-time-indicator me-2"></i>
+                            Active Pipelines
+                        </h5>
+                        <span class="badge bg-warning">{{ active_runs|length }} Running</span>
+                    </div>
+                    <div class="card-body">
+                        {% for pipeline in active_runs %}
+                        <div class="pipeline-card card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1">{{ pipeline.name }}</h6>
+                                        <small class="text-muted">{{ pipeline.pipeline_id }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge status-badge bg-warning">{{ pipeline.status }}</span>
+                                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="cancelPipeline('{{ pipeline.pipeline_id }}')">
+                                            <i class="fas fa-stop"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Current Stage: <strong>{{ pipeline.stage }}</strong></small>
+                                </div>
+                                <div class="progress progress-thin">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ pipeline.progress_percentage }}%" aria-valuenow="{{ pipeline.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">{{ pipeline.progress_percentage }}% Complete</small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ pipeline.started_by.first_name if pipeline.started_by else 'Unknown' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Pipelines -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Recent Pipeline Runs
+                        </h5>
+                        <a href="{{ url_for('breeder_pro.templates') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-template me-1"></i>
+                            Manage Templates
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_runs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Pipeline Name</th>
+                                        <th>Status</th>
+                                        <th>Started</th>
+                                        <th>Duration</th>
+                                        <th>Progress</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pipeline in recent_runs %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ pipeline.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ pipeline.pipeline_id }}</small>
+                                        </td>
+                                        <td>
+                                            {% if pipeline.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif pipeline.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% elif pipeline.status == 'running' %}
+                                                <span class="badge bg-warning">Running</span>
+                                            {% elif pipeline.status == 'cancelled' %}
+                                                <span class="badge bg-secondary">Cancelled</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ pipeline.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ pipeline.started_at.strftime('%Y-%m-%d %H:%M') if pipeline.started_at else 'N/A' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if pipeline.duration_seconds %}
+                                                <small>{{ (pipeline.duration_seconds // 60) }}m {{ (pipeline.duration_seconds % 60) }}s</small>
+                                            {% else %}
+                                                <small class="text-muted">-</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress progress-thin" style="width: 80px;">
+                                                <div class="progress-bar" style="width: {{ pipeline.progress_percentage }}%"></div>
+                                            </div>
+                                            <small>{{ pipeline.progress_percentage }}%</small>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('breeder_pro.pipeline_details', run_id=pipeline.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if pipeline.status in ['running', 'queued'] %}
+                                            <button class="btn btn-sm btn-outline-danger" onclick="cancelPipeline('{{ pipeline.pipeline_id }}')">
+                                                <i class="fas fa-stop"></i>
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No pipeline runs yet</h5>
+                            <p class="text-muted">Start your first pipeline to see results here</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Pipeline Modal -->
+    <div class="modal fade" id="customPipelineModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog me-2"></i>
+                        Custom Pipeline Configuration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customPipelineForm">
+                        <div class="mb-3">
+                            <label class="form-label">Pipeline Name</label>
+                            <input type="text" class="form-control" id="pipelineName" value="Custom Pipeline {{ moment().format('YYYY-MM-DD HH:mm') }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Template (Optional)</label>
+                            <select class="form-control" id="templateSelect">
+                                <option value="">Custom Configuration</option>
+                                {% for template in templates %}
+                                <option value="{{ template.id }}">{{ template.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Target Genera</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Cattleya" id="genusCattleya" checked>
+                                        <label class="form-check-label" for="genusCattleya">Cattleya</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Dendrobium" id="genusDendrobium">
+                                        <label class="form-check-label" for="genusDendrobium">Dendrobium</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Phalaenopsis" id="genusPhalaenopsis">
+                                        <label class="form-check-label" for="genusPhalaenopsis">Phalaenopsis</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Oncidium" id="genusOncidium">
+                                        <label class="form-check-label" for="genusOncidium">Oncidium</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Bulbophyllum" id="genusBulbophyllum">
+                                        <label class="form-check-label" for="genusBulbophyllum">Bulbophyllum</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="Masdevallia" id="genusMasdevallia">
+                                        <label class="form-check-label" for="genusMasdevallia">Masdevallia</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Configuration Options</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="detailedAnalysis" checked>
+                                <label class="form-check-label" for="detailedAnalysis">
+                                    Detailed AI Analysis
+                                    <small class="text-muted d-block">Includes trait analysis and inheritance patterns</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="uploadToDrive" checked>
+                                <label class="form-check-label" for="uploadToDrive">
+                                    Upload to Google Drive
+                                    <small class="text-muted d-block">Store images and data in cloud storage</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="generateReports" checked>
+                                <label class="form-check-label" for="generateReports">
+                                    Generate PDF/CSV Reports
+                                    <small class="text-muted d-block">Create professional reports and data exports</small>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email Notifications (Optional)</label>
+                            <input type="email" class="form-control" id="notificationEmail" placeholder="your@email.com">
+                            <small class="text-muted">Receive completion notifications and reports</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-orchid" onclick="startCustomPipeline()">
+                        <i class="fas fa-rocket me-2"></i>
+                        Start Pipeline
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh active pipelines every 10 seconds
+        setInterval(refreshActivePipelines, 10000);
+        
+        function refreshActivePipelines() {
+            if (document.querySelectorAll('.real-time-indicator').length > 0) {
+                fetch('/admin/breeder-pro/api/active-pipelines')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update progress bars and status
+                        if (data.active_pipelines && data.active_pipelines.length > 0) {
+                            location.reload(); // Simple reload for now - could be more sophisticated
+                        }
+                    })
+                    .catch(error => console.warn('Error refreshing pipelines:', error));
+            }
+        }
+        
+        function startQuickPipeline() {
+            if (confirm('Start a quick pipeline with default settings?')) {
+                fetch('/admin/breeder-pro/start-pipeline', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: `Quick Pipeline ${new Date().toLocaleString()}`,
+                        config: {
+                            genera: ['Cattleya'],
+                            detailed_analysis: true,
+                            upload_to_drive: true,
+                            generate_reports: true
+                        }
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pipeline started successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error starting pipeline: ' + error.message);
+                });
+            }
+        }
+        
+        function showCustomPipelineModal() {
+            new bootstrap.Modal(document.getElementById('customPipelineModal')).show();
+        }
+        
+        function startCustomPipeline() {
+            const form = document.getElementById('customPipelineForm');
+            const formData = new FormData(form);
+            
+            // Get selected genera
+            const genera = [];
+            document.querySelectorAll('input[type="checkbox"][value]:checked').forEach(cb => {
+                if (cb.value && cb.value !== 'on') {
+                    genera.push(cb.value);
+                }
+            });
+            
+            const config = {
+                genera: genera,
+                detailed_analysis: document.getElementById('detailedAnalysis').checked,
+                upload_to_drive: document.getElementById('uploadToDrive').checked,
+                generate_reports: document.getElementById('generateReports').checked,
+                max_pages_per_genus: 5,
+                request_delay: 1.0
+            };
+            
+            const notificationEmails = [];
+            const email = document.getElementById('notificationEmail').value.trim();
+            if (email) {
+                notificationEmails.push(email);
+            }
+            
+            const requestData = {
+                name: document.getElementById('pipelineName').value,
+                template_id: document.getElementById('templateSelect').value || null,
+                config: config,
+                notification_emails: notificationEmails
+            };
+            
+            fetch('/admin/breeder-pro/start-pipeline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('customPipelineModal')).hide();
+                    alert('Custom pipeline started successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error starting pipeline: ' + error.message);
+            });
+        }
+        
+        function cancelPipeline(pipelineId) {
+            if (confirm('Are you sure you want to cancel this pipeline?')) {
+                fetch(`/admin/breeder-pro/pipeline/${pipelineId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pipeline cancelled successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error cancelling pipeline: ' + error.message);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

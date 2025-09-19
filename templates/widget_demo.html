@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCOS Orchid Judge - Mobile Widget Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .demo-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px;
+        }
+        .demo-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .widget-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            height: 600px;
+            overflow-y: auto;
+        }
+        @media (max-width: 480px) {
+            .demo-container {
+                margin: 10px;
+            }
+            
+            .widget-container {
+                height: calc(100vh - 120px);
+                border-radius: 8px;
+            }
+        }
+        
+        .status {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 1rem;
+            color: white;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🌺 FCOS Orchid Judge</h1>
+            <p>Mobile-First Educational Widget</p>
+        </div>
+        
+        <div class="widget-container">
+            <div id="fcos-orchid-judge"></div>
+        </div>
+        
+        <div class="status" id="widget-status">
+            Loading widget...
+        </div>
+    </div>
+
+    <!-- Load the widget -->
+    <script src="{{ url_for('static', filename='widgets/fcos-orchid-judge.umd.js') }}"></script>
+    <script>
+        let widget = null;
+        
+        function updateStatus(message, isError = false) {
+            const status = document.getElementById('widget-status');
+            status.textContent = message;
+            status.style.background = isError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)';
+        }
+        
+        // Initialize widget
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Check if widget is available
+                if (typeof FCOSOrchidJudge === 'undefined') {
+                    updateStatus('Widget failed to load - script not found', true);
+                    return;
+                }
+                
+                // Configure widget
+                const config = {
+                    theme: 'light',
+                    largeText: false,
+                    language: 'en',
+                    aiProvider: {
+                        mode: 'openai',
+                        webhookUrl: null
+                    },
+                    cloud: {
+                        webappUrl: undefined,
+                        secret: undefined
+                    }
+                };
+                
+                // Mount widget
+                widget = FCOSOrchidJudge.mount('#fcos-orchid-judge', config);
+                updateStatus('Widget loaded successfully! Ready for orchid judging.');
+                
+                console.log('FCOS Orchid Judge widget mounted successfully', config);
+                
+            } catch (error) {
+                console.error('Failed to mount widget:', error);
+                updateStatus('Failed to initialize widget: ' + error.message, true);
+                
+                // Show fallback content
+                document.getElementById('fcos-orchid-judge').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #ef4444;">
+                        <h3>Widget Load Error</h3>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9em; margin-top: 15px;">
+                            Please check that the widget files are built and available.
+                        </p>
+                    </div>
+                `;
+            }
+        });
+        
+        // Handle widget cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (widget) {
+                FCOSOrchidJudge.unmount(widget);
+            }
+        });
+    </script>
+</body>
+</html>

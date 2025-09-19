@@ -1,0 +1,60 @@
+Add this to the Replit AI prompt (Archive + Calendar)
+
+Archive & Calendar Views (same embed, no extra files)
+
+Enhance the existing “Orchid of the Day” widget with navigable history:
+
+Modes
+	•	Today (default): single card.
+	•	Week: 7-day strip (Sun–Sat, or locale-aware).
+	•	Month: calendar grid for the selected month.
+	•	Year: 12 mini-calendars for the selected year (performance-optimized).
+
+Provide a mode switcher (segmented control) inside the widget: Today | Week | Month | Year.
+
+Date navigation
+	•	Back/forward buttons and a jump-to date picker.
+	•	Keyboard support: ←/→ moves day or page; PgUp/PgDn moves month; Home/End jumps to start/end.
+	•	Deep links via hash or query:
+	•	#oofd?mode=today
+	•	#oofd?mode=month&year=2025&month=09
+	•	#oofd?mode=week&date=2025-09-11
+	•	#oofd?mode=year&year=2025
+	•	On load, parse the link params; otherwise use local time America/Los_Angeles. Persist last user mode in localStorage.
+
+Deterministic date→entry mapping (no repeats until cycle ends)
+
+Reuse the existing deterministic selector, but extend it to any date:
+	•	Compute an index for each requested date using the same seeded hash (YYYY-MM-DD).
+	•	Exclude rows without image_url.
+	•	Cycle-through logic: Within a 365-day horizon (configurable), ensure we don’t map two different dates to the exact same record unless dataset size requires it. If collision, increment index (wrap) until a unique row for that period is found.
+	•	If dataset < number of requested days, allow repeats but never show the same record twice in the same visible view (e.g., the same card twice in a month grid).
+
+Rendering
+	•	Week view: 7 cards with small images (lazy-loaded), each with title + 1-sentence caption; clicking opens full card overlay (lightbox).
+	•	Month view: Calendar grid with each day showing:
+	•	Tiny thumbnail (object-fit: cover; square)
+	•	Short title (truncate with ellipsis)
+	•	Tooltip on focus/hover with 1-sentence blurb.
+	•	Click opens full card overlay for that day.
+	•	Year view: 12 compact months; thumbnails only; clicking a day zooms to full card.
+	•	All views are fully responsive, large tap targets, and WCAG AA contrast.
+
+Performance
+	•	Virtualize/lazy-load thumbnails (IntersectionObserver).
+	•	Cache normalized dataset in sessionStorage (respect cacheTtlMinutes).
+	•	For Year view, load month grids progressively (staggered) to avoid layout jank.
+
+A11y
+	•	Every interactive element has a visible focus outline.
+	•	Calendar uses proper roles: role="grid", days as role="gridcell", aria-selected for the focused day.
+	•	aria-live="polite" announces view changes (“Month view: September 2025.”).
+
+Share/Permalink + Print
+	•	Each full card overlay includes:
+	•	Copy link (permalink to that date/mode).
+	•	Print card (opens print dialog for a clean single-card layout).
+
+Config additions
+
+Extend the existing CONFIG:

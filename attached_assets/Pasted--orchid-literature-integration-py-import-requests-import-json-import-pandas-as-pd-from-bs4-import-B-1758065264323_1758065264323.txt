@@ -1,0 +1,84 @@
+# orchid_literature_integration.py
+import requests
+import json
+import pandas as pd
+from bs4 import BeautifulSoup
+
+# -----------------------------
+# Configuration
+# -----------------------------
+OUTPUT_FILE = "output/plant_genomics_literature.json"
+KEYWORDS = ["orchid", "Cattleya", "Sarcochilus", "Zygopetalum", "flower trait", "genomics", "chromosome"]
+MAX_ARTICLES = 50  # per source
+
+# Example source: PubMed API
+PUBMED_API = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+PUBMED_FETCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+
+# -----------------------------
+# Helper Functions
+# -----------------------------
+def search_pubmed(query, max_results=50):
+    """Search PubMed and return a list of PubMed IDs"""
+    params = {
+        "db": "pubmed",
+        "term": query,
+        "retmax": max_results,
+        "retmode": "json"
+    }
+    r = requests.get(PUBMED_API, params=params)
+    data = r.json()
+    return data.get("esearchresult", {}).get("idlist", [])
+
+def fetch_pubmed_abstracts(pmids):
+    """Fetch abstracts from PubMed given a list of PMIDs"""
+    ids = ",".join(pmids)
+    params = {"db": "pubmed", "id": ids, "retmode": "xml"}
+    r = requests.get(PUBMED_FETCH, params=params)
+    soup = BeautifulSoup(r.text, "xml")
+    articles = []
+    for article in soup.find_all("PubmedArticle"):
+        title = article.ArticleTitle.text if article.ArticleTitle else ""
+        abstract = article.Abstract.text if article.Abstract else ""
+        pmid = article.PMID.text if article.PMID else ""
+        articles.append({"pmid": pmid, "title": title, "abstract": abstract})
+    return articles
+
+def extract_trait_info(abstract_text):
+    """Stub NLP function to extract trait/gene info from abstract"""
+    # For prototype, we just return dummy structure
+    return {
+        "traits_mentioned": ["flower_color", "flower_shape"],
+        "genes_mentioned": ["LOC12345", "LOC67890"],
+        "chromosomes": ["chr1", "chr5"]
+    }
+
+# -----------------------------
+# Main Pipeline
+# -----------------------------
+def main():
+    all_articles_data = []
+
+    for keyword in KEYWORDS:
+        print(f"Searching PubMed for keyword: {keyword}")
+        pmids = search_pubmed(keyword, MAX_ARTICLES)
+        if not pmids:
+            continue
+        abstracts = fetch_pubmed_abstracts(pmids)
+        for article in abstracts:
+            trait_info = extract_trait_info(article["abstract"])
+            article_data = {
+                "pmid": article["pmid"],
+                "title": article["title"],
+                "abstract": article["abstract"],
+                "trait_info": trait_info
+            }
+            all_articles_data.append(article_data)
+    
+    # Save structured literature database
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(all_articles_data, f, indent=2, ensure_ascii=False)
+    print(f"Saved literature integration data to {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    main()

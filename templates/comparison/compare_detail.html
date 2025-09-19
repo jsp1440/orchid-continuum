@@ -1,0 +1,436 @@
+{% extends "layout.html" %}
+{% set page_title = "Orchid Comparison Analysis" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="git-compare" class="me-2"></i>
+                    Orchid Comparison Analysis
+                </h1>
+                <a href="/comparison" class="btn btn-outline-primary">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Interface
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h6>Taxonomic Relationship</h6>
+                    <h4>{{ comparison.taxonomic_similarity.relationship }}</h4>
+                    <small>
+                        {% if comparison.taxonomic_similarity.same_genus %}Same Genus{% endif %}
+                        {% if comparison.taxonomic_similarity.same_family and not comparison.taxonomic_similarity.same_genus %}Same Family{% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h6>Phenotypic Similarity</h6>
+                    <h4>{{ "%.1f"|format(comparison.phenotypic_similarity.similarity_percentage) }}%</h4>
+                    <small>{{ comparison.phenotypic_similarity.shared_traits }} shared traits</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h6>Geographic Relationship</h6>
+                    <h4>{{ comparison.geographic_relationship.relationship.split(',')[0] }}</h4>
+                    <small>{{ comparison.temporal_relationship.relationship }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Orchid 1 Details -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="camera" class="me-2"></i>{{ orchid1.display_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Image -->
+                    {% if orchid1.image_url %}
+                    <img src="{{ orchid1.image_url }}" class="img-fluid rounded mb-3" style="max-height: 300px; width: 100%; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded mb-3" style="height: 300px;">
+                        <i data-feather="image" style="width: 64px; height: 64px; opacity: 0.3;"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Scientific Classification</h6>
+                        <table class="table table-dark table-sm">
+                            <tr><td>Scientific Name:</td><td><em>{{ orchid1.scientific_name }}</em></td></tr>
+                            <tr><td>Genus:</td><td>{{ orchid1.genus }}</td></tr>
+                            <tr><td>Species:</td><td>{{ orchid1.species }}</td></tr>
+                            <tr><td>Growth Habit:</td><td>{{ orchid1.growth_habit }}</td></tr>
+                        </table>
+                    </div>
+
+                    <!-- EXIF Metadata -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Photo Metadata</h6>
+                        {% if analysis1.exif_metadata.extracted %}
+                            <div class="bg-secondary p-3 rounded">
+                                {% if analysis1.exif_metadata.datetime_info %}
+                                <h6 class="small">Date & Time Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis1.exif_metadata.datetime_info.items() %}
+                                    <li><strong>{{ key.replace('_', ' ').title() }}:</strong> 
+                                        {% if value is mapping %}
+                                            {{ value.formatted or value.raw }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                
+                                {% if analysis1.exif_metadata.location_info %}
+                                <h6 class="small mt-3">Location Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis1.exif_metadata.location_info.items() %}
+                                    <li><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                
+                                {% if analysis1.exif_metadata.camera_info %}
+                                <h6 class="small mt-3">Camera Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis1.exif_metadata.camera_info.items() %}
+                                    <li><strong>{{ key.title() }}:</strong> {{ value }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                        <p class="text-muted small">No EXIF data available</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Geographic Origin -->
+                    <div class="mb-4">
+                        <h6 class="text-info">Geographic Origin</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% for key, value in analysis1.geographic_origin.items() %}
+                                {% if value != 'Unknown' %}
+                                <p class="small mb-1"><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Temporal Data -->
+                    {% if analysis1.temporal_data %}
+                    <div class="mb-4">
+                        <h6 class="text-warning">Temporal Analysis</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% for key, value in analysis1.temporal_data.items() %}
+                                {% if value %}
+                                <p class="small mb-1"><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Biodiversity Tags -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Biodiversity Tags</h6>
+                        <div>
+                            {% for tag in analysis1.biodiversity_tags %}
+                            <span class="badge bg-primary me-1 mb-1" style="font-size: 0.7rem;">{{ tag.replace('_', ' ') }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Phenotypic Traits -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Phenotypic Traits</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% if analysis1.phenotypic_traits.morphology %}
+                            <p class="small"><strong>Morphology:</strong></p>
+                            <div class="ps-3">
+                                {% for trait in analysis1.phenotypic_traits.morphology %}
+                                <span class="badge bg-success me-1 mb-1" style="font-size: 0.6rem;">{{ trait.replace('_', ' ') }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis1.phenotypic_traits.physical_characteristics %}
+                            <p class="small mt-2"><strong>Physical Characteristics:</strong><br>
+                            {{ analysis1.phenotypic_traits.physical_characteristics[:200] }}{% if analysis1.phenotypic_traits.physical_characteristics|length > 200 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orchid 2 Details -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="camera" class="me-2"></i>{{ orchid2.display_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Image -->
+                    {% if orchid2.image_url %}
+                    <img src="{{ orchid2.image_url }}" class="img-fluid rounded mb-3" style="max-height: 300px; width: 100%; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded mb-3" style="height: 300px;">
+                        <i data-feather="image" style="width: 64px; height: 64px; opacity: 0.3;"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Scientific Classification</h6>
+                        <table class="table table-dark table-sm">
+                            <tr><td>Scientific Name:</td><td><em>{{ orchid2.scientific_name }}</em></td></tr>
+                            <tr><td>Genus:</td><td>{{ orchid2.genus }}</td></tr>
+                            <tr><td>Species:</td><td>{{ orchid2.species }}</td></tr>
+                            <tr><td>Growth Habit:</td><td>{{ orchid2.growth_habit }}</td></tr>
+                        </table>
+                    </div>
+
+                    <!-- EXIF Metadata -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Photo Metadata</h6>
+                        {% if analysis2.exif_metadata.extracted %}
+                            <div class="bg-secondary p-3 rounded">
+                                {% if analysis2.exif_metadata.datetime_info %}
+                                <h6 class="small">Date & Time Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis2.exif_metadata.datetime_info.items() %}
+                                    <li><strong>{{ key.replace('_', ' ').title() }}:</strong> 
+                                        {% if value is mapping %}
+                                            {{ value.formatted or value.raw }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                
+                                {% if analysis2.exif_metadata.location_info %}
+                                <h6 class="small mt-3">Location Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis2.exif_metadata.location_info.items() %}
+                                    <li><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                
+                                {% if analysis2.exif_metadata.camera_info %}
+                                <h6 class="small mt-3">Camera Information:</h6>
+                                <ul class="list-unstyled small">
+                                    {% for key, value in analysis2.exif_metadata.camera_info.items() %}
+                                    <li><strong>{{ key.title() }}:</strong> {{ value }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                        <p class="text-muted small">No EXIF data available</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Geographic Origin -->
+                    <div class="mb-4">
+                        <h6 class="text-info">Geographic Origin</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% for key, value in analysis2.geographic_origin.items() %}
+                                {% if value != 'Unknown' %}
+                                <p class="small mb-1"><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Temporal Data -->
+                    {% if analysis2.temporal_data %}
+                    <div class="mb-4">
+                        <h6 class="text-warning">Temporal Analysis</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% for key, value in analysis2.temporal_data.items() %}
+                                {% if value %}
+                                <p class="small mb-1"><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Biodiversity Tags -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Biodiversity Tags</h6>
+                        <div>
+                            {% for tag in analysis2.biodiversity_tags %}
+                            <span class="badge bg-primary me-1 mb-1" style="font-size: 0.7rem;">{{ tag.replace('_', ' ') }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Phenotypic Traits -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Phenotypic Traits</h6>
+                        <div class="bg-secondary p-3 rounded">
+                            {% if analysis2.phenotypic_traits.morphology %}
+                            <p class="small"><strong>Morphology:</strong></p>
+                            <div class="ps-3">
+                                {% for trait in analysis2.phenotypic_traits.morphology %}
+                                <span class="badge bg-success me-1 mb-1" style="font-size: 0.6rem;">{{ trait.replace('_', ' ') }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis2.phenotypic_traits.physical_characteristics %}
+                            <p class="small mt-2"><strong>Physical Characteristics:</strong><br>
+                            {{ analysis2.phenotypic_traits.physical_characteristics[:200] }}{% if analysis2.phenotypic_traits.physical_characteristics|length > 200 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Analysis -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Detailed Comparison Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Shared Traits -->
+                        <div class="col-md-4">
+                            <h6 class="text-success">Shared Biodiversity Tags</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                {% if comparison.shared_biodiversity_tags %}
+                                    {% for tag in comparison.shared_biodiversity_tags %}
+                                    <span class="badge bg-success me-1 mb-1" style="font-size: 0.7rem;">{{ tag.replace('_', ' ') }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted small">No shared tags</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Unique to Orchid 1 -->
+                        <div class="col-md-4">
+                            <h6 class="text-warning">Unique to {{ orchid1.display_name }}</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                {% if comparison.unique_tags_orchid1 %}
+                                    {% for tag in comparison.unique_tags_orchid1[:10] %}
+                                    <span class="badge bg-warning me-1 mb-1" style="font-size: 0.7rem;">{{ tag.replace('_', ' ') }}</span>
+                                    {% endfor %}
+                                    {% if comparison.unique_tags_orchid1|length > 10 %}
+                                    <span class="badge bg-secondary">+{{ comparison.unique_tags_orchid1|length - 10 }} more</span>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-muted small">No unique tags</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Unique to Orchid 2 -->
+                        <div class="col-md-4">
+                            <h6 class="text-info">Unique to {{ orchid2.display_name }}</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                {% if comparison.unique_tags_orchid2 %}
+                                    {% for tag in comparison.unique_tags_orchid2[:10] %}
+                                    <span class="badge bg-info me-1 mb-1" style="font-size: 0.7rem;">{{ tag.replace('_', ' ') }}</span>
+                                    {% endfor %}
+                                    {% if comparison.unique_tags_orchid2|length > 10 %}
+                                    <span class="badge bg-secondary">+{{ comparison.unique_tags_orchid2|length - 10 }} more</span>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-muted small">No unique tags</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Relationships -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Geographic Analysis</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                <p class="mb-2"><strong>Relationship:</strong> {{ comparison.geographic_relationship.relationship }}</p>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6 class="small">{{ orchid1.display_name }}:</h6>
+                                        {% for key, value in comparison.geographic_relationship.origin1.items() %}
+                                            {% if value != 'Unknown' %}
+                                            <p class="small mb-1">{{ key.replace('_', ' ').title() }}: {{ value }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-6">
+                                        <h6 class="small">{{ orchid2.display_name }}:</h6>
+                                        {% for key, value in comparison.geographic_relationship.origin2.items() %}
+                                            {% if value != 'Unknown' %}
+                                            <p class="small mb-1">{{ key.replace('_', ' ').title() }}: {{ value }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Temporal Analysis</h6>
+                            <div class="bg-secondary p-3 rounded">
+                                <p class="mb-2"><strong>Relationship:</strong> {{ comparison.temporal_relationship.relationship }}</p>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6 class="small">{{ orchid1.display_name }}:</h6>
+                                        {% for key, value in comparison.temporal_relationship.temporal1.items() %}
+                                            {% if value %}
+                                            <p class="small mb-1">{{ key.replace('_', ' ').title() }}: {{ value }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-6">
+                                        <h6 class="small">{{ orchid2.display_name }}:</h6>
+                                        {% for key, value in comparison.temporal_relationship.temporal2.items() %}
+                                            {% if value %}
+                                            <p class="small mb-1">{{ key.replace('_', ' ').title() }}: {{ value }}</p>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

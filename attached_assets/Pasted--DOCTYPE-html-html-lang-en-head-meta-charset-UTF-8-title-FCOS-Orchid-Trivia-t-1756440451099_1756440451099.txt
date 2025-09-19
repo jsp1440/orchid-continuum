@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🌸 FCOS Orchid Trivia</title>
+  <style>
+    body {
+      font-family: 'Georgia', 'Palatino Linotype', serif;
+      background-color: #f3eafa;
+      color: #333;
+      margin: 2em;
+    }
+
+    .trivia-container {
+      max-width: 960px;
+      margin: auto;
+      border: 6px solid #7a9c59;
+      border-radius: 16px;
+      padding: 2em;
+      background-color: #ffffff;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    h1 {
+      text-align: center;
+      color: #5e3a87;
+      font-size: 2.5em;
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    }
+
+    .trivia-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5em;
+      margin-top: 2em;
+    }
+
+    .trivia-image {
+      flex: 1 1 300px;
+      max-width: 300px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .trivia-text {
+      flex: 2 1 500px;
+      font-size: 1.15em;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .category {
+      font-weight: bold;
+      color: #4c7643;
+      margin-bottom: 0.5em;
+    }
+
+    button {
+      display: block;
+      margin-left: auto;
+      margin-top: 2em;
+      background-color: #7a9c59;
+      color: white;
+      font-size: 1.2em;
+      padding: 0.7em 1.5em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #5e7a40;
+    }
+  </style>
+</head>
+<body>
+  <div class="trivia-container">
+    <h1>🌿 Welcome to FCOS Orchid Trivia!</h1>
+    <div class="trivia-box">
+      <img id="trivia-image" src="" alt="Orchid" class="trivia-image" />
+      <div class="trivia-text" id="trivia-text">
+        Click the button to reveal an orchid secret.
+      </div>
+    </div>
+    <button onclick="showNextTrivia()">Next ➤</button>
+  </div>
+
+  <script>
+    const triviaData = [
+      {
+        category: "History",
+        text: "In 1804, Bletia verecunda was among the first orchids to be lovingly documented...",
+        image: "images/bletia_verecunda.jpg"
+      },
+      {
+        category: "Pop Culture",
+        text: "The 'Blood Orchid' may not be real, but it stole the spotlight in *Anacondas*...",
+        image: "images/blood_orchid.jpg"
+      },
+      {
+        category: "Fragrance",
+        text: "Brassavola nodosa, better known as the ‘Lady of the Night,’ waits until sunset...",
+        image: "images/brassavola_nodosa.jpg"
+      },
+      {
+        category: "Weird & Wonderful",
+        text: "Bulbophyllum medusae doesn’t do subtle. Its flowers resemble the serpentine hair...",
+        image: "images/bulbophyllum_medusa.jpg"
+      },
+      {
+        category: "Diversity",
+        text: "There are over 28,000 known species of orchids. That’s more than birds, mammals...",
+        image: "images/bunch_orchids.jpg"
+      },
+      {
+        category: "Botanical First",
+        text: "Calanthe × dominyi made waves in 1856 as the very first man-made orchid hybrid...",
+        image: "images/calanthe_dominyi.jpg"
+      },
+      {
+        category: "Species Highlight",
+        text: "Cattleya maxima, with her golden stripes and ruffled elegance...",
+        image: "images/cattleya_maxima.jpg"
+      },
+      {
+        category: "Culture",
+        text: "In Chinese art, orchids symbolize refinement and loyalty...",
+        image: "images/chinese_orchid_art.jpg"
+      },
+      {
+        category: "Nicknames",
+        text: "Coelogyne cristata is nicknamed the 'Snow Queen'...",
+        image: "images/coelogyne_cristata.jpg"
+      },
+      {
+        category: "Elegance",
+        text: "Cymbidium elegans lives up to its name. Native to the Himalayas...",
+        image: "images/cymbidium_elegans.jpg"
+      },
+      {
+        category: "Darwin's Theory",
+        text: "Darwin predicted the existence of a moth with a foot-long tongue...",
+        image: "images/darwin_orchids.jpg"
+      },
+      {
+        category: "Seasonal Beauty",
+        text: "Dendrobium aphyllum pulls a disappearing act...",
+        image: "images/dendrobium_aphyllum.jpg"
+      },
+      {
+        category: "Geography",
+        text: "Encyclia radicans thrives where others wouldn't dare...",
+        image: "images/encyclia_radicans.jpg"
+      },
+      {
+        category: "Local Beauty",
+        text: "Encyclia tampensis — the Tampa Butterfly Orchid — calls Florida home...",
+        image: "images/encyclia_tampensis.jpg"
+      },
+      {
+        category: "Endangered Wonders",
+        text: "The Ghost Orchid is more spirit than plant...",
+        image: "images/ghost_orchid.jpg"
+      },
+      {
+        category: "Unusual Colors",
+        text: "Green orchids don’t scream for attention, but their pale hues...",
+        image: "images/green_orchids.jpg"
+      },
+      {
+        category: "Growth Habit",
+        text: "Some orchids grow on rocks (lithophytes) rather than trees or soil...",
+        image: "images/IMG_6794.JPG"
+      },
+      {
+        category: "Tiny Marvels",
+        text: "Platystele jungermannioides boasts the world’s tiniest orchid flower...",
+        image: "images/IMG_6799.JPG"
+      },
+      {
+        category: "Botanical Legends",
+        text: "John Lindley didn’t just admire orchids — he wrangled them into scientific order...",
+        image: "images/john_lindley.jpg"
+      },
+      {
+        category: "National Symbol",
+        text: "Laelia purpurata isn’t just pretty — it’s patriotic!",
+        image: "images/laelia_purpurata.jpg"
+      },
+
+      {
+        category: "Pansy Face",
+        text: "Miltoniopsis orchids are often called ‘Pansy Orchids’ — not because they’re shy, but because their blooms look like smiling, watercolor faces.",
+        image: "images/miltoniopsis_breathtaking.jpg"
+      },
+      {
+        category: "Mimicry",
+        text: "Ophrys apifera, the 'Bee Orchid', has flowers that resemble a female bee — luring males to do the pollination dance. Deceptive? Absolutely. Effective? Always.",
+        image: "images/ophrys_apifera.jpg"
+      },
+      {
+        category: "Longevity",
+        text: "Orchid seeds are tiny and dust-like — almost invisible. But once they sprout, some orchids can live for decades. They're in it for the long bloom.",
+        image: "images/orchid_seeds.jpg"
+      },
+      {
+        category: "Ghost Stories",
+        text: "The Ghost Orchid only blooms a few times a year, often hidden in the swamp. Collectors and fans trek through alligator territory just to catch a glimpse.",
+        image: "images/ghost_orchid_swamp.jpg"
+      },
+      {
+        category: "Ancient Roots",
+        text: "Orchids have been around since the age of dinosaurs. Fossilized pollen was found on the back of a bee trapped in amber — Jurassic Park, but floral!",
+        image: "images/orchid_fossil.jpg"
+      },
+      {
+        category: "Space Travel",
+        text: "In 1984, orchid tissue cultures were sent into space aboard the Challenger. Scientists wanted to know: can orchids bloom among the stars?",
+        image: "images/orchid_in_space.jpg"
+      },
+      {
+        category: "Showtime",
+        text: "Orchid shows are judged like dog shows: points for color, shape, stance, and grooming. Yes — even a plant can have posture!",
+        image: "images/orchid_show_table.jpg"
+      },
+      {
+        category: "Smell Test",
+        text: "Stanhopea orchids bloom for just 3 days — but their perfume is unforgettable. Think pineapple meets banana with a splash of root beer. Sniff fast!",
+        image: "images/stanhopea.jpg"
+      },
+      {
+        category: "Microhabitats",
+        text: "Many orchids don’t need soil. They perch on tree bark and pull moisture from the air, turning your branches into high-rise condos.",
+        image: "images/epiphyte_orchid.jpg"
+      },
+      {
+        category: "Resilience",
+        text: "Zygopetalum orchids may look delicate, but they're as tough as they come. Bold color patterns and spicy fragrance — plus winter blooming. A triple win.",
+        image: "images/zygopetalum.jpg"
+      },
+      {
+        category: "Color Trickery",
+        text: "Orchids don’t produce blue pigment naturally. Blue orchids? Usually dyed. But don’t tell them that — they still think they’re royalty.",
+        image: "images/blue_orchid.jpg"
+      },
+      {
+        category: "FCOS Local Lore",
+        text: "In Five Cities, we once had a Paphiopedilum bloom so perfectly, it was mistaken for a sculpture. Turns out, it just liked our foggy mornings.",
+        image: "images/paphiopedilum_sculpture.jpg"
+      },
+      {
+        category: "Shape Shifters",
+        text: "Masdevallia orchids don’t follow the rules — their petals fuse into wild geometric shapes. Origami meets jungle flair.",
+        image: "images/masdevallia_geometric.jpg"
+      },
+      {
+        category: "Food Connection",
+        text: "The vanilla bean comes from an orchid! Vanilla planifolia is the only orchid grown for food. And your cookies thank it dearly.",
+        image: "images/vanilla_orchid.jpg"
+      },
+      {
+        category: "Mystery Pollinators",
+        text: "Some orchids have never been observed being pollinated. Nature keeps her secrets — even from the scientists with cameras.",
+        image: "images/orchid_pollination.jpg"
+      },
+      {
+        category: "Hybrid Obsession",
+        text: "There are over 150,000 registered orchid hybrids. Hobbyists are basically plant matchmakers with clipboards.",
+        image: "images/orchid_hybrids.jpg"
+      },
+      {
+        category: "Miniature Charm",
+        text: "Some orchids grow no taller than a thimble. Perfect for fairy gardens, teacups, and dedicated growers with magnifying glasses.",
+        image: "images/miniature_orchid.jpg"
+      },
+      {
+        category: "Night Owls",
+        text: "Some orchids only bloom at night — to attract moths. Nature throws her best parties after sunset.",
+        image: "images/night_blooming_orchid.jpg"
+      },
+      {
+        category: "Terrarium Stars",
+        text: "Jewel orchids are grown not for their flowers, but for their glowing, vein-covered leaves. They’re like circuit boards made by elves.",
+        image: "images/jewel_orchid.jpg"
+      },
+      {
+        category: "Scientific Puzzles",
+        text: "Despite centuries of study, orchids still stump botanists. Why do some only bloom every 7 years? Even the orchids won’t tell.",
+        image: "images/orchid_question_mark.jpg"
+      },
+
+      {
+        category: "Camouflage Artists",
+        text: "Some orchids like the Habenaria radiata mimic birds in flight — their petals splayed like wings mid-soar. Mother Nature’s own origami show.",
+        image: "images/habenaria_radiata.jpg"
+      },
+      {
+        category: "Rainforest Royalty",
+        text: "Lycaste aromatica isn’t just yellow and beautiful — it smells like cinnamon! It’s like walking into a pastry shop… in the middle of the jungle.",
+        image: "images/lycaste_aromatica.jpg"
+      },
+      {
+        category: "Winter Wonders",
+        text: "Some Cymbidiums bloom in mid-winter — icy winds, gloomy skies, and suddenly, a tropical blossom stares back at you like, 'What frost?'",
+        image: "images/cymbidium_winter.jpg"
+      },
+      {
+        category: "Mad Scientists",
+        text: "Orchid breeders once used turkey basters and paintbrushes to pollinate. Now it’s gene splicing. Either way — they're still playing floral Cupid.",
+        image: "images/orchid_breeding.jpg"
+      },
+      {
+        category: "Photo Finish",
+        text: "Photographing orchids is its own sport — humidity fogs your lens, bees crash the frame, and the blooms turn away like shy celebs.",
+        image: "images/orchid_photography.jpg"
+      },
+      {
+        category: "Insect Impersonators",
+        text: "Some orchids resemble spiders, flies, or praying mantises — which sounds creepy, until you realize it helps them survive. Cosplay with purpose!",
+        image: "images/spider_orchid.jpg"
+      },
+      {
+        category: "Medicinal Myths",
+        text: "Ancient herbalists believed orchids could restore vitality, improve love lives, or even cure poison. Results… unverified.",
+        image: "images/medicinal_orchid.jpg"
+      },
+      {
+        category: "Mountain Tough",
+        text: "Disa orchids thrive in alpine mists and freezing fogs. Not bad for something that looks like it belongs on a red carpet.",
+        image: "images/disa_orchid.jpg"
+      },
+      {
+        category: "Fossil Mystery",
+        text: "Orchids rarely fossilize, but when they do, it's like finding the Holy Grail. One fossilized in amber stunned scientists — and lit up the orchid world.",
+        image: "images/fossil_amber_orchid.jpg"
+      },
+      {
+        category: "Monsoon Magic",
+        text: "In India, monsoon season awakens orchids in full force. Entire forests come alive with color — like Holi, but for petals.",
+        image: "images/monsoon_orchids.jpg"
+      },
+      {
+        category: "Petal Precision",
+        text: "Orchids have the wildest symmetry — some even trick bees into landing precisely where they’ll pollinate. Talk about a clever trap door!",
+        image: "images/orchid_symmetry.jpg"
+      },
+      {
+        category: "Glow Up",
+        text: "Some orchids, like Aerangis, glow faintly in the moonlight to attract nocturnal pollinators. Subtle? Maybe. Magical? Absolutely.",
+        image: "images/aerangis_glow.jpg"
+      },
+      {
+        category: "Upside-Down Orchids",
+        text: "Yes, some orchids bloom upside-down — lip on top, instead of below. It’s called resupination, and it’s basically a fancy yoga pose.",
+        image: "images/upside_down_orchid.jpg"
+      },
+      {
+        category: "Record Breaker",
+        text: "Grammatophyllum speciosum is the world’s largest orchid — over 2,000 pounds when mature! If orchids went to the gym, this would be the bodybuilder.",
+        image: "images/grammatophyllum_speciosum.jpg"
+      },
+      {
+        category: "Tropical Trickster",
+        text: "Phalaenopsis bellina doesn’t bloom all at once — it teases, one petal at a time, like a plant playing peekaboo.",
+        image: "images/phalaenopsis_bellina.jpg"
+      },
+      {
+        category: "Rain Sensors",
+        text: "Some orchids won’t open unless there’s high humidity — they read the air like meteorologists. If it’s dry, they stay tucked in.",
+        image: "images/humidity_orchid.jpg"
+      },
+      {
+        category: "Cultural Icon",
+        text: "In ancient Greece, orchids symbolized virility and strength. One myth claimed they sprang from a fallen satyr’s blood. Dramatic much?",
+        image: "images/greek_orchid.jpg"
+      },
+      {
+        category: "Color Confusion",
+        text: "A single orchid species can bloom in multiple colors — from soft blush to bold magenta. It’s the plant equivalent of changing outfits mid-party.",
+        image: "images/color_variety_orchid.jpg"
+      },
+      {
+        category: "Orchid Thieves",
+        text: "In the 1800s, rare orchid poaching was a crime of passion — collectors hired hunters to steal from rivals' greenhouses. It was floral espionage!",
+        image: "images/orchid_thieves.jpg"
+      },
+      {
+        category: "Closing Act",
+        text: "And when all is bloomed and admired, some orchids drop their flowers like mic drops — dramatic exits worthy of an encore.",
+        image: "images/orchid_micdrop.jpg"
+      }
+    ];
+
+    let currentIndex = -1;
+
+    function showNextTrivia() {
+      currentIndex = (currentIndex + 1) % triviaData.length;
+      const trivia = triviaData[currentIndex];
+      document.getElementById("trivia-image").src = trivia.image;
+      document.getElementById("trivia-text").innerHTML = `
+        <div class="category">Category: ${trivia.category}</div>
+        <div>${trivia.text}</div>
+      `;
+    }
+
+    // Initial load
+    showNextTrivia();
+  </script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Game Analytics Dashboard - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Admin Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i data-feather="bar-chart-2" class="me-2 text-primary"></i>
+            Game & Widget Analytics
+        </h1>
+        <div class="d-flex gap-2">
+            <select id="timePeriod" class="form-select" onchange="updateAnalytics()">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+            <button class="btn btn-outline-secondary" onclick="exportAnalytics()">
+                <i data-feather="download" class="me-2"></i>Export
+            </button>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Game Sessions</h6>
+                            <h3 class="mb-0">{{ analytics.games.total_sessions or 0 }}</h3>
+                            <small class="opacity-75">{{ analytics.games.total_completions or 0 }} completed</small>
+                        </div>
+                        <i data-feather="play-circle" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Widget Views</h6>
+                            <h3 class="mb-0">{{ analytics.widgets.total_views or 0 }}</h3>
+                            <small class="opacity-75">Across all widgets</small>
+                        </div>
+                        <i data-feather="grid" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Unique Users</h6>
+                            <h3 class="mb-0">{{ analytics.users.unique_players or 0 }}</h3>
+                            <small class="opacity-75">{{ analytics.users.registered_users or 0 }} registered</small>
+                        </div>
+                        <i data-feather="users" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Completion Rate</h6>
+                            <h3 class="mb-0">
+                                {% if analytics.games.total_sessions > 0 %}
+                                {{ "%.1f"|format((analytics.games.total_completions / analytics.games.total_sessions * 100)) }}%
+                                {% else %}
+                                0%
+                                {% endif %}
+                            </h3>
+                            <small class="opacity-75">Games finished</small>
+                        </div>
+                        <i data-feather="target" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Daily Usage Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="usageChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="pie-chart" class="me-2"></i>
+                        Game Types
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="gameTypesChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Tables -->
+    <div class="row g-4">
+        <!-- Game Analytics Table -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="gamepad-2" class="me-2"></i>
+                        Games by Type
+                    </h5>
+                    <small class="text-muted">Sessions started</small>
+                </div>
+                <div class="card-body">
+                    {% if analytics.games.by_type %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Game Type</th>
+                                    <th>Sessions</th>
+                                    <th>Popularity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for game_type, count in analytics.games.by_type.items() %}
+                                <tr>
+                                    <td>
+                                        {% if game_type == 'memory' %}
+                                            <i data-feather="cpu" class="me-2 text-primary"></i>Memory
+                                        {% elif game_type == 'rebus' %}
+                                            <i data-feather="puzzle-piece" class="me-2 text-success"></i>Rebus
+                                        {% else %}
+                                            <i data-feather="play" class="me-2 text-secondary"></i>{{ game_type.title() }}
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ count }}</strong></td>
+                                    <td>
+                                        {% set percentage = (count / analytics.games.total_sessions * 100) if analytics.games.total_sessions > 0 else 0 %}
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ percentage }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ "%.1f"|format(percentage) }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i data-feather="inbox" style="width: 48px; height: 48px;" class="mb-3"></i>
+                        <p>No game data available for this period</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Widget Analytics Table -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="layout" class="me-2"></i>
+                        Widgets by Usage
+                    </h5>
+                    <small class="text-muted">Total views</small>
+                </div>
+                <div class="card-body">
+                    {% if analytics.widgets.by_widget %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Widget</th>
+                                    <th>Views</th>
+                                    <th>Share</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for widget, count in analytics.widgets.by_widget.items() %}
+                                <tr>
+                                    <td>
+                                        {% if 'featured' in widget.lower() %}
+                                            <i data-feather="star" class="me-2 text-warning"></i>
+                                        {% elif 'gallery' in widget.lower() %}
+                                            <i data-feather="image" class="me-2 text-info"></i>
+                                        {% elif 'discovery' in widget.lower() %}
+                                            <i data-feather="compass" class="me-2 text-success"></i>
+                                        {% else %}
+                                            <i data-feather="square" class="me-2 text-secondary"></i>
+                                        {% endif %}
+                                        {{ widget.replace('_', ' ').title() }}
+                                    </td>
+                                    <td><strong>{{ count }}</strong></td>
+                                    <td>
+                                        {% set percentage = (count / analytics.widgets.total_views * 100) if analytics.widgets.total_views > 0 else 0 %}
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: {{ percentage }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ "%.1f"|format(percentage) }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i data-feather="inbox" style="width: 48px; height: 48px;" class="mb-3"></i>
+                        <p>No widget data available for this period</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Engagement Insights -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Engagement Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="insight-card">
+                                <h6>Most Popular Game</h6>
+                                {% if analytics.games.by_type %}
+                                    {% set popular_game = analytics.games.by_type.items()|list|sort(attribute=1, reverse=true)|first %}
+                                    <p class="h5 text-primary">{{ popular_game[0].title() }}</p>
+                                    <small class="text-muted">{{ popular_game[1] }} sessions</small>
+                                {% else %}
+                                    <p class="text-muted">No data</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="insight-card">
+                                <h6>Most Popular Widget</h6>
+                                {% if analytics.widgets.by_widget %}
+                                    {% set popular_widget = analytics.widgets.by_widget.items()|list|sort(attribute=1, reverse=true)|first %}
+                                    <p class="h5 text-success">{{ popular_widget[0].replace('_', ' ').title() }}</p>
+                                    <small class="text-muted">{{ popular_widget[1] }} views</small>
+                                {% else %}
+                                    <p class="text-muted">No data</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="insight-card">
+                                <h6>User Engagement</h6>
+                                {% set engagement_rate = ((analytics.users.registered_users / analytics.users.unique_players * 100) if analytics.users.unique_players > 0 else 0) %}
+                                <p class="h5 text-info">{{ "%.1f"|format(engagement_rate) }}%</p>
+                                <small class="text-muted">Registration rate</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="insight-card">
+                                <h6>Peak Activity</h6>
+                                {% if analytics.games.daily_usage %}
+                                    {% set peak_day = analytics.games.daily_usage.items()|list|sort(attribute=1, reverse=true)|first %}
+                                    <p class="h5 text-warning">{{ peak_day[1] }}</p>
+                                    <small class="text-muted">{{ peak_day[0] }}</small>
+                                {% else %}
+                                    <p class="text-muted">No data</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.insight-card {
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+}
+
+.insight-card h6 {
+    margin-bottom: 0.5rem;
+    color: var(--bs-text-muted);
+}
+
+.card-body canvas {
+    max-height: 300px;
+}
+</style>
+
+<script>
+// Chart.js configuration for dark theme
+Chart.defaults.color = '#adb5bd';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+Chart.defaults.backgroundColor = 'rgba(13, 202, 240, 0.1)';
+
+// Usage trends chart
+const usageCtx = document.getElementById('usageChart').getContext('2d');
+const usageChart = new Chart(usageCtx, {
+    type: 'line',
+    data: {
+        labels: {{ analytics.games.daily_usage.keys()|list|tojson if analytics.games.daily_usage else []|tojson }},
+        datasets: [
+            {
+                label: 'Games',
+                data: {{ analytics.games.daily_usage.values()|list|tojson if analytics.games.daily_usage else []|tojson }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Widgets',
+                data: {{ analytics.widgets.daily_usage.values()|list|tojson if analytics.widgets.daily_usage else []|tojson }},
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255,255,255,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(255,255,255,0.1)'
+                }
+            }
+        }
+    }
+});
+
+// Game types pie chart
+const gameTypesCtx = document.getElementById('gameTypesChart').getContext('2d');
+const gameTypesChart = new Chart(gameTypesCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ analytics.games.by_type.keys()|list|tojson if analytics.games.by_type else []|tojson }},
+        datasets: [{
+            data: {{ analytics.games.by_type.values()|list|tojson if analytics.games.by_type else []|tojson }},
+            backgroundColor: [
+                'rgba(13, 110, 253, 0.8)',
+                'rgba(25, 135, 84, 0.8)', 
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(111, 66, 193, 0.8)'
+            ],
+            borderWidth: 2,
+            borderColor: '#343a40'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20
+                }
+            }
+        }
+    }
+});
+
+function updateAnalytics() {
+    const days = document.getElementById('timePeriod').value;
+    window.location.href = `/admin/game-analytics?days=${days}`;
+}
+
+function exportAnalytics() {
+    const days = document.getElementById('timePeriod').value;
+    
+    // Create downloadable analytics report
+    const analytics = {{ analytics|tojson }};
+    const report = {
+        period: `${days} days`,
+        generated: new Date().toISOString(),
+        summary: {
+            games: analytics.games,
+            widgets: analytics.widgets,
+            users: analytics.users
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orchid-analytics-${days}days-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,738 @@
+{% extends "admin/base.html" %}
+
+{% block title %}SVO Session Details - {{ session.session_name }}{% endblock %}
+{% block page_title %}📊 Session Analysis: {{ session.session_name }}{% endblock %}
+{% block page_subtitle %}Detailed SVO Research Results and Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+    .result-card {
+        border-left: 4px solid var(--fcos-green);
+        transition: all 0.3s ease;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-2px);
+        border-left-color: var(--fcos-purple);
+    }
+    
+    .svo-tuple {
+        background: linear-gradient(90deg, #f8f9fa, #fff);
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .subject { color: #dc3545; font-weight: 600; }
+    .verb { color: var(--fcos-purple); font-weight: 600; }
+    .object { color: var(--fcos-green); font-weight: 600; }
+    
+    .context-text {
+        background-color: #f8f9fa;
+        border-left: 3px solid #dee2e6;
+        font-style: italic;
+    }
+    
+    .analytics-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .export-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .export-btn:hover {
+        transform: scale(1.05);
+    }
+    
+    .filter-chip {
+        background-color: var(--fcos-purple);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-chip:hover {
+        background-color: var(--fcos-purple-600);
+        transform: scale(1.05);
+    }
+    
+    .filter-chip.active {
+        background-color: var(--fcos-green);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .confidence-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #dc3545, #ffc107, #28a745);
+    }
+    
+    .session-meta {
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .url-status-good { color: #28a745; }
+    .url-status-warning { color: #ffc107; }
+    .url-status-error { color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Session Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card session-meta">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="mb-3">{{ session.session_name }}</h4>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <p class="mb-2">
+                                    <strong>Status:</strong>
+                                    {% if session.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif session.status == 'running' %}
+                                    <span class="badge bg-warning">Running</span>
+                                    {% elif session.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-2"><strong>Created:</strong> {{ session.created_at.strftime('%Y-%m-%d %H:%M:%S') if session.created_at else 'Unknown' }}</p>
+                                {% if session.completed_at %}
+                                <p class="mb-2"><strong>Completed:</strong> {{ session.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="mb-2"><strong>URLs Analyzed:</strong> {{ session.urls|length if session.urls else 0 }}</p>
+                                <p class="mb-2"><strong>SVO Tuples Found:</strong> {{ session.total_svo_found or 0 }}</p>
+                                {% if session.failed_urls %}
+                                <p class="mb-2"><strong>Failed URLs:</strong> {{ session.failed_urls|length }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group-vertical" role="group">
+                            {% if summary and summary.csv_export_path %}
+                            <a href="{{ summary.csv_export_path }}" class="btn btn-primary export-btn mb-2">
+                                <i data-feather="download" class="me-1"></i>
+                                Download CSV
+                            </a>
+                            {% endif %}
+                            <button class="btn btn-outline-success export-btn mb-2" onclick="exportToExcel()">
+                                <i data-feather="file-text" class="me-1"></i>
+                                Export Excel
+                            </button>
+                            <button class="btn btn-outline-info export-btn mb-2" onclick="exportToJson()">
+                                <i data-feather="code" class="me-1"></i>
+                                Export JSON
+                            </button>
+                            <button class="btn btn-outline-warning export-btn" onclick="generateCitation()">
+                                <i data-feather="bookmark" class="me-1"></i>
+                                Generate Citation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Dashboard -->
+{% if analytics %}
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="bar-chart-2" class="me-2 text-primary"></i>
+                    URL Performance Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 text-center">
+                        <div class="h4 text-primary">{{ analytics.total_urls_processed }}</div>
+                        <div class="text-muted">URLs Processed</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="h4 text-success">{{ "%.1f"|format(analytics.average_confidence * 100) }}%</div>
+                        <div class="text-muted">Avg Confidence</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="h4 text-info">{{ analytics.high_confidence_count }}</div>
+                        <div class="text-muted">High Confidence</div>
+                    </div>
+                </div>
+                
+                {% if analytics.most_productive_url %}
+                <div class="alert alert-info">
+                    <strong>Most Productive URL:</strong> 
+                    <code>{{ analytics.most_productive_url[0] }}</code>
+                    produced {{ analytics.most_productive_url[1] }} SVO tuples
+                </div>
+                {% endif %}
+                
+                <!-- URL Distribution Chart -->
+                <div class="chart-container">
+                    <canvas id="urlDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card analytics-card text-white">
+            <div class="card-header border-0">
+                <h5 class="mb-0">
+                    <i data-feather="trending-up" class="me-2"></i>
+                    Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Avg Context Length:</span>
+                        <strong>{{ "%.0f"|format(analytics.average_context_length) }} chars</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Success Rate:</span>
+                        <strong>{{ "%.1f"|format((analytics.total_urls_processed / (session.urls|length if session.urls else 1)) * 100) }}%</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Unique Subjects:</span>
+                        <strong>{{ summary.unique_subjects if summary else 'N/A' }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Unique Verbs:</span>
+                        <strong>{{ summary.unique_verbs if summary else 'N/A' }}</strong>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between">
+                        <span>Unique Objects:</span>
+                        <strong>{{ summary.unique_objects if summary else 'N/A' }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error Summary -->
+        {% if session.failed_urls %}
+        <div class="card mt-3">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">
+                    <i data-feather="alert-triangle" class="me-2"></i>
+                    Processing Errors
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for failed in session.failed_urls[:3] %}
+                <div class="mb-2 pb-2 {% if not loop.last %}border-bottom{% endif %}">
+                    <div class="small text-muted">{{ failed.url }}</div>
+                    <div class="small text-danger">{{ failed.error }}</div>
+                </div>
+                {% endfor %}
+                {% if session.failed_urls|length > 3 %}
+                <div class="text-muted small">
+                    ... and {{ session.failed_urls|length - 3 }} more errors
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Frequency Charts -->
+{% if summary %}
+<div class="row mb-4">
+    {% if summary.subject_chart_path %}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">Top Subjects</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ summary.subject_chart_path }}" class="img-fluid" alt="Subject Frequency Chart">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if summary.verb_chart_path %}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">Top Verbs</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ summary.verb_chart_path }}" class="img-fluid" alt="Verb Frequency Chart">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if summary.object_chart_path %}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">Top Objects</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ summary.object_chart_path }}" class="img-fluid" alt="Object Frequency Chart">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Filtering and Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="filter" class="me-2 text-primary"></i>
+                        SVO Results Explorer
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <input type="text" class="form-control me-2" id="searchBox" 
+                               placeholder="Search SVO tuples..." style="width: 300px;">
+                        <button class="btn btn-outline-primary" onclick="performSearch()">
+                            <i data-feather="search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Filter Chips -->
+                <div class="mb-3">
+                    <span class="me-2 text-muted">Quick Filters:</span>
+                    <button class="filter-chip active me-2" onclick="filterResults('all')">All Results</button>
+                    <button class="filter-chip me-2" onclick="filterResults('high_confidence')">High Confidence</button>
+                    <button class="filter-chip me-2" onclick="filterResults('botanical')">Botanical Terms</button>
+                    <button class="filter-chip me-2" onclick="filterResults('scientific')">Scientific Names</button>
+                </div>
+                
+                <!-- Results Count -->
+                <div class="mb-3">
+                    <span class="text-muted">Showing <strong id="resultsCount">{{ sample_results|length }}</strong> of {{ session.total_svo_found or 0 }} total results</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SVO Results -->
+<div class="row">
+    <div class="col-12">
+        <div id="resultsContainer">
+            {% if sample_results %}
+                {% for result in sample_results %}
+                <div class="card result-card mb-3" data-confidence="{{ result.confidence_score or 0 }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <!-- SVO Tuple -->
+                                <div class="svo-tuple p-3 mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3 text-center">
+                                            <div class="subject">{{ result.subject }}</div>
+                                            <small class="text-muted">Subject</small>
+                                        </div>
+                                        <div class="col-md-3 text-center">
+                                            <div class="verb">{{ result.verb }}</div>
+                                            <small class="text-muted">Verb</small>
+                                        </div>
+                                        <div class="col-md-6 text-center">
+                                            <div class="object">{{ result.object }}</div>
+                                            <small class="text-muted">Object</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Context -->
+                                {% if result.context_text %}
+                                <div class="context-text p-3 mb-2">
+                                    <strong>Context:</strong> {{ result.context_text[:200] }}{% if result.context_text|length > 200 %}...{% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <!-- Metadata -->
+                                <div class="small text-muted mb-2">
+                                    <strong>Source:</strong> 
+                                    <a href="{{ result.source_url }}" target="_blank" class="text-decoration-none">
+                                        {{ result.source_url[:50] }}{% if result.source_url|length > 50 %}...{% endif %}
+                                    </a>
+                                </div>
+                                
+                                <!-- Confidence Score -->
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="small text-muted">Confidence:</span>
+                                        <span class="small fw-bold">{{ "%.1f"|format((result.confidence_score or 0) * 100) }}%</span>
+                                    </div>
+                                    <div class="confidence-bar" style="width: {{ (result.confidence_score or 0) * 100 }}%;"></div>
+                                </div>
+                                
+                                <!-- Cleaned versions -->
+                                <div class="small text-muted">
+                                    <div><strong>Clean:</strong> {{ result.subject_clean }} → {{ result.verb_clean }} → {{ result.object_clean }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Load More Button -->
+                {% if sample_results|length >= 100 %}
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary" onclick="loadMoreResults()">
+                        <i data-feather="chevron-down" class="me-1"></i>
+                        Load More Results
+                    </button>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i data-feather="search" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                        <h5 class="text-muted">No SVO Results Found</h5>
+                        <p class="text-muted">This session hasn't produced any SVO tuples yet.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Back Navigation -->
+<div class="row mt-5">
+    <div class="col-12">
+        <a href="{{ url_for('admin_svo.svo_research_dashboard') }}" class="btn btn-secondary">
+            <i data-feather="arrow-left" class="me-1"></i>
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let currentFilter = 'all';
+let searchQuery = '';
+let currentOffset = {{ sample_results|length }};
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    initializeCharts();
+    initializeSearch();
+});
+
+function initializeCharts() {
+    {% if analytics and analytics.url_distribution %}
+    // URL Distribution Chart
+    const urlData = {{ analytics.url_distribution|tojson }};
+    const ctx = document.getElementById('urlDistributionChart');
+    
+    if (ctx && Object.keys(urlData).length > 0) {
+        const urls = Object.keys(urlData).map(url => {
+            return url.length > 30 ? url.substring(0, 30) + '...' : url;
+        });
+        const counts = Object.values(urlData);
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: urls,
+                datasets: [{
+                    label: 'SVO Tuples',
+                    data: counts,
+                    backgroundColor: 'rgba(106, 63, 181, 0.8)',
+                    borderColor: 'rgba(106, 63, 181, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+}
+
+function initializeSearch() {
+    const searchBox = document.getElementById('searchBox');
+    if (searchBox) {
+        searchBox.addEventListener('input', debounce(function() {
+            searchQuery = this.value.toLowerCase();
+            filterDisplayedResults();
+        }, 300));
+        
+        searchBox.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    }
+}
+
+function filterResults(filterType) {
+    // Update active filter chip
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    currentFilter = filterType;
+    filterDisplayedResults();
+}
+
+function filterDisplayedResults() {
+    const results = document.querySelectorAll('.result-card');
+    let visibleCount = 0;
+    
+    results.forEach(result => {
+        let shouldShow = true;
+        
+        // Apply filter
+        if (currentFilter === 'high_confidence') {
+            const confidence = parseFloat(result.dataset.confidence);
+            shouldShow = confidence > 0.8;
+        } else if (currentFilter === 'botanical') {
+            const text = result.textContent.toLowerCase();
+            shouldShow = text.includes('orchid') || text.includes('plant') || text.includes('flower') || 
+                        text.includes('bloom') || text.includes('grow') || text.includes('root');
+        } else if (currentFilter === 'scientific') {
+            const text = result.textContent;
+            shouldShow = /[A-Z][a-z]+ [a-z]+/.test(text); // Simple scientific name pattern
+        }
+        
+        // Apply search
+        if (shouldShow && searchQuery) {
+            const text = result.textContent.toLowerCase();
+            shouldShow = text.includes(searchQuery);
+        }
+        
+        result.style.display = shouldShow ? 'block' : 'none';
+        if (shouldShow) visibleCount++;
+    });
+    
+    document.getElementById('resultsCount').textContent = visibleCount;
+}
+
+function performSearch() {
+    const searchBox = document.getElementById('searchBox');
+    searchQuery = searchBox.value.toLowerCase();
+    filterDisplayedResults();
+}
+
+function loadMoreResults() {
+    // In a real implementation, this would fetch more results from the server
+    // For now, just show a message
+    alert('Loading more results would require server-side pagination implementation.');
+}
+
+async function exportToExcel() {
+    try {
+        showExportSpinner('excel');
+        
+        // For now, redirect to CSV export
+        {% if summary and summary.csv_export_path %}
+        window.open('{{ summary.csv_export_path }}', '_blank');
+        {% else %}
+        alert('Export not available for this session.');
+        {% endif %}
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Export failed: ' + error.message);
+    } finally {
+        hideExportSpinner('excel');
+    }
+}
+
+async function exportToJson() {
+    try {
+        showExportSpinner('json');
+        
+        // Create JSON export
+        const sessionData = {
+            session: {
+                id: '{{ session.id }}',
+                name: '{{ session.session_name }}',
+                status: '{{ session.status }}',
+                created_at: '{{ session.created_at.isoformat() if session.created_at else "" }}',
+                completed_at: '{{ session.completed_at.isoformat() if session.completed_at else "" }}',
+                total_svo_found: {{ session.total_svo_found or 0 }},
+                urls: {{ session.urls|tojson if session.urls else [] }}
+            },
+            analytics: {{ analytics|tojson if analytics else {} }},
+            sample_results: {{ sample_results[:50]|map(attribute='to_dict')|list|tojson if sample_results else [] }}
+        };
+        
+        // Download JSON
+        const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `svo_session_{{ session.id }}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Export failed: ' + error.message);
+    } finally {
+        hideExportSpinner('json');
+    }
+}
+
+function generateCitation() {
+    const sessionName = '{{ session.session_name }}';
+    const createdDate = '{{ session.created_at.strftime("%Y-%m-%d") if session.created_at else "" }}';
+    const totalTuples = {{ session.total_svo_found or 0 }};
+    const urlCount = {{ session.urls|length if session.urls else 0 }};
+    
+    const citation = `Subject-Verb-Object Analysis: "${sessionName}". ` +
+                    `Orchid Continuum Research Platform. ` +
+                    `${createdDate}. ` +
+                    `${totalTuples} SVO tuples extracted from ${urlCount} botanical websites. ` +
+                    `Session ID: {{ session.id }}.`;
+    
+    // Show citation in modal
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Research Citation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">APA Style Citation:</label>
+                        <div class="form-control" style="min-height: 80px; background-color: #f8f9fa;">${citation}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">BibTeX Entry:</label>
+                        <textarea class="form-control" rows="6" style="background-color: #f8f9fa;" readonly>@misc{svo_${sessionName.replace(/\s+/g, '_').toLowerCase()}_{{ session.id.replace('-', '') }},
+    title={Subject-Verb-Object Analysis: ${sessionName}},
+    author={Orchid Continuum Research Platform},
+    year={${createdDate.split('-')[0]}},
+    note={${totalTuples} SVO tuples from ${urlCount} botanical websites, Session ID: {{ session.id }}},
+    url={${window.location.href}}
+}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="copyToClipboard('${citation}')">
+                        Copy Citation
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    modal.addEventListener('hidden.bs.modal', () => modal.remove());
+}
+
+function showExportSpinner(type) {
+    const btn = document.querySelector(`[onclick="exportTo${type.charAt(0).toUpperCase() + type.slice(1)}()"]`);
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner me-1"></div>Exporting...';
+    }
+}
+
+function hideExportSpinner(type) {
+    const btn = document.querySelector(`[onclick="exportTo${type.charAt(0).toUpperCase() + type.slice(1)}()"]`);
+    if (btn) {
+        btn.disabled = false;
+        if (type === 'excel') {
+            btn.innerHTML = '<i data-feather="file-text" class="me-1"></i>Export Excel';
+        } else if (type === 'json') {
+            btn.innerHTML = '<i data-feather="code" class="me-1"></i>Export JSON';
+        }
+        feather.replace();
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-success position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+        toast.textContent = 'Citation copied to clipboard!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }, function() {
+        alert('Failed to copy citation. Please copy manually.');
+    });
+}
+
+// Utility functions
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

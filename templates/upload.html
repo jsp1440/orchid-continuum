@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Orchid - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i data-feather="upload" class="me-2"></i>Upload Orchid Photo
+                    </h3>
+                    <p class="mb-0">Share your orchid photos and let AI identify and catalog them</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <div class="mb-4">
+                            <label for="file" class="form-label">Select Orchid Photo</label>
+                            <input type="file" class="form-control form-control-lg" id="file" name="file" 
+                                   accept="image/*" required>
+                            <div class="form-text">
+                                <i data-feather="info" class="me-1"></i>
+                                Supported formats: JPG, PNG, GIF, BMP (Max 16MB)
+                            </div>
+                        </div>
+                        
+                        <!-- Image preview -->
+                        <div id="imagePreview" class="mb-4" style="display: none;">
+                            <label class="form-label">Preview</label>
+                            <div class="border rounded p-3 text-center">
+                                <img id="previewImage" src="#" alt="Preview" class="img-fluid" style="max-height: 400px;">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Additional Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                      placeholder="Add any additional information about this orchid: location found, growing conditions, suspected species, etc."></textarea>
+                            <div class="form-text">
+                                <i data-feather="edit-3" class="me-1"></i>
+                                This information helps improve AI identification accuracy
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                                    <i data-feather="upload" class="me-2"></i>Upload & Analyze
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary btn-lg w-100">
+                                    <i data-feather="grid" class="me-2"></i>Browse Gallery
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Processing indicator -->
+                    <div id="processingIndicator" class="text-center mt-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Processing your orchid photo with AI...</p>
+                        <small class="text-muted">This may take 30-60 seconds</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upload Instructions -->
+            <div class="card border-0 shadow mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="help-circle" class="me-2"></i>Upload Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i data-feather="camera" class="me-2 text-success"></i>Best Practices</h6>
+                            <ul class="list-unstyled">
+                                <li><i data-feather="check" class="me-2 text-success"></i>Clear, well-lit photos</li>
+                                <li><i data-feather="check" class="me-2 text-success"></i>Focus on the flower</li>
+                                <li><i data-feather="check" class="me-2 text-success"></i>Include labels if visible</li>
+                                <li><i data-feather="check" class="me-2 text-success"></i>Multiple angles if possible</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i data-feather="x-circle" class="me-2 text-danger"></i>Avoid</h6>
+                            <ul class="list-unstyled">
+                                <li><i data-feather="x" class="me-2 text-danger"></i>Blurry or dark images</li>
+                                <li><i data-feather="x" class="me-2 text-danger"></i>Heavy filters or editing</li>
+                                <li><i data-feather="x" class="me-2 text-danger"></i>Partial flowers only</li>
+                                <li><i data-feather="x" class="me-2 text-danger"></i>Very small file sizes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Features Info -->
+            <div class="card border-0 shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="cpu" class="me-2"></i>AI Analysis Features
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i data-feather="eye" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Visual Recognition</h6>
+                                <small class="text-muted">Identifies species from flower characteristics</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i data-feather="file-text" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>OCR Text Extraction</h6>
+                                <small class="text-muted">Reads plant labels and tags</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i data-feather="database" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Metadata Enrichment</h6>
+                                <small class="text-muted">Adds cultural and taxonomic information</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const processingIndicator = document.getElementById('processingIndicator');
+    
+    // Image preview functionality
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+    
+    // Form submission handling
+    uploadForm.addEventListener('submit', function(e) {
+        const file = fileInput.files[0];
+        if (!file) {
+            e.preventDefault();
+            alert('Please select a file to upload.');
+            return;
+        }
+        
+        // Show processing indicator
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        processingIndicator.style.display = 'block';
+        
+        // The form will submit normally, but we've prepared the UI for the processing time
+    });
+    
+    // File size validation
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && file.size > 16 * 1024 * 1024) { // 16MB
+            alert('File size must be less than 16MB. Please choose a smaller image.');
+            fileInput.value = '';
+            imagePreview.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

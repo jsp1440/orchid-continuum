@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Approval Dashboard - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Admin Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold" style="color: #7A4B8E;">
+                        <i data-feather="shield-check" class="me-2"></i>
+                        Orchid Approval Dashboard
+                    </h2>
+                    <p class="text-muted">Manage orchid validation, gallery assignments, and Orchid of the Day scheduling</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('orchid_approval.validate_orchid') }}" class="btn btn-primary me-2">
+                        <i data-feather="eye" class="me-1"></i> Validate Orchids
+                    </a>
+                    <a href="{{ url_for('orchid_approval.orchid_of_day_schedule') }}" class="btn btn-success">
+                        <i data-feather="calendar" class="me-1"></i> Schedule Orchid of Day
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.pending_approvals }}</h4>
+                            <p class="card-text">Pending Approval</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i data-feather="clock" style="width: 32px; height: 32px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.approved_orchids }}</h4>
+                            <p class="card-text">Approved Orchids</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i data-feather="check-circle" style="width: 32px; height: 32px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.total_orchids }}</h4>
+                            <p class="card-text">Total Orchids</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i data-feather="database" style="width: 32px; height: 32px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background-color: #7A4B8E; color: white;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.galleries_configured }}</h4>
+                            <p class="card-text">Active Galleries</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i data-feather="grid" style="width: 32px; height: 32px;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Upcoming Schedule -->
+    <div class="row">
+        <!-- Recent Approvals -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header" style="background-color: #F8F9FA;">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="activity" class="me-2"></i>
+                        Recent Approvals
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_approvals %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Display ID</th>
+                                    <th>Orchid</th>
+                                    <th>Gallery</th>
+                                    <th>Approved</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for approval in recent_approvals %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ approval.special_display_id }}</span>
+                                    </td>
+                                    <td>
+                                        <strong><em>{{ approval.approved_genus }} {{ approval.approved_species }}</em></strong>
+                                        {% if approval.approved_common_name %}
+                                        <br><small class="text-muted">{{ approval.approved_common_name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: #7A4B8E;">
+                                            {{ approval.gallery_type.value.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ approval.approved_at.strftime('%m/%d/%Y') if approval.approved_at }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No recent approvals</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Orchid of the Day -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header" style="background-color: #F8F9FA;">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="star" class="me-2"></i>
+                        Orchid of the Day - Upcoming
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_schedule %}
+                    <div class="timeline">
+                        {% for orchid in upcoming_schedule %}
+                        <div class="timeline-item mb-3">
+                            <div class="timeline-marker" 
+                                 style="background-color: {% if orchid.scheduled_date == today %}#28a745{% else %}#7A4B8E{% endif %};">
+                                <i data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <em>{{ orchid.approved_genus }} {{ orchid.approved_species }}</em>
+                                        </h6>
+                                        <small class="text-muted">{{ orchid.special_display_id }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge {% if orchid.scheduled_date == today %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ orchid.scheduled_date.strftime('%m/%d') if orchid.scheduled_date }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if orchid.approved_country %}
+                                <small class="text-muted">
+                                    <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                                    {{ orchid.approved_country }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No upcoming orchids scheduled</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('orchid_approval.orchid_of_day_schedule') }}" class="btn btn-outline-primary btn-sm">
+                        Manage Schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header" style="background-color: #F8F9FA;">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="zap" class="me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('orchid_approval.validate_orchid') }}" class="btn btn-outline-primary w-100 mb-2">
+                                <i data-feather="eye" class="me-2"></i>
+                                Validate New Orchids
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('orchid_approval.orchid_of_day_schedule') }}" class="btn btn-outline-success w-100 mb-2">
+                                <i data-feather="calendar" class="me-2"></i>
+                                Schedule Orchid of Day
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-info w-100 mb-2" onclick="exportApprovedOrchids()">
+                                <i data-feather="download" class="me-2"></i>
+                                Export Approved List
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-warning w-100 mb-2" onclick="bulkValidation()">
+                                <i data-feather="check-square" class="me-2"></i>
+                                Bulk Validation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+function exportApprovedOrchids() {
+    // Implementation for exporting approved orchid list
+    alert('Export functionality will be implemented');
+}
+
+function bulkValidation() {
+    // Implementation for bulk validation
+    alert('Bulk validation functionality will be implemented');
+}
+
+// Initialize feather icons
+feather.replace();
+</script>
+{% endblock %}

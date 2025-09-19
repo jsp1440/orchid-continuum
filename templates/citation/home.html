@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% set page_title = "Citations & Research Attribution" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 text-light mb-4">
+                <i data-feather="book-open" class="me-2"></i>
+                Citations & Research Attribution
+            </h1>
+            <p class="text-muted mb-4">
+                Proper attribution and citation formats for academic and research use of the Orchid Continuum database.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Attribution Text -->
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="file-text" class="me-2"></i>Research Attribution Guidelines
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="bg-secondary p-4 rounded">
+                        <pre class="text-light mb-0" style="font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word;">{{ attribution_text }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Citation Tools -->
+            <div class="card bg-dark text-light mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="copy" class="me-2"></i>Quick Citation Generator
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Citation Source:</label>
+                            <select class="form-select bg-secondary text-light" id="citation-source">
+                                <option value="world_orchids">World Orchids Database</option>
+                                <option value="orchid_continuum">Orchid Continuum System</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Citation Format:</label>
+                            <select class="form-select bg-secondary text-light" id="citation-format">
+                                <option value="full">Full Citation</option>
+                                <option value="short">Short Citation</option>
+                                <option value="bibtex">BibTeX Entry</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Access Date:</label>
+                        <input type="date" class="form-control bg-secondary text-light" id="access-date">
+                    </div>
+                    <button class="btn btn-primary" onclick="generateCitation()">
+                        <i data-feather="refresh-cw" class="me-1"></i>Generate Citation
+                    </button>
+                    
+                    <!-- Generated Citation Display -->
+                    <div id="generated-citation" class="mt-3" style="display: none;">
+                        <label class="form-label">Generated Citation:</label>
+                        <div class="bg-secondary p-3 rounded">
+                            <pre id="citation-text" class="text-light mb-0" style="font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: pre-wrap;"></pre>
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-outline-success btn-sm" onclick="copyCitation()">
+                                <i data-feather="copy" class="me-1"></i>Copy to Clipboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Export Options -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="download" class="me-2"></i>Export Citations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/citation/export/bibtex" class="btn btn-outline-primary">
+                            <i data-feather="file-text" class="me-1"></i>Download BibTeX File
+                        </a>
+                        <a href="/citation/export/txt" class="btn btn-outline-secondary">
+                            <i data-feather="file" class="me-1"></i>Download Text File
+                        </a>
+                        <a href="/citation/research-guidelines" class="btn btn-outline-info">
+                            <i data-feather="help-circle" class="me-1"></i>Research Guidelines
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BibTeX Preview -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="code" class="me-2"></i>BibTeX Entries
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="bg-secondary p-3 rounded">
+                        <pre class="text-light mb-0" style="font-family: 'Courier New', monospace; font-size: 0.75rem; white-space: pre-wrap;">{{ bibtex_collection }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Examples -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="example" class="me-2"></i>Citation Examples
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">For Taxonomic Research:</h6>
+                            <div class="bg-secondary p-3 rounded mb-3">
+                                <p class="small mb-2"><strong>Example:</strong></p>
+                                <p class="small mb-0">"The taxonomic classification follows Hassler's World Orchids database (Hassler, M. (1994-2025): World Orchids. www.worldplants.de/orchids/. Last accessed DD/MM/YYYY)."</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">For AI Analysis Research:</h6>
+                            <div class="bg-secondary p-3 rounded mb-3">
+                                <p class="small mb-2"><strong>Example:</strong></p>
+                                <p class="small mb-0">"Orchid identification and morphological analysis were performed using the Orchid Continuum AI system, with taxonomic verification against established databases."</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-warning">For Educational Use:</h6>
+                            <div class="bg-secondary p-3 rounded mb-3">
+                                <p class="small mb-2"><strong>Example:</strong></p>
+                                <p class="small mb-0">"Data and images sourced from the Orchid Continuum database (2025), incorporating AI-enhanced metadata extraction and taxonomic classification."</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">For Comparative Studies:</h6>
+                            <div class="bg-secondary p-3 rounded mb-3">
+                                <p class="small mb-2"><strong>Example:</strong></p>
+                                <p class="small mb-0">"Morphological comparisons and biodiversity analysis performed using Orchid Continuum's AI-powered comparison tools, with reference data from Hassler (2025)."</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Citation generation functionality
+async function generateCitation() {
+    const source = document.getElementById('citation-source').value;
+    const format = document.getElementById('citation-format').value;
+    const accessDate = document.getElementById('access-date').value;
+    
+    // Convert date format
+    const dateObj = new Date(accessDate);
+    const formattedDate = dateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+    
+    try {
+        const response = await fetch(`/citation/api/citation/${source}?format=${format}&date=${formattedDate}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('citation-text').textContent = data.citation;
+            document.getElementById('generated-citation').style.display = 'block';
+        } else {
+            alert('Error generating citation: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Citation generation error:', error);
+        alert('Error generating citation. Please try again.');
+    }
+}
+
+function copyCitation() {
+    const citationText = document.getElementById('citation-text').textContent;
+    
+    // Copy to clipboard
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(citationText).then(() => {
+            // Show success feedback
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+            button.classList.remove('btn-outline-success');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-success');
+                feather.replace();
+            }, 2000);
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            alert('Failed to copy citation to clipboard');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = citationText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Citation copied to clipboard!');
+    }
+}
+
+// Set default access date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('access-date').value = today;
+});
+</script>
+{% endblock %}

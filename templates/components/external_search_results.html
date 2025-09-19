@@ -1,0 +1,550 @@
+<!-- External Database Search Results Component -->
+<!-- This template displays results from EOL.org and GBIF databases -->
+
+<div id="external-search-results-container" class="external-results-container">
+    
+    <!-- Search Status Header -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <i data-feather="globe" class="me-2"></i>External Database Results
+                        <span class="badge bg-primary ms-2" id="total-external-count">0</span>
+                    </h5>
+                    <small class="text-muted" id="search-duration">Search duration: --</small>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportExternalResults()">
+                        <i data-feather="download" class="me-1"></i>Export
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="shareExternalResults()">
+                        <i data-feather="share-2" class="me-1"></i>Share
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearExternalResults()">
+                        <i data-feather="x" class="me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Cross-References (if any) -->
+    <div id="local-cross-references" class="local-matches-section d-none mb-4">
+        <div class="alert alert-info">
+            <h6 class="alert-heading">
+                <i data-feather="link" class="me-2"></i>Local Collection Matches
+                <span class="badge bg-info ms-2" id="local-matches-count">0</span>
+            </h6>
+            <div id="local-matches-content" class="row g-2">
+                <!-- Local matches will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- EOL.org Results Section -->
+    <div id="eol-results-section" class="external-database-section d-none mb-4">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i data-feather="book-open" class="me-2"></i>Encyclopedia of Life (EOL.org)
+                        <span class="badge bg-light text-success ms-2" id="eol-result-count">0</span>
+                    </h6>
+                    <div class="btn-group" role="group">
+                        <a href="#" id="eol-source-link" target="_blank" class="btn btn-sm btn-outline-light">
+                            <i data-feather="external-link" class="me-1"></i>View on EOL
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="addEOLToCollection()">
+                            <i data-feather="plus" class="me-1"></i>Add to Collection
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="eol-content">
+                    <!-- EOL content will be loaded here -->
+                    
+                    <!-- Species Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <h6 class="text-success" id="eol-scientific-name">Scientific Name</h6>
+                            <div id="eol-common-names" class="mb-2">
+                                <!-- Common names as badges -->
+                            </div>
+                            <div id="eol-taxonomic-status" class="small text-muted mb-2">
+                                <!-- Taxonomic status -->
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <small class="text-muted">Page ID: <span id="eol-page-id">--</span></small><br>
+                            <small class="text-muted">Last Updated: <span id="eol-last-updated">--</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Synonyms -->
+                    <div id="eol-synonyms-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">Synonyms:</h6>
+                        <div id="eol-synonyms" class="d-flex flex-wrap gap-1">
+                            <!-- Synonym badges -->
+                        </div>
+                    </div>
+
+                    <!-- Descriptions -->
+                    <div id="eol-descriptions-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">Species Descriptions:</h6>
+                        <div id="eol-descriptions">
+                            <!-- Description cards -->
+                        </div>
+                    </div>
+
+                    <!-- Images -->
+                    <div id="eol-images-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">EOL Images:</h6>
+                        <div class="row g-2" id="eol-images">
+                            <!-- Image thumbnails -->
+                        </div>
+                    </div>
+
+                    <!-- Citation -->
+                    <div class="alert alert-light mt-3">
+                        <small class="text-muted">
+                            <strong>Citation:</strong> <span id="eol-citation">Encyclopedia of Life citation</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GBIF Results Section -->
+    <div id="gbif-results-section" class="external-database-section d-none mb-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i data-feather="map" class="me-2"></i>Global Biodiversity Information Facility (GBIF)
+                        <span class="badge bg-light text-info ms-2" id="gbif-result-count">0</span>
+                    </h6>
+                    <div class="btn-group" role="group">
+                        <a href="#" id="gbif-source-link" target="_blank" class="btn btn-sm btn-outline-light">
+                            <i data-feather="external-link" class="me-1"></i>View on GBIF
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="addGBIFToCollection()">
+                            <i data-feather="plus" class="me-1"></i>Add to Collection
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="gbif-content">
+                    <!-- GBIF content will be loaded here -->
+                    
+                    <!-- Species Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <h6 class="text-info" id="gbif-scientific-name">Scientific Name</h6>
+                            <div class="small text-muted mb-1">
+                                <strong>Author:</strong> <span id="gbif-author">--</span> |
+                                <strong>Rank:</strong> <span id="gbif-rank">--</span> |
+                                <strong>Status:</strong> <span id="gbif-taxonomic-status">--</span>
+                            </div>
+                            <div class="small text-muted">
+                                <strong>Family:</strong> <span id="gbif-family">--</span> |
+                                <strong>Genus:</strong> <span id="gbif-genus">--</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <small class="text-muted">Species Key: <span id="gbif-species-key">--</span></small><br>
+                            <small class="text-muted">Occurrences: <span id="gbif-occurrence-count" class="fw-bold">0</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Vernacular Names -->
+                    <div id="gbif-vernacular-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">Common Names:</h6>
+                        <div id="gbif-vernacular-names" class="d-flex flex-wrap gap-1">
+                            <!-- Vernacular name badges -->
+                        </div>
+                    </div>
+
+                    <!-- Conservation Status -->
+                    <div id="gbif-conservation-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">Conservation Status:</h6>
+                        <div id="gbif-conservation-status">
+                            <!-- Conservation status badge -->
+                        </div>
+                    </div>
+
+                    <!-- Occurrence Records with Images -->
+                    <div id="gbif-occurrences-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">Recent Occurrences with Images:</h6>
+                        <div id="gbif-occurrences" class="row g-2">
+                            <!-- Occurrence cards with images -->
+                        </div>
+                    </div>
+
+                    <!-- GBIF Images Gallery -->
+                    <div id="gbif-images-section" class="mb-3 d-none">
+                        <h6 class="small fw-bold text-muted">GBIF Images:</h6>
+                        <div class="row g-2" id="gbif-images">
+                            <!-- Image thumbnails -->
+                        </div>
+                    </div>
+
+                    <!-- Citation -->
+                    <div class="alert alert-light mt-3">
+                        <small class="text-muted">
+                            <strong>Citation:</strong> <span id="gbif-citation">GBIF citation</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Opportunities Section -->
+    <div id="research-opportunities-section" class="d-none mb-4">
+        <div class="alert alert-warning">
+            <h6 class="alert-heading">
+                <i data-feather="lightbulb" class="me-2"></i>Research Opportunities
+            </h6>
+            <div id="research-opportunities-content">
+                <!-- Research opportunities will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Display -->
+    <div id="external-search-errors" class="d-none">
+        <div class="alert alert-danger">
+            <h6 class="alert-heading">
+                <i data-feather="alert-triangle" class="me-2"></i>Search Errors
+            </h6>
+            <div id="error-messages">
+                <!-- Error messages will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="no-external-results" class="text-center py-4 d-none">
+        <div class="text-muted">
+            <i data-feather="search" class="mb-2" style="width: 48px; height: 48px;"></i>
+            <p class="h6">No external database results found</p>
+            <p class="small">Try searching with different terms or check the spelling.</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- JavaScript for External Results Management -->
+<script>
+// External search results management
+window.ExternalResultsManager = {
+    
+    // Display external search results
+    displayResults: function(data) {
+        const container = document.getElementById('external-search-results-container');
+        if (!container) return;
+        
+        // Show container
+        container.classList.remove('d-none');
+        
+        // Update search duration
+        if (data.results && data.results.summary) {
+            document.getElementById('search-duration').textContent = 
+                `Search duration: ${data.results.summary.search_duration_ms}ms`;
+            document.getElementById('total-external-count').textContent = 
+                data.results.summary.total_external_results || 0;
+        }
+        
+        // Display local matches
+        this.displayLocalMatches(data.results.local_matches || []);
+        
+        // Display EOL results
+        if (data.results.external_results && data.results.external_results.EOL) {
+            this.displayEOLResults(data.results.external_results.EOL);
+        }
+        
+        // Display GBIF results
+        if (data.results.external_results && data.results.external_results.GBIF) {
+            this.displayGBIFResults(data.results.external_results.GBIF);
+        }
+        
+        // Display research opportunities
+        if (data.results.research_opportunities && data.results.research_opportunities.length > 0) {
+            this.displayResearchOpportunities(data.results.research_opportunities);
+        }
+        
+        // Show no results if needed
+        const hasResults = (data.results.summary.total_external_results > 0) || 
+                          (data.results.local_matches && data.results.local_matches.length > 0);
+        if (!hasResults) {
+            document.getElementById('no-external-results').classList.remove('d-none');
+        }
+        
+        // Initialize feather icons
+        if (window.feather) {
+            feather.replace();
+        }
+    },
+    
+    // Display local matches
+    displayLocalMatches: function(matches) {
+        if (!matches || matches.length === 0) return;
+        
+        const section = document.getElementById('local-cross-references');
+        const content = document.getElementById('local-matches-content');
+        const count = document.getElementById('local-matches-count');
+        
+        count.textContent = matches.length;
+        content.innerHTML = '';
+        
+        matches.forEach(match => {
+            const matchCard = `
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-body py-2">
+                            <h6 class="card-title mb-1">${match.display_name || match.scientific_name}</h6>
+                            <small class="text-muted">${match.genus} ${match.species || ''}</small>
+                            <div class="mt-1">
+                                ${match.has_eol_data ? '<span class="badge bg-success">EOL Data</span>' : ''}
+                                ${match.has_gbif_data ? '<span class="badge bg-info">GBIF Data</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            content.innerHTML += matchCard;
+        });
+        
+        section.classList.remove('d-none');
+    },
+    
+    // Display EOL results
+    displayEOLResults: function(eolData) {
+        if (!eolData || eolData.error) {
+            console.log('EOL Error:', eolData.error);
+            return;
+        }
+        
+        const section = document.getElementById('eol-results-section');
+        
+        // Set basic information
+        document.getElementById('eol-scientific-name').textContent = eolData.scientific_name || 'Unknown';
+        document.getElementById('eol-page-id').textContent = eolData.page_id || '--';
+        document.getElementById('eol-last-updated').textContent = eolData.last_updated || '--';
+        document.getElementById('eol-source-link').href = eolData.source_url || '#';
+        document.getElementById('eol-citation').textContent = eolData.citation || '';
+        
+        // Display common names
+        if (eolData.common_names && eolData.common_names.length > 0) {
+            const commonNamesContainer = document.getElementById('eol-common-names');
+            commonNamesContainer.innerHTML = eolData.common_names.map(name => 
+                `<span class="badge bg-success me-1">${name}</span>`
+            ).join('');
+        }
+        
+        // Display synonyms
+        if (eolData.synonyms && eolData.synonyms.length > 0) {
+            const synonymsContainer = document.getElementById('eol-synonyms');
+            synonymsContainer.innerHTML = eolData.synonyms.map(syn => 
+                `<span class="badge bg-secondary me-1">${syn}</span>`
+            ).join('');
+            document.getElementById('eol-synonyms-section').classList.remove('d-none');
+        }
+        
+        // Display descriptions
+        if (eolData.descriptions && eolData.descriptions.length > 0) {
+            const descriptionsContainer = document.getElementById('eol-descriptions');
+            descriptionsContainer.innerHTML = eolData.descriptions.map(desc => `
+                <div class="card mb-2">
+                    <div class="card-body py-2">
+                        <p class="card-text small">${desc.substring(0, 300)}${desc.length > 300 ? '...' : ''}</p>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('eol-descriptions-section').classList.remove('d-none');
+        }
+        
+        // Display images
+        if (eolData.images && eolData.images.length > 0) {
+            const imagesContainer = document.getElementById('eol-images');
+            imagesContainer.innerHTML = eolData.images.map(img => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <img src="${img.url}" class="card-img-top" style="height: 150px; object-fit: cover;" 
+                             alt="${img.title || 'EOL Image'}" loading="lazy">
+                        <div class="card-footer py-1">
+                            <small class="text-muted">${img.title || 'EOL Image'}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('eol-images-section').classList.remove('d-none');
+        }
+        
+        section.classList.remove('d-none');
+    },
+    
+    // Display GBIF results
+    displayGBIFResults: function(gbifData) {
+        if (!gbifData || gbifData.error) {
+            console.log('GBIF Error:', gbifData.error);
+            return;
+        }
+        
+        const section = document.getElementById('gbif-results-section');
+        
+        // Set basic information
+        document.getElementById('gbif-scientific-name').textContent = gbifData.scientific_name || 'Unknown';
+        document.getElementById('gbif-species-key').textContent = gbifData.species_key || '--';
+        document.getElementById('gbif-author').textContent = gbifData.author || '--';
+        document.getElementById('gbif-rank').textContent = gbifData.rank || '--';
+        document.getElementById('gbif-taxonomic-status').textContent = gbifData.taxonomic_status || '--';
+        document.getElementById('gbif-family').textContent = gbifData.family || '--';
+        document.getElementById('gbif-genus').textContent = gbifData.genus || '--';
+        document.getElementById('gbif-occurrence-count').textContent = gbifData.occurrence_count || 0;
+        document.getElementById('gbif-source-link').href = gbifData.source_url || '#';
+        document.getElementById('gbif-citation').textContent = gbifData.citation || '';
+        
+        // Display vernacular names
+        if (gbifData.vernacular_names && gbifData.vernacular_names.length > 0) {
+            const vernacularContainer = document.getElementById('gbif-vernacular-names');
+            vernacularContainer.innerHTML = gbifData.vernacular_names.map(name => 
+                `<span class="badge bg-info me-1">${name}</span>`
+            ).join('');
+            document.getElementById('gbif-vernacular-section').classList.remove('d-none');
+        }
+        
+        // Display conservation status
+        if (gbifData.conservation_status) {
+            const conservationContainer = document.getElementById('gbif-conservation-status');
+            conservationContainer.innerHTML = `<span class="badge bg-warning">${gbifData.conservation_status}</span>`;
+            document.getElementById('gbif-conservation-section').classList.remove('d-none');
+        }
+        
+        // Display images
+        if (gbifData.images && gbifData.images.length > 0) {
+            const imagesContainer = document.getElementById('gbif-images');
+            imagesContainer.innerHTML = gbifData.images.map(img => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <img src="${img.url}" class="card-img-top" style="height: 150px; object-fit: cover;" 
+                             alt="${img.title || 'GBIF Image'}" loading="lazy">
+                        <div class="card-footer py-1">
+                            <small class="text-muted">${img.title || 'GBIF Image'}</small>
+                            ${img.location ? `<br><small class="text-muted">${img.location.country || ''}</small>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('gbif-images-section').classList.remove('d-none');
+        }
+        
+        section.classList.remove('d-none');
+    },
+    
+    // Display research opportunities
+    displayResearchOpportunities: function(opportunities) {
+        if (!opportunities || opportunities.length === 0) return;
+        
+        const section = document.getElementById('research-opportunities-section');
+        const content = document.getElementById('research-opportunities-content');
+        
+        content.innerHTML = opportunities.map(opp => `
+            <div class="mb-2">
+                <span class="badge bg-warning me-2">${opp.type.replace('_', ' ').toUpperCase()}</span>
+                ${opp.message}
+            </div>
+        `).join('');
+        
+        section.classList.remove('d-none');
+    },
+    
+    // Clear all results
+    clear: function() {
+        // Hide all sections
+        const sections = [
+            'local-cross-references',
+            'eol-results-section', 
+            'gbif-results-section',
+            'research-opportunities-section',
+            'external-search-errors',
+            'no-external-results'
+        ];
+        
+        sections.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.classList.add('d-none');
+        });
+        
+        // Reset counts
+        document.getElementById('total-external-count').textContent = '0';
+        document.getElementById('search-duration').textContent = 'Search duration: --';
+    }
+};
+
+// Global functions for button actions
+function exportExternalResults() {
+    console.log('Export external results');
+    // Implementation for exporting results
+}
+
+function shareExternalResults() {
+    console.log('Share external results');
+    // Implementation for sharing results
+}
+
+function clearExternalResults() {
+    window.ExternalResultsManager.clear();
+    document.getElementById('external-search-results-container').classList.add('d-none');
+}
+
+function addEOLToCollection() {
+    console.log('Add EOL species to collection');
+    // Implementation for adding EOL species to local collection
+}
+
+function addGBIFToCollection() {
+    console.log('Add GBIF species to collection');
+    // Implementation for adding GBIF species to local collection
+}
+</script>
+
+<!-- Styles for External Results -->
+<style>
+.external-results-container {
+    margin-top: 20px;
+}
+
+.external-database-section .card-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.external-results-container img {
+    transition: transform 0.2s;
+}
+
+.external-results-container img:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+@media (max-width: 768px) {
+    .external-results-container .btn-group {
+        flex-direction: column;
+    }
+    
+    .external-results-container .card-body {
+        padding: 0.75rem;
+    }
+}
+</style>

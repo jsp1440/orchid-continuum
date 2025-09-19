@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Range Reveal Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .orchid-image {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .guess-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .guess-input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            margin: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            min-width: 150px;
+        }
+        .reveal-btn, .next-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .reveal-btn:hover, .next-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+        .result-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .correct { color: #4CAF50; }
+        .incorrect { color: #ff6b6b; }
+        .map-placeholder {
+            width: 100%;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+        }
+        h1, h2 { text-align: center; margin-bottom: 30px; }
+        .species-name { font-style: italic; font-size: 20px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🌺 Orchid Range Reveal Game</h1>
+        <p style="text-align: center; opacity: 0.9;">Guess where this beautiful orchid species naturally grows!</p>
+        
+        <div id="gameArea">
+            <img id="orchidImage" class="orchid-image" src="" alt="Mystery Orchid">
+            <div class="species-name" id="speciesName"></div>
+            
+            <div class="guess-section">
+                <h2>Where does this orchid grow naturally?</h2>
+                <input type="text" id="countryGuess" class="guess-input" placeholder="Country (e.g., Thailand)">
+                <input type="number" id="elevationGuess" class="guess-input" placeholder="Elevation (meters)" min="0" max="5000">
+                <br>
+                <button class="reveal-btn" onclick="revealAnswer()">Reveal Answer</button>
+            </div>
+            
+            <div class="result-section" id="resultSection">
+                <h2>🗺️ The Answer</h2>
+                <div id="answerText"></div>
+                <div class="map-placeholder">
+                    <div>📍 Interactive map would appear here<br>(Connected to your Atlas API)</div>
+                </div>
+                <div id="scoreText" class="score"></div>
+                <button class="next-btn" onclick="nextRound()">Next Orchid →</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; opacity: 0.7;">
+            <p>Game Data: <span id="currentRound">1</span>/5 | Score: <span id="totalScore">0</span>/100</p>
+        </div>
+    </div>
+
+    <script>
+        // Sample game data - replace with Atlas API calls
+        const gameData = [
+            {
+                id: 1,
+                image: "https://lh3.googleusercontent.com/d/1OPWqO2c_L_mwf2w5Rg_AdP4OaZB72CDq",
+                species: "Bulbophyllum lindleyanaum",
+                country: "Philippines",
+                elevation: 800,
+                habitat: "Epiphytic in montane forests"
+            },
+            {
+                id: 2,
+                image: "https://lh3.googleusercontent.com/d/1Mq1nV7Q-77SczHeqY5lLZDSrIQ6-XOE3",
+                species: "Bulbophyllum fascinatior",
+                country: "Myanmar",
+                elevation: 1200,
+                habitat: "Cloud forests of the Shan Hills"
+            },
+            {
+                id: 3,
+                image: "https://lh3.googleusercontent.com/d/1zDVRr7_kvgZab9sgjYVAcBOe3QGw0swK",
+                species: "Bulbophyllum 'Kurizaki'",
+                country: "Thailand",
+                elevation: 600,
+                habitat: "Tropical lowland forests"
+            },
+            {
+                id: 4,
+                image: "https://lh3.googleusercontent.com/d/1c3KNYrSmTyyeppgSEBl0jeSktByNUsFx",
+                species: "Bulbophyllum 'Wright'",
+                country: "Indonesia",
+                elevation: 900,
+                habitat: "Volcanic slopes of Java"
+            },
+            {
+                id: 5,
+                image: "https://lh3.googleusercontent.com/d/1MzmB1cks_FaVdU07s39ltUxwm0LhQDzJ",
+                species: "Bulbophyllum lasiochilum",
+                country: "Philippines",
+                elevation: 1500,
+                habitat: "Cool montane forests"
+            }
+        ];
+        
+        let currentRound = 0;
+        let totalScore = 0;
+        let currentOrchid = null;
+        
+        function loadRound() {
+            if (currentRound >= gameData.length) {
+                showFinalScore();
+                return;
+            }
+            
+            currentOrchid = gameData[currentRound];
+            
+            document.getElementById('orchidImage').src = currentOrchid.image;
+            document.getElementById('speciesName').textContent = currentOrchid.species;
+            document.getElementById('countryGuess').value = '';
+            document.getElementById('elevationGuess').value = '';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('currentRound').textContent = currentRound + 1;
+        }
+        
+        function revealAnswer() {
+            const countryGuess = document.getElementById('countryGuess').value.trim();
+            const elevationGuess = parseInt(document.getElementById('elevationGuess').value);
+            
+            if (!countryGuess || !elevationGuess) {
+                alert('Please enter both country and elevation guesses!');
+                return;
+            }
+            
+            let score = 0;
+            let feedback = [];
+            
+            // Score country guess
+            if (countryGuess.toLowerCase() === currentOrchid.country.toLowerCase()) {
+                score += 50;
+                feedback.push(`<span class="correct">✓ Country correct: ${currentOrchid.country}</span>`);
+            } else {
+                feedback.push(`<span class="incorrect">✗ Country: ${currentOrchid.country} (you guessed: ${countryGuess})</span>`);
+            }
+            
+            // Score elevation guess (within 300m gets points)
+            const elevationDiff = Math.abs(elevationGuess - currentOrchid.elevation);
+            if (elevationDiff <= 100) {
+                score += 50;
+                feedback.push(`<span class="correct">✓ Elevation very close: ${currentOrchid.elevation}m</span>`);
+            } else if (elevationDiff <= 300) {
+                score += 25;
+                feedback.push(`<span class="correct">◐ Elevation close: ${currentOrchid.elevation}m (you guessed: ${elevationGuess}m)</span>`);
+            } else {
+                feedback.push(`<span class="incorrect">✗ Elevation: ${currentOrchid.elevation}m (you guessed: ${elevationGuess}m)</span>`);
+            }
+            
+            totalScore += score;
+            
+            document.getElementById('answerText').innerHTML = `
+                <div style="margin: 20px 0;">
+                    ${feedback.join('<br>')}
+                    <br><br>
+                    <strong>Habitat:</strong> ${currentOrchid.habitat}
+                </div>
+            `;
+            
+            document.getElementById('scoreText').innerHTML = `Round Score: ${score}/100`;
+            document.getElementById('totalScore').textContent = totalScore;
+            document.getElementById('resultSection').style.display = 'block';
+        }
+        
+        function nextRound() {
+            currentRound++;
+            loadRound();
+        }
+        
+        function showFinalScore() {
+            document.getElementById('gameArea').innerHTML = `
+                <div style="text-align: center;">
+                    <h2>🎉 Game Complete!</h2>
+                    <div class="score">Final Score: ${totalScore}/500</div>
+                    <p>${totalScore >= 400 ? '🏆 Orchid Expert!' : 
+                         totalScore >= 300 ? '🌟 Great Job!' : 
+                         totalScore >= 200 ? '🌱 Good Effort!' : 
+                         '📚 Keep Learning!'}</p>
+                    <button class="next-btn" onclick="location.reload()">Play Again</button>
+                </div>
+            `;
+        }
+        
+        // Initialize game
+        loadRound();
+        
+        // Allow Enter key to submit guess
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                revealAnswer();
+            }
+        });
+    </script>
+</body>
+</html>

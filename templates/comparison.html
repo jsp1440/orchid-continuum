@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Compare {{ data.species_name.title() }} Specimens - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>🔬 {{ data.species_name.title() }} Comparison</h1>
+                    <p class="text-muted mb-0">{{ data.specimen_count }} specimens • {{ data.with_photos|length }} with photos</p>
+                </div>
+                <a href="{{ url_for('research_dashboard') }}" class="btn btn-outline-primary">
+                    <i data-feather="bar-chart-2"></i> Research Dashboard
+                </a>
+            </div>
+
+            <!-- Research Summary -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ data.specimen_count }}</h3>
+                            <p class="mb-0">Total Specimens</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ data.with_photos|length }}</h3>
+                            <p class="mb-0">With Photos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ data.photographers|length }}</h3>
+                            <p class="mb-0">Different Growers</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ data.climate_conditions|length }}</h3>
+                            <p class="mb-0">Climate Types</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growing Conditions Summary -->
+            {% if data.climate_conditions or data.growth_habits %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="thermometer"></i> Growing Conditions Observed</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if data.climate_conditions %}
+                        <div class="col-md-6">
+                            <strong>Climate Preferences:</strong>
+                            {% for condition in data.climate_conditions %}
+                                <span class="badge badge-info mx-1">{{ condition }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if data.growth_habits %}
+                        <div class="col-md-6">
+                            <strong>Growth Habits:</strong>
+                            {% for habit in data.growth_habits %}
+                                <span class="badge badge-success mx-1">{{ habit }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Specimen Comparison Grid -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="grid"></i> Specimen Comparison Grid</h5>
+                    <small class="text-muted">Each specimen may represent different growing conditions, locations, or care techniques</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for specimen in data.specimens %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 specimen-card">
+                                {% if specimen.google_drive_id %}
+                                <div class="specimen-image">
+                                    <img src="https://drive.google.com/uc?id={{ specimen.google_drive_id }}" 
+                                         class="card-img-top" alt="{{ specimen.display_name }}"
+                                         style="height: 200px; object-fit: cover;">
+                                </div>
+                                {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <i data-feather="image" size="48" class="text-muted"></i>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="card-body">
+                                    <h6 class="card-title">Specimen #{{ loop.index }}</h6>
+                                    
+                                    {% if specimen.photographer %}
+                                    <p class="mb-1"><strong>Grower:</strong> {{ specimen.photographer }}</p>
+                                    {% endif %}
+                                    
+                                    {% if specimen.ingestion_source %}
+                                    <p class="mb-1"><strong>Source:</strong> <span class="badge badge-secondary">{{ specimen.ingestion_source }}</span></p>
+                                    {% endif %}
+                                    
+                                    {% if specimen.climate_preference %}
+                                    <p class="mb-1"><strong>Climate:</strong> {{ specimen.climate_preference }}</p>
+                                    {% endif %}
+                                    
+                                    {% if specimen.growth_habit %}
+                                    <p class="mb-1"><strong>Growth:</strong> {{ specimen.growth_habit }}</p>
+                                    {% endif %}
+                                    
+                                    {% if specimen.bloom_time %}
+                                    <p class="mb-1"><strong>Bloom Time:</strong> {{ specimen.bloom_time }}</p>
+                                    {% endif %}
+                                    
+                                    {% if specimen.ai_description %}
+                                    <p class="mb-2"><strong>AI Notes:</strong></p>
+                                    <p class="text-muted small">{{ specimen.ai_description[:100] }}...</p>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('orchid_detail', id=specimen.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.specimen-card {
+    transition: transform 0.2s;
+}
+.specimen-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.specimen-image {
+    position: relative;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

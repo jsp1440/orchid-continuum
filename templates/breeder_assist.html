@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Continuum - Breeder Assist{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h1 class="display-4 fw-bold text-light mb-3">
+                        <i data-feather="cpu" class="me-3"></i>Orchid Continuum — Breeder Assist
+                    </h1>
+                    <p class="lead text-light opacity-90 mb-0">
+                        Advanced breeding system with privacy controls, predictive modeling, and comprehensive judging
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tabs Navigation -->
+    <ul class="nav nav-tabs nav-fill mb-4" id="breederTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button">
+                <i data-feather="folder" class="me-2"></i>Projects
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="collection-tab" data-bs-toggle="tab" data-bs-target="#collection" type="button">
+                <i data-feather="database" class="me-2"></i>Collection
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="design-tab" data-bs-toggle="tab" data-bs-target="#design" type="button">
+                <i data-feather="target" class="me-2"></i>Design (Reverse)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="recommend-tab" data-bs-toggle="tab" data-bs-target="#recommend" type="button">
+                <i data-feather="trending-up" class="me-2"></i>Recommend (Forward)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="judging-tab" data-bs-toggle="tab" data-bs-target="#judging" type="button">
+                <i data-feather="award" class="me-2"></i>Judging
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="learn-tab" data-bs-toggle="tab" data-bs-target="#learn" type="button">
+                <i data-feather="book-open" class="me-2"></i>Learn
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="breederTabContent">
+        
+        <!-- Projects Tab -->
+        <div class="tab-pane fade show active" id="projects" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i data-feather="lock" class="me-2"></i>Pro Breeder Mode</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Project Name</label>
+                                <input type="text" class="form-control" id="projectName" placeholder="My Breeding Program">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Security Passphrase</label>
+                                <input type="password" class="form-control" id="projectPassphrase" placeholder="Enter secure passphrase">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Privacy Mode</label>
+                                <select class="form-select" id="privacyMode">
+                                    <option value="local-only">Local-only (Never shared)</option>
+                                    <option value="share-insights">Share anonymous insights</option>
+                                    <option value="collaborative">Collaborative (with partners)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Genus Focus</label>
+                                <select class="form-select" id="genusFocus">
+                                    <option value="cattleya">Cattleya</option>
+                                    <option value="phalaenopsis">Phalaenopsis</option>
+                                    <option value="dendrobium">Dendrobium</option>
+                                    <option value="cymbidium">Cymbidium</option>
+                                    <option value="oncidium">Oncidium</option>
+                                    <option value="multi-genus">Multi-genus</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary w-100 mb-2" onclick="createProject()">
+                                <i data-feather="plus" class="me-2"></i>Create New Project
+                            </button>
+                            <button class="btn btn-outline-secondary w-100" onclick="loadProject()">
+                                <i data-feather="folder-open" class="me-2"></i>Load Existing Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i data-feather="list" class="me-2"></i>Your Breeding Projects</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="projectsList" class="row g-3">
+                                <!-- Projects will be populated here -->
+                                <div class="col-12 text-center py-5">
+                                    <i data-feather="folder-plus" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                                    <p class="text-muted">No breeding projects yet. Create your first encrypted project to get started.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Tab -->
+        <div class="tab-pane fade" id="collection" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i data-feather="database" class="me-2"></i>Plant Collection</h5>
+                            <div>
+                                <button class="btn btn-light btn-sm me-2" onclick="importCSV()">
+                                    <i data-feather="upload" class="me-1"></i>Import CSV
+                                </button>
+                                <button class="btn btn-light btn-sm" onclick="addPlant()">
+                                    <i data-feather="plus" class="me-1"></i>Add Plant
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="plantsTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Genus</th>
+                                            <th>Grex/Species</th>
+                                            <th>Clonal Name</th>
+                                            <th>Parent 1</th>
+                                            <th>Parent 2</th>
+                                            <th>Awards</th>
+                                            <th>Bloom Month</th>
+                                            <th>Traits</th>
+                                            <th>Privacy</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Plants will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Design (Reverse) Tab -->
+        <div class="tab-pane fade" id="design" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i data-feather="target" class="me-2"></i>Target Traits</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Trait Sliders -->
+                            <div class="mb-3">
+                                <label class="form-label">Roundness: <span id="roundnessVal">0.20</span></label>
+                                <input type="range" class="form-range" id="roundnessSlider" min="0" max="1" step="0.01" value="0.20" oninput="updateTraitValue('roundness', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Flatness: <span id="flatnessVal">0.10</span></label>
+                                <input type="range" class="form-range" id="flatnessSlider" min="0" max="1" step="0.01" value="0.10" oninput="updateTraitValue('flatness', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Color Saturation: <span id="saturationVal">0.18</span></label>
+                                <input type="range" class="form-range" id="saturationSlider" min="0" max="1" step="0.01" value="0.18" oninput="updateTraitValue('saturation', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Flower Size: <span id="sizeVal">0.10</span></label>
+                                <input type="range" class="form-range" id="sizeSlider" min="0" max="1" step="0.01" value="0.10" oninput="updateTraitValue('size', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Flowers per Spike: <span id="flowersVal">0.08</span></label>
+                                <input type="range" class="form-range" id="flowersSlider" min="0" max="1" step="0.01" value="0.08" oninput="updateTraitValue('flowers', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Symmetry: <span id="symmetryVal">0.10</span></label>
+                                <input type="range" class="form-range" id="symmetrySlider" min="0" max="1" step="0.01" value="0.10" oninput="updateTraitValue('symmetry', this.value)">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Color Family</label>
+                                <select class="form-select" id="colorFamily">
+                                    <option value="white">White</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="orange">Orange</option>
+                                    <option value="pink">Pink</option>
+                                    <option value="red">Red</option>
+                                    <option value="purple">Purple</option>
+                                    <option value="blue">Blue</option>
+                                    <option value="green">Green</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-warning w-100" onclick="findCrosses()">
+                                <i data-feather="search" class="me-2"></i>Find Crosses
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i data-feather="list" class="me-2"></i>Recommended Crosses</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="crossRecommendations">
+                                <div class="text-center py-5">
+                                    <i data-feather="target" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                                    <p class="text-muted">Set your target traits and click "Find Crosses" to see recommendations</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommend (Forward) Tab -->
+        <div class="tab-pane fade" id="recommend" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i data-feather="trending-up" class="me-2"></i>Forward Breeding</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Select Plants</label>
+                                <select class="form-select" id="parentSelection" multiple>
+                                    <!-- Will be populated from collection -->
+                                </select>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Optimization Goal</label>
+                                <select class="form-select" id="optimizationGoal">
+                                    <option value="awardability">Awardability</option>
+                                    <option value="floriferousness">Floriferousness</option>
+                                    <option value="color-novelty">Color Novelty</option>
+                                    <option value="climate-fit">Climate Adaptation</option>
+                                    <option value="balanced">Balanced Improvement</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="generateForwardRecommendations()">
+                                <i data-feather="cpu" class="me-2"></i>Generate Recommendations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i data-feather="list" class="me-2"></i>Breeding Pairings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="forwardRecommendations">
+                                <div class="text-center py-5">
+                                    <i data-feather="trending-up" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                                    <p class="text-muted">Select parent plants and optimization goal to see pairing recommendations</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Judging Tab -->
+        <div class="tab-pane fade" id="judging" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i data-feather="award" class="me-2"></i>Judging System</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Select System</label>
+                                <select class="form-select" id="judgingSystem" onchange="loadJudgingWeights()">
+                                    <option value="aos">AOS (American Orchid Society)</option>
+                                    <option value="joga">JOGA (Japan Orchid Growers Association)</option>
+                                    <option value="anos">ANOS (Australian Native Orchid Society)</option>
+                                    <option value="nzos">NZOS (New Zealand Orchid Society)</option>
+                                    <option value="eojc">EOJC (European Orchid Judging Centre)</option>
+                                    <option value="custom">Custom Weights</option>
+                                </select>
+                            </div>
+                            <div id="judgingWeights">
+                                <!-- Weights will be populated here -->
+                            </div>
+                            <button class="btn btn-warning w-100" onclick="saveJudgingProfile()">
+                                <i data-feather="save" class="me-2"></i>Save Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i data-feather="bar-chart" class="me-2"></i>Judging Preview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="judgingPreview">
+                                <canvas id="judgingChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learn Tab -->
+        <div class="tab-pane fade" id="learn" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action active" onclick="loadLesson(1)">
+                            <i data-feather="book" class="me-2"></i>Orchid Genetics Basics
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadLesson(2)">
+                            <i data-feather="clipboard" class="me-2"></i>Record-keeping
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadLesson(3)">
+                            <i data-feather="camera" class="me-2"></i>Photography for Breeding
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadLesson(4)">
+                            <i data-feather="trending-up" class="me-2"></i>Heritability Estimation
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadLesson(5)">
+                            <i data-feather="award" class="me-2"></i>Judging Systems
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadLesson(6)">
+                            <i data-feather="target" class="me-2"></i>Crossing Programs
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i data-feather="book-open" class="me-2"></i>Learning Module</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="lessonContent">
+                                <!-- Lesson content will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="plantModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add/Edit Plant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Plant form will be here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentProject = null;
+let plantCollection = [];
+let judgingProfiles = {};
+
+// Initialize the breeder assist system
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    initializeJudgingProfiles();
+    loadStoredProjects();
+    loadLesson(1); // Load first lesson by default
+});
+
+// Project Management
+function createProject() {
+    const name = document.getElementById('projectName').value;
+    const passphrase = document.getElementById('projectPassphrase').value;
+    const privacy = document.getElementById('privacyMode').value;
+    const genus = document.getElementById('genusFocus').value;
+    
+    if (!name || !passphrase) {
+        alert('Please enter both project name and passphrase');
+        return;
+    }
+    
+    const project = {
+        id: Date.now().toString(),
+        name: name,
+        passphrase: passphrase, // In real implementation, this would be hashed
+        privacy: privacy,
+        genus: genus,
+        created: new Date().toISOString(),
+        plants: [],
+        crosses: [],
+        notes: []
+    };
+    
+    saveProject(project);
+    displayProjects();
+    clearProjectForm();
+}
+
+function saveProject(project) {
+    const projects = JSON.parse(localStorage.getItem('orchidProjects') || '[]');
+    const existingIndex = projects.findIndex(p => p.id === project.id);
+    
+    if (existingIndex >= 0) {
+        projects[existingIndex] = project;
+    } else {
+        projects.push(project);
+    }
+    
+    localStorage.setItem('orchidProjects', JSON.stringify(projects));
+}
+
+function loadStoredProjects() {
+    displayProjects();
+}
+
+function displayProjects() {
+    const projects = JSON.parse(localStorage.getItem('orchidProjects') || '[]');
+    const container = document.getElementById('projectsList');
+    
+    if (projects.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i data-feather="folder-plus" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                <p class="text-muted">No breeding projects yet. Create your first encrypted project to get started.</p>
+            </div>
+        `;
+        feather.replace();
+        return;
+    }
+    
+    container.innerHTML = projects.map(project => `
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">${project.name}</h6>
+                    <p class="card-text small text-muted">
+                        ${project.genus} • ${project.privacy} • ${new Date(project.created).toLocaleDateString()}
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="openProject('${project.id}')">
+                            <i data-feather="folder-open" class="me-1"></i>Open
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteProject('${project.id}')">
+                            <i data-feather="trash" class="me-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    feather.replace();
+}
+
+function clearProjectForm() {
+    document.getElementById('projectName').value = '';
+    document.getElementById('projectPassphrase').value = '';
+    document.getElementById('privacyMode').value = 'local-only';
+    document.getElementById('genusFocus').value = 'cattleya';
+}
+
+// Trait Management
+function updateTraitValue(trait, value) {
+    document.getElementById(trait + 'Val').textContent = parseFloat(value).toFixed(2);
+}
+
+// Initialize judging profiles with the provided weights
+function initializeJudgingProfiles() {
+    judgingProfiles = {
+        aos: {
+            roundness: 0.20,
+            flatness: 0.10,
+            color_saturation: 0.18,
+            presentation: 0.08,
+            symmetry: 0.10,
+            flower_size: 0.10,
+            flowers_per_spike: 0.08,
+            substance_texture: 0.08,
+            lip_definition: 0.05,
+            pattern_quality: 0.03
+        },
+        joga: {
+            roundness: 0.15,
+            flatness: 0.12,
+            color_saturation: 0.20,
+            presentation: 0.12,
+            symmetry: 0.15,
+            flower_size: 0.08,
+            flowers_per_spike: 0.06,
+            substance_texture: 0.07,
+            lip_definition: 0.03,
+            pattern_quality: 0.02
+        },
+        // Add other systems as needed
+    };
+    
+    loadJudgingWeights();
+}
+
+function loadJudgingWeights() {
+    const system = document.getElementById('judgingSystem').value;
+    const weights = judgingProfiles[system] || judgingProfiles.aos;
+    const container = document.getElementById('judgingWeights');
+    
+    container.innerHTML = Object.entries(weights).map(([trait, weight]) => `
+        <div class="mb-2">
+            <label class="form-label">${trait.replace('_', ' ').toUpperCase()}: <span id="${trait}WeightVal">${weight.toFixed(2)}</span></label>
+            <input type="range" class="form-range" id="${trait}WeightSlider" min="0" max="1" step="0.01" value="${weight}" 
+                   oninput="updateJudgingWeight('${trait}', this.value)">
+        </div>
+    `).join('');
+}
+
+function updateJudgingWeight(trait, value) {
+    document.getElementById(trait + 'WeightVal').textContent = parseFloat(value).toFixed(2);
+}
+
+// Learning Module
+function loadLesson(lessonNumber) {
+    const lessons = {
+        1: {
+            title: "Orchid Genetics Basics",
+            content: `
+                <h4>Understanding Orchid Inheritance</h4>
+                <p>Orchid breeding involves complex genetic interactions that go beyond simple Mendelian genetics:</p>
+                <ul>
+                    <li><strong>Polygenic Traits:</strong> Most orchid characteristics like color intensity and flower size are controlled by multiple genes</li>
+                    <li><strong>Epistasis:</strong> Genes can interact to modify each other's expression</li>
+                    <li><strong>Environmental Influence:</strong> Growing conditions significantly affect trait expression</li>
+                    <li><strong>Heterosis:</strong> Hybrid vigor often results in offspring superior to either parent</li>
+                </ul>
+                
+                <h5>Key Concepts</h5>
+                <p><strong>Heritability:</strong> The proportion of trait variation due to genetic factors rather than environment. Higher heritability means more predictable inheritance.</p>
+                
+                <div class="alert alert-info">
+                    <strong>Quiz:</strong> What percentage of flower color variation is typically heritable in orchids?<br>
+                    <input type="radio" name="q1" value="20"> 20% &nbsp;
+                    <input type="radio" name="q1" value="60"> 60% &nbsp;
+                    <input type="radio" name="q1" value="90"> 90%
+                </div>
+            `
+        },
+        2: {
+            title: "Record-keeping for Breeders",
+            content: `
+                <h4>Essential Breeding Records</h4>
+                <p>Systematic record-keeping is crucial for successful orchid breeding programs:</p>
+                
+                <h5>Plant Records</h5>
+                <ul>
+                    <li>Unique ID system (genus abbreviation + sequential number)</li>
+                    <li>Complete parentage (seed parent × pollen parent)</li>
+                    <li>Source and acquisition date</li>
+                    <li>Growth habit and cultural requirements</li>
+                </ul>
+                
+                <h5>Crossing Records</h5>
+                <ul>
+                    <li>Cross date and pollination details</li>
+                    <li>Pod development timeline</li>
+                    <li>Seed sowing date and flask information</li>
+                    <li>Germination rates and deflasking dates</li>
+                </ul>
+                
+                <div class="alert alert-warning">
+                    <strong>Best Practice:</strong> Always photograph flowers before crossing and maintain duplicate records in different locations.
+                </div>
+            `
+        },
+        // Add more lessons as needed
+    };
+    
+    const lesson = lessons[lessonNumber];
+    if (lesson) {
+        document.getElementById('lessonContent').innerHTML = `
+            <h3>${lesson.title}</h3>
+            ${lesson.content}
+        `;
+    }
+}
+
+// Recommendation Functions
+function findCrosses() {
+    // Implement reverse breeding logic here
+    const recommendations = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Cross A × Cross B</h6>
+                        <p class="small">Goal Match: 87%</p>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: 87%"></div>
+                        </div>
+                        <p class="small text-muted">Expected traits align well with your targets</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Add more recommendations -->
+        </div>
+    `;
+    
+    document.getElementById('crossRecommendations').innerHTML = recommendations;
+}
+
+function generateForwardRecommendations() {
+    // Implement forward breeding logic here
+    const recommendations = `
+        <div class="list-group">
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">Parent A × Parent B</h6>
+                        <p class="mb-1">Expected improvement in target traits</p>
+                        <small>Confidence: 78%</small>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">Rank 1</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('forwardRecommendations').innerHTML = recommendations;
+}
+
+// Additional utility functions would be implemented here
+</script>
+
+{% endblock %}

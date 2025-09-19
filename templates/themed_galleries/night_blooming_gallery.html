@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<!-- Night-Blooming Orchids Gallery -->
+<div class="container-fluid py-4" style="background: linear-gradient(135deg, #2c1810, #8B4513, #1a1a2e);">
+    
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 text-white mb-3">
+                <i data-feather="moon" class="me-3" style="color: #e6e6fa;"></i>
+                {{ title }}
+            </h1>
+            <p class="lead text-light">{{ night_info.description }}</p>
+        </div>
+    </div>
+
+    <!-- Night-Blooming Information Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-light h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-light">
+                        <i data-feather="eye" class="me-2"></i>Pollinators
+                    </h5>
+                    <ul class="text-light small">
+                        {% for pollinator in night_info.pollinators %}
+                        <li>{{ pollinator }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-info h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-info">
+                        <i data-feather="star" class="me-2"></i>Characteristics
+                    </h5>
+                    <ul class="text-light small">
+                        {% for char in night_info.characteristics %}
+                        <li>{{ char }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">
+                        <i data-feather="flower-2" class="me-2"></i>Night Genera
+                    </h5>
+                    <ul class="text-light small">
+                        {% for genus in night_info.common_night_genera %}
+                        <li>{{ genus }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary">
+                        <i data-feather="bar-chart" class="me-2"></i>Collection
+                    </h5>
+                    <p class="card-text text-light">
+                        <strong>{{ orchids.total }}</strong> night bloomers
+                    </p>
+                    <small class="text-muted">Nocturnal species</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Special Night-Blooming Info Box -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-dark border-light" role="alert" style="background: linear-gradient(45deg, #2c1810, #4a4a4a);">
+                <h5 class="alert-heading text-light">
+                    <i data-feather="moon" class="me-2"></i>Mysteries of the Night Garden
+                </h5>
+                <p class="text-light">Night-blooming orchids have evolved sophisticated strategies to attract nocturnal pollinators. Many release their strongest fragrances after sunset, transforming the evening garden into an intoxicating experience of sight and scent.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    {% if orchids.items %}
+    <div class="row">
+        {% for orchid in orchids.items %}
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card bg-dark border-secondary h-100 orchid-card">
+                <div class="position-relative">
+                    {% if orchid.google_drive_id %}
+                    <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                         alt="{{ orchid.display_name }}" 
+                         class="card-img-top" 
+                         style="height: 250px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ orchid.image_url or '/static/images/orchid_placeholder.svg' }}" 
+                         alt="{{ orchid.display_name }}" 
+                         class="card-img-top" 
+                         style="height: 250px; object-fit: cover;">
+                    {% endif %}
+                    
+                    <!-- Night Blooming Badge -->
+                    <span class="position-absolute top-0 end-0 badge bg-secondary m-2">
+                        <i data-feather="moon" class="me-1"></i>Night
+                    </span>
+                </div>
+                
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title text-white">{{ orchid.display_name }}</h6>
+                    {% if orchid.scientific_name %}
+                    <p class="card-text text-muted small fst-italic">{{ orchid.scientific_name }}</p>
+                    {% endif %}
+                    
+                    <!-- Night blooming indicator -->
+                    <p class="card-text text-light small">
+                        <i data-feather="moon" class="me-1"></i>Night blooming
+                    </p>
+                    
+                    {% if orchid.region %}
+                    <p class="card-text text-success small">
+                        <i data-feather="map-pin" class="me-1"></i>{{ orchid.region }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if orchid.growth_habit %}
+                    <p class="card-text text-info small">
+                        <i data-feather="leaf" class="me-1"></i>{{ orchid.growth_habit }}
+                    </p>
+                    {% endif %}
+                    
+                    <div class="mt-auto">
+                        <a href="/orchid/{{ orchid.id }}" class="btn btn-outline-light btn-sm">
+                            <i data-feather="eye" class="me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if orchids.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12 d-flex justify-content-center">
+            <nav>
+                <ul class="pagination pagination-dark">
+                    {% if orchids.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orchids.prev_num }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in orchids.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != orchids.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if orchids.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orchids.next_num }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- No orchids found -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="card bg-dark border-warning">
+                <div class="card-body">
+                    <h5 class="text-warning">No night-blooming orchids found</h5>
+                    <p class="text-light">We're working to add more nocturnal orchid species to our collection.</p>
+                    <a href="/gallery" class="btn btn-primary">View All Orchids</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Back to Galleries -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="/gallery" class="btn btn-outline-light">
+                <i data-feather="arrow-left" class="me-2"></i>Back to All Galleries
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.orchid-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #495057;
+}
+
+.orchid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(230, 230, 250, 0.3);
+    border-color: #e6e6fa;
+}
+
+.pagination-dark .page-link {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #fff;
+}
+
+.pagination-dark .page-item.active .page-link {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.pagination-dark .page-link:hover {
+    background-color: #495057;
+    border-color: #6c757d;
+}
+
+/* Night theme styling */
+body {
+    background-color: #1a1a2e;
+}
+
+.card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+</style>
+
+<script>
+// Initialize Feather Icons
+feather.replace();
+</script>
+{% endblock %}

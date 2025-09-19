@@ -1,0 +1,105 @@
+You are an expert full-stack engineer. Create production-ready scaffolding and initial features for “The Orchid Continuum” without disclosing any proprietary schema or workflows. Use TypeScript OR Python consistently (pick one stack and stick to it). Deliver clean code, tests, and documentation.
+
+GOALS
+1) Monorepo with services and apps, Dockerized, CI-ready.
+2) API service with auth (RBAC), rate limiting, and endpoints for search, map, phenology, curation queues, and rights-aware exports. No proprietary field names—use abstracted, neutral names.
+3) Widgets (embeddable via single <script>) for “Orchid of the Day”, Weather/Habitat Compare, and Map Viewer. Ship UMD builds.
+4) Ingest worker stubs for external data sources (placeholders + interfaces only). Include schedules and retry/backoff but no proprietary workflow details.
+5) AI worker stubs for: EXIF parsing, embeddings, identification suggestion queue, morphometrics placeholders. Do NOT include model secrets or proprietary logic.
+6) Postgres setup with PostGIS + pgvector enabled; generic tables sufficient for demos. Provide migrations. Avoid revealing the real schema used in production; this is a public-safe scaffold.
+7) Observability: Sentry hooks, basic OpenTelemetry tracing, Prometheus metrics.
+8) Admin (Curator) UI: review queue, approve/merge/flag actions, keyboard shortcuts. Use role-based access.
+9) Documentation: quickstart, env vars, deploy guides for Railway and Fly.io; how to embed widgets on Neon One with a single <script>.
+
+TECH CHOICES (choose one coherent stack)
+- API: FastAPI (Python) OR NestJS (TypeScript)
+- DB: PostgreSQL with PostGIS + pgvector; migrations via Alembic (Python) or Prisma (TS)
+- Frontend: Svelte or Web Components (Stencil) that compile to a single UMD bundle
+- Jobs: Celery/RQ (Python) or BullMQ (TS)
+- Bundling: Vite build targets producing ESM + UMD
+- Testing: pytest + httpx (Python) or Vitest/Jest + Supertest (TS)
+
+MONOREPO STRUCTURE
+/apps/widgets     # web components (UMD bundles)
+/apps/admin       # curator console
+/services/api
+/services/ingest
+/services/ai-worker
+/infra/docker
+/docs/public
+/docs/internal
+/scripts
+
+FEATURE SPECS & ACCEPTANCE CRITERIA
+
+A) API (v0)
+- Auth: email+password + roles: viewer, member, contributor, curator, admin.
+- Rate limit: per-IP and per-key (configurable).
+- Endpoints:
+  * GET /health -> {status:"ok"}
+  * GET /search?q=&filters= -> returns paginated demo records with neutral fields; supports text + semantic toggle.
+  * GET /map/tiles and /map/query -> bbox/elevation filters; returns GeoJSON (demo).
+  * GET /phenology?taxon=&region= -> returns month histogram (demo data).
+  * GET /curation/queue -> low-confidence demo entries; POST actions approve/merge/flag.
+  * GET /export/csv and /export/bibtex -> redacts rights-restricted fields; throttled.
+- Tests for each endpoint; OpenAPI docs enabled.
+
+B) DB & Migrations
+- Create generic demo tables with neutral names (Record, Media, Location, Tag, CurationEvent) that DO NOT reveal proprietary schema.
+- Enable PostGIS and pgvector extensions (migrations should include CREATE EXTENSION).
+- Seed script with synthetic demo data (no third-party data).
+
+C) AI Worker (stubs)
+- EXIF parser stub (fields: timestamp, gps, camera model).
+- Embedding generator interface (plug-in implementation later).
+- Identification suggestion pipeline stub (reads a queue, writes suggestions).
+- Morphometrics placeholder returning synthetic ratios.
+- Retry/backoff; dead-letter queue.
+- Unit tests for queue processing.
+
+D) Ingest Service (stubs)
+- Interfaces for external sources; do not include actual source code or flow.
+- Schedulers for periodic pulls (disabled by default).
+- Logging and metrics around task outcomes.
+
+E) Widgets
+- “Orchid of the Day” web component: fetches from API, displays image/title/credit, handles rights watermark.
+- “Weather/Habitat Compare” web component: user ZIP input -> calls API stub to return habitat vs local comparison (demo data); renders gauges.
+- “Map Viewer” web component: displays tiles/GeoJSON with bbox filter UI.
+- All widgets build to UMD single-file bundle; namespace-safe; no global CSS bleed; accessible.
+- Provide HTML snippets:
+  <script src="https://cdn.example.com/orchid-widgets.umd.js"></script>
+  <div id="orchid-of-day" data-theme="light"></div>
+
+F) Admin (Curator) UI
+- Login, role awareness.
+- Review queue: table + detail panel with approve/merge/flag.
+- Keyboard shortcuts (j/k next/prev; a=approve; m=merge; f=flag).
+- Toasts + optimistic updates.
+- Tests for core flows.
+
+G) CI/CD
+- GitHub Actions workflow:
+  * on push: install deps, run tests, build, dockerize.
+  * artifacts: widget bundles; Docker images for api/ingest/ai-worker.
+  * environment configs for staging/prod.
+- Dockerfiles per service; docker-compose.dev.yml for local.
+
+H) Observability
+- Basic Sentry integration (dsn via env).
+- OpenTelemetry traces exported to console (dev) or OTLP endpoint (prod).
+- Prometheus /metrics endpoint on API.
+
+I) Docs
+- /docs/public: executive summary + safe overview.
+- /docs/internal: runbooks, env var reference, incident SOPs; do not include proprietary schema.
+- README with quickstart, local dev, deploy to Railway and Fly.io, and Neon Postgres setup.
+
+NON-DISCLOSURE GUARDRAILS
+- Do NOT include or infer proprietary schema/field names, ingestion order, or internal workflows.
+- All example data, field names, and pipelines must be generic placeholders suitable for public code.
+- Include a simple “AI Secrecy & Disclosure Policy” snippet for the admin UI settings to reinforce non-disclosure in the assistant.
+
+OUTPUT
+- Generate code scaffolding, tests, Dockerfiles, README, and example embed HTML.
+- Provide a one-page “What to customize privately” checklist (where production-only internals will be wired later).

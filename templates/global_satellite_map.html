@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Orchid Explorer - Satellite View</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #satellite-earth {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* CLEAN UI - NO OVERLAPPING CONTROLS */
+        .space-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 1000;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            pointer-events: auto;
+            max-width: 200px;
+        }
+        
+        .hud-left {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .hud-right {
+            text-align: right;
+        }
+        
+        .space-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            color: #00d4aa;
+        }
+        
+        .space-subtitle {
+            font-size: 12px;
+            margin: 5px 0 0 0;
+            opacity: 0.8;
+        }
+        
+        .orchid-counter {
+            background: linear-gradient(135deg, #7A4B8E, #9B59B6);
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        /* CLEAN CONTROLS - BOTTOM EDGE */
+        .space-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .space-btn {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .space-btn:hover {
+            background: rgba(0, 212, 170, 0.8);
+            border-color: #00d4aa;
+            transform: translateY(-2px);
+        }
+        
+        .space-btn.active {
+            background: rgba(0, 212, 170, 0.6);
+            border-color: #00d4aa;
+        }
+        
+        /* ORCHID POINTS OF LIGHT */
+        .orchid-point {
+            background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(0, 212, 170, 0.8) 30%, transparent 70%);
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            box-shadow: 0 0 10px rgba(0, 212, 170, 0.8), 0 0 20px rgba(0, 212, 170, 0.4);
+            animation: twinkle 3s infinite;
+        }
+        
+        .orchid-point.bright {
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 0 30px rgba(0, 212, 170, 0.6);
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+        
+        /* ZOOM LEVEL INDICATOR */
+        .zoom-indicator {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .zoom-bar {
+            width: 4px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 10px auto;
+            border-radius: 2px;
+            position: relative;
+        }
+        
+        .zoom-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #00d4aa, #7A4B8E);
+            border-radius: 2px;
+            transition: height 0.3s ease;
+        }
+        
+        /* LOADING SCREEN */
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #001122 0%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+        }
+        
+        .earth-loading {
+            width: 100px;
+            height: 100px;
+            border: 3px solid rgba(0, 212, 170, 0.3);
+            border-top: 3px solid #00d4aa;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .loading-detail {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .hud-panel {
+                max-width: 150px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .space-title {
+                font-size: 14px;
+            }
+            
+            .space-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 90%;
+            }
+            
+            .space-btn {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="earth-loading"></div>
+        <div class="loading-text">🌍 Initializing Satellite View</div>
+        <div class="loading-detail">Loading Earth from space...</div>
+    </div>
+    
+    <!-- Main Map Container -->
+    <div id="satellite-earth"></div>
+    
+    <!-- Clean HUD Interface -->
+    <div class="space-hud">
+        <div class="hud-left">
+            <div class="hud-panel">
+                <div class="space-title">🛰️ Orchid Earth</div>
+                <div class="space-subtitle">Global Satellite View</div>
+                <div class="orchid-counter" id="orchidCounter">
+                    Loading...
+                </div>
+            </div>
+        </div>
+        
+        <div class="hud-right">
+            <div class="hud-panel">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; opacity: 0.8;">Altitude</div>
+                    <div id="altitudeText" style="font-weight: bold;">∞ km</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Zoom Level Indicator -->
+    <div class="zoom-indicator">
+        <div style="text-align: center; font-size: 11px; margin-bottom: 5px;">ZOOM</div>
+        <div class="zoom-bar">
+            <div class="zoom-level" id="zoomLevel" style="height: 10%;"></div>
+        </div>
+        <div style="text-align: center; font-size: 10px; margin-top: 5px;" id="zoomText">Space</div>
+    </div>
+    
+    <!-- Clean Controls -->
+    <div class="space-controls">
+        <button class="space-btn active" id="globalBtn" onclick="viewGlobal()">
+            🌍 Global
+        </button>
+        <button class="space-btn" id="hotspotsBtn" onclick="showHotspots()">
+            ✨ Hotspots
+        </button>
+        <button class="space-btn" id="regionsBtn" onclick="showRegions()">
+            🗺️ Regions
+        </button>
+        <button class="space-btn" onclick="resetToSpace()">
+            🚀 Space View
+        </button>
+        <button class="space-btn" onclick="goHome()">
+            🏠 Home
+        </button>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let satelliteMap;
+        let orchidPoints = [];
+        let currentZoom = 2;
+        
+        // Initialize the satellite Earth view
+        async function initSatelliteEarth() {
+            try {
+                console.log('🛰️ Initializing satellite Earth view...');
+                
+                // Create the map with space-like initial view
+                satelliteMap = L.map('satellite-earth', {
+                    center: [30, 0],
+                    zoom: 2,
+                    minZoom: 2,
+                    maxZoom: 16,
+                    zoomControl: false,
+                    attributionControl: false,
+                    worldCopyJump: false,
+                    doubleClickZoom: true,
+                    scrollWheelZoom: true,
+                    touchZoom: true
+                });
+                
+                // High-quality satellite imagery
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '',
+                    maxZoom: 16,
+                    noWrap: false,
+                    crossOrigin: false
+                });
+                
+                satelliteLayer.addTo(satelliteMap);
+                
+                // Track zoom changes
+                satelliteMap.on('zoomend', updateZoomDisplay);
+                satelliteMap.on('moveend', updateAltitude);
+                
+                // Load orchid points of light
+                await loadOrchidPointsOfLight();
+                
+                // Hide loading screen
+                document.getElementById('loadingScreen').style.display = 'none';
+                
+                console.log('🌍 Satellite Earth view loaded successfully');
+                
+            } catch (error) {
+                console.error('Error initializing satellite Earth:', error);
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div style="text-align: center;">
+                        <h3 style="color: #ff6b6b;">🚫 Satellite Connection Failed</h3>
+                        <p>Unable to establish satellite connection to Earth</p>
+                        <button onclick="window.location.reload()" style="padding: 10px 20px; background: #00d4aa; border: none; border-radius: 5px; color: white; cursor: pointer;">
+                            🔄 Retry Connection
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load real orchid data as points of light
+        async function loadOrchidPointsOfLight() {
+            try {
+                console.log('✨ Loading orchid points of light...');
+                
+                const response = await fetch('/mapping/api/coordinates');
+                const data = await response.json();
+                
+                if (data.coordinates && data.coordinates.length > 0) {
+                    let pointCount = 0;
+                    
+                    data.coordinates.forEach(orchid => {
+                        if (orchid.lat && orchid.lng) {
+                            // Create twinkling point of light
+                            const pointOfLight = L.marker([orchid.lat, orchid.lng], {
+                                icon: L.divIcon({
+                                    className: pointCount % 10 === 0 ? 'orchid-point bright' : 'orchid-point',
+                                    iconSize: [8, 8],
+                                    html: ''
+                                })
+                            });
+                            
+                            // Add popup for close viewing
+                            pointOfLight.bindPopup(`
+                                <div style="color: #333; text-align: center; min-width: 200px;">
+                                    <h6 style="color: #7A4B8E; margin-bottom: 10px;">🌺 ${orchid.name || 'Orchid Discovery'}</h6>
+                                    <p><strong>Location:</strong> ${orchid.location || 'Unknown region'}</p>
+                                    <p><strong>Coordinates:</strong> ${orchid.lat.toFixed(4)}°, ${orchid.lng.toFixed(4)}°</p>
+                                    ${orchid.image ? `<img src="${orchid.image}" style="width: 150px; height: 100px; object-fit: cover; border-radius: 5px; margin-top: 5px;">` : ''}
+                                </div>
+                            `);
+                            
+                            pointOfLight.addTo(satelliteMap);
+                            orchidPoints.push(pointOfLight);
+                            pointCount++;
+                        }
+                    });
+                    
+                    console.log(`✨ Created ${pointCount} points of light`);
+                    document.getElementById('orchidCounter').textContent = `${pointCount} Points of Light`;
+                    
+                } else {
+                    // Add sample constellation
+                    createSampleConstellation();
+                }
+                
+            } catch (error) {
+                console.error('Error loading orchid points:', error);
+                createSampleConstellation();
+            }
+        }
+        
+        // Create sample constellation of orchid points
+        function createSampleConstellation() {
+            const samplePoints = [
+                { lat: 10.5, lng: -84.7, name: "Costa Rica Cloud Forest" },
+                { lat: -3.4, lng: -60.0, name: "Amazon Rainforest" },
+                { lat: -22.9, lng: -43.2, name: "Brazilian Atlantic Forest" },
+                { lat: 7.9, lng: 80.8, name: "Sri Lankan Highlands" },
+                { lat: -6.2, lng: 106.8, name: "Indonesian Archipelago" },
+                { lat: 14.6, lng: 121.0, name: "Philippine Islands" },
+                { lat: -25.3, lng: 133.8, name: "Australian Outback" },
+                { lat: -18.8, lng: 46.9, name: "Madagascar Forests" },
+                { lat: 35.9, lng: 104.2, name: "Chinese Mountains" },
+                { lat: 20.6, lng: -103.3, name: "Mexican Highlands" }
+            ];
+            
+            samplePoints.forEach((point, index) => {
+                const pointOfLight = L.marker([point.lat, point.lng], {
+                    icon: L.divIcon({
+                        className: index % 3 === 0 ? 'orchid-point bright' : 'orchid-point',
+                        iconSize: [8, 8],
+                        html: ''
+                    })
+                });
+                
+                pointOfLight.bindPopup(`
+                    <div style="color: #333; text-align: center;">
+                        <h6 style="color: #7A4B8E;">🌺 ${point.name}</h6>
+                        <p>High orchid diversity zone</p>
+                        <p><strong>Coordinates:</strong> ${point.lat.toFixed(1)}°, ${point.lng.toFixed(1)}°</p>
+                    </div>
+                `);
+                
+                pointOfLight.addTo(satelliteMap);
+                orchidPoints.push(pointOfLight);
+            });
+            
+            document.getElementById('orchidCounter').textContent = `${samplePoints.length} Points of Light`;
+            console.log(`✨ Created ${samplePoints.length} sample points of light`);
+        }
+        
+        // Control functions
+        function viewGlobal() {
+            setActiveButton('globalBtn');
+            satelliteMap.setView([30, 0], 2);
+        }
+        
+        function showHotspots() {
+            setActiveButton('hotspotsBtn');
+            if (orchidPoints.length > 0) {
+                const group = new L.featureGroup(orchidPoints);
+                satelliteMap.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        function showRegions() {
+            setActiveButton('regionsBtn');
+            // Focus on major orchid regions
+            const regions = [
+                { center: [-3, -60], zoom: 5, name: "Amazon" },
+                { center: [7, 81], zoom: 6, name: "Sri Lanka" },
+                { center: [-6, 107], zoom: 5, name: "Indonesia" }
+            ];
+            
+            const randomRegion = regions[Math.floor(Math.random() * regions.length)];
+            satelliteMap.setView(randomRegion.center, randomRegion.zoom);
+        }
+        
+        function resetToSpace() {
+            setActiveButton('globalBtn');
+            satelliteMap.setView([30, 0], 2);
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        function setActiveButton(activeId) {
+            document.querySelectorAll('.space-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(activeId).classList.add('active');
+        }
+        
+        function updateZoomDisplay() {
+            currentZoom = satelliteMap.getZoom();
+            const zoomPercent = ((currentZoom - 2) / 14) * 100;
+            document.getElementById('zoomLevel').style.height = Math.max(10, zoomPercent) + '%';
+            
+            let zoomLabel = 'Space';
+            if (currentZoom >= 3 && currentZoom < 6) zoomLabel = 'Continental';
+            else if (currentZoom >= 6 && currentZoom < 10) zoomLabel = 'Regional';
+            else if (currentZoom >= 10 && currentZoom < 14) zoomLabel = 'Local';
+            else if (currentZoom >= 14) zoomLabel = 'Surface';
+            
+            document.getElementById('zoomText').textContent = zoomLabel;
+        }
+        
+        function updateAltitude() {
+            const zoom = satelliteMap.getZoom();
+            let altitude = '∞';
+            
+            if (zoom >= 3) altitude = Math.round(20000 / Math.pow(2, zoom - 3));
+            if (zoom >= 6) altitude = Math.round(5000 / Math.pow(2, zoom - 6));
+            if (zoom >= 10) altitude = Math.round(500 / Math.pow(2, zoom - 10));
+            if (zoom >= 14) altitude = Math.round(50 / Math.pow(2, zoom - 14));
+            
+            document.getElementById('altitudeText').textContent = altitude + ' km';
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            initSatelliteEarth();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (satelliteMap) {
+                satelliteMap.invalidateSize();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botany Lab - Stats & Imports | {{ config.SITE_NAME or 'Orchid Continuum' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4/dist/feather.css" rel="stylesheet">
+    <style>
+        :root {
+            --orchid-primary: #6f42c1;
+            --orchid-secondary: #495057;
+            --orchid-success: #198754;
+            --orchid-info: #0dcaf0;
+            --orchid-warning: #ffc107;
+            --orchid-danger: #dc3545;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        .navbar-brand {
+            color: var(--orchid-primary) !important;
+            font-weight: 600;
+        }
+        
+        .btn-orchid {
+            background-color: var(--orchid-primary);
+            border-color: var(--orchid-primary);
+            color: white;
+        }
+        
+        .btn-orchid:hover {
+            background-color: #5a359a;
+            border-color: #5a359a;
+            color: white;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--orchid-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .data-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .analysis-results {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            border: 2px solid #dee2e6;
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .loading .loading-spinner {
+            display: inline-block;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i data-feather="activity" class="me-2"></i>
+                Botany Lab - Stats & Imports
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">← Back to Orchid Continuum</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h1 class="display-6 mb-3">🧪 Botany Lab - Stats & Imports</h1>
+                        <p class="lead">Import your own orchid datasets, run statistical analyses, and extract insights from botanical images.</p>
+                        <p class="text-muted">Supports CSV files, Google Drive links, and various statistical tests for orchid research.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Data Import -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📊 Step 1: Import Your Data</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- CSV Paste -->
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Paste CSV Data</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea id="csvInput" class="form-control" rows="8" 
+                                                  placeholder="Paste your CSV data here...&#10;Example:&#10;genus,species,latitude,flowering_month&#10;Cattleya,mossiae,10.5,March&#10;Cymbidium,ensifolium,28.2,October"></textarea>
+                                        <button id="parseCsvBtn" class="btn btn-orchid mt-2">
+                                            <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                            Parse CSV
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- URL Fetch -->
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Fetch from URL</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <input type="url" id="dataUrl" class="form-control mb-3" 
+                                               placeholder="https://drive.google.com/file/d/.../view">
+                                        <div class="alert alert-info">
+                                            <strong>Supported:</strong><br>
+                                            • Google Drive (set to "Anyone with link")<br>
+                                            • Dropbox public links<br>
+                                            • Direct CSV file URLs<br>
+                                            • GitHub raw file links
+                                        </div>
+                                        <button id="fetchUrlBtn" class="btn btn-orchid">
+                                            <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                            Fetch & Parse
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Preview -->
+        <div id="dataPreviewSection" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📋 Data Preview</h4>
+                        <small class="text-muted" id="dataInfo"></small>
+                    </div>
+                    <div class="card-body">
+                        <div class="data-preview">
+                            <div class="table-responsive">
+                                <table id="dataTable" class="table table-sm table-hover">
+                                    <thead class="table-light"></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Column Selection -->
+        <div id="columnSelectionSection" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">🎯 Step 2: Select Analysis Columns</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="columnX" class="form-label">X Variable (Predictor/Independent)</label>
+                                <select id="columnX" class="form-select">
+                                    <option value="">Select X column...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="columnY" class="form-label">Y Variable (Response/Dependent)</label>
+                                <select id="columnY" class="form-select">
+                                    <option value="">Select Y column...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <strong>Analysis Requirements:</strong><br>
+                            • Summary Stats: Only Y needed (numerical)<br>
+                            • Correlation & Regression: Both X and Y (numerical)<br>
+                            • t-test: Y numerical, X categorical (2 groups)<br>
+                            • Chi-square: Both X and Y categorical
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Statistical Analyses -->
+        <div id="analysisSection" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📈 Step 3: Run Statistical Analyses</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3">
+                                <button id="summaryBtn" class="btn btn-outline-primary w-100">
+                                    <i data-feather="bar-chart-2" class="me-1"></i>
+                                    Summary Stats
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button id="correlationBtn" class="btn btn-outline-success w-100">
+                                    <i data-feather="trending-up" class="me-1"></i>
+                                    Correlation
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button id="tTestBtn" class="btn btn-outline-info w-100">
+                                    <i data-feather="users" class="me-1"></i>
+                                    t-test
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button id="chiSquareBtn" class="btn btn-outline-warning w-100">
+                                    <i data-feather="grid" class="me-1"></i>
+                                    Chi-square
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <button id="regressionBtn" class="btn btn-outline-secondary w-100">
+                                    <i data-feather="trending-up" class="me-1"></i>
+                                    Linear Regression
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="analysisResults" class="analysis-results" style="display: none;">
+                            <h5>Analysis Results</h5>
+                            <div id="resultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Image Analysis -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">🖼️ Step 4: Image Analysis (Optional)</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label for="imageUrl" class="form-label">Image URL (flower photos work best)</label>
+                                <input type="url" id="imageUrl" class="form-control" 
+                                       placeholder="https://... (JPEG, PNG, etc.)">
+                                <button id="analyzeImageBtn" class="btn btn-orchid mt-2">
+                                    <span class="loading-spinner spinner-border spinner-border-sm me-2"></span>
+                                    <i data-feather="camera" class="me-1"></i>
+                                    Analyze Image
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="imageResults" style="display: none; margin-top: 1rem;">
+                            <h5>Image Analysis Results</h5>
+                            <div id="imageContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Save Dataset Pointer -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">💾 Step 5: Save Dataset Reference</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Save a reference to your dataset for future use (no data is copied to our servers).</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" id="datasetTitle" class="form-control mb-2" 
+                                       placeholder="Dataset title">
+                                <input type="url" id="datasetUrl" class="form-control mb-2" 
+                                       placeholder="Dataset URL (Google Drive, Dropbox, etc.)">
+                                <textarea id="datasetDescription" class="form-control mb-2" rows="3" 
+                                          placeholder="Brief description of your dataset..."></textarea>
+                                <button id="savePointerBtn" class="btn btn-success">
+                                    <i data-feather="bookmark" class="me-1"></i>
+                                    Save Dataset Reference
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="saveResults" style="display: none; margin-top: 1rem;">
+                            <div class="alert alert-success">
+                                <h6>Dataset Reference Saved!</h6>
+                                <div id="saveContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4/dist/feather.min.js"></script>
+    
+    <script>
+        // Initialize feather icons
+        feather.replace();
+
+        // Global state
+        let currentData = null;
+        let currentColumns = [];
+
+        // Utility functions
+        function showLoading(btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+        }
+
+        function hideLoading(btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+
+        function showSection(sectionId) {
+            document.getElementById(sectionId).style.display = 'block';
+            document.getElementById(sectionId).classList.add('fade-in');
+        }
+
+        // CSV Parsing
+        document.getElementById('parseCsvBtn').addEventListener('click', async function() {
+            const csvText = document.getElementById('csvInput').value.trim();
+            if (!csvText) {
+                showError('Please paste CSV data first');
+                return;
+            }
+
+            showLoading(this);
+
+            try {
+                const response = await fetch('/botany-lab/api/parse-csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csv_text: csvText })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentData = result.records;
+                    currentColumns = result.columns;
+                    displayDataPreview(result);
+                    setupColumnSelectors();
+                    showSection('dataPreviewSection');
+                    showSection('columnSelectionSection');
+                    showSection('analysisSection');
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Failed to parse CSV: ' + error.message);
+            } finally {
+                hideLoading(this);
+            }
+        });
+
+        // URL Fetching
+        document.getElementById('fetchUrlBtn').addEventListener('click', async function() {
+            const url = document.getElementById('dataUrl').value.trim();
+            if (!url) {
+                showError('Please enter a URL first');
+                return;
+            }
+
+            showLoading(this);
+
+            try {
+                const response = await fetch('/botany-lab/api/fetch-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentData = result.records;
+                    currentColumns = result.columns;
+                    displayDataPreview(result);
+                    setupColumnSelectors();
+                    showSection('dataPreviewSection');
+                    showSection('columnSelectionSection');
+                    showSection('analysisSection');
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Failed to fetch data: ' + error.message);
+            } finally {
+                hideLoading(this);
+            }
+        });
+
+        function displayDataPreview(result) {
+            const infoEl = document.getElementById('dataInfo');
+            infoEl.textContent = `${result.row_count} rows, ${result.columns.length} columns`;
+
+            const table = document.getElementById('dataTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            // Build header
+            const headerRow = document.createElement('tr');
+            result.columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                headerRow.appendChild(th);
+            });
+            thead.innerHTML = '';
+            thead.appendChild(headerRow);
+
+            // Build body (preview only)
+            tbody.innerHTML = '';
+            result.preview.forEach(row => {
+                const tr = document.createElement('tr');
+                result.columns.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = row[col] || '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function setupColumnSelectors() {
+            const xSelect = document.getElementById('columnX');
+            const ySelect = document.getElementById('columnY');
+
+            xSelect.innerHTML = '<option value="">Select X column...</option>';
+            ySelect.innerHTML = '<option value="">Select Y column...</option>';
+
+            currentColumns.forEach(col => {
+                const optionX = document.createElement('option');
+                optionX.value = col;
+                optionX.textContent = col;
+                xSelect.appendChild(optionX);
+
+                const optionY = document.createElement('option');
+                optionY.value = col;
+                optionY.textContent = col;
+                ySelect.appendChild(optionY);
+            });
+
+            // Auto-select first two columns if available
+            if (currentColumns.length >= 1) xSelect.value = currentColumns[0];
+            if (currentColumns.length >= 2) ySelect.value = currentColumns[1];
+        }
+
+        // Analysis functions
+        async function runAnalysis(endpoint, payload) {
+            try {
+                const response = await fetch(`/botany-lab/api/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                displayAnalysisResult(result);
+            } catch (error) {
+                showError('Analysis failed: ' + error.message);
+            }
+        }
+
+        function displayAnalysisResult(result) {
+            const resultsDiv = document.getElementById('analysisResults');
+            const contentDiv = document.getElementById('resultsContent');
+
+            if (result.error) {
+                contentDiv.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+            } else {
+                contentDiv.innerHTML = `<pre class="bg-light p-3 rounded">${JSON.stringify(result, null, 2)}</pre>`;
+            }
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Analysis button handlers
+        document.getElementById('summaryBtn').addEventListener('click', function() {
+            const column = document.getElementById('columnY').value;
+            if (!column) {
+                showError('Select Y column for summary statistics');
+                return;
+            }
+            runAnalysis('summary-stats', { column });
+        });
+
+        document.getElementById('correlationBtn').addEventListener('click', function() {
+            const colX = document.getElementById('columnX').value;
+            const colY = document.getElementById('columnY').value;
+            if (!colX || !colY) {
+                showError('Select both X and Y columns for correlation');
+                return;
+            }
+            runAnalysis('correlation', { col_x: colX, col_y: colY });
+        });
+
+        document.getElementById('tTestBtn').addEventListener('click', function() {
+            const colX = document.getElementById('columnX').value;
+            const colY = document.getElementById('columnY').value;
+            if (!colX || !colY) {
+                showError('Select both X and Y columns for t-test');
+                return;
+            }
+            runAnalysis('t-test', { numeric_col: colY, group_col: colX });
+        });
+
+        document.getElementById('chiSquareBtn').addEventListener('click', function() {
+            const colX = document.getElementById('columnX').value;
+            const colY = document.getElementById('columnY').value;
+            if (!colX || !colY) {
+                showError('Select both X and Y columns for chi-square test');
+                return;
+            }
+            runAnalysis('chi-square', { col_x: colX, col_y: colY });
+        });
+
+        document.getElementById('regressionBtn').addEventListener('click', function() {
+            const colX = document.getElementById('columnX').value;
+            const colY = document.getElementById('columnY').value;
+            if (!colX || !colY) {
+                showError('Select both X and Y columns for regression');
+                return;
+            }
+            runAnalysis('regression', { col_x: colX, col_y: colY });
+        });
+
+        // Image Analysis
+        document.getElementById('analyzeImageBtn').addEventListener('click', async function() {
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+            if (!imageUrl) {
+                showError('Please enter an image URL');
+                return;
+            }
+
+            showLoading(this);
+
+            try {
+                const response = await fetch('/botany-lab/api/analyze-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_url: imageUrl })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayImageResult(result);
+                    document.getElementById('imageResults').style.display = 'block';
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Image analysis failed: ' + error.message);
+            } finally {
+                hideLoading(this);
+            }
+        });
+
+        function displayImageResult(result) {
+            const contentDiv = document.getElementById('imageContent');
+            
+            let html = '<div class="row"><div class="col-md-6">';
+            
+            // Dominant colors
+            if (result.dominant_colors && result.dominant_colors.length > 0) {
+                html += '<h6>Dominant Colors</h6>';
+                result.dominant_colors.forEach(color => {
+                    html += `<div class="mb-2">
+                        <span class="color-swatch" style="background-color: ${color.hex}"></span>
+                        ${color.hex} (${color.percentage}%)
+                    </div>`;
+                });
+            }
+            
+            html += '</div><div class="col-md-6">';
+            
+            // EXIF data
+            if (result.exif_data && Object.keys(result.exif_data).length > 0) {
+                html += '<h6>EXIF Data</h6>';
+                html += '<div class="small">';
+                Object.entries(result.exif_data).forEach(([key, value]) => {
+                    if (key.includes('Date') || key.includes('GPS') || key.includes('Camera') || key.includes('Make') || key.includes('Model')) {
+                        html += `<div><strong>${key}:</strong> ${value}</div>`;
+                    }
+                });
+                html += '</div>';
+            }
+            
+            html += '</div></div>';
+            
+            // Image info
+            if (result.image_size) {
+                html += `<div class="mt-3 small text-muted">
+                    Image size: ${result.image_size[0]} × ${result.image_size[1]} pixels
+                    (${result.total_pixels.toLocaleString()} total pixels analyzed)
+                </div>`;
+            }
+            
+            contentDiv.innerHTML = html;
+        }
+
+        // Save Dataset Pointer
+        document.getElementById('savePointerBtn').addEventListener('click', async function() {
+            const title = document.getElementById('datasetTitle').value.trim();
+            const url = document.getElementById('datasetUrl').value.trim();
+            const description = document.getElementById('datasetDescription').value.trim();
+
+            if (!title || !url) {
+                showError('Please provide both title and URL');
+                return;
+            }
+
+            try {
+                const response = await fetch('/botany-lab/api/save-dataset-pointer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        dataset_url: url,
+                        description: description
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('saveContent').innerHTML = `
+                        <p><strong>Reference ID:</strong> ${result.experiment_id}</p>
+                        <p>Your dataset reference has been saved and can be accessed later for analysis.</p>
+                    `;
+                    document.getElementById('saveResults').style.display = 'block';
+                    
+                    // Clear form
+                    document.getElementById('datasetTitle').value = '';
+                    document.getElementById('datasetUrl').value = '';
+                    document.getElementById('datasetDescription').value = '';
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('Failed to save dataset reference: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

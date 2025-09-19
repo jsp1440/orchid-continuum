@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+{% set page_title = "Administrative Dashboard" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="shield" class="me-2"></i>
+                    Administrative Dashboard
+                </h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin_ai_assistant') }}" class="btn btn-info">
+                        <i data-feather="cpu" class="me-1"></i>AI Assistant
+                    </a>
+                    <a href="/admin/ai-widgets/" class="btn btn-warning">
+                        <i data-feather="grid" class="me-1"></i>Widget Builder
+                    </a>
+                    <a href="/admin/migration/" class="btn btn-secondary">
+                        <i data-feather="download-cloud" class="me-1"></i>Media Migration
+                    </a>
+                    <a href="{{ url_for('admin_database_query') }}" class="btn btn-primary">
+                        <i data-feather="database" class="me-1"></i>SQL Console
+                    </a>
+                    <a href="{{ url_for('export_complete_database') }}" class="btn btn-success">
+                        <i data-feather="download" class="me-1"></i>Complete Export
+                    </a>
+                    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger">
+                        <i data-feather="log-out" class="me-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.orchid_records }}</h4>
+                            <p class="card-text">Orchid Records</p>
+                        </div>
+                        <i data-feather="star" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.taxonomy_entries }}</h4>
+                            <p class="card-text">Taxonomy Entries</p>
+                        </div>
+                        <i data-feather="layers" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.user_uploads }}</h4>
+                            <p class="card-text">User Uploads</p>
+                        </div>
+                        <i data-feather="upload" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.judging_analyses }}</h4>
+                            <p class="card-text">Analyses</p>
+                        </div>
+                        <i data-feather="award" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin_database_query') }}" class="btn btn-outline-primary">
+                            <i data-feather="terminal" class="me-1"></i>Execute SQL Query
+                        </a>
+                        <a href="{{ url_for('export_complete_database') }}" class="btn btn-outline-success">
+                            <i data-feather="download-cloud" class="me-1"></i>Download Complete Database
+                        </a>
+                        <a href="{{ url_for('export_custom_data') }}" class="btn btn-outline-info">
+                            <i data-feather="filter" class="me-1"></i>Custom Data Export
+                        </a>
+                        <a href="{{ url_for('database_maintenance') }}" class="btn btn-outline-warning">
+                            <i data-feather="tool" class="me-1"></i>Database Maintenance
+                        </a>
+                        <a href="{{ url_for('batch_botanical_analysis_route') }}" class="btn btn-outline-secondary">
+                            <i data-feather="layers" class="me-1"></i>Batch Analysis
+                        </a>
+                        <a href="/drive-import" class="btn btn-outline-success">
+                            <i data-feather="cloud-download" class="me-1"></i>Google Drive Import
+                        </a>
+                        <a href="/admin/taxonomy/" class="btn btn-outline-danger">
+                            <i data-feather="check-circle" class="me-1"></i>Taxonomy Verification
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>System Health
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-dark table-sm">
+                        <tr>
+                            <td>Database Size:</td>
+                            <td class="text-end">{{ health.database_size or 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Images:</td>
+                            <td class="text-end">{{ health.total_images }}</td>
+                        </tr>
+                        <tr>
+                            <td>AI Analyzed:</td>
+                            <td class="text-end">{{ health.ai_analyzed }}</td>
+                        </tr>
+                        <tr>
+                            <td>RHS Verified:</td>
+                            <td class="text-end">{{ health.rhs_verified }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Recent Orchids -->
+                        <div class="col-lg-6">
+                            <h6>Latest Orchid Records</h6>
+                            <div class="list-group list-group-flush">
+                                {% for orchid in recent_orchids %}
+                                <div class="list-group-item list-group-item-dark">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">{{ orchid.display_name or orchid.scientific_name }}</h6>
+                                            <p class="mb-1 small text-muted">
+                                                {% if orchid.genus %}{{ orchid.genus }}{% endif %}
+                                                {% if orchid.species %}{{ orchid.species }}{% endif %}
+                                            </p>
+                                            <small>{{ orchid.created_at.strftime('%Y-%m-%d %H:%M') if orchid.created_at else 'Unknown' }}</small>
+                                        </div>
+                                        <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-sm btn-outline-light">
+                                            <i data-feather="eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Recent Uploads -->
+                        <div class="col-lg-6">
+                            <h6>Recent Uploads</h6>
+                            <div class="list-group list-group-flush">
+                                {% for upload in recent_uploads %}
+                                <div class="list-group-item list-group-item-dark">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ upload.original_filename or upload.filename }}</h6>
+                                            <small class="text-muted">
+                                                {{ upload.upload_date.strftime('%Y-%m-%d %H:%M') if upload.upload_date else 'Unknown' }}
+                                            </small>
+                                        </div>
+                                        <span class="badge {% if upload.processed %}bg-success{% else %}bg-warning{% endif %}">
+                                            {% if upload.processed %}Processed{% else %}Pending{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
