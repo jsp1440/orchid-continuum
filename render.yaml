@@ -1,11 +1,24 @@
 services:
-  - type: web
-    name: orchid-continuum
-    env: python
-    plan: free
+  - type: web
+    name: orchid-continuum
+    env: python
+    plan: free
+    region: oregon
 
-    buildCommand: |
-      apt-get update && apt-get install -y \
-        build-essential \
-        libpq-dev \
-        lib
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r apps/api/requirements.txt
+
+    startCommand: uvicorn apps.api.main:app --host 0.0.0.0 --port 10000
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+
+    build:
+      aptPackages:
+        - build-essential
+        - libpq-dev
+        - libjpeg-dev
+        - zlib1g-dev
+        - libssl-dev
