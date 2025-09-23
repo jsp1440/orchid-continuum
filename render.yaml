@@ -1,17 +1,15 @@
 services:
-  - type: web
-    name: orchid-continuum
-    env: python
-    plan: free
-    region: oregon
-
-    buildCommand: |
-      apt-get update && xargs -a apt.txt apt-get install -y
-      pip install --upgrade pip
-      pip install -r apps/api/requirements.txt
-
-    startCommand: uvicorn apps.api.main:app --host 0.0.0.0 --port 10000
-
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.6
+  - type: web
+    name: orchid-continuum
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      apt-get update
+      apt-get install -y build-essential libpq-dev libjpeg-dev zlib1g-dev libssl1-dev
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.6
