@@ -9,9 +9,16 @@
         <div class="col-12">
             <h1 class="display-5 mb-3">
                 <i data-feather="grid" class="me-2"></i>Orchid Gallery
+                <span class="badge bg-primary ms-2 fs-6">{{ total_database_count|default('1,591') }} orchids</span>
             </h1>
             <p class="lead text-muted mb-2">Explore our collection of orchid photos and their AI-generated insights</p>
             <p class="text-muted fst-italic">"Where every orchid has a story — and every photo has a home."</p>
+            {% if total != total_database_count %}
+            <div class="alert alert-info mb-3">
+                <i data-feather="filter" class="me-1"></i>
+                Showing {{ total }} of {{ total_database_count|default('1,591') }} orchids (filtered)
+            </div>
+            {% endif %}
         </div>
     </div>
     
@@ -19,7 +26,7 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <form method="GET" action="{{ url_for('gallery') }}" class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="genus" class="form-label">Genus</label>
                     <select class="form-select" id="genus" name="genus">
                         <option value="">All Genera</option>
@@ -30,7 +37,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="climate" class="form-label">Climate Preference</label>
                     <select class="form-select" id="climate" name="climate">
                         <option value="">All Climates</option>
@@ -41,7 +48,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="growth_habit" class="form-label">Growth Habit</label>
                     <select class="form-select" id="growth_habit" name="growth_habit">
                         <option value="">All Habits</option>
@@ -52,8 +59,19 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <div class="btn-group w-100">
+                <div class="col-md-2">
+                    <label for="country" class="form-label">Country/Region</label>
+                    <select class="form-select" id="country" name="country">
+                        <option value="">All Countries</option>
+                        {% for country in countries %}
+                            <option value="{{ country }}" {% if current_country == country %}selected{% endif %}>
+                                {{ country }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="btn-group flex-fill me-2">
                         <button type="submit" class="btn btn-primary">
                             <i data-feather="filter" class="me-1"></i>Filter
                         </button>
@@ -61,6 +79,7 @@
                             <i data-feather="x" class="me-1"></i>Clear
                         </a>
                     </div>
+                    <input type="text" class="form-control" name="search" placeholder="Search..." value="{{ search_query|default('') }}">
                 </div>
             </form>
         </div>
