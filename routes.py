@@ -3308,6 +3308,7 @@ def gallery():
     genus = request.args.get('genus', '')
     climate = request.args.get('climate', '')
     growth_habit = request.args.get('growth_habit', '')
+    country = request.args.get('country', '')
     search_query = request.args.get('search', '')
     per_page = 48
     
@@ -3330,6 +3331,10 @@ def gallery():
         if growth_habit:
             where_conditions.append("growth_habit ILIKE %s")
             params.append(growth_habit)
+        if country:
+            where_conditions.append("(country ILIKE %s OR region ILIKE %s OR locality ILIKE %s)")
+            country_param = f'%{country}%'
+            params.extend([country_param, country_param, country_param])
         if search_query:
             where_conditions.append("(display_name ILIKE %s OR scientific_name ILIKE %s OR genus ILIKE %s)")
             search_param = f'%{search_query}%'
@@ -3416,6 +3421,23 @@ def gallery():
         cursor.execute("SELECT DISTINCT growth_habit FROM orchid_record WHERE growth_habit IS NOT NULL AND growth_habit != '' ORDER BY growth_habit")
         growth_habits = [row[0] for row in cursor.fetchall()]
         
+        # Get countries/regions for filter
+        cursor.execute("""
+            SELECT DISTINCT country_region FROM (
+                SELECT country as country_region FROM orchid_record WHERE country IS NOT NULL AND country != ''
+                UNION
+                SELECT region as country_region FROM orchid_record WHERE region IS NOT NULL AND region != ''
+                UNION
+                SELECT locality as country_region FROM orchid_record WHERE locality IS NOT NULL AND locality != ''
+            ) AS combined
+            ORDER BY country_region
+        """)
+        countries = [row[0] for row in cursor.fetchall()]
+        
+        # Get total database count
+        cursor.execute("SELECT COUNT(*) FROM orchid_record WHERE google_drive_id IS NOT NULL AND google_drive_id != '' AND google_drive_id != 'None'")
+        total_database_count = cursor.fetchone()[0]
+        
         cursor.close()
         conn.close()
         
@@ -3426,17 +3448,21 @@ def gallery():
             page=page,
             pages=orchids.pages,
             total=total_count,
+            total_database_count=total_database_count,
             per_page=per_page,
             search_query=search_query,
             genus_filter=genus,
             climate_filter=climate,
             growth_habit_filter=growth_habit,
+            country_filter=country,
             genera=genera,
             climates=climates,
             growth_habits=growth_habits,
+            countries=countries,
             current_genus=genus,
             current_climate=climate,
-            current_growth_habit=growth_habit
+            current_growth_habit=growth_habit,
+            current_country=country
         )
         
     except Exception as e:
@@ -3456,10 +3482,10 @@ def gallery():
         
         return render_template('gallery.html', 
             orchids=EmptyPagination(),
-            page=1, pages=1, total=0, per_page=48,
-            search_query='', genus_filter='', climate_filter='', growth_habit_filter='',
-            genera=[], climates=[], growth_habits=[],
-            current_genus='', current_climate='', current_growth_habit=''
+            page=1, pages=1, total=0, total_database_count=1591, per_page=48,
+            search_query='', genus_filter='', climate_filter='', growth_habit_filter='', country_filter='',
+            genera=[], climates=[], growth_habits=[], countries=[],
+            current_genus='', current_climate='', current_growth_habit='', current_country=''
         )
 
 @app.route('/gallery-old')
