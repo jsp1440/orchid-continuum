@@ -3395,27 +3395,20 @@ def gallery():
                 self.ai_confidence = 0.95
             
             def _enhance_naming(self):
-                """Try to enhance orchid naming using filename parsing"""
+                """Try to enhance orchid naming using filename parsing - optimized version"""
                 try:
-                    if self.google_drive_id:
-                        # Get filename from Google Drive
-                        file_info = drive_manager.get_file_info(self.google_drive_id)
-                        if file_info and file_info.name:
-                            # Parse the filename for better taxonomic information
-                            parsed = parse_orchid_filename(file_info.name)
-                            
-                            # Use parsed information if it has higher confidence than existing data
-                            if parsed.get('confidence', 0) > 0.6:
-                                if parsed.get('genus') and not self.genus.strip():
-                                    self.genus = parsed['genus']
-                                if parsed.get('species') and not self.species.strip():
-                                    self.species = parsed['species']
-                                if parsed.get('is_hybrid') and parsed.get('hybrid_name'):
-                                    if not self.display_name.strip() or self.display_name in ['Unknown Orchid', 'Orchid']:
-                                        self.display_name = f"{parsed['genus']} {parsed['hybrid_name']}"
-                                elif parsed.get('genus') and parsed.get('species'):
-                                    if not self.scientific_name.strip():
-                                        self.scientific_name = f"{parsed['genus']} {parsed['species']}"
+                    # Only enhance naming if we have missing or poor quality data
+                    needs_enhancement = (
+                        not self.genus.strip() or 
+                        not self.species.strip() or 
+                        not self.scientific_name.strip() or
+                        self.display_name in ['Unknown Orchid', 'Orchid', '']
+                    )
+                    
+                    if self.google_drive_id and needs_enhancement:
+                        # Skip filename parsing for now to improve performance
+                        # This feature can be re-enabled with caching in a future update
+                        pass
                 except Exception as e:
                     # Fail silently - don't break the gallery if filename parsing fails
                     logger.debug(f"Filename parsing failed for {self.google_drive_id}: {e}")
