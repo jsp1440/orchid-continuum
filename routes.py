@@ -3325,10 +3325,10 @@ def gallery():
             where_conditions.append("genus ILIKE %s")
             params.append(f'%{genus}%')
         if climate:
-            where_conditions.append("climate_preference = %s")
+            where_conditions.append("climate_preference ILIKE %s")
             params.append(climate)
         if growth_habit:
-            where_conditions.append("growth_habit = %s")
+            where_conditions.append("growth_habit ILIKE %s")
             params.append(growth_habit)
         if search_query:
             where_conditions.append("(display_name ILIKE %s OR scientific_name ILIKE %s OR genus ILIKE %s)")
@@ -3492,11 +3492,11 @@ def gallery_old():
                 params.append(f'%{genus}%')
                 
             if climate:
-                where_conditions.append("climate_preference = %s")
+                where_conditions.append("climate_preference ILIKE %s")
                 params.append(climate)
                 
             if growth_habit:
-                where_conditions.append("growth_habit = %s")
+                where_conditions.append("growth_habit ILIKE %s")
                 params.append(growth_habit)
             
             where_clause = " AND ".join(where_conditions)
