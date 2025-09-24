@@ -161,6 +161,54 @@ def format_scientific_name(genus, species, author=None):
     
     return name
 
+def validate_google_drive_id_unique(google_drive_id, current_orchid_id=None):
+    """
+    Validate that a Google Drive ID is not already assigned to another orchid.
+    Prevents duplicate image assignments that cause data quality issues.
+    
+    Args:
+        google_drive_id: The Google Drive ID to check
+        current_orchid_id: ID of current orchid (for updates, to exclude self)
+    
+    Returns:
+        tuple: (is_valid, error_message, existing_orchid_info)
+    """
+    if not google_drive_id or google_drive_id in ['', 'None']:
+        return True, None, None
+    
+    try:
+        from models import OrchidRecord
+        
+        # Check if this Google Drive ID is already used by another orchid
+        query = OrchidRecord.query.filter(
+            OrchidRecord.google_drive_id == google_drive_id,
+            OrchidRecord.google_drive_id.isnot(None),
+            OrchidRecord.google_drive_id != '',
+            OrchidRecord.google_drive_id != 'None'
+        )
+        
+        # Exclude current orchid if this is an update
+        if current_orchid_id:
+            query = query.filter(OrchidRecord.id != current_orchid_id)
+        
+        existing_orchid = query.first()
+        
+        if existing_orchid:
+            error_msg = f"Google Drive ID '{google_drive_id}' is already assigned to orchid '{existing_orchid.display_name}' (ID: {existing_orchid.id})"
+            orchid_info = {
+                'id': existing_orchid.id,
+                'display_name': existing_orchid.display_name,
+                'genus': existing_orchid.genus,
+                'species': existing_orchid.species
+            }
+            return False, error_msg, orchid_info
+        
+        return True, None, None
+        
+    except Exception as e:
+        logger.error(f"Error validating Google Drive ID uniqueness: {str(e)}")
+        return False, f"Error validating Google Drive ID: {str(e)}", None
+
 def validate_orchid_data(data):
     """Validate orchid data before saving"""
     errors = []
@@ -168,6 +216,15 @@ def validate_orchid_data(data):
     # Required fields
     if not data.get('display_name'):
         errors.append("Display name is required")
+    
+    # Validate Google Drive ID uniqueness
+    if data.get('google_drive_id'):
+        is_valid, error_msg, existing_info = validate_google_drive_id_unique(
+            data['google_drive_id'], 
+            data.get('id')  # Pass current orchid ID for updates
+        )
+        if not is_valid:
+            errors.append(error_msg)
     
     # Validate scientific name format if provided
     if data.get('scientific_name'):
