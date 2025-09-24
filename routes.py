@@ -3364,6 +3364,8 @@ def gallery():
         
         # Create clean orchid objects
         from datetime import datetime
+        from filename_parser import parse_orchid_filename
+        from gdrive_manager import drive_manager
         
         class CleanOrchid:
             def __init__(self, row):
@@ -3380,13 +3382,54 @@ def gallery():
                 self.climate_preference = row[10] or ''
                 self.google_drive_id = row[11]
                 self.photographer = row[12] or 'FCOS Collection'
-                # Use display_name for description if scientific name is not available
-                description_name = self.scientific_name if self.scientific_name else self.display_name if self.display_name else 'orchid'
+                
+                # Enhanced naming: Try to get better names from filename if available
+                self._enhance_naming()
+                
+                # Use best available name for description
+                description_name = self.get_best_name()
                 self.ai_description = row[13] or f'Beautiful {description_name} specimen'
                 self.created_at = row[14] or datetime.now()
                 self.is_featured = row[15] or False
                 self.image_url = f'/api/drive-photo/{self.google_drive_id}' if self.google_drive_id else None
                 self.ai_confidence = 0.95
+            
+            def _enhance_naming(self):
+                """Try to enhance orchid naming using filename parsing"""
+                try:
+                    if self.google_drive_id:
+                        # Get filename from Google Drive
+                        file_info = drive_manager.get_file_info(self.google_drive_id)
+                        if file_info and file_info.name:
+                            # Parse the filename for better taxonomic information
+                            parsed = parse_orchid_filename(file_info.name)
+                            
+                            # Use parsed information if it has higher confidence than existing data
+                            if parsed.get('confidence', 0) > 0.6:
+                                if parsed.get('genus') and not self.genus.strip():
+                                    self.genus = parsed['genus']
+                                if parsed.get('species') and not self.species.strip():
+                                    self.species = parsed['species']
+                                if parsed.get('is_hybrid') and parsed.get('hybrid_name'):
+                                    if not self.display_name.strip() or self.display_name in ['Unknown Orchid', 'Orchid']:
+                                        self.display_name = f"{parsed['genus']} {parsed['hybrid_name']}"
+                                elif parsed.get('genus') and parsed.get('species'):
+                                    if not self.scientific_name.strip():
+                                        self.scientific_name = f"{parsed['genus']} {parsed['species']}"
+                except Exception as e:
+                    # Fail silently - don't break the gallery if filename parsing fails
+                    logger.debug(f"Filename parsing failed for {self.google_drive_id}: {e}")
+            
+            def get_best_name(self):
+                """Get the best available name for this orchid"""
+                if self.genus and self.species and self.genus.strip() and self.species.strip():
+                    return f"{self.genus} {self.species}"
+                elif self.scientific_name and self.scientific_name.strip():
+                    return self.scientific_name
+                elif self.display_name and self.display_name.strip():
+                    return self.display_name
+                else:
+                    return 'orchid'
         
         orchid_items = [CleanOrchid(row) for row in rows]
         
