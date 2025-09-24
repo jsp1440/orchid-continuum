@@ -3368,9 +3368,9 @@ def gallery():
         class CleanOrchid:
             def __init__(self, row):
                 self.id = row[0]
-                self.display_name = row[1] or 'Unknown Orchid'
-                self.scientific_name = row[2] or 'Unknown Species'
-                self.genus = row[3] or 'Unknown'
+                self.display_name = row[1] or ''
+                self.scientific_name = row[2] or ''
+                self.genus = row[3] or ''
                 self.species = row[4] or ''
                 self.author = row[5] or ''
                 self.region = row[6] or ''
@@ -3380,7 +3380,9 @@ def gallery():
                 self.climate_preference = row[10] or ''
                 self.google_drive_id = row[11]
                 self.photographer = row[12] or 'FCOS Collection'
-                self.ai_description = row[13] or f'Beautiful {self.scientific_name} specimen'
+                # Use display_name for description if scientific name is not available
+                description_name = self.scientific_name if self.scientific_name else self.display_name if self.display_name else 'orchid'
+                self.ai_description = row[13] or f'Beautiful {description_name} specimen'
                 self.created_at = row[14] or datetime.now()
                 self.is_featured = row[15] or False
                 self.image_url = f'/api/drive-photo/{self.google_drive_id}' if self.google_drive_id else None

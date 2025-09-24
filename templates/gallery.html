@@ -169,17 +169,22 @@
                     
                     <div class="card-body">
                         <h6 class="card-title mb-2">
-                            {% if orchid.genus and orchid.species %}
+                            {% if orchid.genus and orchid.species and orchid.genus.strip() and orchid.species.strip() %}
                                 <em>{{ orchid.genus }} {{ orchid.species }}</em>
-                            {% elif orchid.scientific_name %}
+                            {% elif orchid.scientific_name and orchid.scientific_name.strip() %}
                                 <em>{{ orchid.scientific_name }}</em>
-                            {% else %}
+                            {% elif orchid.display_name and orchid.display_name.strip() %}
                                 {{ orchid.display_name }}
+                            {% else %}
+                                Unknown Orchid
                             {% endif %}
                         </h6>
                         
-                        {% if orchid.display_name and orchid.scientific_name and orchid.display_name != orchid.scientific_name %}
-                            <p class="text-muted small mb-2">{{ orchid.display_name }}</p>
+                        {% if orchid.display_name and orchid.display_name.strip() and ((orchid.genus and orchid.species and orchid.genus.strip() and orchid.species.strip()) or (orchid.scientific_name and orchid.scientific_name.strip())) %}
+                            {% set scientific_display = (orchid.genus + ' ' + orchid.species) if (orchid.genus and orchid.species and orchid.genus.strip() and orchid.species.strip()) else orchid.scientific_name %}
+                            {% if orchid.display_name != scientific_display %}
+                                <p class="text-muted small mb-2">{{ orchid.display_name }}</p>
+                            {% endif %}
                         {% endif %}
                         
                         <div class="row g-2 mb-3">
