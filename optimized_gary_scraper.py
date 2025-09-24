@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 from app import app, db
 from models import OrchidRecord
+from validation_integration import ScraperValidationSystem, create_validated_orchid_record
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,10 @@ class OptimizedGaryScraper:
         
         self.collected_count = 0
         self.error_count = 0
+        
+        # Initialize validation system
+        self.validator = ScraperValidationSystem()
+        logger.info("🔒 Validation system initialized for Gary scraper")
         
         # Try multiple API endpoint patterns for React apps
         self.api_patterns = [
@@ -177,29 +182,48 @@ class OptimizedGaryScraper:
             logger.debug(f"Could not extract React state: {e}")
 
     def extract_basic_genus_info(self, html_content, genus_name, source_url):
-        """Extract basic genus information from HTML content"""
+        """Extract basic genus information from HTML content with validation"""
         try:
-            # Create a basic record for the genus
-            orchid_record = OrchidRecord(
-                display_name=genus_name,
-                scientific_name=genus_name,
-                genus=genus_name,
-                ingestion_source='gary_optimized_search',
-                image_source='Gary Yong Gee Orchids',
-                data_source=source_url,
-                ai_description=f"Genus {genus_name} from Gary Yong Gee's orchid collection",
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
-            )
+            # Prepare record data for validation
+            record_data = {
+                'display_name': genus_name,
+                'scientific_name': genus_name,
+                'genus': genus_name,
+                'ingestion_source': 'gary_optimized_search',
+                'image_source': 'Gary Yong Gee Orchids',
+                'data_source': source_url,
+                'ai_description': f"Genus {genus_name} from Gary Yong Gee's orchid collection"
+            }
             
-            db.session.add(orchid_record)
-            db.session.commit()
+            # Validate before creating database record
+            validated_data = create_validated_orchid_record(record_data, "gary_scraper")
             
-            logger.info(f"✅ Added genus: {genus_name}")
-            self.collected_count += 1
+            if validated_data:
+                # Create validated record
+                orchid_record = OrchidRecord(
+                    display_name=validated_data['display_name'],
+                    scientific_name=validated_data['scientific_name'],
+                    genus=validated_data['genus'],
+                    ingestion_source=validated_data['ingestion_source'],
+                    image_source=validated_data['image_source'],
+                    data_source=validated_data['data_source'],
+                    ai_description=validated_data['ai_description'],
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                
+                db.session.add(orchid_record)
+                db.session.commit()
+                
+                logger.info(f"✅ Added validated genus: {genus_name}")
+                self.collected_count += 1
+            else:
+                logger.warning(f"❌ Rejected invalid genus: {genus_name}")
+                self.error_count += 1
             
         except Exception as e:
             logger.error(f"❌ Error creating genus record: {e}")
+            self.error_count += 1
 
     def try_search_functionality(self, genus_name):
         """Try to use search functionality on Gary's site"""
@@ -287,7 +311,7 @@ class OptimizedGaryScraper:
             logger.debug(f"Known species pattern search failed: {e}")
 
     def collect_species_from_url(self, url, species_name):
-        """Collect species data from a working URL"""
+        """Collect species data from a working URL with validation"""
         try:
             response = self.session.get(url, timeout=15)
             if response.status_code == 200:
@@ -297,27 +321,48 @@ class OptimizedGaryScraper:
                 genus = parts[0] if parts else ''
                 species = parts[1] if len(parts) > 1 else ''
                 
-                orchid_record = OrchidRecord(
-                    display_name=species_name,
-                    scientific_name=species_name,
-                    genus=genus,
-                    species=species,
-                    ingestion_source='gary_species_url',
-                    image_source='Gary Yong Gee Orchids',
-                    data_source=url,
-                    ai_description=f"Species {species_name} from Gary Yong Gee's collection",
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
-                )
+                # Prepare record data for validation
+                record_data = {
+                    'display_name': species_name,
+                    'scientific_name': species_name,
+                    'genus': genus,
+                    'species': species,
+                    'ingestion_source': 'gary_species_url',
+                    'image_source': 'Gary Yong Gee Orchids',
+                    'data_source': url,
+                    'ai_description': f"Species {species_name} from Gary Yong Gee's collection"
+                }
                 
-                db.session.add(orchid_record)
-                db.session.commit()
+                # Validate before creating database record
+                validated_data = create_validated_orchid_record(record_data, "gary_scraper")
                 
-                logger.info(f"✅ Collected species: {species_name}")
-                self.collected_count += 1
+                if validated_data:
+                    # Create validated record
+                    orchid_record = OrchidRecord(
+                        display_name=validated_data['display_name'],
+                        scientific_name=validated_data['scientific_name'],
+                        genus=validated_data['genus'],
+                        species=validated_data.get('species', ''),
+                        ingestion_source=validated_data['ingestion_source'],
+                        image_source=validated_data['image_source'],
+                        data_source=validated_data['data_source'],
+                        ai_description=validated_data['ai_description'],
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    
+                    db.session.add(orchid_record)
+                    db.session.commit()
+                    
+                    logger.info(f"✅ Collected validated species: {species_name}")
+                    self.collected_count += 1
+                else:
+                    logger.warning(f"❌ Rejected invalid species: {species_name}")
+                    self.error_count += 1
                 
         except Exception as e:
             logger.error(f"❌ Error collecting from {url}: {e}")
+            self.error_count += 1
 
     def process_search_results(self, data, genus_name):
         """Process search results from API"""
@@ -358,55 +403,95 @@ class OptimizedGaryScraper:
             logger.error(f"❌ Error processing JSON data: {e}")
 
     def process_orchid_item(self, item, genus_context):
-        """Process a single orchid item from JSON data"""
+        """Process a single orchid item from JSON data with validation"""
         try:
             name = item.get('name') or item.get('scientificName') or item.get('displayName', '')
             genus = item.get('genus') or (name.split()[0] if name else genus_context)
             species = item.get('species') or (name.split()[1] if len(name.split()) > 1 else '')
             
             if name and genus:
-                orchid_record = OrchidRecord(
-                    display_name=name,
-                    scientific_name=name,
-                    genus=genus,
-                    species=species,
-                    author=item.get('author', ''),
-                    region=item.get('distribution', ''),
-                    native_habitat=item.get('habitat', ''),
-                    image_url=item.get('imageUrl') or item.get('image', ''),
-                    ingestion_source='gary_json_data',
-                    image_source='Gary Yong Gee Orchids',
-                    ai_description=item.get('description', f"Orchid {name} from Gary Yong Gee's collection"),
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
-                )
+                # Prepare record data for validation
+                record_data = {
+                    'display_name': name,
+                    'scientific_name': name,
+                    'genus': genus,
+                    'species': species,
+                    'author': item.get('author', ''),
+                    'region': item.get('distribution', ''),
+                    'native_habitat': item.get('habitat', ''),
+                    'image_url': item.get('imageUrl') or item.get('image', ''),
+                    'ingestion_source': 'gary_json_data',
+                    'image_source': 'Gary Yong Gee Orchids',
+                    'ai_description': item.get('description', f"Orchid {name} from Gary Yong Gee's collection")
+                }
                 
-                db.session.add(orchid_record)
-                db.session.commit()
+                # Validate before creating database record
+                validated_data = create_validated_orchid_record(record_data, "gary_scraper")
                 
-                logger.info(f"✅ Collected: {name}")
-                self.collected_count += 1
+                if validated_data:
+                    # Create validated record
+                    orchid_record = OrchidRecord(
+                        display_name=validated_data['display_name'],
+                        scientific_name=validated_data['scientific_name'],
+                        genus=validated_data['genus'],
+                        species=validated_data.get('species', ''),
+                        author=validated_data.get('author', ''),
+                        region=validated_data.get('region', ''),
+                        native_habitat=validated_data.get('native_habitat', ''),
+                        image_url=validated_data.get('image_url', ''),
+                        ingestion_source=validated_data['ingestion_source'],
+                        image_source=validated_data['image_source'],
+                        ai_description=validated_data['ai_description'],
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    
+                    db.session.add(orchid_record)
+                    db.session.commit()
+                    
+                    logger.info(f"✅ Collected validated orchid: {name}")
+                    self.collected_count += 1
+                else:
+                    logger.warning(f"❌ Rejected invalid orchid: {name} (genus: {genus})")
+                    self.error_count += 1
                 
         except Exception as e:
             logger.error(f"❌ Error processing orchid item: {e}")
+            self.error_count += 1
 
     def generate_gary_report(self):
-        """Generate comprehensive report of Gary collection"""
+        """Generate comprehensive report of Gary collection with validation stats"""
         with app.app_context():
             gary_sources = ['gary_optimized_search', 'gary_species_url', 'gary_json_data']
             total_gary = OrchidRecord.query.filter(
                 OrchidRecord.ingestion_source.in_(gary_sources)
             ).count()
             
+            # Get validation report
+            validation_report = self.validator.get_validation_report()
+            
             logger.info("📊 GARY COLLECTION REPORT")
             logger.info(f"   Total Gary orchids: {total_gary}")
             logger.info(f"   Collection session: {self.collected_count}")
-            logger.info(f"   Errors: {self.error_count}")
+            logger.info(f"   Validation errors: {self.error_count}")
+            logger.info(f"   Validation rate: {validation_report['summary']['validation_rate']}%")
+            
+            # Log validation details
+            if validation_report['accepted_genera']:
+                logger.info("✅ Accepted genera:")
+                for genus, count in list(validation_report['accepted_genera'].items())[:5]:
+                    logger.info(f"     {genus}: {count} records")
+            
+            if validation_report['rejected_genera']:
+                logger.info("❌ Rejected genera:")
+                for genus, count in list(validation_report['rejected_genera'].items())[:5]:
+                    logger.info(f"     {genus}: {count} records")
             
             return {
                 'total_gary_orchids': total_gary,
                 'session_collected': self.collected_count,
-                'errors': self.error_count
+                'errors': self.error_count,
+                'validation_report': validation_report
             }
 
 if __name__ == "__main__":

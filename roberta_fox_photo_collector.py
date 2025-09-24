@@ -13,6 +13,10 @@ import logging
 import os
 import psycopg2
 from urllib.parse import urljoin
+from app import app, db
+from models import OrchidRecord
+from validation_integration import ScraperValidationSystem, create_validated_orchid_record
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +33,12 @@ class RobertaFoxPhotoCollector:
         self.db_url = os.environ.get('DATABASE_URL')
         self.conn = psycopg2.connect(self.db_url)
         
-        logger.info("🌺 ROBERTA FOX PHOTO COLLECTOR INITIALIZED")
+        # Initialize validation system
+        self.validator = ScraperValidationSystem()
+        self.collected_count = 0
+        self.rejected_count = 0
+        
+        logger.info("🌺 ROBERTA FOX PHOTO COLLECTOR INITIALIZED WITH VALIDATION")
         
     def collect_all_photos(self):
         """Collect all photos from Roberta Fox's 19 galleries"""
@@ -77,36 +86,44 @@ class RobertaFoxPhotoCollector:
         return total_updated
     
     def process_gallery(self, gallery_url, gallery_name):
-        """Process a single gallery and extract photo URLs"""
+        """Process a single gallery and create validated orchid records"""
         
         try:
             response = self.session.get(gallery_url, timeout=30)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
-            updated_count = 0
+            gallery_collected = 0
+            gallery_rejected = 0
             
-            # Find all image links in the gallery
-            image_links = soup.find_all('a')
-            for link in image_links:
-                href = link.get('href', '')
+            with app.app_context():
+                # Find all image links in the gallery
+                image_links = soup.find_all('a')
                 
-                # Look for image files
-                if any(ext in href.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                    # Get the full image URL
-                    image_url = urljoin(gallery_url, href)
+                for link in image_links:
+                    href = link.get('href', '')
                     
-                    # Extract orchid name from the link text or nearby text
-                    orchid_name = self.extract_orchid_name(link)
-                    
-                    if orchid_name:
-                        # Update database record with photo URL
-                        updated = self.update_orchid_photo(orchid_name, image_url, gallery_name)
-                        if updated:
-                            updated_count += 1
-                            logger.info(f"   📷 Updated {orchid_name[:50]}... with photo")
+                    # Look for image files
+                    if any(ext in href.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                        # Get the full image URL
+                        image_url = urljoin(gallery_url, href)
+                        
+                        # Extract orchid name from the link text or nearby text
+                        orchid_name = self.extract_orchid_name(link)
+                        
+                        if orchid_name and len(orchid_name) > 3:
+                            # Create validated orchid record
+                            created = self.create_validated_orchid_record(orchid_name, image_url, gallery_name, gallery_url)
+                            if created:
+                                gallery_collected += 1
+                                self.collected_count += 1
+                                logger.info(f"   ✅ Created validated orchid: {orchid_name[:50]}...")
+                            else:
+                                gallery_rejected += 1
+                                self.rejected_count += 1
             
-            return updated_count
+            logger.info(f"📊 {gallery_name}: {gallery_collected} collected, {gallery_rejected} rejected")
+            return gallery_collected
             
         except Exception as e:
             logger.error(f"Error processing gallery {gallery_url}: {e}")
@@ -127,6 +144,64 @@ class RobertaFoxPhotoCollector:
                 return alt_text
         
         return None
+    
+    def create_validated_orchid_record(self, orchid_name, image_url, gallery_name, gallery_url):
+        """Create a new validated orchid record from Roberta Fox gallery data"""
+        try:
+            # Parse genus from orchid name
+            parts = orchid_name.split()
+            genus = parts[0] if parts else ''
+            species = parts[1] if len(parts) > 1 else ''
+            
+            # Prepare record data for validation
+            record_data = {
+                'display_name': orchid_name,
+                'scientific_name': orchid_name,
+                'genus': genus,
+                'species': species,
+                'image_url': image_url,
+                'ai_description': f"Orchid from Roberta Fox {gallery_name} gallery: {orchid_name}",
+                'ingestion_source': 'roberta_fox_validated',
+                'image_source': f'Roberta Fox - {gallery_name}',
+                'data_source': gallery_url
+            }
+            
+            # Validate before creating database record
+            validated_data = create_validated_orchid_record(record_data, "roberta_fox_scraper")
+            
+            if validated_data:
+                # Create validated record
+                try:
+                    orchid_record = OrchidRecord(
+                        display_name=validated_data['display_name'],
+                        scientific_name=validated_data['scientific_name'],
+                        genus=validated_data['genus'],
+                        species=validated_data.get('species', ''),
+                        image_url=validated_data.get('image_url', ''),
+                        ai_description=validated_data['ai_description'],
+                        ingestion_source=validated_data['ingestion_source'],
+                        image_source=validated_data['image_source'],
+                        data_source=validated_data['data_source'],
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    
+                    db.session.add(orchid_record)
+                    db.session.commit()
+                    
+                    return True
+                    
+                except Exception as e:
+                    logger.error(f"❌ Database error for {orchid_name}: {e}")
+                    db.session.rollback()
+                    return False
+            else:
+                logger.debug(f"❌ Validation failed for {orchid_name} (genus: {genus})")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error creating validated record for {orchid_name}: {e}")
+            return False
     
     def update_orchid_photo(self, orchid_name, image_url, gallery_name):
         """Update orchid record in database with photo URL"""
