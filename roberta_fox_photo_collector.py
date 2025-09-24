@@ -101,12 +101,18 @@ class RobertaFoxPhotoCollector:
                 image_links = soup.find_all('a')
                 
                 for link in image_links:
-                    href = link.get('href', '')
+                    if not link or not hasattr(link, 'get'):
+                        continue
+                    
+                    try:
+                        href = link.get('href', '')
+                    except AttributeError:
+                        continue
                     
                     # Look for image files
-                    if any(ext in href.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                    if href and isinstance(href, str) and any(ext in href.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
                         # Get the full image URL
-                        image_url = urljoin(gallery_url, href)
+                        image_url = urljoin(gallery_url, str(href))
                         
                         # Extract orchid name from the link text or nearby text
                         orchid_name = self.extract_orchid_name(link)
@@ -172,19 +178,18 @@ class RobertaFoxPhotoCollector:
             if validated_data:
                 # Create validated record
                 try:
-                    orchid_record = OrchidRecord(
-                        display_name=validated_data['display_name'],
-                        scientific_name=validated_data['scientific_name'],
-                        genus=validated_data['genus'],
-                        species=validated_data.get('species', ''),
-                        image_url=validated_data.get('image_url', ''),
-                        ai_description=validated_data['ai_description'],
-                        ingestion_source=validated_data['ingestion_source'],
-                        image_source=validated_data['image_source'],
-                        data_source=validated_data['data_source'],
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
+                    orchid_record = OrchidRecord()
+                    orchid_record.display_name = validated_data['display_name']
+                    orchid_record.scientific_name = validated_data['scientific_name']
+                    orchid_record.genus = validated_data['genus']
+                    orchid_record.species = validated_data.get('species', '')
+                    orchid_record.image_url = validated_data.get('image_url', '')
+                    orchid_record.ai_description = validated_data['ai_description']
+                    orchid_record.ingestion_source = validated_data['ingestion_source']
+                    orchid_record.image_source = validated_data['image_source']
+                    orchid_record.data_source = validated_data['data_source']
+                    orchid_record.created_at = datetime.utcnow()
+                    orchid_record.updated_at = datetime.utcnow()
                     
                     db.session.add(orchid_record)
                     db.session.commit()
