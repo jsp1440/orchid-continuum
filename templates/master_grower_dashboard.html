@@ -776,6 +776,9 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Widget Communication System -->
+    <script src="/static/js/widget-communication.js"></script>
+    
     <!-- Dashboard JavaScript -->
     <script>
         // Global dashboard state
@@ -786,11 +789,51 @@
             insights: {}
         };
         
+        // Communication adapter for dashboard
+        let dashboardComm = null;
+        
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
             loadDashboardState();
+            initializeCommunication();
         });
+        
+        // Initialize communication system
+        function initializeCommunication() {
+            // Wait for communication system to be ready
+            setTimeout(() => {
+                if (typeof window.WidgetCommunication !== 'undefined') {
+                    dashboardComm = window.WidgetCommunication.createAdapter('dashboard');
+                    
+                    // Subscribe to communication events
+                    dashboardComm.onOrchidSelected((orchidData) => {
+                        console.log('🌺 Orchid selected via communication:', orchidData);
+                        setSharedOrchid(orchidData);
+                    });
+                    
+                    dashboardComm.onAnalysisCompleted((analysisData, message) => {
+                        console.log('📊 Analysis completed via communication:', message.source, analysisData);
+                        addAnalysisResult(message.source, analysisData);
+                    });
+                    
+                    dashboardComm.onInsightsGenerated((insights) => {
+                        console.log('💡 Cross-tool insights generated:', insights);
+                        updateCrossToolInsights(insights);
+                    });
+                    
+                    dashboardComm.onRecommendationsUpdated((recommendations) => {
+                        console.log('🎯 Recommendations updated:', recommendations);
+                        showRecommendations(recommendations);
+                    });
+                    
+                    console.log('✅ Dashboard communication initialized');
+                } else {
+                    console.warn('⚠️ Widget Communication not available, retrying...');
+                    setTimeout(initializeCommunication, 1000);
+                }
+            }, 500);
+        }
         
         // Tool launching
         function launchTool(toolId) {
@@ -920,18 +963,28 @@
             }
         }
         
-        // Shared data management
+        // Enhanced shared data management with communication
         function setSharedOrchid(orchidData) {
             sharedData.activeOrchid = orchidData;
             updateSharedDataPanel();
             showSharedDataPanel();
             saveDashboardState();
+            
+            // Broadcast via communication system
+            if (dashboardComm) {
+                dashboardComm.setActiveOrchid(orchidData);
+            }
         }
         
         function addAnalysisResult(toolId, result) {
             sharedData.analyses[toolId] = result;
             updateCrossToolInsights();
             saveDashboardState();
+            
+            // Broadcast via communication system  
+            if (dashboardComm) {
+                dashboardComm.reportAnalysis(result);
+            }
         }
         
         function updateSharedDataPanel() {
@@ -960,12 +1013,27 @@
             feather.replace();
         }
         
-        function updateCrossToolInsights() {
+        function updateCrossToolInsights(communicationInsights) {
             const insights = document.getElementById('crossToolInsights');
             const analyses = sharedData.analyses;
             
             let insightsHtml = '';
             
+            // Show communication-generated insights first (priority insights)
+            if (communicationInsights) {
+                Object.entries(communicationInsights).forEach(([key, insight]) => {
+                    const priorityClass = insight.priority === 'high' ? 'border-danger' : 
+                                        insight.priority === 'medium' ? 'border-warning' : 'border-info';
+                    insightsHtml += `
+                        <div class="insight-card ${priorityClass}">
+                            <div class="insight-label">${insight.title}</div>
+                            <div class="insight-value" style="font-size: 0.85rem;">${insight.message}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Show individual analysis results
             if (analyses['health-diagnostic']) {
                 insightsHtml += `
                     <div class="insight-card">
@@ -1014,6 +1082,72 @@
             insights.innerHTML = insightsHtml;
         }
         
+        // Show smart recommendations from communication system
+        function showRecommendations(recommendations) {
+            if (!recommendations || recommendations.length === 0) return;
+            
+            // Create or update recommendations panel
+            let recPanel = document.getElementById('recommendationsPanel');
+            if (!recPanel) {
+                recPanel = document.createElement('div');
+                recPanel.id = 'recommendationsPanel';
+                recPanel.className = 'shared-data-panel show';
+                recPanel.style.marginTop = '1rem';
+                
+                document.querySelector('.shared-data-panel').insertAdjacentElement('afterend', recPanel);
+            }
+            
+            let recHtml = `
+                <div class="data-panel-header">
+                    <i data-feather="lightbulb"></i>
+                    <h4>Smart Recommendations</h4>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearRecommendations()">
+                        <i data-feather="x" class="me-1"></i>Dismiss
+                    </button>
+                </div>
+                <div class="recommendations-list">
+            `;
+            
+            recommendations.forEach(rec => {
+                const toolIcon = getToolIcon(rec.tool);
+                recHtml += `
+                    <div class="action-card" onclick="launchTool('${rec.tool}')">
+                        <div class="d-flex align-items-start gap-2">
+                            <i data-feather="${toolIcon}" class="flex-shrink-0 mt-1" style="width: 18px; height: 18px;"></i>
+                            <div>
+                                <div class="action-title">${rec.action}</div>
+                                <div class="action-description">${rec.reason}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            recHtml += '</div>';
+            recPanel.innerHTML = recHtml;
+            
+            // Replace feather icons
+            feather.replace();
+        }
+        
+        function getToolIcon(tool) {
+            const iconMap = {
+                'health': 'heart',
+                'conditions': 'map-pin', 
+                'breeding': 'git-merge',
+                'care': 'calendar',
+                'authentication': 'shield-check'
+            };
+            return iconMap[tool] || 'tool';
+        }
+        
+        function clearRecommendations() {
+            const recPanel = document.getElementById('recommendationsPanel');
+            if (recPanel) {
+                recPanel.remove();
+            }
+        }
+        
         function showSharedDataPanel() {
             const panel = document.getElementById('sharedDataPanel');
             panel.classList.add('show');
@@ -1031,7 +1165,13 @@
                 insights: {}
             };
             hideSharedDataPanel();
+            clearRecommendations();
             saveDashboardState();
+            
+            // Clear communication state
+            if (dashboardComm) {
+                dashboardComm.clearState();
+            }
         }
         
         function hasActiveAnalysis() {
