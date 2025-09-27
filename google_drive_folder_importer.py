@@ -114,12 +114,29 @@ class GoogleDriveFolderImporter:
         if not mime_type.startswith('image/'):
             return False
         
-        # Look for orchid/hybrid indicators in filename
+        # Look for orchid/hybrid indicators in filename (expanded to include abbreviations)
         orchid_indicators = [
+            # Full genus names
             'orchid', 'hybrid', 'svo', 'sunset', 'valley', 'breeding',
             'cattleya', 'dendrobium', 'phalaenopsis', 'oncidium', 'vanda',
-            'paphiopedilum', 'cymbidium', 'miltonia', 'cross', 'grex'
+            'paphiopedilum', 'cymbidium', 'miltonia', 'cross', 'grex',
+            'laelia', 'epidendrum', 'brassavola', 'sophronitis', 'encyclia',
+            'bulbophyllum', 'masdevallia', 'maxillaria', 'prosthechea',
+            # Common abbreviations found in SVO files
+            '_c ', '_l ', '_epi ', '_den ', '_phal ', '_onc ', '_van ',
+            '_paph ', '_cym ', '_mil ', '_brs ', '_soph ', '_enc ', '_bulb ',
+            '_masd ', '_max ', '_pro ', '_nagiela', '_pot ', '_blc ', '_slc ',
+            # Also check without underscore for filenames like "3055C_"
+            'c_', 'l_', 'epi_', 'den_', 'phal_', 'onc_', 'van_', 'paph_',
+            'cym_', 'mil_', 'brs_', 'soph_', 'enc_', 'bulb_', 'masd_',
+            'max_', 'pro_', 'nagiela', 'pot_', 'blc_', 'slc_'
         ]
+        
+        # Also check for pattern like "2994T_C " or "3055_L " (number + optional letter + underscore + genus abbreviation)
+        import re
+        pattern = r'\d+[A-Z]*_[A-Z]+ '
+        if re.search(pattern, name.upper()):
+            return True
         
         return any(indicator in name for indicator in orchid_indicators)
     
