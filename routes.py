@@ -14077,6 +14077,73 @@ try:
 except ImportError:
     logger.warning("⚠️ OrchidAI Research Hub blueprint not available for registration")
 
+# Import AI Orchid Health Diagnostic
+try:
+    from ai_orchid_health_diagnostic import diagnose_orchid_health_from_photo
+    logger.info("🏥 AI Orchid Health Diagnostic imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import AI Orchid Health Diagnostic: {e}")
+    diagnose_orchid_health_from_photo = None
+
+# AI Orchid Health Diagnostic API endpoint
+@app.route('/api/orchid-health-diagnostic', methods=['POST'])
+def orchid_health_diagnostic():
+    """API endpoint for AI orchid health diagnosis from photos"""
+    try:
+        if not diagnose_orchid_health_from_photo:
+            return jsonify({
+                'success': False,
+                'error': 'Health diagnostic system not available'
+            }), 500
+            
+        # Get uploaded image or image path
+        image_file = request.files.get('image')
+        user_notes = request.form.get('notes', '')
+        
+        if not image_file:
+            return jsonify({
+                'success': False,
+                'error': 'No image provided'
+            }), 400
+        
+        # Save uploaded image temporarily
+        filename = secure_filename(image_file.filename)
+        temp_path = os.path.join('temp', f"health_diagnostic_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}")
+        os.makedirs('temp', exist_ok=True)
+        image_file.save(temp_path)
+        
+        try:
+            # Perform health diagnosis
+            diagnosis_result = diagnose_orchid_health_from_photo(temp_path, user_notes)
+            
+            # Clean up temporary file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            
+            logger.info(f"🏥 Health diagnosis completed - Status: {diagnosis_result.get('health_diagnosis', {}).get('health_assessment', {}).get('overall_status', 'unknown')}")
+            
+            return jsonify({
+                'success': True,
+                'diagnosis': diagnosis_result,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            # Clean up temporary file on error
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise
+            
+    except Exception as e:
+        logger.error(f"Health diagnostic API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+logger.info("🏥 AI Orchid Health Diagnostic API endpoint registered at /api/orchid-health-diagnostic")
+
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
 @app.route('/api/eol-orchid-explorer/<int:orchid_id>')
