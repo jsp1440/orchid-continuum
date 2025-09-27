@@ -14206,108 +14206,10 @@ def growing_condition_matcher():
 
 logger.info("🌱 Personalized Growing Condition Matcher API endpoint registered at /api/growing-condition-matcher")
 
-# Import Breeding Compatibility Predictor
-try:
-    from breeding_compatibility_predictor import predict_orchid_breeding_compatibility, find_breeding_partners
-    logger.info("🧬 Breeding Compatibility Predictor imported successfully")
-except ImportError as e:
-    logger.error(f"Failed to import Breeding Compatibility Predictor: {e}")
-    predict_orchid_breeding_compatibility = None
-    find_breeding_partners = None
+# AI Breeder Assistant Pro is already registered in app.py
+logger.info("🌟 AI Breeder Assistant Pro available via /widgets/ai-breeder-pro")
 
-# Breeding Compatibility Predictor API endpoints
-@app.route('/api/breeding-compatibility', methods=['POST'])
-@csrf.exempt
-def breeding_compatibility():
-    """API endpoint for breeding compatibility prediction"""
-    try:
-        if not predict_orchid_breeding_compatibility:
-            return jsonify({
-                'success': False,
-                'error': 'Breeding compatibility predictor not available'
-            }), 500
-            
-        # Get request data
-        data = request.get_json()
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No data provided'
-            }), 400
-        
-        parent1_id = data.get('parent1_id')
-        parent2_id = data.get('parent2_id')
-        
-        if not parent1_id or not parent2_id:
-            return jsonify({
-                'success': False,
-                'error': 'Both parent1_id and parent2_id are required'
-            }), 400
-        
-        # Validate IDs are different
-        if parent1_id == parent2_id:
-            return jsonify({
-                'success': False,
-                'error': 'Cannot breed an orchid with itself'
-            }), 400
-        
-        include_ai_analysis = data.get('include_ai_analysis', True)
-        
-        # Predict breeding compatibility
-        result = predict_orchid_breeding_compatibility(
-            parent1_id=int(parent1_id),
-            parent2_id=int(parent2_id),
-            include_ai_analysis=include_ai_analysis
-        )
-        
-        logger.info(f"🧬 Breeding compatibility analysis completed for orchids: {parent1_id} × {parent2_id}")
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"Breeding compatibility API error: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 500
-
-@app.route('/api/breeding-partners/<int:orchid_id>')
-@csrf.exempt
-def breeding_partners(orchid_id):
-    """API endpoint for finding breeding partners"""
-    try:
-        if not find_breeding_partners:
-            return jsonify({
-                'success': False,
-                'error': 'Breeding partner finder not available'
-            }), 500
-        
-        # Get query parameters
-        desired_traits = request.args.getlist('traits')
-        max_suggestions = int(request.args.get('max_suggestions', 10))
-        max_suggestions = max(1, min(20, max_suggestions))  # Limit range
-        
-        # Find breeding partners
-        result = find_breeding_partners(
-            orchid_id=orchid_id,
-            desired_traits=desired_traits if desired_traits else None,
-            max_suggestions=max_suggestions
-        )
-        
-        logger.info(f"🔍 Breeding partner search completed for orchid: {orchid_id}")
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"Breeding partners API error: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 500
-
-logger.info("🧬 Breeding Compatibility Predictor API endpoints registered at /api/breeding-compatibility and /api/breeding-partners")
+# Old breeding compatibility system removed - using AI Breeder Assistant Pro instead
 
 # Import Adaptive Care Calendar Generator
 try:
@@ -14538,6 +14440,18 @@ def orchid_authentication_capabilities():
 
 logger.info("🔍 Orchid Authentication API endpoints registered at /api/orchid-authentication and /api/orchid-authentication-capabilities")
 
+# Import Master AI Widget Manager
+try:
+    from master_ai_widget_manager import ai_widget_manager
+    app.register_blueprint(ai_widget_manager)
+    logger.info("🧠 Master AI Widget Manager registered successfully at /ai-widget-manager")
+except ImportError as e:
+    logger.error(f"Failed to import Master AI Widget Manager: {e}")
+except Exception as e:
+    logger.warning(f"Master AI Widget Manager registration issue: {e}")
+
+logger.info("🧠 Master AI Orchid Widget Manager - Autonomous monitoring and optimization system active")
+
 # Master Orchid Grower Dashboard route
 @app.route('/master-grower-dashboard')
 def master_grower_dashboard():
@@ -14555,10 +14469,10 @@ def growing_condition_widget():
     """Personalized Growing Condition Matcher widget"""
     return render_template('widgets/growing_condition_matcher.html')
 
-@app.route('/widgets/breeding-compatibility-predictor')
-def breeding_predictor_widget():
-    """Breeding Compatibility Predictor widget"""
-    return render_template('widgets/breeding_compatibility_predictor.html')
+@app.route('/widgets/ai-breeder-pro')
+def ai_breeder_pro_widget():
+    """AI Breeder Assistant Pro widget - superior breeding system"""
+    return render_template('ai_breeder_pro/widget_home.html')
 
 @app.route('/widgets/adaptive-care-calendar')
 def care_calendar_widget():
