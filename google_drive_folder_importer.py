@@ -18,7 +18,7 @@ from validation_integration import ScraperValidationSystem, create_validated_orc
 from google_drive_service import get_drive_service
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class GoogleDriveFolderImporter:
@@ -73,7 +73,11 @@ class GoogleDriveFolderImporter:
                 logger.info(f"📁 Found {len(items)} items in folder")
                 
                 for item in items:
+                    # Debug: Show all files found
+                    logger.debug(f"   📄 Found file: {item.get('name', 'Unknown')} (type: {item.get('mimeType', 'Unknown')})")
+                    
                     if self.is_orchid_image(item):
+                        logger.info(f"   🌺 Processing: {item.get('name', 'Unknown')}")
                         processed = self.process_orchid_file(item, folder_url)
                         if processed:
                             self.collected_count += 1
@@ -86,6 +90,8 @@ class GoogleDriveFolderImporter:
                             logger.info(f"   ✅ Committed batch of 5 records")
                         
                         time.sleep(1)  # Be respectful to API
+                    else:
+                        logger.debug(f"   ⏭️ Skipping non-orchid file: {item.get('name', 'Unknown')}")
                 
                 # Final commit
                 db.session.commit()
