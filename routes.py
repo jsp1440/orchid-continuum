@@ -14144,6 +14144,68 @@ def orchid_health_diagnostic():
 
 logger.info("🏥 AI Orchid Health Diagnostic API endpoint registered at /api/orchid-health-diagnostic")
 
+# Import Personalized Growing Condition Matcher
+try:
+    from personalized_growing_condition_matcher import find_optimal_orchids_for_user
+    logger.info("🌱 Personalized Growing Condition Matcher imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import Personalized Growing Condition Matcher: {e}")
+    find_optimal_orchids_for_user = None
+
+# Personalized Growing Condition Matcher API endpoint
+@app.route('/api/growing-condition-matcher', methods=['POST'])
+def growing_condition_matcher():
+    """API endpoint for personalized growing condition matching"""
+    try:
+        if not find_optimal_orchids_for_user:
+            return jsonify({
+                'success': False,
+                'error': 'Growing condition matcher not available'
+            }), 500
+            
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        user_location = data.get('location')
+        if not user_location:
+            return jsonify({
+                'success': False,
+                'error': 'Location is required'
+            }), 400
+        
+        # Parse growing setup data
+        growing_setup = data.get('growing_setup', {})
+        max_recommendations = data.get('max_recommendations', 10)
+        
+        # Validate max_recommendations
+        max_recommendations = max(1, min(20, int(max_recommendations)))
+        
+        # Find optimal orchids
+        result = find_optimal_orchids_for_user(
+            user_location=user_location,
+            growing_setup_data=growing_setup,
+            max_recommendations=max_recommendations
+        )
+        
+        logger.info(f"🌱 Growing condition match completed for location: {user_location}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Growing condition matcher API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+logger.info("🌱 Personalized Growing Condition Matcher API endpoint registered at /api/growing-condition-matcher")
+
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
 @app.route('/api/eol-orchid-explorer/<int:orchid_id>')

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Orchid Matcher - The Orchid Continuum</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        :root {
+            --orchid-primary: #8A2BE2;
+            --orchid-secondary: #9370DB;
+            --orchid-accent: #BA55D3;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .growing-condition-matcher {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1000px;
+            margin: 2rem auto;
+        }
+        
+        .matcher-header {
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-accent));
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-icon {
+            font-size: 3rem;
+            opacity: 0.9;
+        }
+        
+        .matcher-icon {
+            width: 48px;
+            height: 48px;
+            stroke-width: 1.5;
+        }
+        
+        .header-text h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .matcher-setup-section {
+            padding: 2rem;
+        }
+        
+        .setup-wizard {
+            margin-bottom: 2rem;
+        }
+        
+        .wizard-step {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .wizard-step.active {
+            display: block;
+        }
+        
+        .wizard-step h4 {
+            color: var(--orchid-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .location-input-group {
+            margin-top: 1rem;
+        }
+        
+        .environment-options,
+        .preferences-options {
+            margin-top: 1rem;
+        }
+        
+        .supplemental-systems {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--orchid-primary);
+        }
+        
+        .wizard-navigation {
+            text-align: center;
+            padding-top: 1rem;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .wizard-navigation .btn {
+            margin: 0 0.5rem;
+        }
+        
+        .matcher-progress {
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .progress-content .spinner-border {
+            width: 4rem;
+            height: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-content h4 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 2rem;
+        }
+        
+        .results-content {
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .results-header h4 {
+            color: var(--success-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .climate-summary {
+            margin-top: 1rem;
+        }
+        
+        .climate-summary .badge {
+            margin: 0 0.25rem;
+        }
+        
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .recommendation-card .card {
+            height: 100%;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            transition: transform 0.2s ease;
+        }
+        
+        .recommendation-card .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .recommendation-card .card-img-top {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .match-score {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+        
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .score-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .compatibility-breakdown {
+            font-size: 0.9rem;
+        }
+        
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+        
+        .breakdown-icon {
+            width: 14px;
+            height: 14px;
+            margin-right: 0.5rem;
+            opacity: 0.7;
+        }
+        
+        .care-difficulty .badge {
+            font-size: 0.8rem;
+        }
+        
+        .recommendation-reasons {
+            margin-top: 1rem;
+        }
+        
+        .recommendation-reasons h6 {
+            color: #333;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .reasons-list {
+            font-size: 0.85rem;
+            margin: 0;
+            padding-left: 1rem;
+        }
+        
+        .reasons-list li {
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+        
+        .care-insights-section,
+        .seasonal-calendar-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .insight-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .insight-card h6 {
+            color: var(--orchid-primary);
+            margin-bottom: 0.75rem;
+        }
+        
+        .season-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            height: 100%;
+        }
+        
+        .season-title {
+            color: var(--orchid-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .season-priorities,
+        .season-watch {
+            margin-bottom: 1rem;
+        }
+        
+        .season-priorities strong,
+        .season-watch strong {
+            color: #333;
+            font-size: 0.85rem;
+        }
+        
+        .season-priorities ul,
+        .season-watch ul {
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+        }
+        
+        .season-priorities li,
+        .season-watch li {
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+        
+        .actions-section {
+            border-top: 1px solid #e1e5e9;
+            padding-top: 1.5rem;
+        }
+        
+        .bg-orange {
+            background-color: #fd7e14 !important;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .growing-condition-matcher {
+                margin: 1rem;
+                border-radius: 15px;
+            }
+            
+            .matcher-header {
+                padding: 1.5rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .matcher-setup-section,
+            .results-content {
+                padding: 1.5rem;
+            }
+            
+            .recommendations-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .wizard-navigation .btn {
+                margin: 0.25rem;
+                width: 45%;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Form styling improvements */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--orchid-primary);
+            box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--orchid-primary);
+            border-color: var(--orchid-primary);
+        }
+        
+        .form-check-input:focus {
+            border-color: var(--orchid-secondary);
+            box-shadow: 0 0 0 0.2rem rgba(138, 43, 226, 0.25);
+        }
+        
+        /* Modal improvements */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-accent));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div id="growing-condition-matcher-widget" class="growing-condition-matcher">
+            <!-- Widget content will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Growing Condition Matcher Widget -->
+    <script src="{{ url_for('static', filename='js/growing-condition-matcher.js') }}"></script>
+    
+    <script>
+        // Initialize Feather icons
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+    </script>
+</body>
+</html>
