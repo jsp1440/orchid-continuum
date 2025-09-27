@@ -14403,6 +14403,141 @@ def care_calendar_templates():
 
 logger.info("🗓️ Adaptive Care Calendar API endpoints registered at /api/care-calendar and /api/care-calendar-templates")
 
+# Import Orchid Authentication Detector
+try:
+    from orchid_authentication_detector import authenticate_orchid_image, get_authentication_capabilities
+    logger.info("🔍 Orchid Authentication Detector imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import Orchid Authentication Detector: {e}")
+    authenticate_orchid_image = None
+    get_authentication_capabilities = None
+
+# Orchid Authentication API endpoints
+@app.route('/api/orchid-authentication', methods=['POST'])
+@csrf.exempt
+def orchid_authentication():
+    """API endpoint for orchid authentication and mislabeling detection"""
+    try:
+        if not authenticate_orchid_image:
+            return jsonify({
+                'success': False,
+                'error': 'Orchid authentication service not available'
+            }), 500
+            
+        # Handle different content types
+        image_data = None
+        claimed_identity = None
+        additional_info = None
+        
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            # Handle file upload
+            if 'image' not in request.files:
+                return jsonify({
+                    'success': False,
+                    'error': 'No image file provided'
+                }), 400
+            
+            file = request.files['image']
+            if file.filename == '':
+                return jsonify({
+                    'success': False,
+                    'error': 'No file selected'
+                }), 400
+            
+            # Read image data
+            image_data = file.read()
+            
+            # Get form data
+            claimed_identity = {}
+            if request.form.get('genus'):
+                claimed_identity['genus'] = request.form.get('genus')
+            if request.form.get('species'):
+                claimed_identity['species'] = request.form.get('species')
+            if request.form.get('hybrid_name'):
+                claimed_identity['hybrid_name'] = request.form.get('hybrid_name')
+            
+            if not claimed_identity:
+                claimed_identity = None
+                
+            additional_info = {
+                'source': request.form.get('source', 'unknown'),
+                'seller_info': request.form.get('seller_info', ''),
+                'price_paid': request.form.get('price_paid', '')
+            }
+            
+        else:
+            # Handle JSON data
+            data = request.get_json()
+            if not data:
+                return jsonify({
+                    'success': False,
+                    'error': 'No data provided'
+                }), 400
+            
+            image_data = data.get('image_data')
+            if not image_data:
+                return jsonify({
+                    'success': False,
+                    'error': 'image_data is required'
+                }), 400
+            
+            claimed_identity = data.get('claimed_identity')
+            additional_info = data.get('additional_info')
+        
+        # Validate image data
+        if not image_data:
+            return jsonify({
+                'success': False,
+                'error': 'No image data received'
+            }), 400
+        
+        # Perform authentication
+        result = authenticate_orchid_image(
+            image_data=image_data,
+            claimed_identity=claimed_identity,
+            additional_info=additional_info
+        )
+        
+        if result.get('success'):
+            logger.info(f"🔍 Orchid authentication completed: {result['authentication_result']['authenticity_level']} "
+                       f"({result['authentication_result']['overall_confidence']:.1f}% confidence)")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Orchid authentication API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/orchid-authentication-capabilities')
+@csrf.exempt
+def orchid_authentication_capabilities():
+    """API endpoint for getting orchid authentication capabilities"""
+    try:
+        if not get_authentication_capabilities:
+            return jsonify({
+                'success': False,
+                'error': 'Orchid authentication capabilities not available'
+            }), 500
+        
+        result = get_authentication_capabilities()
+        
+        logger.info("🔍 Orchid authentication capabilities retrieved successfully")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Authentication capabilities API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+logger.info("🔍 Orchid Authentication API endpoints registered at /api/orchid-authentication and /api/orchid-authentication-capabilities")
+
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
 @app.route('/api/eol-orchid-explorer/<int:orchid_id>')
