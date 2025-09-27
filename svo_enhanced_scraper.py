@@ -15,7 +15,7 @@ from urllib.parse import urljoin, urlparse
 import re
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app import app, db
