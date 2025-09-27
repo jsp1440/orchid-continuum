@@ -196,12 +196,20 @@ class ScraperValidationSystem:
         }
         
         try:
-            # Check for reasonable scientific name format
+            # Determine if this is a hybrid orchid
+            is_hybrid = self._is_hybrid_orchid(record_data, genus)
+            
+            # Check for reasonable scientific name format with different rules for hybrids
             scientific_name = record_data.get('scientific_name', '')
             if scientific_name:
-                if not self._validate_scientific_name_format(scientific_name):
-                    result['issues'].append("Invalid scientific name format")
-                    result['confidence'] *= 0.8
+                if is_hybrid:
+                    if not self._validate_hybrid_name_format(scientific_name):
+                        result['issues'].append("Invalid hybrid name format")
+                        result['confidence'] *= 0.9  # More lenient for hybrids
+                else:
+                    if not self._validate_scientific_name_format(scientific_name):
+                        result['issues'].append("Invalid scientific name format")
+                        result['confidence'] *= 0.8
             
             # Check for suspicious content (like insect families)
             display_name = record_data.get('display_name', '')
@@ -216,8 +224,11 @@ class ScraperValidationSystem:
                 result['issues'].append("Data from non-credible source")
                 result['confidence'] *= 0.7
             
+            # Set different confidence thresholds for hybrids vs species
+            confidence_threshold = 0.4 if is_hybrid else 0.6
+            
             # Set passed status based on confidence
-            if result['confidence'] < 0.6:
+            if result['confidence'] < confidence_threshold:
                 result['passed'] = False
             
         except Exception as e:
@@ -226,6 +237,66 @@ class ScraperValidationSystem:
             result['confidence'] = 0.0
         
         return result
+    
+    def _is_hybrid_orchid(self, record_data: Dict, genus: str) -> bool:
+        """Determine if this is a hybrid orchid based on multiple indicators"""
+        
+        # Check explicit hybrid flag
+        if record_data.get('is_hybrid'):
+            return True
+        
+        # Check for intergeneric hybrid genera
+        intergeneric_hybrids = {
+            'Potinara', 'Brassolaeliocattleya', 'Laeliocattleya', 
+            'Sophrolaeliocattleya', 'Brassocattleya', 'Rhyncholaeliocattleya',
+            'Cattleyonia', 'Vuylstekeara'
+        }
+        if genus in intergeneric_hybrids:
+            return True
+        
+        # Check for hybrid indicators in names
+        text_to_check = ' '.join([
+            record_data.get('display_name', ''),
+            record_data.get('scientific_name', ''),
+            record_data.get('ai_description', '')
+        ]).lower()
+        
+        hybrid_indicators = ['x ', ' x ', 'cross', 'hybrid', 'grex', 'breeding']
+        if any(indicator in text_to_check for indicator in hybrid_indicators):
+            return True
+        
+        # Check source indicates hybrids
+        source = record_data.get('ingestion_source', '')
+        if 'hybrid' in source.lower() or 'svo' in source.lower():
+            return True
+        
+        return False
+    
+    def _validate_hybrid_name_format(self, scientific_name: str) -> bool:
+        """Validate hybrid name format - more flexible than species names"""
+        import re
+        
+        if not scientific_name or len(scientific_name.strip()) < 3:
+            return False
+        
+        name = scientific_name.strip()
+        
+        # Allow various hybrid naming patterns:
+        # 1. Traditional: Genus species
+        # 2. Cultivar: Genus 'Cultivar Name'
+        # 3. Cross: Genus Parent1 x Parent2
+        # 4. Grex: Genus Grex Name
+        # 5. Intergeneric: ComplexGenus Name
+        
+        hybrid_patterns = [
+            r'^[A-Z][a-zA-Z]+ [A-Za-z\s\'"×x\-\.]+$',  # General hybrid pattern
+            r'^[A-Z][a-zA-Z]+ \'[^\']+\'$',              # Cultivar format 'Name'
+            r'^[A-Z][a-zA-Z]+ [A-Za-z\s]+ [×x] [A-Za-z\s]+$',  # Cross format Parent1 x Parent2
+            r'^[A-Z][a-zA-Z]+ [A-Z][a-zA-Z\s]+$',       # Grex or cultivar names
+            r'^\d+[A-Z]* [A-Z][a-zA-Z]+ [A-Za-z\s]+$'   # Numbered hybrids like "2811T Pot Name"
+        ]
+        
+        return any(re.match(pattern, name) for pattern in hybrid_patterns)
     
     def _validate_scientific_name_format(self, scientific_name: str) -> bool:
         """Validate basic scientific name format (Genus species)"""
@@ -263,6 +334,10 @@ class ScraperValidationSystem:
             'gary_json_data',
             'roberta_fox_comprehensive',
             'svo_hybrids',
+            'google_drive_svo_direct',
+            'google_drive_svo_hybrids',
+            'google_sheets_import',
+            'gbif_botanical_service',
             'manual_entry',
             'ai_analysis'
         ]
