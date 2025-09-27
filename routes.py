@@ -14077,5 +14077,93 @@ try:
 except ImportError:
     logger.warning("⚠️ OrchidAI Research Hub blueprint not available for registration")
 
+# EOL Orchid Explorer Widget API
+@app.route('/api/eol-orchid-explorer')
+@app.route('/api/eol-orchid-explorer/<int:orchid_id>')
+def eol_orchid_explorer(orchid_id=None):
+    """EOL Orchid Explorer Widget API - provides EOL data for orchid exploration"""
+    try:
+        eol_integrator = EOLIntegrator()
+        
+        if orchid_id:
+            # Get specific orchid with EOL enhancement
+            orchid = OrchidRecord.query.get(orchid_id)
+            if not orchid:
+                return jsonify({'error': 'Orchid not found'}), 404
+            
+            # Get EOL data for this specific orchid
+            eol_data = eol_integrator.search_eol_species(orchid.scientific_name)
+            
+            # Get related species from your database
+            related_orchids = OrchidRecord.query.filter(
+                OrchidRecord.genus == orchid.genus,
+                OrchidRecord.id != orchid.id
+            ).limit(6).all()
+            
+            response_data = {
+                'orchid': {
+                    'id': orchid.id,
+                    'scientific_name': orchid.scientific_name,
+                    'display_name': orchid.display_name,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'image_filename': orchid.image_filename,
+                    'ai_description': orchid.ai_description
+                },
+                'eol_data': eol_data,
+                'related_species': [{
+                    'id': r.id,
+                    'scientific_name': r.scientific_name,
+                    'display_name': r.display_name,
+                    'image_filename': r.image_filename
+                } for r in related_orchids]
+            }
+        else:
+            # Get random EOL-enhanced orchids for exploration
+            enhanced_orchids = OrchidRecord.query.filter(
+                OrchidRecord.genus.isnot(None),
+                OrchidRecord.species.isnot(None),
+                OrchidRecord.image_filename.isnot(None)
+            ).order_by(func.random()).limit(12).all()
+            
+            orchid_data = []
+            for orchid in enhanced_orchids:
+                # Try to get cached EOL data or search
+                eol_data = eol_integrator.search_eol_species(orchid.scientific_name)
+                
+                orchid_data.append({
+                    'id': orchid.id,
+                    'scientific_name': orchid.scientific_name,
+                    'display_name': orchid.display_name,
+                    'genus': orchid.genus,
+                    'species': orchid.species,
+                    'image_filename': orchid.image_filename,
+                    'eol_summary': {
+                        'has_eol_data': bool(eol_data),
+                        'eol_images_count': len(eol_data.get('images', [])) if eol_data else 0,
+                        'conservation_status': eol_data.get('conservation_status') if eol_data else None
+                    }
+                })
+            
+            response_data = {
+                'featured_orchids': orchid_data,
+                'total_database_size': OrchidRecord.query.count(),
+                'eol_integration_status': 'active'
+            }
+        
+        return jsonify({
+            'status': 'success',
+            'timestamp': datetime.now().isoformat(),
+            'data': response_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in EOL Orchid Explorer API: {e}")
+        return jsonify({
+            'error': 'Failed to load EOL orchid data',
+            'details': str(e)
+        }), 500
+
+logger.info("🌺 EOL Orchid Explorer API endpoint registered at /api/eol-orchid-explorer")
 logger.info("🤖 AI Research API endpoints registered successfully at /api/ai-research/*")
 
