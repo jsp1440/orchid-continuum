@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for, send_file, session, Response, abort, make_response
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app import app, db
+from app import app, db, csrf
 from models import (OrchidRecord, OrchidTaxonomy, UserUpload, ScrapingLog, WidgetConfig, 
                    User, JudgingAnalysis, Certificate, BatchUpload, UserFeedback, WeatherData, UserLocation, WeatherAlert, WorkshopRegistration, BugReport,
                    MemberCollection, ExternalDatabaseCache, ResearchCollaboration, LiteratureCitation, Pollinator, AdvancedOrchidPollinatorRelationship)
@@ -14205,6 +14205,109 @@ def growing_condition_matcher():
         }), 500
 
 logger.info("🌱 Personalized Growing Condition Matcher API endpoint registered at /api/growing-condition-matcher")
+
+# Import Breeding Compatibility Predictor
+try:
+    from breeding_compatibility_predictor import predict_orchid_breeding_compatibility, find_breeding_partners
+    logger.info("🧬 Breeding Compatibility Predictor imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import Breeding Compatibility Predictor: {e}")
+    predict_orchid_breeding_compatibility = None
+    find_breeding_partners = None
+
+# Breeding Compatibility Predictor API endpoints
+@app.route('/api/breeding-compatibility', methods=['POST'])
+@csrf.exempt
+def breeding_compatibility():
+    """API endpoint for breeding compatibility prediction"""
+    try:
+        if not predict_orchid_breeding_compatibility:
+            return jsonify({
+                'success': False,
+                'error': 'Breeding compatibility predictor not available'
+            }), 500
+            
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        parent1_id = data.get('parent1_id')
+        parent2_id = data.get('parent2_id')
+        
+        if not parent1_id or not parent2_id:
+            return jsonify({
+                'success': False,
+                'error': 'Both parent1_id and parent2_id are required'
+            }), 400
+        
+        # Validate IDs are different
+        if parent1_id == parent2_id:
+            return jsonify({
+                'success': False,
+                'error': 'Cannot breed an orchid with itself'
+            }), 400
+        
+        include_ai_analysis = data.get('include_ai_analysis', True)
+        
+        # Predict breeding compatibility
+        result = predict_orchid_breeding_compatibility(
+            parent1_id=int(parent1_id),
+            parent2_id=int(parent2_id),
+            include_ai_analysis=include_ai_analysis
+        )
+        
+        logger.info(f"🧬 Breeding compatibility analysis completed for orchids: {parent1_id} × {parent2_id}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Breeding compatibility API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/breeding-partners/<int:orchid_id>')
+@csrf.exempt
+def breeding_partners(orchid_id):
+    """API endpoint for finding breeding partners"""
+    try:
+        if not find_breeding_partners:
+            return jsonify({
+                'success': False,
+                'error': 'Breeding partner finder not available'
+            }), 500
+        
+        # Get query parameters
+        desired_traits = request.args.getlist('traits')
+        max_suggestions = int(request.args.get('max_suggestions', 10))
+        max_suggestions = max(1, min(20, max_suggestions))  # Limit range
+        
+        # Find breeding partners
+        result = find_breeding_partners(
+            orchid_id=orchid_id,
+            desired_traits=desired_traits if desired_traits else None,
+            max_suggestions=max_suggestions
+        )
+        
+        logger.info(f"🔍 Breeding partner search completed for orchid: {orchid_id}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Breeding partners API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+logger.info("🧬 Breeding Compatibility Predictor API endpoints registered at /api/breeding-compatibility and /api/breeding-partners")
 
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
