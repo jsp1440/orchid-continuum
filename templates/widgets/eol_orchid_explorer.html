@@ -1,0 +1,363 @@
+<!-- EOL Orchid Explorer Widget Template -->
+<!-- Usage: Include this template and initialize with JavaScript -->
+
+<div class="eol-orchid-explorer-widget">
+    <!-- Basic Widget -->
+    <div id="eol-explorer-basic" 
+         class="mb-4" 
+         data-eol-orchid-explorer 
+         data-mode="explore" 
+         data-auto-refresh="300000">
+    </div>
+    
+    <!-- Species-Specific Widget (if orchid_id provided) -->
+    {% if orchid_id %}
+    <div id="eol-explorer-species-{{ orchid_id }}" 
+         class="mb-4" 
+         data-eol-orchid-explorer 
+         data-orchid-id="{{ orchid_id }}" 
+         data-mode="species">
+    </div>
+    {% endif %}
+    
+    <!-- Conservation Focus Widget -->
+    <div id="eol-explorer-conservation" 
+         class="mb-4" 
+         data-eol-orchid-explorer 
+         data-mode="conservation" 
+         data-show-images="true" 
+         data-auto-refresh="600000">
+    </div>
+</div>
+
+<!-- Required CSS -->
+<style>
+.eol-orchid-explorer {
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #28a745;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+    margin-bottom: 20px;
+}
+
+.eol-widget-header {
+    border-bottom: 1px solid #28a745;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.eol-widget-header h5 {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.eol-controls .btn {
+    border-color: #28a745;
+    color: #28a745;
+    transition: all 0.3s ease;
+}
+
+.eol-controls .btn:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.eol-content {
+    min-height: 200px;
+}
+
+.eol-orchid-card,
+.eol-species-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid #444 !important;
+}
+
+.eol-orchid-card:hover,
+.eol-species-card:hover {
+    transform: translateY(-3px);
+    border-color: #28a745 !important;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.eol-grid-image,
+.eol-related-image {
+    height: 150px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+}
+
+.eol-main-image {
+    height: 250px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.eol-gallery-image {
+    height: 80px;
+    width: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.eol-gallery-image:hover {
+    transform: scale(1.05);
+}
+
+.eol-no-image,
+.eol-no-image-small,
+.eol-no-image-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(68, 68, 68, 0.3);
+    color: #666;
+    border-radius: 8px;
+}
+
+.eol-no-image {
+    height: 250px;
+}
+
+.eol-no-image-small {
+    height: 120px;
+}
+
+.eol-no-image-grid {
+    height: 150px;
+}
+
+.eol-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.eol-conservation-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.eol-conservation-badge.bg-danger {
+    background: rgba(220, 53, 69, 0.9) !important;
+    color: white;
+}
+
+.eol-conservation-badge.bg-warning {
+    background: rgba(255, 193, 7, 0.9) !important;
+    color: #000;
+}
+
+.eol-conservation-badge.bg-info {
+    background: rgba(13, 202, 240, 0.9) !important;
+    color: white;
+}
+
+.eol-conservation-badge.bg-success {
+    background: rgba(25, 135, 84, 0.9) !important;
+    color: white;
+}
+
+.eol-status-indicators .badge {
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.eol-external-data {
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.eol-footer {
+    border-top: 1px solid #444;
+    padding-top: 10px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.eol-footer a {
+    text-decoration: none;
+    color: #28a745;
+    font-weight: 500;
+}
+
+.eol-footer a:hover {
+    color: #20c997;
+}
+
+.feather-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+/* Loading and Error States */
+.eol-loading .spinner-border {
+    color: #28a745;
+}
+
+.eol-error {
+    color: #ffc107;
+}
+
+.eol-retry-btn {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.eol-retry-btn:hover {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .eol-orchid-explorer {
+        padding: 15px;
+    }
+    
+    .eol-grid-image,
+    .eol-related-image {
+        height: 120px;
+    }
+    
+    .eol-main-image {
+        height: 200px;
+    }
+    
+    .eol-controls {
+        margin-top: 10px;
+    }
+}
+
+/* Dark theme adjustments */
+.eol-orchid-explorer .card-body {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.eol-orchid-explorer .text-light {
+    color: #f8f9fa !important;
+}
+
+.eol-orchid-explorer .text-muted {
+    color: #adb5bd !important;
+}
+
+.eol-orchid-explorer .text-success {
+    color: #28a745 !important;
+}
+
+/* Animation for widget loading */
+.eol-orchid-explorer {
+    animation: eolFadeIn 0.5s ease-in-out;
+}
+
+@keyframes eolFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<!-- Required JavaScript -->
+<script src="{{ url_for('static', filename='js/eol-orchid-explorer.js') }}"></script>
+
+<!-- Initialize widgets if auto-initialization is disabled -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manual initialization example
+    {% if manual_init %}
+    // Basic exploration widget
+    new EOLOrchidExplorer('eol-explorer-basic', {
+        mode: 'explore',
+        autoRefresh: 300000,
+        showImages: true,
+        showTaxonomy: true,
+        showConservation: true
+    });
+    
+    {% if orchid_id %}
+    // Species-specific widget
+    new EOLOrchidExplorer('eol-explorer-species-{{ orchid_id }}', {
+        orchidId: {{ orchid_id }},
+        mode: 'species',
+        showImages: true,
+        showTaxonomy: true,
+        showConservation: true
+    });
+    {% endif %}
+    
+    // Conservation focus widget
+    new EOLOrchidExplorer('eol-explorer-conservation', {
+        mode: 'conservation',
+        autoRefresh: 600000,
+        showImages: true,
+        showConservation: true
+    });
+    {% endif %}
+    
+    // Custom initialization hook
+    if (typeof window.initEOLWidgets === 'function') {
+        window.initEOLWidgets();
+    }
+});
+</script>
+
+<!-- Documentation -->
+<!--
+EOL Orchid Explorer Widget Usage:
+
+1. Basic Usage (Auto-initialization):
+   Just include this template - widgets will initialize automatically
+
+2. Manual Initialization:
+   new EOLOrchidExplorer('container-id', {
+       mode: 'explore',          // 'explore', 'species', 'conservation'
+       orchidId: null,           // Specific orchid ID for species mode
+       showImages: true,         // Show EOL images
+       showTaxonomy: true,       // Show taxonomic information
+       showConservation: true,   // Show conservation status
+       autoRefresh: 300000,      // Auto-refresh interval (ms)
+       maxImages: 6              // Maximum EOL images to show
+   });
+
+3. Template Variables:
+   - orchid_id: Specific orchid ID for species-specific display
+   - manual_init: Set to true to disable auto-initialization
+
+4. Integration with existing pages:
+   {% include 'widgets/eol_orchid_explorer.html' with context %}
+   
+5. Custom styling:
+   Override CSS classes with !important or increase specificity
+-->
