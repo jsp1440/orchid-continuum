@@ -14309,6 +14309,100 @@ def breeding_partners(orchid_id):
 
 logger.info("🧬 Breeding Compatibility Predictor API endpoints registered at /api/breeding-compatibility and /api/breeding-partners")
 
+# Import Adaptive Care Calendar Generator
+try:
+    from adaptive_care_calendar import generate_adaptive_care_calendar, get_care_calendar_templates
+    logger.info("🗓️ Adaptive Care Calendar Generator imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import Adaptive Care Calendar Generator: {e}")
+    generate_adaptive_care_calendar = None
+    get_care_calendar_templates = None
+
+# Adaptive Care Calendar API endpoints
+@app.route('/api/care-calendar', methods=['POST'])
+@csrf.exempt
+def generate_care_calendar():
+    """API endpoint for generating adaptive care calendars"""
+    try:
+        if not generate_adaptive_care_calendar:
+            return jsonify({
+                'success': False,
+                'error': 'Care calendar generator not available'
+            }), 500
+            
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        orchid_id = data.get('orchid_id')
+        if not orchid_id:
+            return jsonify({
+                'success': False,
+                'error': 'orchid_id is required'
+            }), 400
+        
+        duration_days = data.get('duration_days', 90)
+        location = data.get('location')
+        user_preferences = data.get('user_preferences', {})
+        
+        # Validate duration
+        if not (7 <= duration_days <= 365):
+            return jsonify({
+                'success': False,
+                'error': 'duration_days must be between 7 and 365 days'
+            }), 400
+        
+        # Generate adaptive care calendar
+        result = generate_adaptive_care_calendar(
+            orchid_id=int(orchid_id),
+            duration_days=int(duration_days),
+            location=location,
+            user_preferences=user_preferences
+        )
+        
+        if result.get('success'):
+            logger.info(f"🗓️ Generated adaptive care calendar for orchid: {orchid_id}, duration: {duration_days} days")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Care calendar API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/care-calendar-templates')
+@csrf.exempt  
+def care_calendar_templates():
+    """API endpoint for getting care calendar templates and options"""
+    try:
+        if not get_care_calendar_templates:
+            return jsonify({
+                'success': False,
+                'error': 'Care calendar templates not available'
+            }), 500
+        
+        result = get_care_calendar_templates()
+        
+        logger.info("🗓️ Care calendar templates retrieved successfully")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Care calendar templates API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+logger.info("🗓️ Adaptive Care Calendar API endpoints registered at /api/care-calendar and /api/care-calendar-templates")
+
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
 @app.route('/api/eol-orchid-explorer/<int:orchid_id>')
