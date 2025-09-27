@@ -14538,6 +14538,40 @@ def orchid_authentication_capabilities():
 
 logger.info("🔍 Orchid Authentication API endpoints registered at /api/orchid-authentication and /api/orchid-authentication-capabilities")
 
+# Master Orchid Grower Dashboard route
+@app.route('/master-grower-dashboard')
+def master_grower_dashboard():
+    """Master dashboard combining all specialized grower tools"""
+    return render_template('master_grower_dashboard.html')
+
+# Widget routes for individual tools
+@app.route('/widgets/ai-orchid-health-diagnostic')
+def health_diagnostic_widget():
+    """AI Orchid Health Diagnostic widget"""
+    return render_template('widgets/orchid_health_diagnostic.html')
+
+@app.route('/widgets/personalized-growing-condition-matcher')  
+def growing_condition_widget():
+    """Personalized Growing Condition Matcher widget"""
+    return render_template('widgets/growing_condition_matcher.html')
+
+@app.route('/widgets/breeding-compatibility-predictor')
+def breeding_predictor_widget():
+    """Breeding Compatibility Predictor widget"""
+    return render_template('widgets/breeding_compatibility_predictor.html')
+
+@app.route('/widgets/adaptive-care-calendar')
+def care_calendar_widget():
+    """Adaptive Care Calendar widget"""
+    return render_template('widgets/adaptive_care_calendar.html')
+
+@app.route('/widgets/orchid-authentication-detector')
+def authentication_widget():
+    """Orchid Authentication Detector widget"""
+    return render_template('widgets/orchid_authentication_detector.html')
+
+logger.info("🏠 Master Grower Dashboard and widget routes registered")
+
 # EOL Orchid Explorer Widget API
 @app.route('/api/eol-orchid-explorer')
 @app.route('/api/eol-orchid-explorer/<int:orchid_id>')
