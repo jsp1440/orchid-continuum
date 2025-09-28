@@ -15,7 +15,9 @@ from models import *  # Import all models
 config = context.config
 
 # Set the database URL from environment
-config.set_main_option('sqlalchemy.url', os.environ.get('DATABASE_URL'))
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    config.set_main_option('sqlalchemy.url', database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -61,7 +63,6 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             process_revision_directives=process_revision_directives,
-            **config.get_section(config.config_ini_section, {})
         )
 
         with context.begin_transaction():
