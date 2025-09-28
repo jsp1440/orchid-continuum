@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% set page_title = "Photo Source Verification - FCOS" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary mb-3">
+                    <i data-feather="camera" class="me-3"></i>Photo Source Verification
+                </h1>
+                <p class="lead text-muted">Track photo sources and ensure authenticity</p>
+            </div>
+
+            <!-- Photo Sources Summary -->
+            <div class="row mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="mb-0"><i data-feather="pie-chart" class="me-2"></i>Photo Sources Overview</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4 mb-3">
+                                    <div class="card bg-success text-white h-100">
+                                        <div class="card-body">
+                                            <i data-feather="check-circle" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                            <h4 class="mb-1">{{ sources.fcos_collection or 0 }}</h4>
+                                            <small>FCOS Collection</small>
+                                            <div class="small mt-1">✓ Society Verified</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card bg-info text-white h-100">
+                                        <div class="card-body">
+                                            <i data-feather="user-check" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                            <h4 class="mb-1">{{ sources.gary_yong_gee or 0 }}</h4>
+                                            <small>Gary Yong Gee</small>
+                                            <div class="small mt-1">✓ Expert Verified</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card bg-primary text-white h-100">
+                                        <div class="card-body">
+                                            <i data-feather="award" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                            <h4 class="mb-1">{{ sources.aos_roberta_fox or 0 }}</h4>
+                                            <small>AOS/Roberta Fox</small>
+                                            <div class="small mt-1">✓ AOS Verified</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row text-center">
+                                <div class="col-md-3 mb-3">
+                                    <div class="card bg-dark text-white h-100">
+                                        <div class="card-body">
+                                            <i data-feather="database" class="mb-2" style="width: 24px; height: 24px;"></i>
+                                            <h5 class="mb-1">{{ sources.gbif_scientific or 0 }}</h5>
+                                            <small>GBIF Scientific</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card bg-secondary text-white h-100">
+                                        <div class="card-body">
+                                            <i data-feather="users" class="mb-2" style="width: 24px; height: 24px;"></i>
+                                            <h5 class="mb-1">{{ sources.user_uploads or 0 }}</h5>
+                                            <small>User Uploads</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card bg-warning text-dark h-100">
+                                        <div class="card-body">
+                                            <i data-feather="help-circle" class="mb-2" style="width: 24px; height: 24px;"></i>
+                                            <h5 class="mb-1">{{ sources.unknown_web or 0 }}</h5>
+                                            <small>Unknown Web</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card bg-light text-dark h-100">
+                                        <div class="card-body">
+                                            <i data-feather="x-circle" class="mb-2" style="width: 24px; height: 24px;"></i>
+                                            <h5 class="mb-1">{{ sources.no_photo or 0 }}</h5>
+                                            <small>No Photo</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Source Quality Legend -->
+            <div class="row mb-5">
+                <div class="col-lg-10 mx-auto">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="text-primary mb-0"><i data-feather="info" class="me-2"></i>Source Quality Levels</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-success"><i data-feather="check-circle" class="me-1"></i> Very High Confidence</h6>
+                                    <ul class="small mb-3">
+                                        <li><strong>GBIF Scientific:</strong> Scientifically verified specimens</li>
+                                        <li><strong>FCOS Collection:</strong> Society verified members' photos</li>
+                                    </ul>
+                                    
+                                    <h6 class="text-info"><i data-feather="check" class="me-1"></i> High Confidence</h6>
+                                    <ul class="small mb-3">
+                                        <li><strong>Gary Yong Gee:</strong> Expert orchid photographer</li>
+                                        <li><strong>AOS/Roberta Fox:</strong> American Orchid Society expert</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-secondary"><i data-feather="help-circle" class="me-1"></i> Medium Confidence</h6>
+                                    <ul class="small mb-3">
+                                        <li><strong>User Uploads:</strong> Community contributions (varies)</li>
+                                    </ul>
+                                    
+                                    <h6 class="text-warning"><i data-feather="alert-triangle" class="me-1"></i> Low Confidence</h6>
+                                    <ul class="small mb-3">
+                                        <li><strong>Unknown Web:</strong> Needs verification</li>
+                                        <li><strong>No Photo:</strong> Missing image data</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Verification Tools -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="text-primary mb-0"><i data-feather="search" class="me-2"></i>Verify Photo Source</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">Enter an orchid ID to check its photo source and authenticity information.</p>
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="input-group mb-3">
+                                        <input type="number" class="form-control" id="orchidIdInput" 
+                                               placeholder="Enter Orchid ID (e.g., 1234)">
+                                        <button class="btn btn-primary" type="button" id="checkSourceBtn">
+                                            <i data-feather="search" class="me-1"></i>Check Source
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-secondary w-100" id="randomOrchidBtn">
+                                        <i data-feather="shuffle" class="me-1"></i>Random Check
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Source Information Display -->
+                            <div id="sourceInfo" class="d-none">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary">Source Information</h6>
+                                                <div id="sourceDetails"></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary">Orchid Information</h6>
+                                                <div id="orchidDetails"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <div class="text-center">
+                                            <button class="btn btn-warning btn-sm me-2" id="flagPhotoBtn">
+                                                <i data-feather="flag" class="me-1"></i>Flag for Verification
+                                            </button>
+                                            <button class="btn btn-info btn-sm" id="viewOrchidBtn">
+                                                <i data-feather="external-link" class="me-1"></i>View in Gallery
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flag Photo Modal -->
+<div class="modal fade" id="flagPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Flag Photo for Verification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="flagPhotoForm">
+                    <input type="hidden" id="flagOrchidId" name="orchid_id">
+                    
+                    <div class="mb-3">
+                        <label for="flagReason" class="form-label">Reason for Flag <span class="text-danger">*</span></label>
+                        <select class="form-select" id="flagReason" name="reason" required>
+                            <option value="">Select a reason...</option>
+                            <option value="Wrong orchid species">Photo shows wrong orchid species</option>
+                            <option value="Poor quality">Photo quality is too poor</option>
+                            <option value="Unverified source">Source needs verification</option>
+                            <option value="Copyright concern">Potential copyright issue</option>
+                            <option value="Not an orchid">Photo doesn't show an orchid</option>
+                            <option value="Other">Other (specify in comments)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="flagComments" class="form-label">Additional Comments</label>
+                        <textarea class="form-control" id="flagComments" name="comments" rows="3"
+                                  placeholder="Optional: Provide additional details about the issue"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="submitFlagBtn">
+                    <i data-feather="flag" class="me-1"></i>Submit Flag
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentOrchidId = null;
+    
+    // Check source button
+    document.getElementById('checkSourceBtn').addEventListener('click', function() {
+        const orchidId = document.getElementById('orchidIdInput').value.trim();
+        if (!orchidId) {
+            alert('Please enter an Orchid ID');
+            return;
+        }
+        checkPhotoSource(orchidId);
+    });
+    
+    // Random orchid button
+    document.getElementById('randomOrchidBtn').addEventListener('click', function() {
+        // Generate a random ID between 1 and 2000 (adjust based on your data)
+        const randomId = Math.floor(Math.random() * 2000) + 1;
+        document.getElementById('orchidIdInput').value = randomId;
+        checkPhotoSource(randomId);
+    });
+    
+    // Flag photo button
+    document.getElementById('flagPhotoBtn').addEventListener('click', function() {
+        if (currentOrchidId) {
+            document.getElementById('flagOrchidId').value = currentOrchidId;
+            new bootstrap.Modal(document.getElementById('flagPhotoModal')).show();
+        }
+    });
+    
+    // Submit flag
+    document.getElementById('submitFlagBtn').addEventListener('click', function() {
+        const form = document.getElementById('flagPhotoForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            orchid_id: formData.get('orchid_id'),
+            reason: formData.get('reason'),
+            comments: formData.get('comments')
+        };
+        
+        if (!data.reason) {
+            alert('Please select a reason for flagging');
+            return;
+        }
+        
+        fetch('/provenance/api/flag-photo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('flagPhotoModal')).hide();
+                alert('Photo flagged successfully for verification!');
+            } else {
+                alert(data.message || 'Failed to flag photo');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to flag photo');
+        });
+    });
+    
+    function checkPhotoSource(orchidId) {
+        fetch(`/provenance/api/photo-source/${orchidId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Orchid not found');
+                return;
+            }
+            
+            currentOrchidId = orchidId;
+            displaySourceInfo(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to get source information');
+        });
+    }
+    
+    function displaySourceInfo(data) {
+        const sourceInfo = document.getElementById('sourceInfo');
+        const sourceDetails = document.getElementById('sourceDetails');
+        const orchidDetails = document.getElementById('orchidDetails');
+        
+        // Confidence level badge
+        const confidenceBadge = getConfidenceBadge(data.confidence_level);
+        
+        sourceDetails.innerHTML = `
+            <p><strong>Photo Type:</strong> ${data.photo_type || 'Unknown'}</p>
+            <p><strong>Source:</strong> ${data.source_name || 'Unknown'}</p>
+            <p><strong>Contributor:</strong> ${data.contributor || 'Unknown'}</p>
+            <p><strong>Status:</strong> ${data.verification_status || 'Unknown'}</p>
+            <p><strong>Confidence:</strong> ${confidenceBadge}</p>
+            ${data.date_added ? `<p><strong>Date Added:</strong> ${new Date(data.date_added).toLocaleDateString()}</p>` : ''}
+        `;
+        
+        orchidDetails.innerHTML = `
+            <p><strong>ID:</strong> ${data.orchid_id}</p>
+            <p><strong>Name:</strong> ${data.orchid_info.display_name || 'Unknown'}</p>
+            <p><strong>Genus:</strong> ${data.orchid_info.genus || 'Unknown'}</p>
+            <p><strong>Species:</strong> ${data.orchid_info.species || 'Unknown'}</p>
+            <p><strong>Region:</strong> ${data.orchid_info.region || 'Unknown'}</p>
+        `;
+        
+        // Update view orchid button
+        document.getElementById('viewOrchidBtn').onclick = function() {
+            window.open(`/gallery?search=${data.orchid_info.display_name}`, '_blank');
+        };
+        
+        sourceInfo.classList.remove('d-none');
+    }
+    
+    function getConfidenceBadge(level) {
+        const badges = {
+            'Very High': '<span class="badge bg-success">Very High</span>',
+            'High': '<span class="badge bg-info">High</span>',
+            'Medium': '<span class="badge bg-secondary">Medium</span>',
+            'Low': '<span class="badge bg-warning">Low</span>'
+        };
+        return badges[level] || '<span class="badge bg-secondary">Unknown</span>';
+    }
+    
+    // Initialize feather icons
+    feather.replace();
+});
+</script>
+{% endblock %}

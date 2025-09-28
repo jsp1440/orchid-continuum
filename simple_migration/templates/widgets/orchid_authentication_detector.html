@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Authentication & Fraud Detector - The Orchid Continuum</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        :root {
+            --danger-primary: #dc3545;
+            --danger-secondary: #c82333;
+            --danger-light: #f8d7da;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --dark-bg: #212529;
+            --light-danger: #fff5f5;
+            --gradient-danger: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+        
+        body {
+            background: var(--gradient-danger);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .orchid-authentication-detector {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(220, 53, 69, 0.2);
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+        
+        .authentication-header {
+            background: linear-gradient(45deg, var(--danger-primary), var(--danger-secondary));
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-icon {
+            font-size: 3rem;
+            opacity: 0.9;
+        }
+        
+        .shield-icon {
+            width: 48px;
+            height: 48px;
+            stroke-width: 1.5;
+        }
+        
+        .header-text h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .authentication-upload-section {
+            padding: 2rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: var(--danger-primary);
+            background-color: var(--light-danger);
+        }
+        
+        .upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--danger-primary);
+            opacity: 0.7;
+        }
+        
+        .upload-cloud-icon {
+            width: 64px;
+            height: 64px;
+        }
+        
+        .upload-content h4 {
+            color: var(--danger-primary);
+            margin: 0;
+        }
+        
+        .upload-requirements {
+            margin-top: 1rem;
+        }
+        
+        .image-preview {
+            margin-bottom: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .preview-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        .preview-img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .preview-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .claimed-identity-section,
+        .additional-info-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .claimed-identity-section h5,
+        .additional-info-section h5 {
+            color: var(--danger-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--danger-primary);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .authentication-controls {
+            text-align: center;
+            padding-top: 1rem;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, var(--danger-primary), var(--danger-secondary));
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-danger:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .authentication-progress {
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .progress-content .spinner-border {
+            width: 4rem;
+            height: 4rem;
+            margin-bottom: 1rem;
+            border-color: var(--danger-primary);
+            border-right-color: transparent;
+        }
+        
+        .progress-content h4 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 2rem;
+        }
+        
+        .analysis-results-content {
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .authenticity-badge {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .authenticity-badge.success {
+            background: linear-gradient(45deg, var(--success-color), #20c997);
+            color: white;
+        }
+        
+        .authenticity-badge.warning {
+            background: linear-gradient(45deg, var(--warning-color), #fd7e14);
+            color: white;
+        }
+        
+        .authenticity-badge.danger {
+            background: linear-gradient(45deg, var(--danger-primary), var(--danger-secondary));
+            color: white;
+        }
+        
+        .confidence-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .confidence-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .confidence-circle small {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .identification-section,
+        .claimed-vs-identified,
+        .database-matches-section,
+        .issues-section,
+        .no-issues-section,
+        .morphological-section,
+        .recommendations-section,
+        .authentication-report {
+            margin-bottom: 2rem;
+        }
+        
+        .identification-section h5,
+        .claimed-vs-identified h5,
+        .database-matches-section h5,
+        .issues-section h5,
+        .morphological-section h5,
+        .recommendations-section h5,
+        .authentication-report h5 {
+            color: var(--danger-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .identification-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .identification-info h6 {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .comparison-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .comparison-card.claimed {
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .comparison-card.identified {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .comparison-card h6 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .confidence-text {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+        
+        .matches-list {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .match-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .match-confidence {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--success-color);
+        }
+        
+        .match-indicators {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .match-indicator {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .match-indicator.success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .issues-list {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .issue-card {
+            margin-bottom: 0;
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .morphological-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .morph-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid var(--info-color);
+        }
+        
+        .morph-label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .morph-value {
+            color: var(--success-color);
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+        
+        .recommendations-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+        
+        .recommendation-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .report-summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .report-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .report-label {
+            font-weight: 500;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .report-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .action-buttons {
+            border-top: 1px solid #e1e5e9;
+            padding-top: 2rem;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .orchid-authentication-detector {
+                margin: 1rem;
+                border-radius: 15px;
+            }
+            
+            .authentication-header {
+                padding: 1.5rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .authentication-upload-section,
+            .analysis-results-content {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .comparison-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .morphological-grid,
+            .report-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .confidence-circle {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .confidence-number {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Alert customizations for authentication results */
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+        
+        /* Badge customizations */
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            border-radius: 25px;
+        }
+        
+        .bg-success {
+            background: var(--success-color) !important;
+        }
+        
+        .bg-warning {
+            background: var(--warning-color) !important;
+        }
+        
+        .bg-danger {
+            background: var(--danger-primary) !important;
+        }
+        
+        /* Loading states */
+        .progress-bar {
+            background: linear-gradient(45deg, var(--danger-primary), var(--danger-secondary));
+        }
+        
+        /* Hover effects */
+        .match-card:hover,
+        .morph-item:hover,
+        .recommendation-item:hover {
+            transform: translateX(2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div id="orchid-authentication-detector-widget" class="orchid-authentication-detector">
+            <!-- Widget content will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Orchid Authentication Detector Widget -->
+    <script src="{{ url_for('static', filename='js/orchid-authentication-detector.js') }}"></script>
+    
+    <script>
+        // Initialize Feather icons
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+    </script>
+</body>
+</html>

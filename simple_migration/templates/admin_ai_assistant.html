@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2><i data-feather="cpu" class="me-2"></i>AI Assistant</h2>
+            <p class="text-muted">Get AI help for platform changes and modifications</p>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="request" class="form-label">What would you like to modify or add?</label>
+                            <textarea class="form-control" id="request" name="request" rows="4" 
+                                    placeholder="Examples:&#10;- Add a new widget type for orchid care tips&#10;- Modify the gallery to show more details&#10;- Create a new search filter&#10;- Update the orchid of the day selection logic">{{ user_request or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="send" class="me-2"></i>Ask AI Assistant
+                        </button>
+                    </form>
+                    
+                    {% if ai_response %}
+                    <div class="mt-4">
+                        <h5>AI Response:</h5>
+                        <div class="alert alert-info">
+                            <pre class="mb-0">{{ ai_response }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h4>Quick Actions</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Widget Management</h6>
+                                <p class="small">Modify existing widgets or create new ones</p>
+                                <a href="/widgets" class="btn btn-sm btn-outline-primary">View Widgets</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Database Updates</h6>
+                                <p class="small">Modify orchid records and metadata</p>
+                                <a href="/admin/dashboard" class="btn btn-sm btn-outline-primary">Admin Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>AI Widget Builder</h6>
+                                <p class="small">Create and modify widgets with AI</p>
+                                <a href="/admin/ai-widgets/" class="btn btn-sm btn-outline-primary">Open Widget Builder</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

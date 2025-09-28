@@ -1,0 +1,805 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Admin Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="settings" class="me-2"></i>Admin Dashboard
+            </h1>
+            <p class="lead text-muted">Manage orchid database, uploads, and automation</p>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i data-feather="database" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.total_orchids }}</h3>
+                    <p class="mb-0">Total Orchids</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <i data-feather="clock" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.pending_uploads }}</h3>
+                    <p class="mb-0">Pending Uploads</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i data-feather="check-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.validated_orchids }}</h3>
+                    <p class="mb-0">Validated</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i data-feather="star" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.featured_orchids }}</h3>
+                    <p class="mb-0">Featured</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Real-time Scraping Dashboard -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i data-feather="activity" class="me-2"></i>Live Scraping Dashboard
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <button id="startScrapingBtn" class="btn btn-success btn-sm" onclick="startMethodicalScraping()">
+                                <i data-feather="play" class="me-1"></i>Start
+                            </button>
+                            <button id="stopScrapingBtn" class="btn btn-danger btn-sm" onclick="stopScraping()">
+                                <i data-feather="stop" class="me-1"></i>Stop
+                            </button>
+                            <button class="btn btn-info btn-sm" onclick="refreshDashboard()">
+                                <i data-feather="refresh-cw" class="me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Dashboard Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-primary" id="totalScraped">0</div>
+                                <small class="text-muted">Total Scraped</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-success" id="successRate">0%</div>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <div class="h3 text-info" id="currentCycle">0</div>
+                                <small class="text-muted">Current Cycle</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h5 text-warning" id="currentScraper">Idle</div>
+                                <small class="text-muted">Current Scraper</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h5" id="uptime">00:00:00</div>
+                                <small class="text-muted">Uptime</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scraper Status Grid -->
+                    <h5 class="mb-3">Scraper Status - One Plant at a Time (90s cycles, 9s reinitialize)</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🌐 Primary Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="gary_yong_gee">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Gary Yong Gee</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="gary_yong_gee_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('gary_yong_gee')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="gary_yong_gee_plants">0</span> | Images: <span id="gary_yong_gee_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="roberta_fox">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Roberta Fox</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="roberta_fox_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('roberta_fox')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="roberta_fox_plants">0</span> | Images: <span id="roberta_fox_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🌍 International Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-1" data-scraper="orchidspecies">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>OrchidSpecies.com</strong> (25K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="orchidspecies_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('orchidspecies')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="orchidspecies_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="singapore_botanic">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>Singapore Botanic</strong> (3K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="singapore_botanic_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('singapore_botanic')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="singapore_botanic_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="kew_gardens">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>Kew Gardens</strong> (50K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="kew_gardens_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('kew_gardens')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="kew_gardens_plants">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-1" data-scraper="orchidwire">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><small><strong>OrchidWire</strong> (84K+)</small></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="orchidwire_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('orchidwire')">
+                                                    <i data-feather="play" width="10" height="10"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="orchidwire_plants">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">🏪 Commercial Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="ecuagenera">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Ecuagenera</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="ecuagenera_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('ecuagenera')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="ecuagenera_plants">0</span> | Images: <span id="ecuagenera_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="andys_orchids">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Andy's Orchids</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="andys_orchids_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('andys_orchids')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="andys_orchids_plants">0</span> | Images: <span id="andys_orchids_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">📸 Photography Sources</h6>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div class="scraper-item mb-2" data-scraper="ron_parsons">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Ron Parsons</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="ron_parsons_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('ron_parsons')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="ron_parsons_plants">0</span> | Images: <span id="ron_parsons_images">0</span></small>
+                                    </div>
+                                    
+                                    <div class="scraper-item mb-2" data-scraper="australian_terrestrial">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><strong>Australian Terrestrial</strong></span>
+                                            <div>
+                                                <span class="badge bg-secondary" id="australian_terrestrial_status">idle</span>
+                                                <button class="btn btn-outline-primary btn-sm ms-1" onclick="manualTrigger('australian_terrestrial')">
+                                                    <i data-feather="play" width="12" height="12"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Plants: <span id="australian_terrestrial_plants">0</span> | Images: <span id="australian_terrestrial_images">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vigilant Monitor Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-dark text-light">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">🚨 Vigilant Monitor - 30-second checks</h6>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success btn-sm" onclick="startVigilantMonitoring()">
+                                            <i data-feather="shield" class="me-1"></i>Start
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="forceBackup()">
+                                            <i data-feather="save" class="me-1"></i>Backup Now
+                                        </button>
+                                        <button class="btn btn-info btn-sm" onclick="showVigilantStats()">
+                                            <i data-feather="activity" class="me-1"></i>Stats
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center">
+                                    <div class="col-3">
+                                        <small class="text-muted">DB Health</small>
+                                        <div class="h6" id="vigilantDBStatus">✅</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Image Check</small>
+                                        <div class="h6" id="vigilantImageStatus">✅</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Backups</small>
+                                        <div class="h6" id="vigilantBackups">0</div>
+                                    </div>
+                                    <div class="col-3">
+                                        <small class="text-muted">Uptime</small>
+                                        <div class="h6" id="vigilantUptime">00:00:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Original Action Cards -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="download" class="me-2"></i>Legacy Web Scraping
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Traditional batch scraping for specific websites.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="triggerScraping('gary')">
+                            <i data-feather="globe" class="me-2"></i>Batch Scrape Gary Yong Gee
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="triggerScraping('roberta')">
+                            <i data-feather="globe" class="me-2"></i>Batch Scrape Roberta Fox
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="/admin/data-import" class="btn btn-primary w-100">
+                            <i data-feather="database" class="me-2"></i>Manage Data Import
+                        </a>
+                    </div>
+                    <div id="scrapingStatus" class="mt-3" style="display: none;">
+                        <div class="alert alert-info" role="alert">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                <span>Scraping in progress...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="folder" class="me-2"></i>Google Drive Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Manage Google Drive folder structure and file organization.</p>
+                    <div class="d-grid gap-2">
+                        <a href="/admin/drive-import" class="btn btn-success">
+                            <i data-feather="cloud-download" class="me-2"></i>Import from Google Drive
+                        </a>
+                        <button class="btn btn-outline-success" onclick="setupDriveFolders()">
+                            <i data-feather="folder-plus" class="me-2"></i>Setup Drive Folders
+                        </button>
+                        <button class="btn btn-outline-success" onclick="syncDriveFiles()">
+                            <i data-feather="refresh-cw" class="me-2"></i>Sync Drive Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Trefle Ecosystem Enrichment Card -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Trefle Ecosystem Data Enrichment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="mb-3">Botanical Ecosystem Data Integration</h6>
+                            <p class="card-text mb-3">
+                                Enrich the 5,975 orchid records with comprehensive ecosystem data from the Trefle botanical API.
+                                Priority processing for 1,591 FCOS Google Drive records with smart matching algorithms and rate limiting compliance.
+                            </p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Smart Matching Features:</strong>
+                                    <ul class="small mt-2">
+                                        <li>Exact scientific name matching</li>
+                                        <li>Fuzzy name matching algorithms</li>
+                                        <li>Genus-level fallback system</li>
+                                        <li>Skip already enriched records</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Data Integration:</strong>
+                                    <ul class="small mt-2">
+                                        <li>Habitat research JSON storage</li>
+                                        <li>Native habitat field updates</li>
+                                        <li>Climate preference enrichment</li>
+                                        <li>Data provenance tracking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="leaf" style="width: 64px; height: 64px; opacity: 0.8;"></i>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('admin_trefle_enrichment') }}" class="btn btn-outline-light btn-lg">
+                                        <i data-feather="activity" class="me-2"></i>Enrichment Dashboard
+                                    </a>
+                                    <small class="text-light mt-2">
+                                        <i data-feather="clock" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Rate limited: 120 API calls/hour
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Google Forms Integration Card -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>Google Forms Integration Pipeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="mb-3">Automated Processing Gateway</h6>
+                            <p class="card-text mb-3">
+                                Process member photo submissions from Google Forms through AI-enhanced taxonomy validation, 
+                                metadata enhancement, and comprehensive botanical analysis to discover correlations between 
+                                observed phenomena, genetics, ecology, anatomy, morphology, and species diversity.
+                            </p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Processing Features:</strong>
+                                    <ul class="small mt-2">
+                                        <li>Automated taxonomy validation</li>
+                                        <li>AI-powered metadata enhancement</li>
+                                        <li>Photo analysis and quality assessment</li>
+                                        <li>Botanical database cross-referencing</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Analysis Capabilities:</strong>
+                                    <ul class="small mt-2">
+                                        <li>Morphological correlation discovery</li>
+                                        <li>Genetic relationship analysis</li>
+                                        <li>Ecological pattern recognition</li>
+                                        <li>Species diversity insights</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="cpu" style="width: 64px; height: 64px; opacity: 0.8;"></i>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('processing.processing_dashboard') }}" class="btn btn-outline-light btn-lg">
+                                        <i data-feather="monitor" class="me-2"></i>Processing Dashboard
+                                    </a>
+                                    <a href="{{ url_for('processing.processing_settings') }}" class="btn btn-outline-light">
+                                        <i data-feather="sliders" class="me-1"></i>Configure Settings
+                                    </a>
+                                </div>
+                                <div class="mt-3">
+                                    <small class="text-light">
+                                        <i data-feather="shield" class="me-1" style="width: 16px; height: 16px;"></i>
+                                        Protected by admin password: jsp191516
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Uploads -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="upload" class="me-2"></i>Recent Uploads
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_uploads %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Status</th>
+                                        <th>Size</th>
+                                        <th>Upload Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for upload in recent_uploads %}
+                                    <tr>
+                                        <td>{{ upload.original_filename }}</td>
+                                        <td>
+                                            {% if upload.processing_status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif upload.processing_status == 'processing' %}
+                                                <span class="badge bg-warning">Processing</span>
+                                            {% elif upload.processing_status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ upload.processing_status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if upload.file_size %}
+                                                {{ "%.1f"|format(upload.file_size / 1024 / 1024) }} MB
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ upload.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if upload.orchid_id %}
+                                                <a href="{{ url_for('orchid_detail', id=upload.orchid_id) }}" class="btn btn-sm btn-outline-primary">
+                                                    View Orchid
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    No Orchid
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent uploads found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scraping Logs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>Recent Scraping Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_scrapes %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Source</th>
+                                        <th>Status</th>
+                                        <th>Items Found</th>
+                                        <th>Items Processed</th>
+                                        <th>Date</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for scrape in recent_scrapes %}
+                                    <tr>
+                                        <td>{{ scrape.source|replace('_', ' ')|title }}</td>
+                                        <td>
+                                            {% if scrape.status == 'success' %}
+                                                <span class="badge bg-success">Success</span>
+                                            {% elif scrape.status == 'error' %}
+                                                <span class="badge bg-danger">Error</span>
+                                            {% elif scrape.status == 'processing' %}
+                                                <span class="badge bg-warning">Processing</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ scrape.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ scrape.items_found or 0 }}</td>
+                                        <td>{{ scrape.items_processed or 0 }}</td>
+                                        <td>{{ scrape.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            {% if scrape.error_message %}
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="{{ scrape.error_message }}">
+                                                    <i data-feather="alert-circle"></i>
+                                                </button>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No scraping activity found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scraping-dashboard.js') }}"></script>
+<script>
+function triggerScraping(source) {
+    const statusDiv = document.getElementById('scrapingStatus');
+    statusDiv.style.display = 'block';
+    
+    fetch(`/api/scrape/${source}`)
+        .then(response => response.json())
+        .then(data => {
+            statusDiv.innerHTML = `
+                <div class="alert alert-${data.error ? 'danger' : 'success'}" role="alert">
+                    ${data.error ? 'Error: ' + data.error : 'Scraping completed successfully!'}
+                    ${data.processed ? '<br>Processed: ' + data.processed + ' items' : ''}
+                </div>
+            `;
+            // Refresh page after 3 seconds
+            setTimeout(() => location.reload(), 3000);
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Error: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function setupDriveFolders() {
+    // This would call an API endpoint to setup Google Drive folders
+    alert('Google Drive folder setup would be triggered here. Implement the backend endpoint first.');
+}
+
+function syncDriveFiles() {
+    // This would call an API endpoint to sync files with Google Drive
+    alert('Google Drive sync would be triggered here. Implement the backend endpoint first.');
+}
+
+// ==============================================================================
+// VIGILANT MONITORING FUNCTIONS  
+// ==============================================================================
+
+async function startVigilantMonitoring() {
+    try {
+        const response = await fetch('/admin/vigilant/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Vigilant monitoring started! 30-second health checks active.');
+            updateVigilantStatus();
+        } else {
+            alert(`❌ Failed to start: ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Connection error: ${error.message}`);
+    }
+}
+
+async function forceBackup() {
+    try {
+        const response = await fetch('/admin/vigilant/force-backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Backup created! ${result.message}`);
+            if (result.backup_url) {
+                window.open(result.backup_url, '_blank');
+            }
+            updateVigilantStatus();
+        } else {
+            alert(`❌ Backup failed: ${result.error}`);
+        }
+    } catch (error) {
+        alert(`❌ Connection error: ${error.message}`);
+    }
+}
+
+async function showVigilantStats() {
+    try {
+        const response = await fetch('/admin/vigilant/stats');
+        const stats = await response.json();
+        
+        const statsText = `🚨 VIGILANT MONITOR STATISTICS
+
+📊 System Health:
+• Total Checks: ${stats.total_checks}
+• Database Issues: ${stats.database_issues} 
+• Image Issues: ${stats.image_issues}
+• Connection Resets: ${stats.connection_resets}
+
+💾 Backup Status:
+• Backups Created: ${stats.backups_created}
+• Check Interval: ${stats.check_interval}s
+• Backup Interval: ${stats.backup_interval}s
+
+⏱️ Uptime:
+• Running: ${stats.is_running ? 'YES' : 'NO'}
+• Uptime: ${stats.uptime_formatted}
+• Last Check: ${stats.last_check}`;
+        
+        alert(statsText);
+        
+    } catch (error) {
+        alert(`❌ Stats error: ${error.message}`);
+    }
+}
+
+async function updateVigilantStatus() {
+    try {
+        const response = await fetch('/admin/vigilant/stats');
+        const stats = await response.json();
+        
+        // Update UI elements
+        document.getElementById('vigilantBackups').textContent = stats.backups_created || 0;
+        document.getElementById('vigilantUptime').textContent = stats.uptime_formatted || '00:00:00';
+        
+        // Update health indicators
+        const dbStatus = stats.database_issues === 0 ? '✅' : '❌';
+        const imageStatus = stats.image_issues === 0 ? '✅' : '⚠️';
+        
+        document.getElementById('vigilantDBStatus').textContent = dbStatus;
+        document.getElementById('vigilantImageStatus').textContent = imageStatus;
+        
+    } catch (error) {
+        console.error('Vigilant status update failed:', error);
+    }
+}
+
+// Auto-update vigilant status every 30 seconds
+setInterval(updateVigilantStatus, 30000);
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

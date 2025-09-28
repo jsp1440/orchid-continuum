@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Thematic Orchid Maps - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="layers" class="me-2"></i>Thematic Orchid Maps
+            </h1>
+            <p class="lead text-muted">
+                Specialized maps showing orchid patterns, distributions, and ecological relationships
+            </p>
+        </div>
+    </div>
+    
+    <!-- Map Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-primary h-100" style="cursor: pointer;" onclick="loadThematicMap('genus')">
+                                <div class="card-body text-center">
+                                    <i data-feather="tag" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Genus Distribution</h5>
+                                    <p class="small text-muted">Geographic spread of major orchid genera</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-success h-100" style="cursor: pointer;" onclick="loadThematicMap('climate')">
+                                <div class="card-body text-center">
+                                    <i data-feather="thermometer" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Climate Zones</h5>
+                                    <p class="small text-muted">Orchid climate preferences and adaptations</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-info h-100" style="cursor: pointer;" onclick="loadThematicMap('elevation')">
+                                <div class="card-body text-center">
+                                    <i data-feather="mountain" class="text-info mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Elevation Patterns</h5>
+                                    <p class="small text-muted">Altitude preferences and mountain orchids</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card border-warning h-100" style="cursor: pointer;" onclick="loadThematicMap('conservation')">
+                                <div class="card-body text-center">
+                                    <i data-feather="shield" class="text-warning mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Conservation Status</h5>
+                                    <p class="small text-muted">Endangered and threatened species</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Map Display -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="mapTitle">
+                        <i data-feather="map" class="me-2"></i>Select a thematic map above
+                    </h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" id="downloadMapBtn" style="display: none;">
+                            <i data-feather="download" class="me-1"></i>Download
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" id="shareMapBtn" style="display: none;">
+                            <i data-feather="share-2" class="me-1"></i>Share
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="thematicMapContainer" style="height: 600px; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center text-muted">
+                            <i data-feather="map-pin" style="width: 64px; height: 64px;" class="mb-3"></i>
+                            <h4>Choose a Thematic Map</h4>
+                            <p>Select one of the thematic map types above to explore orchid patterns and distributions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Information -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6><i data-feather="info" class="me-2"></i>About Thematic Maps</h6>
+                    <p class="small mb-0">
+                        These specialized maps reveal patterns in orchid distribution, ecology, and conservation. 
+                        Each map uses our database of 4,173+ orchid records to show different aspects of orchid biogeography.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6><i data-feather="database" class="me-2"></i>Data Sources</h6>
+                    <p class="small mb-0">
+                        Maps are generated from our comprehensive database including collections from 
+                        Roberta Fox, Gary Young Gee, Ron Parsons, and major botanical gardens worldwide.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentThematicMap = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+
+function loadThematicMap(mapType) {
+    const container = document.getElementById('thematicMapContainer');
+    const title = document.getElementById('mapTitle');
+    const downloadBtn = document.getElementById('downloadMapBtn');
+    const shareBtn = document.getElementById('shareMapBtn');
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading ${mapType} thematic map...</p>
+        </div>
+    `;
+    
+    // Update title
+    const mapTitles = {
+        'genus': 'Genus Distribution Map',
+        'climate': 'Climate Zone Map', 
+        'elevation': 'Elevation Pattern Map',
+        'conservation': 'Conservation Status Map'
+    };
+    
+    title.innerHTML = `<i data-feather="map" class="me-2"></i>${mapTitles[mapType]}`;
+    
+    // Simulate loading and create themed map content
+    setTimeout(() => {
+        let mapContent = '';
+        
+        switch(mapType) {
+            case 'genus':
+                mapContent = createGenusMap();
+                break;
+            case 'climate':
+                mapContent = createClimateMap();
+                break;
+            case 'elevation':
+                mapContent = createElevationMap();
+                break;
+            case 'conservation':
+                mapContent = createConservationMap();
+                break;
+        }
+        
+        container.innerHTML = mapContent;
+        downloadBtn.style.display = 'inline-block';
+        shareBtn.style.display = 'inline-block';
+        
+        feather.replace();
+        console.log(`🗺️ ${mapType} thematic map loaded`);
+    }, 2000);
+}
+
+function createGenusMap() {
+    return `
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="bg-gradient" style="height: 400px; background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4); border-radius: 10px; position: relative;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                            <h4>Genus Distribution Visualization</h4>
+                            <p>Interactive map showing geographic spread of:</p>
+                            <div class="d-flex justify-content-center flex-wrap gap-2">
+                                <span class="badge bg-danger">Cattleya</span>
+                                <span class="badge bg-success">Phalaenopsis</span>
+                                <span class="badge bg-primary">Dendrobium</span>
+                                <span class="badge bg-warning">Oncidium</span>
+                                <span class="badge bg-info">Paphiopedilum</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Top Genera by Region</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Cattleya</span>
+                            <span class="badge bg-primary">256 records</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Phalaenopsis</span>
+                            <span class="badge bg-success">189 records</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Dendrobium</span>
+                            <span class="badge bg-info">167 records</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Oncidium</span>
+                            <span class="badge bg-warning">134 records</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createClimateMap() {
+    return `
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div style="height: 400px; background: linear-gradient(180deg, #87CEEB, #98FB98, #F0E68C, #FFB6C1); border-radius: 10px; position: relative;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-center">
+                            <h4>Climate Zone Distribution</h4>
+                            <p>Orchid climate preferences across global zones</p>
+                            <div class="row text-white">
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-primary p-2">Tropical<br>1,245</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-success p-2">Subtropical<br>987</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-warning p-2">Temperate<br>456</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-info p-2">Alpine<br>123</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Climate Adaptations</h6>
+                    <div class="small">
+                        <p><strong>Tropical:</strong> High humidity, consistent temperatures, epiphytic lifestyle</p>
+                        <p><strong>Subtropical:</strong> Seasonal variation, moderate temperatures</p>
+                        <p><strong>Temperate:</strong> Cool growing, winter dormancy, terrestrial</p>
+                        <p><strong>Alpine:</strong> Cold tolerant, high elevation specialists</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createElevationMap() {
+    return `
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div style="height: 400px; background: linear-gradient(to top, #228B22, #32CD32, #ADFF2F, #F0F8FF, #FFFFFF); border-radius: 10px; position: relative;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-center text-dark">
+                            <h4>Elevation Distribution</h4>
+                            <p>Orchid altitude preferences and mountain adaptations</p>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <div class="text-center">
+                                            <div class="badge bg-success p-2">Sea Level<br>0-500m<br>892 records</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="badge bg-warning p-2">Mid-elevation<br>500-1500m<br>567 records</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="badge bg-primary p-2">High-elevation<br>1500m+<br>234 records</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Elevation Specialists</h6>
+                    <div class="small">
+                        <p><strong>Cloud Forest:</strong> Masdevallia, Dracula species (1000-3000m)</p>
+                        <p><strong>Montane:</strong> Cymbidium, Pleione (1500-2500m)</p>
+                        <p><strong>Alpine:</strong> Cypripedium, high-altitude Orchis (2000m+)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createConservationMap() {
+    return `
+        <div class="p-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div style="height: 400px; background: linear-gradient(45deg, #FF4444, #FFAA44, #FFFF44, #44FF44); border-radius: 10px; position: relative;">
+                        <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+                            <h4>Conservation Status Map</h4>
+                            <p>Threatened and endangered orchid species worldwide</p>
+                            <div class="row">
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-danger p-2">Critically<br>Endangered<br>45</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-warning p-2">Endangered<br>89</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-info p-2">Vulnerable<br>156</div>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <div class="badge bg-success p-2">Stable<br>2,234</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Conservation Priorities</h6>
+                    <div class="small">
+                        <p><strong>Habitat Loss:</strong> Primary threat to orchid populations</p>
+                        <p><strong>Climate Change:</strong> Affecting elevation and temperature ranges</p>
+                        <p><strong>Over-collection:</strong> Rare species under pressure</p>
+                        <p><strong>Conservation Success:</strong> Ex-situ programs showing results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

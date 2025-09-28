@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Five Cities Orchid Society - YouTube Channel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .youtube-widget {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .video-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .channel-stats {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .search-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .video-player-modal {
+            z-index: 1060;
+        }
+        .detached-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            height: 240px;
+            z-index: 1050;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            resize: both;
+            min-width: 240px;
+            min-height: 180px;
+        }
+        .fcos-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="youtube-widget p-4">
+            <!-- Channel Header -->
+            <div class="row align-items-center mb-4">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i data-feather="play-circle" class="me-2"></i>
+                        {{ channel_stats.channel_title }}
+                    </h2>
+                    <p class="mb-0 opacity-75">Sharing orchid knowledge and passion with the community</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="channel-stats text-center">
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="fw-bold">{{ channel_stats.subscriber_count }}</div>
+                                <small>Subscribers</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold">{{ channel_stats.video_count }}</div>
+                                <small>Videos</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold">{{ channel_stats.view_count }}</div>
+                                <small>Views</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Interface -->
+            <div class="search-container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <input type="text" 
+                                   id="videoSearch" 
+                                   class="form-control form-control-lg" 
+                                   placeholder="Search our videos or explore orchid content...">
+                            <button class="btn btn-primary" type="button" onclick="searchVideos()">
+                                <i data-feather="search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="searchAllYouTube">
+                            <label class="form-check-label text-dark" for="searchAllYouTube">
+                                Search all orchid videos
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Videos Grid -->
+        <div class="row" id="videosGrid">
+            {% for video in recent_videos %}
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card video-card h-100" onclick="playVideo('{{ video.video_id }}', '{{ video.title }}')">
+                    <div class="position-relative">
+                        <img src="{{ video.thumbnail }}" class="card-img-top" alt="{{ video.title }}">
+                        {% if video.is_fcos %}
+                        <span class="position-absolute top-0 start-0 m-2 fcos-badge">FCOS</span>
+                        {% endif %}
+                        <div class="position-absolute bottom-0 end-0 m-2">
+                            <span class="badge bg-dark">
+                                <i data-feather="play" width="12" height="12"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">{{ video.title }}</h6>
+                        <p class="card-text text-muted small">{{ video.description }}</p>
+                        <small class="text-muted">{{ video.channel_title }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Searching videos...</p>
+        </div>
+    </div>
+
+    <!-- Video Player Modal -->
+    <div class="modal fade video-player-modal" id="videoModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoTitle">Video Player</h5>
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="detachPlayer()">
+                            <i data-feather="external-link" width="16" height="16"></i>
+                            Detach
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="videoPlayerContainer" style="height: 500px;">
+                        <!-- YouTube player will be embedded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detached Player (initially hidden) -->
+    <div id="detachedPlayer" class="detached-player" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center p-2 bg-light">
+            <small class="fw-bold" id="detachedTitle">Video Player</small>
+            <button class="btn btn-sm btn-outline-secondary" onclick="reattachPlayer()">
+                <i data-feather="minimize-2" width="12" height="12"></i>
+            </button>
+        </div>
+        <div id="detachedPlayerContainer" style="height: calc(100% - 40px);">
+            <!-- Detached player content -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace();
+
+        let currentVideoId = null;
+        let isDetached = false;
+
+        function searchVideos() {
+            const query = document.getElementById('videoSearch').value;
+            const searchAll = document.getElementById('searchAllYouTube').checked;
+            const searchType = searchAll ? 'general' : 'channel';
+            
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            fetch(`/youtube/api/search?q=${encodeURIComponent(query)}&type=${searchType}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayVideos(data.videos);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                });
+        }
+
+        function displayVideos(videos) {
+            const grid = document.getElementById('videosGrid');
+            grid.innerHTML = '';
+            
+            videos.forEach(video => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 col-lg-3 mb-4';
+                
+                const fcosBadge = video.is_fcos ? 
+                    '<span class="position-absolute top-0 start-0 m-2 fcos-badge">FCOS</span>' : '';
+                
+                col.innerHTML = `
+                    <div class="card video-card h-100" onclick="playVideo('${video.video_id}', '${video.title}')">
+                        <div class="position-relative">
+                            <img src="${video.thumbnail}" class="card-img-top" alt="${video.title}">
+                            ${fcosBadge}
+                            <div class="position-absolute bottom-0 end-0 m-2">
+                                <span class="badge bg-dark">
+                                    <i data-feather="play" width="12" height="12"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">${video.title}</h6>
+                            <p class="card-text text-muted small">${video.description}</p>
+                            <small class="text-muted">${video.channel_title}</small>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(col);
+            });
+            
+            feather.replace();
+        }
+
+        function playVideo(videoId, title) {
+            currentVideoId = videoId;
+            document.getElementById('videoTitle').textContent = title;
+            document.getElementById('detachedTitle').textContent = title;
+            
+            const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+            const iframe = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+            
+            if (!isDetached) {
+                document.getElementById('videoPlayerContainer').innerHTML = iframe;
+                new bootstrap.Modal(document.getElementById('videoModal')).show();
+            } else {
+                document.getElementById('detachedPlayerContainer').innerHTML = iframe;
+            }
+        }
+
+        function detachPlayer() {
+            if (currentVideoId) {
+                isDetached = true;
+                const embedUrl = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`;
+                const iframe = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+                
+                document.getElementById('detachedPlayerContainer').innerHTML = iframe;
+                document.getElementById('detachedPlayer').style.display = 'block';
+                
+                bootstrap.Modal.getInstance(document.getElementById('videoModal')).hide();
+            }
+        }
+
+        function reattachPlayer() {
+            if (currentVideoId) {
+                isDetached = false;
+                document.getElementById('detachedPlayer').style.display = 'none';
+                
+                const embedUrl = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`;
+                const iframe = `<iframe width="100%" height="100%" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+                
+                document.getElementById('videoPlayerContainer').innerHTML = iframe;
+                new bootstrap.Modal(document.getElementById('videoModal')).show();
+            }
+        }
+
+        // Search on Enter key
+        document.getElementById('videoSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchVideos();
+            }
+        });
+
+        // Make detached player draggable
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        const detachedPlayer = document.getElementById('detachedPlayer');
+
+        detachedPlayer.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        function dragStart(e) {
+            if (e.target.closest('.btn')) return; // Don't drag when clicking buttons
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+
+            if (e.target === detachedPlayer || e.target.closest('.bg-light')) {
+                isDragging = true;
+            }
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                setTranslate(currentX, currentY, detachedPlayer);
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+        }
+    </script>
+</body>
+</html>

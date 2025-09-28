@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ theme_info.name }} - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('themed_orchids') }}">Themed Collections</a></li>
+                            <li class="breadcrumb-item active">{{ theme_info.name }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="display-4" style="color: #2B6A30;">
+                        🌺 {{ theme_info.name }}
+                    </h1>
+                    <p class="text-muted">Found {{ orchid_count }} orchids in this collection</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('themed_orchids') }}" class="btn btn-outline-success me-2">
+                        <i data-feather="arrow-left"></i> All Themes
+                    </a>
+                    <a href="{{ url_for('gallery') }}" class="btn btn-success">
+                        <i data-feather="grid"></i> All Orchids
+                    </a>
+                </div>
+            </div>
+
+            <!-- Theme Navigation -->
+            <div class="mb-4">
+                <div class="btn-group" role="group" aria-label="Theme navigation">
+                    {% for theme_key, theme_data in themes.items() %}
+                    <a href="{{ url_for('themed_orchids', theme=theme_key) }}" 
+                       class="btn {% if theme_key == theme %}btn-success{% else %}btn-outline-success{% endif %} btn-sm">
+                        {{ theme_data.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Results -->
+            {% if orchids %}
+            <div class="row">
+                {% for orchid in orchids %}
+                <div class="col-md-6 col-lg-4 col-xl-3 mb-4">
+                    <div class="card h-100 shadow-sm orchid-card">
+                        <div class="position-relative">
+                            {% if orchid.google_drive_id %}
+                            <img src="/api/drive-photo/{{ orchid.google_drive_id }}" 
+                                 class="card-img-top orchid-image" 
+                                 alt="{{ orchid.scientific_name or 'Orchid' }}"
+                                 onerror="this.src='/static/images/orchid_placeholder.svg'">
+                            {% elif orchid.image_path %}
+                            <img src="{{ orchid.image_path }}" 
+                                 class="card-img-top orchid-image" 
+                                 alt="{{ orchid.scientific_name or 'Orchid' }}"
+                                 onerror="this.src='/static/images/orchid_placeholder.svg'">
+                            {% else %}
+                            <img src="/static/images/orchid_placeholder.svg" 
+                                 class="card-img-top orchid-image" 
+                                 alt="Orchid placeholder">
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title text-success fw-bold mb-1">
+                                {{ orchid.scientific_name or 'Unknown Species' }}
+                            </h6>
+                            {% if orchid.common_name %}
+                            <p class="text-muted small mb-2">{{ orchid.common_name }}</p>
+                            {% endif %}
+                            {% if orchid.location %}
+                            <p class="text-muted small mb-2">
+                                <i data-feather="map-pin" class="me-1" style="width: 14px; height: 14px;"></i>
+                                {{ orchid.location }}
+                            </p>
+                            {% endif %}
+                            {% if orchid.description %}
+                            <p class="card-text small">
+                                {{ orchid.description[:100] }}{% if orchid.description|length > 100 %}...{% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="/orchid/{{ orchid.id }}" class="btn btn-sm btn-outline-success w-100">
+                                <i data-feather="eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i data-feather="search" style="width: 64px; height: 64px; color: #6c757d;"></i>
+                </div>
+                <h3 class="text-muted">No orchids found for this theme</h3>
+                <p class="text-muted">Try exploring a different theme or check back later.</p>
+                <a href="{{ url_for('themed_orchids') }}" class="btn btn-success">
+                    <i data-feather="arrow-left"></i> Back to Themes
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.orchid-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.orchid-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(43, 106, 48, 0.15) !important;
+}
+
+.orchid-image {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+.btn-group .btn {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        flex-wrap: wrap;
+    }
+    .btn-group .btn {
+        margin-bottom: 0.25rem;
+    }
+}
+</style>
+
+<script>
+// Initialize feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

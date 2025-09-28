@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Philosophy: {{ result.philosophy if result and result.philosophy else 'Results' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        .result-header {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .badge-display {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        
+        .philosophy-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-action {
+            background: linear-gradient(45deg, #10b981, #059669);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            margin: 0.25rem;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .btn-retake {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .error-display {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .widget-compact {
+            font-size: 0.9rem;
+        }
+        
+        .widget-compact h1 {
+            font-size: 1.8rem;
+        }
+        
+        .widget-compact h2 {
+            font-size: 1.2rem;
+        }
+        
+        .philosophy-stats {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .inline-result {
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Badge earned indicator */
+        .badge-earned {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 576px) {
+            body {
+                padding: 0.5rem;
+            }
+            .result-header {
+                padding: 1.5rem;
+            }
+            .philosophy-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="widget-compact">
+    <div class="container-fluid">
+        {% if result and result.error %}
+        <div class="error-display">
+            <h3><i data-feather="alert-circle"></i> Oops!</h3>
+            <p>{{ result.error }}</p>
+            <div class="action-buttons">
+                <a href="{{ url_for('philosophy_quiz_widget') }}" class="btn-action btn-retake">
+                    <i data-feather="refresh-cw"></i> Try Again
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="inline-result">
+            {% if result and result.badge_earned %}
+            <div class="badge-earned">
+                <h5><i data-feather="award"></i> New Badge Earned!</h5>
+                <p class="mb-0">Your philosophy badge has been added to your member profile!</p>
+            </div>
+            {% endif %}
+
+            <div class="result-header">
+                {% if result and result.philosophy_data %}
+                <div class="badge-display">
+                    {% if result.philosophy_data.badge_link %}
+                    <img src="{{ result.philosophy_data.badge_link }}" 
+                         alt="{{ result.philosophy }} Badge" 
+                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3);">
+                    {% else %}
+                    🌺
+                    {% endif %}
+                </div>
+                <h1 class="mb-2">{{ result.philosophy }}</h1>
+                <h2 class="h6 text-muted mb-3">Your Orchid Philosophy</h2>
+                <p class="small">{{ result.philosophy_data.life_philosophy }}</p>
+                {% else %}
+                <h1>🌺 Philosophy Discovered!</h1>
+                <p>Your orchid growing philosophy has been revealed.</p>
+                {% endif %}
+            </div>
+
+            {% if result and result.philosophy_data %}
+            <div class="philosophy-card">
+                <h4 class="mb-3"><i data-feather="book-open"></i> Your Growing Style</h4>
+                <p class="mb-3">{{ result.philosophy_data.orchid_reflection }}</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i data-feather="sun"></i> Your Haiku</h6>
+                        <p class="text-muted small">{{ result.philosophy_data.haiku }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i data-feather="compass"></i> Practical Wisdom</h6>
+                        <p class="small">{{ result.philosophy_data.practical }}</p>
+                    </div>
+                </div>
+                
+                <div class="philosophy-stats">
+                    <h6><i data-feather="zap"></i> Science Insight</h6>
+                    <p class="mb-0 small">{{ result.philosophy_data.science }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="action-buttons">
+                <a href="{{ url_for('philosophy_quiz_widget') }}" class="btn-action btn-retake">
+                    <i data-feather="refresh-cw"></i> Retake Quiz
+                </a>
+                <a href="#" onclick="window.parent.postMessage({type: 'quiz_completed', philosophy: '{{ result.philosophy if result else 'Unknown' }}'}, '*')" class="btn-action">
+                    <i data-feather="check"></i> Done
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Post message to parent frame for NeonOne integration
+        window.addEventListener('load', function() {
+            if (window.parent !== window) {
+                const result = {
+                    type: 'quiz_result',
+                    {% if result and result.philosophy %}
+                    philosophy: '{{ result.philosophy }}',
+                    {% if result.philosophy_data %}
+                    haiku: '{{ result.philosophy_data.haiku|replace("'", "\\'") }}',
+                    badge_earned: {{ 'true' if result.badge_earned else 'false' }},
+                    {% endif %}
+                    {% endif %}
+                    widget_mode: true
+                };
+                window.parent.postMessage(result, '*');
+            }
+        });
+        
+        // Handle iframe resize
+        function resizeIframe() {
+            const height = document.body.scrollHeight;
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'resize_iframe',
+                    height: height
+                }, '*');
+            }
+        }
+        
+        // Resize after content loads
+        setTimeout(resizeIframe, 500);
+        window.addEventListener('resize', resizeIframe);
+    </script>
+</body>
+</html>

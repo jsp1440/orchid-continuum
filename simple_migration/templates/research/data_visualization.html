@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization Tools - Orchid Research Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tool-section {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chart-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .chart-type-card {
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .chart-type-card:hover {
+            background: rgba(66, 153, 225, 0.3);
+            border-color: rgba(66, 153, 225, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        .chart-type-card.selected {
+            background: rgba(66, 153, 225, 0.5);
+            border-color: rgba(66, 153, 225, 0.8);
+        }
+        
+        .chart-preview {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .chart-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .data-input-area {
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            min-height: 150px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .data-input-area:focus {
+            outline: none;
+            border-color: rgba(66, 153, 225, 0.5);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .analysis-panel {
+            background: rgba(26, 32, 44, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4fd1c7;
+        }
+        
+        .priority-high {
+            border-left-color: #f56565;
+        }
+        
+        .priority-medium {
+            border-left-color: #ed8936;
+        }
+        
+        .priority-low {
+            border-left-color: #68d391;
+        }
+        
+        .step-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+        
+        .action-btn {
+            background: rgba(66, 153, 225, 0.6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(66, 153, 225, 0.8);
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.primary { background: rgba(72, 187, 120, 0.6); }
+        .action-btn.primary:hover { background: rgba(72, 187, 120, 0.8); }
+        
+        .action-btn.secondary { background: rgba(142, 68, 173, 0.6); }
+        .action-btn.secondary:hover { background: rgba(142, 68, 173, 0.8); }
+        
+        .citation-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .citation-output {
+            background: rgba(45, 55, 72, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-buttons {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .nav-btn {
+            background: rgba(108, 117, 125, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(108, 117, 125, 1);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i data-feather="bar-chart-2" class="me-3"></i>Data Visualization Tools</h1>
+            <p class="lead">AI-powered chart generation and data analysis for scientific research</p>
+        </div>
+        
+        <!-- Data Description Input -->
+        <div class="tool-section">
+            <h3><i data-feather="database" class="me-2"></i>Describe Your Data</h3>
+            <p>Tell us about your research data and we'll suggest the best visualizations.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <label for="data-description" class="form-label">Data Description:</label>
+                    <textarea class="form-control data-input-area" id="data-description" 
+                              placeholder="Describe your data (e.g., 'Monthly orchid flowering counts across 5 species over 2 years')"></textarea>
+                </div>
+                <div class="col-md-4">
+                    <label for="research-goal" class="form-label">Research Goal:</label>
+                    <textarea class="form-control data-input-area" id="research-goal" 
+                              placeholder="What do you want to discover or show?"></textarea>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <button class="action-btn primary" onclick="analyzeDataRequirements()">
+                    <i data-feather="cpu"></i>Analyze Data & Get Recommendations
+                </button>
+            </div>
+            
+            <div id="analysis-results" class="analysis-panel" style="display: none;"></div>
+        </div>
+        
+        <!-- Chart Type Selection -->
+        <div class="tool-section">
+            <h3><i data-feather="pie-chart" class="me-2"></i>Chart Type Explorer</h3>
+            <p>Select a chart type to see examples and learn when to use each one.</p>
+            
+            <div class="chart-type-grid">
+                <div class="chart-type-card" data-chart="bar" onclick="selectChartType('bar')">
+                    <i data-feather="bar-chart" style="width: 48px; height: 48px; margin-bottom: 15px;"></i>
+                    <h5>Bar Chart</h5>
+                    <p>Compare categories or groups</p>
+                </div>
+                
+                <div class="chart-type-card" data-chart="line" onclick="selectChartType('line')">
+                    <i data-feather="trending-up" style="width: 48px; height: 48px; margin-bottom: 15px;"></i>
+                    <h5>Line Chart</h5>
+                    <p>Show trends over time</p>
+                </div>
+                
+                <div class="chart-type-card" data-chart="scatter" onclick="selectChartType('scatter')">
+                    <i data-feather="scatter-chart" style="width: 48px; height: 48px; margin-bottom: 15px;"></i>
+                    <h5>Scatter Plot</h5>
+                    <p>Explore relationships between variables</p>
+                </div>
+                
+                <div class="chart-type-card" data-chart="histogram" onclick="selectChartType('histogram')">
+                    <i data-feather="activity" style="width: 48px; height: 48px; margin-bottom: 15px;"></i>
+                    <h5>Histogram</h5>
+                    <p>Show data distribution</p>
+                </div>
+            </div>
+            
+            <div id="chart-preview-section" style="display: none;">
+                <div class="chart-preview">
+                    <div id="chart-container"></div>
+                    <div id="chart-explanation" class="mt-3"></div>
+                    <div id="creation-steps" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Platform Citation -->
+        <div class="citation-section">
+            <h3><i data-feather="bookmark" class="me-2"></i>Cite This Platform</h3>
+            <p>When using The Orchid Continuum for research, please include proper attribution:</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <label for="citation-format" class="form-label">Citation Format:</label>
+                    <select class="form-select bg-dark border-secondary text-light" id="citation-format">
+                        <option value="apa">APA Style (7th Edition)</option>
+                        <option value="mla">MLA Style (9th Edition)</option>
+                        <option value="chicago">Chicago Style (17th Edition)</option>
+                        <option value="bibtex">BibTeX Format</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="action-btn secondary w-100" onclick="generatePlatformCitation()">
+                        <i data-feather="bookmark"></i>Generate Citation
+                    </button>
+                </div>
+            </div>
+            
+            <div id="platform-citation" class="citation-output" style="display: none;"></div>
+            
+            <div class="text-center mt-3" id="copy-citation-btn" style="display: none;">
+                <button class="action-btn" onclick="copyCitation()">
+                    <i data-feather="copy"></i>Copy Citation
+                </button>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-buttons">
+            <a href="/research-lab/" class="nav-btn">
+                <i data-feather="arrow-left"></i>Back to Research Lab
+            </a>
+            <a href="/research-lab/writing-lab" class="nav-btn">
+                <i data-feather="edit-3"></i>Writing Lab
+            </a>
+            <a href="/" class="nav-btn">
+                <i data-feather="home"></i>Homepage
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        let selectedChart = null;
+        let currentCitation = '';
+        
+        // Analyze data requirements
+        function analyzeDataRequirements() {
+            const description = document.getElementById('data-description').value.trim();
+            const goal = document.getElementById('research-goal').value.trim();
+            
+            if (!description) {
+                alert('Please describe your data first');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('analysis-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <p class="mt-3">Analyzing your data requirements...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/data/analyze-requirements', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: description,
+                    goal: goal
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayAnalysisResults(data);
+            })
+            .catch(error => {
+                console.error('Analysis error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Analysis failed. Please try again.</div>';
+            });
+        }
+        
+        // Display analysis results
+        function displayAnalysisResults(data) {
+            const resultsDiv = document.getElementById('analysis-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let html = `
+                <h4><i data-feather="cpu" class="me-2"></i>AI Analysis Results</h4>
+                <p><strong>Data Type:</strong> ${data.data_type || 'Mixed'}</p>
+            `;
+            
+            if (data.recommended_charts && data.recommended_charts.length > 0) {
+                html += `<h5>Recommended Visualizations:</h5>`;
+                data.recommended_charts.forEach((chart, index) => {
+                    html += `
+                        <div class="recommendation-card priority-${chart.priority || 'medium'}">
+                            <h6>${chart.chart_type} Chart (${chart.priority || 'medium'} priority)</h6>
+                            <p><strong>Why:</strong> ${chart.reasoning}</p>
+                            <p><strong>Suggested Title:</strong> ${chart.title_suggestion}</p>
+                            <p><strong>Axes:</strong> X: ${chart.x_axis_label}, Y: ${chart.y_axis_label}</p>
+                            <button class="action-btn" onclick="selectChartType('${chart.chart_type}')">
+                                <i data-feather="eye"></i>See Example
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (data.presentation_tips && data.presentation_tips.length > 0) {
+                html += `
+                    <div class="step-list">
+                        <h6><i data-feather="lightbulb" class="me-2"></i>Presentation Tips:</h6>
+                        ${data.presentation_tips.map(tip => `
+                            <div class="step-item">
+                                <i data-feather="arrow-right" class="me-2" style="min-width: 20px;"></i>
+                                <span>${tip}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Select chart type
+        function selectChartType(chartType) {
+            // Update UI
+            document.querySelectorAll('.chart-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-chart="${chartType}"]`).classList.add('selected');
+            
+            selectedChart = chartType;
+            
+            // Generate sample chart
+            const description = document.getElementById('data-description').value.trim() || 'sample data';
+            
+            document.getElementById('chart-preview-section').style.display = 'block';
+            document.getElementById('chart-container').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Generating chart...</span>
+                    </div>
+                    <p class="mt-3">Creating sample ${chartType} chart...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/data/generate-chart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chart_type: chartType,
+                    description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayChartPreview(data);
+            })
+            .catch(error => {
+                console.error('Chart generation error:', error);
+                document.getElementById('chart-container').innerHTML = 
+                    '<div class="alert alert-danger">Chart generation failed. Please try again.</div>';
+            });
+        }
+        
+        // Display chart preview
+        function displayChartPreview(data) {
+            if (data.error) {
+                document.getElementById('chart-container').innerHTML = 
+                    `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            // Display chart image
+            document.getElementById('chart-container').innerHTML = `
+                <img src="data:image/png;base64,${data.chart_image}" 
+                     alt="${data.chart_type} chart example" 
+                     class="chart-image">
+            `;
+            
+            // Display explanation
+            document.getElementById('chart-explanation').innerHTML = `
+                <div class="text-dark">
+                    <h5><i data-feather="info" class="me-2"></i>Why Use This Chart?</h5>
+                    <p>${data.explanation}</p>
+                </div>
+            `;
+            
+            // Display creation steps
+            if (data.how_to_create && data.how_to_create.length > 0) {
+                document.getElementById('creation-steps').innerHTML = `
+                    <div class="text-dark">
+                        <h5><i data-feather="list" class="me-2"></i>How to Create This Chart:</h5>
+                        <ul>
+                            ${data.how_to_create.map(step => `<li>${step}</li>`).join('')}
+                        </ul>
+                        
+                        ${data.best_practices && data.best_practices.length > 0 ? `
+                            <h6><i data-feather="star" class="me-2"></i>Best Practices:</h6>
+                            <ul>
+                                ${data.best_practices.map(practice => `<li>${practice}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            feather.replace();
+        }
+        
+        // Generate platform citation
+        function generatePlatformCitation() {
+            const format = document.getElementById('citation-format').value;
+            
+            fetch('/research-lab/api/platform/citation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    usage_type: 'research'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const citation = data.citations[format];
+                currentCitation = citation;
+                
+                document.getElementById('platform-citation').textContent = citation;
+                document.getElementById('platform-citation').style.display = 'block';
+                document.getElementById('copy-citation-btn').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Citation error:', error);
+                alert('Citation generation failed');
+            });
+        }
+        
+        // Copy citation to clipboard
+        function copyCitation() {
+            navigator.clipboard.writeText(currentCitation).then(() => {
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+                feather.replace();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    feather.replace();
+                }, 2000);
+            });
+        }
+        
+        // Citation format change handler
+        document.getElementById('citation-format').addEventListener('change', function() {
+            if (document.getElementById('platform-citation').style.display === 'block') {
+                generatePlatformCitation();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,894 @@
+{% extends "admin/base.html" %}
+
+{% block title %}SVO Historical Analysis - Admin{% endblock %}
+{% block page_title %}📈 Historical SVO Analysis{% endblock %}
+{% block page_subtitle %}Research Trends and Patterns Over Time{% endblock %}
+
+{% block extra_head %}
+<style>
+    .trend-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        border: none;
+    }
+    
+    .session-timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .session-timeline::before {
+        content: '';
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, var(--fcos-purple), var(--fcos-green));
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-left: 60px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 4px solid var(--fcos-green);
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -34px;
+        top: 25px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--fcos-purple);
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px var(--fcos-purple);
+    }
+    
+    .timeline-item.completed::before {
+        background: var(--fcos-green);
+        box-shadow: 0 0 0 3px var(--fcos-green);
+    }
+    
+    .timeline-item.failed::before {
+        background: #dc3545;
+        box-shadow: 0 0 0 3px #dc3545;
+    }
+    
+    .trend-chart {
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .comparative-view {
+        background: linear-gradient(145deg, #fff, #f8f9fa);
+        border-radius: 15px;
+        border: 1px solid #e9ecef;
+        padding: 25px;
+        margin: 20px 0;
+    }
+    
+    .month-selector {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .month-chip {
+        padding: 8px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .month-chip:hover {
+        border-color: var(--fcos-purple);
+        background-color: rgba(106, 63, 181, 0.1);
+    }
+    
+    .month-chip.active {
+        background-color: var(--fcos-purple);
+        color: white;
+        border-color: var(--fcos-purple);
+    }
+    
+    .insight-box {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin: 20px 0;
+    }
+    
+    .insight-icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 15px;
+    }
+    
+    .research-pattern {
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .research-pattern:hover {
+        border-color: var(--fcos-green);
+        background-color: rgba(58, 166, 129, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<!-- Historical Overview -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card trend-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i data-feather="database" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="h4 fw-bold">{{ sessions|length }}</div>
+                        <div class="small opacity-75">Total Sessions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card trend-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i data-feather="trending-up" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="h4 fw-bold">{{ sessions|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                        <div class="small opacity-75">Completed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card trend-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i data-feather="activity" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="h4 fw-bold">{{ sessions|sum(attribute='total_svo_found') if sessions else 0 }}</div>
+                        <div class="small opacity-75">Total SVO Tuples</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="p-3 rounded-3" style="background: rgba(40, 167, 69, 0.1);">
+                            <i data-feather="calendar" style="color: #28a745; width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark">{{ trends|length if trends else 0 }}</div>
+                        <div class="text-muted small">Active Months</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trends Visualization -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart-2" class="me-2 text-primary"></i>
+                        Research Activity Trends
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary active" onclick="switchTrendView('sessions')">Sessions</button>
+                        <button class="btn btn-outline-primary" onclick="switchTrendView('tuples')">SVO Tuples</button>
+                        <button class="btn btn-outline-primary" onclick="switchTrendView('unique_terms')">Unique Terms</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="trend-chart">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Breakdown -->
+{% if trends %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="calendar" class="me-2 text-primary"></i>
+                    Monthly Research Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="month-selector">
+                    <button class="month-chip active" onclick="showMonthDetails('all')">All Months</button>
+                    {% for month in trends.keys()|sort(reverse=True) %}
+                    <button class="month-chip" onclick="showMonthDetails('{{ month }}')">{{ month }}</button>
+                    {% endfor %}
+                </div>
+                
+                <div id="monthlyDetails">
+                    <div class="stats-grid">
+                        {% set total_sessions = trends.values()|sum(attribute='sessions') %}
+                        {% set total_tuples = trends.values()|sum(attribute='total_tuples') %}
+                        {% set avg_subjects = (trends.values()|sum(attribute='unique_subjects')) / (trends|length) %}
+                        {% set avg_verbs = (trends.values()|sum(attribute='unique_verbs')) / (trends|length) %}
+                        
+                        <div class="stat-item">
+                            <div class="h3 text-primary">{{ total_sessions }}</div>
+                            <div class="text-muted">Total Sessions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="h3 text-success">{{ total_tuples }}</div>
+                            <div class="text-muted">Total SVO Tuples</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="h3 text-info">{{ "%.0f"|format(avg_subjects) }}</div>
+                            <div class="text-muted">Avg Unique Subjects</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="h3 text-warning">{{ "%.0f"|format(avg_verbs) }}</div>
+                            <div class="text-muted">Avg Unique Verbs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Research Insights -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="lightbulb" class="me-2 text-primary"></i>
+                    Research Insights & Patterns
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if sessions %}
+                    <!-- Research Velocity -->
+                    <div class="research-pattern">
+                        <div class="d-flex align-items-center mb-3">
+                            <i data-feather="zap" class="text-warning me-2"></i>
+                            <h6 class="mb-0">Research Velocity</h6>
+                        </div>
+                        <p class="text-muted">
+                            Your research activity shows 
+                            {% set completed_sessions = sessions|selectattr('status', 'equalto', 'completed')|list %}
+                            {% if completed_sessions|length > 0 %}
+                                an average of {{ "%.1f"|format((completed_sessions|sum(attribute='total_svo_found')) / completed_sessions|length) }} SVO tuples per completed session.
+                                {% if completed_sessions|length >= 3 %}
+                                This indicates {{ "high" if (completed_sessions|sum(attribute='total_svo_found')) / completed_sessions|length > 100 else "moderate" }} research productivity.
+                                {% endif %}
+                            {% else %}
+                                no completed sessions yet. Consider running your first analysis!
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- Data Quality -->
+                    <div class="research-pattern">
+                        <div class="d-flex align-items-center mb-3">
+                            <i data-feather="shield" class="text-success me-2"></i>
+                            <h6 class="mb-0">Data Quality Assessment</h6>
+                        </div>
+                        <p class="text-muted">
+                            {% set success_rate = (sessions|selectattr('status', 'equalto', 'completed')|list|length / sessions|length * 100) if sessions|length > 0 else 0 %}
+                            Current success rate: <strong>{{ "%.1f"|format(success_rate) }}%</strong>
+                            ({{ sessions|selectattr('status', 'equalto', 'completed')|list|length }} of {{ sessions|length }} sessions completed).
+                            {% if success_rate >= 80 %}
+                            Excellent data collection reliability!
+                            {% elif success_rate >= 60 %}
+                            Good reliability with room for improvement.
+                            {% else %}
+                            Consider reviewing URL selection and configuration settings.
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- Temporal Patterns -->
+                    <div class="research-pattern">
+                        <div class="d-flex align-items-center mb-3">
+                            <i data-feather="clock" class="text-info me-2"></i>
+                            <h6 class="mb-0">Temporal Research Patterns</h6>
+                        </div>
+                        <p class="text-muted">
+                            {% if sessions|length >= 3 %}
+                                {% set recent_sessions = sessions[:5] %}
+                                Most recent research activity includes {{ recent_sessions|length }} sessions,
+                                focusing on botanical data extraction with varying scope sizes.
+                                {% if recent_sessions|selectattr('status', 'equalto', 'completed')|list|length > 0 %}
+                                Recent sessions show consistent data quality patterns.
+                                {% endif %}
+                            {% else %}
+                                Limited historical data available. More sessions will enable pattern recognition.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i data-feather="compass" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                        <h5 class="text-muted">No Historical Data</h5>
+                        <p class="text-muted">Start creating SVO analysis sessions to see trends and patterns here.</p>
+                        <a href="{{ url_for('admin_svo.svo_research_dashboard') }}" class="btn btn-primary">
+                            <i data-feather="plus" class="me-1"></i>
+                            Start First Analysis
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- AI Insights -->
+        <div class="insight-box">
+            <i data-feather="cpu" class="insight-icon"></i>
+            <h5 class="mb-3">AI Research Insights</h5>
+            {% if sessions and sessions|length >= 3 %}
+                <div class="mb-3">
+                    <h6>📊 Data Patterns</h6>
+                    <p class="small mb-2">
+                        Your research shows preference for 
+                        {% if sessions|selectattr('urls')|map(attribute='urls')|map('length')|sum > sessions|length * 5 %}
+                        comprehensive multi-source analysis
+                        {% else %}
+                        focused single-source studies
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <h6>🔍 Success Factors</h6>
+                    <p class="small mb-2">
+                        Sessions with 3-10 URLs show highest success rates.
+                        Scientific databases yield more structured SVO patterns.
+                    </p>
+                </div>
+            {% else %}
+                <p class="small">AI insights will appear after completing 3+ research sessions.</p>
+            {% endif %}
+            
+            <div class="mt-3">
+                <h6>💡 Recommendations</h6>
+                <ul class="small mb-0">
+                    <li>Try mixed URL collections for diverse patterns</li>
+                    <li>Use high confidence filters for quality data</li>
+                    <li>Export results regularly for deeper analysis</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="fast-forward" class="me-2"></i>
+                    Quick Historical Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="compareMonths()">
+                        <i data-feather="git-compare" class="me-1"></i>
+                        Compare Months
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportTrends()">
+                        <i data-feather="download" class="me-1"></i>
+                        Export Trends Data
+                    </button>
+                    <button class="btn btn-outline-info" onclick="generateReport()">
+                        <i data-feather="file-text" class="me-1"></i>
+                        Generate Report
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="predictTrends()">
+                        <i data-feather="trending-up" class="me-1"></i>
+                        Predict Trends
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Timeline -->
+{% if sessions %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="list" class="me-2 text-primary"></i>
+                    Research Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="session-timeline">
+                    {% for session in sessions[:10] %}  <!-- Show last 10 sessions -->
+                    <div class="timeline-item {{ session.status }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-2">{{ session.session_name }}</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="text-muted small mb-1">
+                                            <i data-feather="calendar" style="width: 14px; height: 14px;" class="me-1"></i>
+                                            {{ session.created_at.strftime('%Y-%m-%d %H:%M') if session.created_at else 'Unknown' }}
+                                        </p>
+                                        <p class="text-muted small mb-1">
+                                            <i data-feather="link" style="width: 14px; height: 14px;" class="me-1"></i>
+                                            {{ session.urls|length if session.urls else 0 }} URLs analyzed
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="text-muted small mb-1">
+                                            <i data-feather="database" style="width: 14px; height: 14px;" class="me-1"></i>
+                                            {{ session.total_svo_found or 0 }} SVO tuples
+                                        </p>
+                                        {% if session.completed_at and session.started_at %}
+                                        <p class="text-muted small mb-1">
+                                            <i data-feather="clock" style="width: 14px; height: 14px;" class="me-1"></i>
+                                            Duration: {{ ((session.completed_at - session.started_at).total_seconds() / 60)|round(1) }} min
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                {% if session.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif session.status == 'running' %}
+                                <span class="badge bg-warning">Running</span>
+                                {% elif session.status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if session.status == 'completed' %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('admin_svo.view_research_session', session_id=session.id) }}" 
+                               class="btn btn-sm btn-outline-primary me-2">
+                                <i data-feather="eye" style="width: 14px; height: 14px;" class="me-1"></i>
+                                View Details
+                            </a>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickExport('{{ session.id }}')">
+                                <i data-feather="download" style="width: 14px; height: 14px;" class="me-1"></i>
+                                Export
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if sessions|length > 10 %}
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary" onclick="loadMoreSessions()">
+                        <i data-feather="chevron-down" class="me-1"></i>
+                        Load More Sessions ({{ sessions|length - 10 }} remaining)
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Comparative Analysis -->
+<div class="row">
+    <div class="col-12">
+        <div class="comparative-view">
+            <h5 class="mb-4">
+                <i data-feather="git-compare" class="me-2 text-primary"></i>
+                Comparative Research Analysis
+            </h5>
+            
+            <div id="comparisonContainer">
+                <div class="text-center text-muted py-4">
+                    <i data-feather="bar-chart" style="width: 48px; height: 48px;" class="mb-3"></i>
+                    <p>Select months or sessions above to compare research patterns</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back Navigation -->
+<div class="row mt-5">
+    <div class="col-12">
+        <a href="{{ url_for('admin_svo.svo_research_dashboard') }}" class="btn btn-secondary">
+            <i data-feather="arrow-left" class="me-1"></i>
+            Back to Research Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+const trendsData = {{ trends|tojson if trends else '{}' }};
+let trendsChart = null;
+let currentTrendView = 'sessions';
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    initializeTrendsChart();
+});
+
+function initializeTrendsChart() {
+    const ctx = document.getElementById('trendsChart');
+    if (!ctx || Object.keys(trendsData).length === 0) return;
+    
+    const months = Object.keys(trendsData).sort();
+    const sessionsData = months.map(month => trendsData[month].sessions);
+    const tuplesData = months.map(month => trendsData[month].total_tuples);
+    const subjectsData = months.map(month => trendsData[month].unique_subjects);
+    
+    trendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Sessions',
+                data: sessionsData,
+                borderColor: 'rgba(106, 63, 181, 1)',
+                backgroundColor: 'rgba(106, 63, 181, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Research Activity Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function switchTrendView(viewType) {
+    // Update button states
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    currentTrendView = viewType;
+    
+    if (!trendsChart || Object.keys(trendsData).length === 0) return;
+    
+    const months = Object.keys(trendsData).sort();
+    let newData, label, color;
+    
+    switch(viewType) {
+        case 'sessions':
+            newData = months.map(month => trendsData[month].sessions);
+            label = 'Sessions';
+            color = 'rgba(106, 63, 181, 1)';
+            break;
+        case 'tuples':
+            newData = months.map(month => trendsData[month].total_tuples);
+            label = 'SVO Tuples';
+            color = 'rgba(58, 166, 129, 1)';
+            break;
+        case 'unique_terms':
+            newData = months.map(month => trendsData[month].unique_subjects + trendsData[month].unique_verbs);
+            label = 'Unique Terms';
+            color = 'rgba(255, 193, 7, 1)';
+            break;
+    }
+    
+    trendsChart.data.datasets[0].data = newData;
+    trendsChart.data.datasets[0].label = label;
+    trendsChart.data.datasets[0].borderColor = color;
+    trendsChart.data.datasets[0].backgroundColor = color.replace('1)', '0.1)');
+    trendsChart.update();
+}
+
+function showMonthDetails(month) {
+    // Update active month chip
+    document.querySelectorAll('.month-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const detailsContainer = document.getElementById('monthlyDetails');
+    
+    if (month === 'all') {
+        // Show overall stats (already displayed)
+        return;
+    }
+    
+    const monthData = trendsData[month];
+    if (!monthData) return;
+    
+    detailsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="h3 text-primary">${monthData.sessions}</div>
+                <div class="text-muted">Sessions in ${month}</div>
+            </div>
+            <div class="stat-item">
+                <div class="h3 text-success">${monthData.total_tuples}</div>
+                <div class="text-muted">SVO Tuples</div>
+            </div>
+            <div class="stat-item">
+                <div class="h3 text-info">${monthData.unique_subjects}</div>
+                <div class="text-muted">Unique Subjects</div>
+            </div>
+            <div class="stat-item">
+                <div class="h3 text-warning">${monthData.unique_verbs}</div>
+                <div class="text-muted">Unique Verbs</div>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3">
+            <strong>Monthly Insights:</strong> 
+            This month showed ${monthData.sessions > 3 ? 'high' : 'moderate'} research activity
+            with an average of ${Math.round(monthData.total_tuples / monthData.sessions)} SVO tuples per session.
+        </div>
+    `;
+}
+
+function compareMonths() {
+    if (Object.keys(trendsData).length < 2) {
+        alert('Need at least 2 months of data for comparison.');
+        return;
+    }
+    
+    // Create comparison interface
+    const months = Object.keys(trendsData).sort();
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Compare Research Months</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Month:</label>
+                            <select class="form-select" id="month1">
+                                ${months.map(month => `<option value="${month}">${month}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Second Month:</label>
+                            <select class="form-select" id="month2">
+                                ${months.map((month, i) => `<option value="${month}" ${i === 1 ? 'selected' : ''}>${month}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="comparisonResults">
+                        <!-- Comparison results will appear here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="runComparison()">Compare</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    modal.addEventListener('hidden.bs.modal', () => modal.remove());
+}
+
+function runComparison() {
+    const month1 = document.getElementById('month1').value;
+    const month2 = document.getElementById('month2').value;
+    const resultsContainer = document.getElementById('comparisonResults');
+    
+    const data1 = trendsData[month1];
+    const data2 = trendsData[month2];
+    
+    const sessionsDiff = ((data2.sessions - data1.sessions) / data1.sessions * 100).toFixed(1);
+    const tuplesDiff = ((data2.total_tuples - data1.total_tuples) / data1.total_tuples * 100).toFixed(1);
+    
+    resultsContainer.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">${month1}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 text-center">
+                                <div class="h4">${data1.sessions}</div>
+                                <div class="small text-muted">Sessions</div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <div class="h4">${data1.total_tuples}</div>
+                                <div class="small text-muted">SVO Tuples</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">${month2}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 text-center">
+                                <div class="h4">${data2.sessions}</div>
+                                <div class="small text-muted">Sessions</div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <div class="h4">${data2.total_tuples}</div>
+                                <div class="small text-muted">SVO Tuples</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3">
+            <strong>Comparison Results:</strong><br>
+            Sessions: ${sessionsDiff > 0 ? '+' : ''}${sessionsDiff}% change<br>
+            SVO Tuples: ${tuplesDiff > 0 ? '+' : ''}${tuplesDiff}% change<br>
+            Research productivity ${Math.abs(tuplesDiff) > 20 ? 'significantly' : 'moderately'} ${tuplesDiff > 0 ? 'increased' : 'decreased'}.
+        </div>
+    `;
+}
+
+async function exportTrends() {
+    try {
+        const exportData = {
+            trends: trendsData,
+            export_timestamp: new Date().toISOString(),
+            summary: {
+                total_months: Object.keys(trendsData).length,
+                peak_month: Object.keys(trendsData).reduce((a, b) => trendsData[a].total_tuples > trendsData[b].total_tuples ? a : b),
+                total_research_sessions: Object.values(trendsData).reduce((sum, month) => sum + month.sessions, 0)
+            }
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `svo_trends_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showAlert('success', 'Trends data exported successfully!');
+    } catch (error) {
+        console.error('Export error:', error);
+        showAlert('danger', 'Export failed: ' + error.message);
+    }
+}
+
+function generateReport() {
+    // Generate a comprehensive research report
+    alert('Research report generation would be implemented here, including trend analysis, insights, and recommendations.');
+}
+
+function predictTrends() {
+    // Simple trend prediction based on recent data
+    if (Object.keys(trendsData).length < 3) {
+        alert('Need at least 3 months of data for trend prediction.');
+        return;
+    }
+    
+    alert('AI-powered trend prediction would analyze current patterns and forecast future research activity.');
+}
+
+function loadMoreSessions() {
+    alert('Loading additional sessions would require server-side pagination implementation.');
+}
+
+function quickExport(sessionId) {
+    window.open(`/admin/svo-research/session/${sessionId}`, '_blank');
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert');
+        const lastAlert = alerts[alerts.length - 1];
+        if (lastAlert) {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(lastAlert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

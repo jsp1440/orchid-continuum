@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Phenotypic Variation Analysis - Orchid Research{% endblock %}
+
+{% block extra_head %}
+<style>
+    .species-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        border: 1px solid rgba(108, 117, 125, 0.2);
+    }
+    
+    .species-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: #6b46c1;
+    }
+    
+    .variation-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+    
+    .trait-color { background-color: #f59e0b; }
+    .trait-size { background-color: #10b981; }
+    .trait-shape { background-color: #3b82f6; }
+    .trait-growth { background-color: #8b5cf6; }
+    .trait-flowering { background-color: #ef4444; }
+    .trait-mutation { background-color: #dc2626; }
+    
+    .specimen-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .specimen-thumbnail {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .specimen-thumbnail:hover {
+        transform: scale(1.05);
+    }
+    
+    .variation-details {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-left: 4px solid #6b46c1;
+    }
+    
+    .confidence-bar {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .confidence-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+        transition: width 0.3s ease;
+    }
+    
+    .research-panel {
+        background: linear-gradient(135deg, #6b46c1 0%, #8b5cf6 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .analysis-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0.375rem;
+    }
+    
+    .variation-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    
+    .gallery-item {
+        background: white;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+    
+    .gallery-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #6b46c1;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 mb-2">
+                <i data-feather="search" class="me-2"></i>Orchid Phenotypic Variation Analysis
+            </h1>
+            <p class="lead text-muted">AI-powered analysis of morphological variations within orchid species</p>
+        </div>
+    </div>
+
+    <!-- Research Overview -->
+    <div class="research-panel">
+        <div class="row">
+            <div class="col-md-8">
+                <h3><i data-feather="search" class="me-2"></i>Advanced Phenotypic Research</h3>
+                <p>This system analyzes multiple photographs of the same orchid species to identify:</p>
+                <ul class="mb-0">
+                    <li><strong>Morphological variations</strong> - Color, size, and shape differences</li>
+                    <li><strong>Growth adaptations</strong> - Environmental influences on development</li>
+                    <li><strong>Flowering characteristics</strong> - Seasonal and regional flowering patterns</li>
+                    <li><strong>Mutation detection</strong> - Identification of genetic variations</li>
+                    <li><strong>Phenotypic plasticity</strong> - Adaptive responses to different conditions</li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-center">
+                <i data-feather="cpu" style="width: 64px; height: 64px;" class="mb-3"></i>
+                <h5>AI-Powered Analysis</h5>
+                <p class="mb-0">Using advanced computer vision to detect patterns invisible to the human eye</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Species Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="layers" class="me-2"></i>Species with Multiple Specimens
+                        <span class="badge bg-primary ms-2">{{ species_list|length }} Available</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for genus, species, count in species_list %}
+                        <div class="col-md-4">
+                            <div class="species-card card h-100" onclick="analyzeSpecies('{{ genus }}', '{{ species }}')">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <em>{{ genus }} {{ species }}</em>
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-success">{{ count }} specimens</span>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); analyzeSpecies('{{ genus }}', '{{ species }}')">
+                                            <i data-feather="play" class="me-1"></i>Analyze
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if not species_list %}
+                        <div class="col-12">
+                            <div class="text-center py-4">
+                                <i data-feather="search" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                                <h4 class="text-muted">No Multi-Specimen Species Found</h4>
+                                <p class="text-muted">The system needs at least 3 specimens of the same species with images for phenotypic analysis.</p>
+                                <a href="/gallery" class="btn btn-primary">
+                                    <i data-feather="upload" class="me-2"></i>Browse Gallery
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results Area -->
+    <div id="analysis-results" style="display: none;">
+        <!-- Analysis Loading -->
+        <div id="analysis-loading" class="text-center py-5">
+            <div class="loading-spinner mb-3"></div>
+            <h4>Analyzing Phenotypic Variations</h4>
+            <p class="text-muted">AI is examining multiple specimens for morphological differences...</p>
+            <div class="progress" style="max-width: 400px; margin: 0 auto;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: 0%" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysis-content" style="display: none;">
+            <!-- Species Header -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 id="species-title" class="mb-2"></h3>
+                            <p id="species-description" class="text-muted mb-0"></p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="analysis-stats">
+                                <div class="stat-item">
+                                    <div class="h4 mb-0 text-primary" id="specimen-count">0</div>
+                                    <small>Specimens</small>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="h4 mb-0 text-success" id="variation-count">0</div>
+                                    <small>Variations</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specimen Gallery -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="grid" class="me-2"></i>Specimen Gallery
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="specimen-gallery" class="specimen-grid">
+                        <!-- Specimens will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phenotypic Variations -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>Identified Variations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="variations-list">
+                        <!-- Variations will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research Insights -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="book-open" class="me-2"></i>Research Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="research-insights">
+                        <!-- Research insights will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentAnalysis = null;
+let analysisInProgress = false;
+
+// Main analysis function
+async function analyzeSpecies(genus, species) {
+    if (analysisInProgress) {
+        alert('Analysis already in progress. Please wait for completion.');
+        return;
+    }
+    
+    analysisInProgress = true;
+    
+    // Show analysis area and loading
+    document.getElementById('analysis-results').style.display = 'block';
+    document.getElementById('analysis-loading').style.display = 'block';
+    document.getElementById('analysis-content').style.display = 'none';
+    
+    // Animate progress bar
+    animateProgressBar();
+    
+    try {
+        // Call analysis API
+        const response = await fetch('/api/analyze-phenotype', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                genus: genus,
+                species: species
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const analysis = await response.json();
+        currentAnalysis = analysis;
+        
+        // Display results
+        displayAnalysisResults(analysis);
+        
+    } catch (error) {
+        console.error('Analysis error:', error);
+        alert('Analysis failed: ' + error.message);
+        document.getElementById('analysis-results').style.display = 'none';
+    } finally {
+        analysisInProgress = false;
+    }
+}
+
+function animateProgressBar() {
+    const progressBar = document.getElementById('progress-bar');
+    let progress = 0;
+    
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 500);
+    
+    // Complete progress bar when done
+    setTimeout(() => {
+        progressBar.style.width = '100%';
+    }, 8000);
+}
+
+function displayAnalysisResults(analysis) {
+    // Hide loading, show content
+    document.getElementById('analysis-loading').style.display = 'none';
+    document.getElementById('analysis-content').style.display = 'block';
+    
+    // Update species header
+    document.getElementById('species-title').textContent = `${analysis.genus} ${analysis.species}`;
+    document.getElementById('species-description').textContent = analysis.research_notes;
+    document.getElementById('specimen-count').textContent = analysis.total_specimens;
+    document.getElementById('variation-count').textContent = analysis.variations.length;
+    
+    // Display specimen gallery
+    displaySpecimenGallery(analysis.specimens);
+    
+    // Display variations
+    displayVariations(analysis.variations);
+    
+    // Display research insights
+    displayResearchInsights(analysis);
+}
+
+function displaySpecimenGallery(specimens) {
+    const gallery = document.getElementById('specimen-gallery');
+    gallery.innerHTML = '';
+    
+    specimens.forEach(specimen => {
+        const specimenDiv = document.createElement('div');
+        specimenDiv.className = 'position-relative';
+        
+        const imageUrl = specimen.google_drive_id ? 
+            `/api/drive-photo/${specimen.google_drive_id}` : 
+            '/static/images/orchid_placeholder.svg';
+        
+        specimenDiv.innerHTML = `
+            <img src="${imageUrl}" 
+                 class="specimen-thumbnail" 
+                 alt="${specimen.display_name}"
+                 onclick="showSpecimenDetail(${specimen.id})"
+                 onerror="this.src='/static/images/orchid_placeholder.svg'">
+            <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2">
+                <small>${specimen.country || 'Unknown location'}</small>
+            </div>
+        `;
+        
+        gallery.appendChild(specimenDiv);
+    });
+}
+
+function displayVariations(variations) {
+    const variationsList = document.getElementById('variations-list');
+    variationsList.innerHTML = '';
+    
+    if (variations.length === 0) {
+        variationsList.innerHTML = `
+            <div class="text-center py-4">
+                <i data-feather="search" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                <p class="text-muted">No significant variations detected in this analysis.</p>
+            </div>
+        `;
+        feather.replace();
+        return;
+    }
+    
+    variations.forEach((variation, index) => {
+        const variationDiv = document.createElement('div');
+        variationDiv.className = 'variation-details';
+        
+        const traitClass = `trait-${variation.variation_type}`;
+        const confidencePercent = Math.round(variation.confidence * 100);
+        
+        variationDiv.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">
+                    <span class="variation-badge ${traitClass} text-white me-2">
+                        ${variation.variation_type.toUpperCase()}
+                    </span>
+                    ${variation.trait_name}
+                </h6>
+                <small class="text-muted">Confidence: ${confidencePercent}%</small>
+            </div>
+            
+            <p class="mb-2">${variation.description}</p>
+            
+            <div class="confidence-bar mb-2">
+                <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>Specimens affected:</strong> ${variation.specimens_affected.length}
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="highlightSpecimens([${variation.specimens_affected.join(',')}])">
+                        <i data-feather="eye" class="me-1"></i>View Specimens
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        variationsList.appendChild(variationDiv);
+    });
+    
+    feather.replace();
+}
+
+function displayResearchInsights(analysis) {
+    const insights = document.getElementById('research-insights');
+    insights.innerHTML = `
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6><i data-feather="dna" class="me-2"></i>Potential Mutations</h6>
+                <div class="list-group list-group-flush">
+                    ${analysis.mutation_indicators && analysis.mutation_indicators.length > 0 ? 
+                        analysis.mutation_indicators.map(mutation => 
+                            `<div class="list-group-item">${mutation}</div>`
+                        ).join('') : 
+                        '<div class="list-group-item text-muted">No mutations detected</div>'
+                    }
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h6><i data-feather="globe" class="me-2"></i>Environmental Adaptations</h6>
+                <div class="list-group list-group-flush">
+                    ${analysis.adaptation_patterns && analysis.adaptation_patterns.length > 0 ? 
+                        analysis.adaptation_patterns.map(adaptation => 
+                            `<div class="list-group-item">${adaptation}</div>`
+                        ).join('') : 
+                        '<div class="list-group-item text-muted">No clear adaptations identified</div>'
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h6><i data-feather="bar-chart-2" class="me-2"></i>Analysis Summary</h6>
+            <div class="bg-light p-3 rounded">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="h5 text-primary">${analysis.morphological_summary?.diversity_score ? (analysis.morphological_summary.diversity_score * 100).toFixed(0) : 0}%</div>
+                        <small>Diversity Score</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h5 text-success">${analysis.morphological_summary?.average_confidence ? (analysis.morphological_summary.average_confidence * 100).toFixed(0) : 0}%</div>
+                        <small>Avg. Confidence</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h5 text-info">${analysis.morphological_summary?.variation_types?.length || 0}</div>
+                        <small>Trait Types</small>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h5 text-warning">${analysis.variations?.length || 0}</div>
+                        <small>Total Variations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="exportAnalysis()">
+                    <i data-feather="download" class="me-2"></i>Export Analysis
+                </button>
+                <button class="btn btn-outline-secondary" onclick="shareAnalysis()">
+                    <i data-feather="share-2" class="me-2"></i>Share Results
+                </button>
+                <button class="btn btn-outline-info" onclick="viewDetailedReport()">
+                    <i data-feather="file-text" class="me-2"></i>Detailed Report
+                </button>
+            </div>
+        </div>
+    `;
+    
+    feather.replace();
+}
+
+function highlightSpecimens(specimenIds) {
+    // Highlight specific specimens in the gallery
+    const gallery = document.getElementById('specimen-gallery');
+    const thumbnails = gallery.querySelectorAll('.specimen-thumbnail');
+    
+    // Remove existing highlights
+    thumbnails.forEach(thumb => {
+        thumb.parentElement.style.border = 'none';
+    });
+    
+    // Add highlights to specific specimens (simplified logic)
+    thumbnails.forEach((thumb, index) => {
+        if (specimenIds.includes(index)) {
+            thumb.parentElement.style.border = '3px solid #6b46c1';
+            thumb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+}
+
+function showSpecimenDetail(specimenId) {
+    // Open specimen detail page
+    window.open(`/orchid/${specimenId}`, '_blank');
+}
+
+function exportAnalysis() {
+    if (currentAnalysis) {
+        const dataStr = JSON.stringify(currentAnalysis, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${currentAnalysis.genus}_${currentAnalysis.species}_phenotype_analysis.json`;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+    }
+}
+
+function shareAnalysis() {
+    if (currentAnalysis) {
+        const shareUrl = `${window.location.origin}/phenotype-analysis?genus=${currentAnalysis.genus}&species=${currentAnalysis.species}`;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Analysis URL copied to clipboard!');
+        });
+    }
+}
+
+function viewDetailedReport() {
+    if (currentAnalysis) {
+        // Open detailed report in new tab
+        window.open(`/reports/phenotype/${currentAnalysis.genus}/${currentAnalysis.species}`, '_blank');
+    }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}AI Breeding Assistant - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h1 class="display-4 fw-bold text-light mb-3">
+                        <i data-feather="dna" class="me-3"></i>AI Breeding Assistant
+                    </h1>
+                    <p class="lead text-light opacity-90 mb-0">
+                        Advanced genetic analysis and breeding recommendations powered by AI
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Tools Section -->
+    <div class="row g-4">
+        <!-- Genetic Analysis Panel -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i data-feather="target" class="me-2"></i>Genetic Analysis</h4>
+                </div>
+                <div class="card-body">
+                    <form id="genetic-analysis-form">
+                        <div class="mb-3">
+                            <label for="parent1-select" class="form-label">Pod Parent</label>
+                            <select class="form-select" id="parent1-select" required>
+                                <option value="">Select pod parent...</option>
+                                <!-- Populated via JavaScript -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="parent2-select" class="form-label">Pollen Parent</label>
+                            <select class="form-select" id="parent2-select" required>
+                                <option value="">Select pollen parent...</option>
+                                <!-- Populated via JavaScript -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Desired Traits</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-color" value="color">
+                                        <label class="form-check-label" for="trait-color">Color</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-size" value="size">
+                                        <label class="form-check-label" for="trait-size">Flower Size</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-fragrance" value="fragrance">
+                                        <label class="form-check-label" for="trait-fragrance">Fragrance</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-form" value="form">
+                                        <label class="form-check-label" for="trait-form">Flower Form</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-vigor" value="vigor">
+                                        <label class="form-check-label" for="trait-vigor">Plant Vigor</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="trait-flowering" value="flowering">
+                                        <label class="form-check-label" for="trait-flowering">Flowering</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i data-feather="cpu" class="me-2"></i>Analyze Cross
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross Predictions Panel -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i data-feather="trending-up" class="me-2"></i>Cross Predictions</h4>
+                </div>
+                <div class="card-body">
+                    <div id="prediction-results" class="text-center py-5">
+                        <i data-feather="cpu" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                        <p class="text-muted">Select parents and desired traits to see AI-powered breeding predictions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Tools Section -->
+    <div class="row g-4 mt-1">
+        <!-- Inheritance Patterns -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i data-feather="git-branch" class="me-2"></i>Inheritance Patterns</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="trait-analysis" class="form-label">Analyze Trait Inheritance</label>
+                        <select class="form-select" id="trait-analysis">
+                            <option value="">Select trait to analyze...</option>
+                            <option value="flower-color">Flower Color</option>
+                            <option value="flower-size">Flower Size</option>
+                            <option value="petal-shape">Petal Shape</option>
+                            <option value="fragrance">Fragrance</option>
+                            <option value="plant-size">Plant Size</option>
+                            <option value="blooming-season">Blooming Season</option>
+                        </select>
+                    </div>
+                    <div id="inheritance-chart" class="text-center py-4">
+                        <canvas id="inheritance-canvas" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breeding Recommendations -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i data-feather="help-circle" class="me-2"></i>AI Recommendations</h4>
+                </div>
+                <div class="card-body">
+                    <div id="recommendations-list" class="list-group list-group-flush">
+                        <!-- Recommendations populated via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compatibility Matrix Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0"><i data-feather="grid" class="me-2"></i>Breeding Compatibility Matrix</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="compatibility-matrix">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Cross Type</th>
+                                    <th>Success Rate</th>
+                                    <th>Expected Traits</th>
+                                    <th>Time to Flower</th>
+                                    <th>Recommendation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resources Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i data-feather="book-open" class="me-2"></i>Breeding Resources</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="database" style="width: 48px; height: 48px;" class="text-primary"></i>
+                                </div>
+                                <h5>Genetic Database</h5>
+                                <p class="text-muted small">Access comprehensive orchid genetic information</p>
+                                <button class="btn btn-outline-primary btn-sm">Explore</button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="bar-chart-2" style="width: 48px; height: 48px;" class="text-success"></i>
+                                </div>
+                                <h5>Success Analytics</h5>
+                                <p class="text-muted small">Track breeding program success rates</p>
+                                <button class="btn btn-outline-success btn-sm">View Stats</button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="users" style="width: 48px; height: 48px;" class="text-info"></i>
+                                </div>
+                                <h5>Breeder Network</h5>
+                                <p class="text-muted small">Connect with expert breeders worldwide</p>
+                                <button class="btn btn-outline-info btn-sm">Connect</button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <i data-feather="calendar" style="width: 48px; height: 48px;" class="text-warning"></i>
+                                </div>
+                                <h5>Breeding Calendar</h5>
+                                <p class="text-muted small">Plan optimal crossing schedules</p>
+                                <button class="btn btn-outline-warning btn-sm">Plan</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Analyzing Genetic Compatibility...</h5>
+                <p class="text-muted mb-0">AI is processing breeding predictions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    feather.replace();
+    
+    // Load initial data
+    loadParentOptions();
+    loadCompatibilityMatrix();
+    initializeCharts();
+    
+    // Form submission handler
+    document.getElementById('genetic-analysis-form').addEventListener('submit', handleGeneticAnalysis);
+    
+    // Trait analysis handler
+    document.getElementById('trait-analysis').addEventListener('change', analyzeInheritance);
+});
+
+async function loadParentOptions() {
+    try {
+        const response = await fetch('/api/breeding-parents');
+        const parents = await response.json();
+        
+        const parent1Select = document.getElementById('parent1-select');
+        const parent2Select = document.getElementById('parent2-select');
+        
+        parents.forEach(parent => {
+            const option1 = new Option(`${parent.display_name} (${parent.genus})`, parent.id);
+            const option2 = new Option(`${parent.display_name} (${parent.genus})`, parent.id);
+            parent1Select.add(option1);
+            parent2Select.add(option2);
+        });
+    } catch (error) {
+        console.error('Error loading parent options:', error);
+    }
+}
+
+async function handleGeneticAnalysis(event) {
+    event.preventDefault();
+    
+    const parent1 = document.getElementById('parent1-select').value;
+    const parent2 = document.getElementById('parent2-select').value;
+    const traits = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    
+    if (!parent1 || !parent2) {
+        alert('Please select both parents');
+        return;
+    }
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    try {
+        const response = await fetch('/api/analyze-breeding-cross', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                parent1_id: parent1,
+                parent2_id: parent2,
+                desired_traits: traits
+            })
+        });
+        
+        const analysis = await response.json();
+        displayPredictionResults(analysis);
+        
+    } catch (error) {
+        console.error('Error analyzing cross:', error);
+        document.getElementById('prediction-results').innerHTML = `
+            <div class="alert alert-danger">
+                <h5>Analysis Error</h5>
+                <p>Unable to analyze this cross. Please try again later.</p>
+            </div>
+        `;
+    } finally {
+        loadingModal.hide();
+    }
+}
+
+function displayPredictionResults(analysis) {
+    const resultsDiv = document.getElementById('prediction-results');
+    
+    resultsDiv.innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h3 class="text-success">${analysis.success_probability}%</h3>
+                        <p class="mb-0">Success Probability</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h3 class="text-info">${analysis.flowering_time}</h3>
+                        <p class="mb-0">Expected Flowering</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Predicted Offspring Traits</h5>
+                        <div class="row">
+                            ${analysis.predicted_traits.map(trait => `
+                                <div class="col-md-4 mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>${trait.name}:</span>
+                                        <div class="progress" style="width: 100px;">
+                                            <div class="progress-bar" style="width: ${trait.probability}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6>AI Breeding Recommendation</h6>
+                    <p class="mb-0">${analysis.recommendation}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadCompatibilityMatrix() {
+    try {
+        const response = await fetch('/api/breeding-compatibility-matrix');
+        const matrix = await response.json();
+        
+        const tbody = document.querySelector('#compatibility-matrix tbody');
+        tbody.innerHTML = matrix.map(row => `
+            <tr>
+                <td><strong>${row.cross_type}</strong></td>
+                <td>
+                    <div class="progress" style="width: 100px;">
+                        <div class="progress-bar bg-${getSuccessColor(row.success_rate)}" 
+                             style="width: ${row.success_rate}%">${row.success_rate}%</div>
+                    </div>
+                </td>
+                <td>${row.expected_traits}</td>
+                <td>${row.flowering_time}</td>
+                <td>
+                    <span class="badge bg-${getRecommendationColor(row.recommendation)}">${row.recommendation}</span>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading compatibility matrix:', error);
+    }
+}
+
+function getSuccessColor(rate) {
+    if (rate >= 80) return 'success';
+    if (rate >= 60) return 'warning';
+    return 'danger';
+}
+
+function getRecommendationColor(rec) {
+    if (rec === 'Highly Recommended') return 'success';
+    if (rec === 'Recommended') return 'primary';
+    if (rec === 'Caution') return 'warning';
+    return 'secondary';
+}
+
+function analyzeInheritance() {
+    const trait = document.getElementById('trait-analysis').value;
+    if (!trait) return;
+    
+    // Initialize inheritance pattern visualization
+    const canvas = document.getElementById('inheritance-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw inheritance pattern visualization
+    drawInheritancePattern(ctx, trait);
+}
+
+function drawInheritancePattern(ctx, trait) {
+    // Sample inheritance pattern visualization
+    ctx.fillStyle = '#007bff';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    
+    // Draw title
+    ctx.fillText(`${trait.replace('-', ' ').toUpperCase()} Inheritance Pattern`, 200, 30);
+    
+    // Draw simplified Punnett square
+    const squareSize = 60;
+    const startX = 100;
+    const startY = 80;
+    
+    // Parent alleles
+    ctx.fillStyle = '#28a745';
+    ctx.fillRect(startX, startY, squareSize, squareSize);
+    ctx.fillStyle = '#dc3545';
+    ctx.fillRect(startX + squareSize, startY, squareSize, squareSize);
+    ctx.fillStyle = '#ffc107';
+    ctx.fillRect(startX, startY + squareSize, squareSize, squareSize);
+    ctx.fillStyle = '#6f42c1';
+    ctx.fillRect(startX + squareSize, startY + squareSize, squareSize, squareSize);
+    
+    // Add labels
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.fillText('AA', startX + 30, startY + 35);
+    ctx.fillText('Aa', startX + squareSize + 30, startY + 35);
+    ctx.fillText('Aa', startX + 30, startY + squareSize + 35);
+    ctx.fillText('aa', startX + squareSize + 30, startY + squareSize + 35);
+    
+    // Add probabilities
+    ctx.fillStyle = '#333';
+    ctx.font = '10px Arial';
+    ctx.fillText('25%', startX + 30, startY + 55);
+    ctx.fillText('50%', startX + squareSize + 30, startY + 55);
+    ctx.fillText('25%', startX + 30, startY + squareSize + 55);
+}
+
+function initializeCharts() {
+    // Initialize any additional charts or visualizations
+    console.log('Charts initialized');
+}
+</script>
+{% endblock %}

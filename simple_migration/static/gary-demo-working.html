@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gary Yong Gee - Orchid Continuum Demo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --orchid-purple: #8B5CF6;
+            --orchid-green: #10B981;
+            --orchid-blue: #3B82F6;
+            --orchid-pink: #EC4899;
+            --orchid-orange: #F59E0B;
+            --dark-bg: #1F2937;
+            --light-bg: #F9FAFB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --gradient-orchid: linear-gradient(135deg, var(--orchid-purple) 0%, var(--orchid-pink) 100%);
+            --gradient-nature: linear-gradient(135deg, var(--orchid-green) 0%, var(--orchid-blue) 100%);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            background: var(--gradient-orchid);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .widget-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .widget-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-orchid);
+        }
+        
+        .widget-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .widget-section h2 {
+            color: var(--text-primary);
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .api-info {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .api-info::before {
+            content: '✨';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .api-key {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+        }
+        .demo-box {
+            border: 2px solid var(--orchid-blue);
+            padding: 28px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-nature);
+        }
+        
+        .demo-box h4 {
+            margin-top: 0;
+            color: var(--orchid-blue);
+            font-weight: 600;
+            font-size: 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--orchid-purple);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+        .search-results {
+            min-height: 50px;
+            margin-top: 10px;
+        }
+        .orchid-result {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+        }
+        .orchid-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+        .orchid-info h5 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        .orchid-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .care-tip {
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #2d5a2d;
+        }
+        .chart-container {
+            height: 120px;
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .chart-bar {
+            flex: 1;
+            margin: 0 2px;
+            background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+        }
+        .chart-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        .map-demo {
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            position: relative;
+            margin: 15px 0;
+        }
+        .map-pin {
+            position: absolute;
+            font-size: 20px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .next-steps {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 2px solid rgba(245, 158, 11, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .next-steps::before {
+            content: '🚀';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .next-steps h3 {
+            color: var(--orchid-orange);
+            margin-top: 0;
+            font-weight: 600;
+        }
+        label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        select {
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌺 Gary Yong Gee Partnership Demo</h1>
+            <p>See exactly how the orchid widgets will work on your website</p>
+            
+            <div class="api-info">
+                <h3 style="color: var(--orchid-green); font-weight: 600; margin-bottom: 16px; font-size: 24px;">✅ Your Partnership Is Ready!</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                    <div>
+                        <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">Partner</p>
+                        <p style="margin: 0; font-weight: 600; color: var(--text-primary);">Gary Yong Gee</p>
+                    </div>
+                    <div>
+                        <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">Website</p>
+                        <p style="margin: 0; font-weight: 600; color: var(--orchid-blue);">orchids.yonggee.name</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <p style="margin: 8px 0; color: var(--text-secondary); font-weight: 500;">API Key</p>
+                    <div class="api-key" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--orchid-purple); font-weight: 600;">GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-grid">
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-blue);">
+                <h2><span style="color: var(--orchid-blue);">🔍</span> Advanced Search Widget</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Your visitors can search through Gary's orchid collection + 15,431 GBIF orchids + Five Cities Society data.</p>
+                
+                <div class="demo-box">
+                    <h4>🎯 Live Demo - Advanced Search Beyond Basic Genus!</h4>
+                    <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
+                        <strong>🌟 This goes far beyond Gary's basic genus search:</strong>
+                    </p>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                        <strong>💡 Try these advanced searches:</strong><br>
+                        • <code>"winter blooming"</code> - Find orchids by season<br>
+                        • <code>"cool temperatures"</code> - Search by growing conditions<br>
+                        • <code>"bright light"</code> - Filter by light requirements<br>
+                        • <code>"Brazil"</code> - Find orchids by origin<br>
+                        • <code>"fragrant"</code> - Search for scented varieties<br>
+                        • <code>"easy to grow"</code> - Beginner-friendly orchids
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" class="search-input" id="searchInput" 
+                               placeholder="Try: 'winter blooming' or 'cool temperatures' or 'bright light'"
+                               style="flex: 1; margin-bottom: 0;">
+                        <button id="searchButton" onclick="performSearch()" 
+                                style="padding: 16px 28px; background: var(--gradient-orchid); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            🔍 Search
+                        </button>
+                    </div>
+                    <div class="search-results" id="searchResults">
+                        <p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>
+                    </div>
+                </div>
+                
+                <div class="code-block">&lt;ocw-search data-placeholder="Search Gary's orchids..."&gt;&lt;/ocw-search&gt;</div>
+            </div>
+
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-green);">
+                <h2><span style="color: var(--orchid-green);">🗺️</span> Privacy-Controlled Mapping</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Interactive map with privacy controls - partners get exact coordinates, public sees generalized locations.</p>
+                
+                <div class="demo-box" style="border-color: #28a745; background: #f0fff4;">
+                    <h4 style="color: #28a745;">🎯 Live Demo - Privacy Controls!</h4>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="radio" name="mapMode" value="public" checked> 📍 Public Mode (generalized)
+                        </label>
+                        <label>
+                            <input type="radio" name="mapMode" value="private"> 🔒 Partner Mode (exact coordinates)
+                        </label>
+                        <button onclick="updateMapMode()" 
+                                style="margin-left: 15px; padding: 12px 24px; background: var(--gradient-nature); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            🗺️ Update Map
+                        </button>
+                    </div>
+                    <div class="map-demo" id="mapDemo">
+                        <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
+                        <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>📍 Public Mode</strong><br>
+                            <small>Showing generalized locations for privacy</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="code-block">&lt;ocw-map&gt;&lt;/ocw-map&gt;</div>
+            </div>
+
+            <div class="widget-section" style="border-left: 4px solid var(--orchid-pink);">
+                <h2><span style="color: var(--orchid-pink);">📊</span> Flowering Phenology Analytics</h2>
+                <p style="color: var(--text-secondary); font-size: 16px;">Shows flowering patterns throughout the year - when do different orchids bloom?</p>
+                
+                <div class="demo-box" style="border-color: #dc3545; background: #fff0f0;">
+                    <h4 style="color: #dc3545;">🎯 Live Demo - Flowering Patterns!</h4>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <select id="taxonSelect" style="flex: 1;">
+                            <option value="Cattleya">Cattleya Species</option>
+                            <option value="Dendrobium">Dendrobium Species</option>
+                            <option value="Phalaenopsis">Phalaenopsis Species</option>
+                        </select>
+                        <button onclick="updatePhenologyChart()" 
+                                style="padding: 12px 24px; background: linear-gradient(135deg, var(--orchid-pink) 0%, var(--orchid-orange) 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: var(--shadow-soft);">
+                            📊 Update Chart
+                        </button>
+                    </div>
+                    <div class="chart-container" id="phenologyChart">
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Jan</div></div>
+                        <div class="chart-bar" style="height: 30%;"><div class="chart-label">Feb</div></div>
+                        <div class="chart-bar" style="height: 60%;"><div class="chart-label">Mar</div></div>
+                        <div class="chart-bar" style="height: 90%;"><div class="chart-label">Apr</div></div>
+                        <div class="chart-bar" style="height: 70%;"><div class="chart-label">May</div></div>
+                        <div class="chart-bar" style="height: 40%;"><div class="chart-label">Jun</div></div>
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Jul</div></div>
+                        <div class="chart-bar" style="height: 20%;"><div class="chart-label">Aug</div></div>
+                        <div class="chart-bar" style="height: 40%;"><div class="chart-label">Sep</div></div>
+                        <div class="chart-bar" style="height: 80%;"><div class="chart-label">Oct</div></div>
+                        <div class="chart-bar" style="height: 60%;"><div class="chart-label">Nov</div></div>
+                        <div class="chart-bar" style="height: 30%;"><div class="chart-label">Dec</div></div>
+                    </div>
+                    <p style="text-align: center; margin: 0; color: #666; font-size: 14px;">
+                        📊 <span id="selectedSpecies">Cattleya</span> flowering peaks in <strong>April (45%)</strong> and <strong>October (35%)</strong>
+                    </p>
+                </div>
+                
+                <div class="code-block">&lt;ocw-phenology data-taxon="Dendrobium"&gt;&lt;/ocw-phenology&gt;</div>
+            </div>
+        </div>
+
+        <!-- JavaScript for interactive demos -->
+        <script>
+            // Enhanced orchid data with advanced search capabilities
+            const orchidData = {
+                'cattleya': [
+                    {
+                        name: 'Cattleya labiata',
+                        common: 'Pink Cattleya',
+                        description: 'Beautiful pink orchid from Brazil, the national flower',
+                        season: 'Fall blooming',
+                        care: '💡 Bright light, warm temperatures, dry rest period',
+                        origin: 'Brazil',
+                        characteristics: ['bright light', 'warm temperatures', 'epiphyte', 'fragrant']
+                    },
+                    {
+                        name: 'Cattleya trianae',
+                        common: 'Christmas Orchid',
+                        description: 'Colombia\'s national flower, winter blooming',
+                        season: 'December-February',
+                        care: '💡 Intermediate temperatures, bright light, regular watering',
+                        origin: 'Colombia',
+                        characteristics: ['winter blooming', 'intermediate temperatures', 'bright light', 'easy to grow']
+                    }
+                ],
+                'phalaenopsis': [
+                    {
+                        name: 'Phalaenopsis amabilis',
+                        common: 'White Moth Orchid',
+                        description: 'Classic white moth orchid, easy to grow indoors',
+                        season: 'Winter-Spring',
+                        care: '💡 Low light, warm temperatures, regular watering',
+                        origin: 'Southeast Asia',
+                        characteristics: ['low light', 'warm temperatures', 'easy to grow', 'winter blooming', 'beginner friendly']
+                    },
+                    {
+                        name: 'Phalaenopsis schilleriana',
+                        common: 'Rose Moth Orchid',
+                        description: 'Pink spotted leaves, fragrant flowers',
+                        season: 'Spring blooming',
+                        care: '💡 Filtered light, high humidity, bark mix',
+                        origin: 'Philippines',
+                        characteristics: ['fragrant', 'filtered light', 'high humidity', 'spring blooming']
+                    }
+                ],
+                'dendrobium': [
+                    {
+                        name: 'Dendrobium nobile',
+                        common: 'Noble Dendrobium',
+                        description: 'Fragrant spring flowers, needs cool winter rest',
+                        season: 'Spring blooming',
+                        care: '💡 Cool winter rest, bright light, less water in winter',
+                        origin: 'Himalayas',
+                        characteristics: ['cool temperatures', 'bright light', 'spring blooming', 'fragrant', 'winter rest']
+                    },
+                    {
+                        name: 'Dendrobium phalaenopsis',
+                        common: 'Dendrobium Phalaenopsis',
+                        description: 'Long-lasting flowers, warm grower',
+                        season: 'Year-round',
+                        care: '💡 Warm temperatures, bright light, regular feeding',
+                        origin: 'Australia',
+                        characteristics: ['warm temperatures', 'bright light', 'easy to grow', 'long lasting']
+                    }
+                ]
+            };
+
+            // Phenology data for different species with specific species names
+            const phenologyData = {
+                'Cattleya': { 
+                    peaks: ['April (45%)', 'October (35%)'], 
+                    pattern: [20, 30, 60, 90, 70, 40, 20, 20, 40, 80, 60, 30],
+                    species: ['C. walkeriana', 'C. nobilior', 'C. mossiae', 'C. trianae', 'C. warscewiczii', 'C. dowiana', 'C. aurantiaca', 'C. skinneri', 'C. bowringiana', 'C. labiata', 'C. percivaliana', 'C. lueddemanniana']
+                },
+                'Dendrobium': { 
+                    peaks: ['March (50%)', 'September (40%)'], 
+                    pattern: [15, 25, 95, 70, 60, 30, 15, 10, 75, 60, 40, 25],
+                    species: ['D. wardianum', 'D. chrysotoxum', 'D. nobile', 'D. pierardii', 'D. fimbriatum', 'D. aggregatum', 'D. densiflorum', 'D. thyrsiflorum', 'D. speciosum', 'D. kingianum', 'D. bigibbum', 'D. canaliculatum']
+                },
+                'Phalaenopsis': { 
+                    peaks: ['January (60%)', 'November (45%)'], 
+                    pattern: [90, 70, 40, 30, 20, 15, 10, 15, 25, 35, 85, 70],
+                    species: ['P. amabilis', 'P. schilleriana', 'P. stuartiana', 'P. aphrodite', 'P. equestris', 'P. mannii', 'P. bellina', 'P. violacea', 'P. gigantea', 'P. amboinensis', 'P. hieroglyphica', 'P. pulchra']
+                }
+            };
+
+            // Real database search functionality
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                if (query.length < 2) {
+                    searchResults.innerHTML = '<p style="color: #666; font-style: italic;">Try the advanced search terms above to see how this goes beyond basic genus lookup...</p>';
+                    return;
+                }
+
+                searchResults.innerHTML = '<p style="color: #007bff;">🔍 Searching real Orchid Continuum database (1,630+ orchids)...</p>';
+
+                // Debounce search requests
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        // Use the actual Orchid Continuum search API
+                        const response = await fetch(`/api/search-orchids?q=${encodeURIComponent(query)}&limit=6`);
+                        
+                        if (!response.ok) {
+                            throw new Error('Search failed');
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.orchids && data.orchids.length > 0) {
+                            searchResults.innerHTML = `
+                                <div style="background: #e8f5e8; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                    🎯 <strong>Real Results from Orchid Continuum Database</strong><br>
+                                    Found ${data.orchids.length} orchids matching "${query}" from ${data.total || '1,630+'} total records
+                                </div>
+                            ` + data.orchids.map(orchid => `
+                                <div class="orchid-result">
+                                    ${orchid.google_drive_id ? `
+                                        <img src="/api/drive-photo/${orchid.google_drive_id}" 
+                                             alt="${orchid.name || orchid.scientific_name}" class="orchid-image"
+                                             onerror="this.src='/static/images/orchid_placeholder.svg'">
+                                    ` : ''}
+                                    <div class="orchid-info">
+                                        <h5>${orchid.name || orchid.scientific_name || (orchid.genus + ' ' + orchid.species)}</h5>
+                                        <p><strong>${orchid.genus} ${orchid.species}</strong> • Real database record</p>
+                                        ${orchid.habitat ? `<p style="color: #007bff;">🌍 Habitat: ${orchid.habitat}</p>` : ''}
+                                        ${orchid.climate ? `<p style="color: #007bff;">🌡️ Climate: ${orchid.climate}</p>` : ''}
+                                        <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
+                                            ✨ <strong>Source:</strong> Live Orchid Continuum Database
+                                            <br>📊 This shows real data from the 1,630+ orchid collection
+                                        </p>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            // Fallback to sample data with real database message
+                            searchResults.innerHTML = `
+                                <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                    🔍 <strong>No exact matches in current database for "${query}"</strong><br>
+                                    Showing sample results to demonstrate advanced search capabilities:
+                                </div>
+                                ${getFallbackResults(query)}
+                                <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px;">
+                                    💡 <strong>In the full system:</strong> This would search across Gary's collection + 15,431+ GBIF orchids + institutional databases
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Search error:', error);
+                        
+                        // Show fallback with error explanation
+                        searchResults.innerHTML = `
+                            <div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                                🔍 <strong>Demo Mode:</strong> Showing how advanced search would work<br>
+                                (Database temporarily unavailable - this demonstrates the widget capabilities)
+                            </div>
+                            ${getFallbackResults(query)}
+                        `;
+                    }
+                }, 500);
+            });
+            
+            // Fallback results for demo purposes
+            function getFallbackResults(query) {
+                const lowerQuery = query.toLowerCase();
+                let results = [];
+                
+                // Advanced search across sample data
+                for (let genus in orchidData) {
+                    orchidData[genus].forEach(orchid => {
+                        let match = false;
+                        let reason = '';
+                        
+                        // Basic genus/species match
+                        if (genus.includes(lowerQuery) || orchid.name.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Scientific name contains "${query}"`;
+                        }
+                        
+                        // Advanced characteristic search
+                        if (orchid.characteristics && orchid.characteristics.some(char => char.includes(lowerQuery))) {
+                            match = true;
+                            reason = `Growing characteristic: "${query}"`;
+                        }
+                        
+                        // Origin search
+                        if (orchid.origin && orchid.origin.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Geographic origin: ${orchid.origin}`;
+                        }
+                        
+                        // Season/care search
+                        if (orchid.season.toLowerCase().includes(lowerQuery) || orchid.care.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = orchid.season.toLowerCase().includes(lowerQuery) ? 
+                                    `Blooming season: ${orchid.season}` : 'Care requirement matches search';
+                        }
+                        
+                        // Description search
+                        if (orchid.description.toLowerCase().includes(lowerQuery)) {
+                            match = true;
+                            reason = `Description contains "${query}"`;
+                        }
+                        
+                        if (match) {
+                            results.push({
+                                ...orchid,
+                                searchReason: reason
+                            });
+                        }
+                    });
+                }
+
+                if (results.length > 0) {
+                    return results.map(orchid => `
+                        <div class="orchid-result">
+                            <div class="orchid-info">
+                                <h5>${orchid.name}</h5>
+                                <p><strong>${orchid.common}</strong> • ${orchid.description}</p>
+                                <p style="color: #007bff;">🌸 Blooms: ${orchid.season} • 🌍 Origin: ${orchid.origin}</p>
+                                <div class="care-tip">${orchid.care}</div>
+                                <p style="color: #28a745; font-size: 12px; margin-top: 8px;">
+                                    ✨ <strong>Match reason:</strong> ${orchid.searchReason}
+                                </p>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    return `
+                        <p style="color: #6c757d;">No results found for "${query}"</p>
+                        <p style="color: #666; font-size: 14px;">Try these advanced searches:</p>
+                        <div style="margin-top: 10px;">
+                            <button onclick="searchExample('winter blooming')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "winter blooming"
+                            </button>
+                            <button onclick="searchExample('cool temperatures')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "cool temperatures"
+                            </button>
+                            <button onclick="searchExample('easy to grow')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "easy to grow"
+                            </button>
+                            <button onclick="searchExample('brazil')" 
+                                    style="margin: 5px; padding: 5px 10px; border: 1px solid #007bff; background: white; color: #007bff; border-radius: 4px; cursor: pointer;">
+                                "brazil"
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Helper function for example searches
+            function searchExample(term) {
+                document.getElementById('searchInput').value = term;
+                performSearch();
+            }
+            
+            // Perform search function
+            function performSearch() {
+                const event = new Event('input');
+                document.getElementById('searchInput').dispatchEvent(event);
+            }
+            
+            // Add Enter key support for search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            // Function to explain why an orchid matched the search
+            function getSearchReason(query, orchid) {
+                if (orchid.characteristics && orchid.characteristics.some(char => char.includes(query))) {
+                    return `Growing characteristic: "${query}"`;
+                }
+                if (orchid.origin && orchid.origin.toLowerCase().includes(query)) {
+                    return `Geographic origin: ${orchid.origin}`;
+                }
+                if (orchid.season.toLowerCase().includes(query)) {
+                    return `Blooming season: ${orchid.season}`;
+                }
+                if (orchid.care.toLowerCase().includes(query)) {
+                    return `Care requirement matches search`;
+                }
+                if (orchid.description.toLowerCase().includes(query)) {
+                    return `Description contains "${query}"`;
+                }
+                if (orchid.name.toLowerCase().includes(query)) {
+                    return `Scientific name contains "${query}"`;
+                }
+                return `Matches search criteria`;
+            }
+
+            // Map functionality
+            const mapRadios = document.querySelectorAll('input[name="mapMode"]');
+            const mapDemo = document.getElementById('mapDemo');
+            
+            function updateMapMode() {
+                const selectedMode = document.querySelector('input[name="mapMode"]:checked').value;
+                
+                if (selectedMode === 'private') {
+                    mapDemo.innerHTML = `
+                        <span class="map-pin" style="left: 34%; top: 42%;">📍</span>
+                        <span class="map-pin" style="left: 68%; top: 58%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>🔒 Partner Mode</strong><br>
+                            <small>Exact coordinates: 34.0522°N, -118.2437°W<br>37.7749°N, -122.4194°W</small>
+                        </div>
+                    `;
+                } else {
+                    mapDemo.innerHTML = `
+                        <span class="map-pin" style="left: 30%; top: 40%;">📍</span>
+                        <span class="map-pin" style="left: 70%; top: 60%;">🌺</span>
+                        <div style="text-align: center;">
+                            <strong>📍 Public Mode</strong><br>
+                            <small>Showing generalized locations for privacy</small>
+                        </div>
+                    `;
+                }
+            }
+
+            mapRadios.forEach(radio => {
+                radio.addEventListener('change', updateMapMode);
+            });
+
+            // Phenology functionality
+            const taxonSelect = document.getElementById('taxonSelect');
+            const selectedSpecies = document.getElementById('selectedSpecies');
+            const phenologyChart = document.getElementById('phenologyChart');
+            
+            function updatePhenologyChart() {
+                const species = taxonSelect.value;
+                selectedSpecies.textContent = species;
+                
+                const data = phenologyData[species];
+                const bars = phenologyChart.querySelectorAll('.chart-bar');
+                
+                bars.forEach((bar, index) => {
+                    bar.style.height = data.pattern[index] + '%';
+                    
+                    // Add species name to the bar if flowering is significant (>30%)
+                    const existingSpecies = bar.querySelector('.species-label');
+                    if (existingSpecies) {
+                        existingSpecies.remove();
+                    }
+                    
+                    if (data.pattern[index] > 30) {
+                        const speciesLabel = document.createElement('div');
+                        speciesLabel.className = 'species-label';
+                        speciesLabel.textContent = data.species[index];
+                        speciesLabel.style.cssText = `
+                            position: absolute;
+                            top: -20px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            font-size: 10px;
+                            color: var(--orchid-purple);
+                            font-weight: 600;
+                            white-space: nowrap;
+                            background: rgba(255,255,255,0.9);
+                            padding: 2px 4px;
+                            border-radius: 4px;
+                            border: 1px solid var(--orchid-purple);
+                        `;
+                        bar.style.position = 'relative';
+                        bar.appendChild(speciesLabel);
+                    }
+                });
+
+                // Update peak info
+                const peakInfo = selectedSpecies.parentElement.querySelector('span:last-child');
+                if (peakInfo) {
+                    peakInfo.innerHTML = ` flowering peaks in <strong>${data.peaks[0]}</strong> and <strong>${data.peaks[1]}</strong>`;
+                }
+            }
+
+            taxonSelect.addEventListener('change', updatePhenologyChart);
+            
+            // Initialize the chart with the default selection
+            updatePhenologyChart();
+        </script>
+
+        <div class="next-steps">
+            <h3>🚀 Next Steps:</h3>
+            <ol style="text-align: left;">
+                <li><strong>Follow STEP_BY_STEP_SETUP.md</strong> - Complete integration guide</li>
+                <li><strong>Upload your orchid data</strong> - CSV template included</li>
+                <li><strong>Add to your website</strong> - Just copy the code snippets above</li>
+                <li><strong>Test everything</strong> - Verify widgets work on your site</li>
+                <li><strong>Go live!</strong> - Announce to your community</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <h3 style="background: var(--gradient-orchid); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 32px; font-weight: 700; margin-bottom: 20px;">🎯 Integration Code</h3>
+            <p style="color: var(--text-secondary); font-size: 18px; margin-bottom: 24px;">Add this once to your website's &lt;head&gt; section:</p>
+            
+            <div class="code-block" style="background: var(--dark-bg); border-radius: 16px; padding: 24px; position: relative;">
+                <div style="position: absolute; top: 12px; right: 16px; background: rgba(16, 185, 129, 0.2); color: var(--orchid-green); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">Copy & Paste Ready</div>
+&lt;script src="https://cdn.orchidcontinuum.org/widgets/ocw-widgets.umd.js"
+        data-api-base="https://api.orchidcontinuum.org"
+        data-api-key="GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2"
+        data-partner="gary-yong-gee"&gt;&lt;/script&gt;
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); padding: 24px; border-radius: 16px; margin: 24px 0; border: 2px solid rgba(139, 92, 246, 0.2);">
+                <p style="margin: 0; font-weight: 600; color: var(--orchid-purple); font-size: 18px;">✨ Then add widgets anywhere: Just copy the widget code from above!</p>
+            </div>
+            
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--border-color);">
+                <p style="color: var(--text-secondary); margin-bottom: 8px;"><strong>Questions?</strong> <span style="color: var(--orchid-blue); font-weight: 600;">partners@orchidcontinuum.org</span></p>
+                <p style="font-size: 20px; font-weight: 600; color: var(--text-primary); margin: 0;"><strong>Gary Yong Gee × Orchid Continuum Partnership</strong></p>
+                <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-style: italic;">Expanding orchid knowledge through collaboration</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

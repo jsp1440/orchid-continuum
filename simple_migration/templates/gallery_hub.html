@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Gallery Hub - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-success">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">
+                            <i data-feather="image" class="me-2"></i>
+                            Gallery Hub
+                        </h2>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('browse')">
+                                <i data-feather="grid" class="me-1"></i>Browse
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('themes')">
+                                <i data-feather="layers" class="me-1"></i>Themes
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchTab('members')">
+                                <i data-feather="users" class="me-1"></i>Members
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Comprehensive orchid image browsing and themed collections</p>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Tab Content Container -->
+                    <div id="gallery-content" style="min-height: 600px;">
+                        <!-- Content will be loaded dynamically based on tab -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTab = new URLSearchParams(window.location.search).get('tab') || 'browse';
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update URL without refresh
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url);
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    // Load content for tab
+    loadTabContent(tab);
+    
+    // Emit event for embed integration
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_gallery_tab_change',
+            tab: tab,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+}
+
+async function loadTabContent(tab) {
+    const content = document.getElementById('gallery-content');
+    content.innerHTML = '<div class="d-flex justify-content-center align-items-center" style="height: 400px;"><div class="spinner-border text-success" role="status"></div></div>';
+    
+    try {
+        switch(tab) {
+            case 'browse':
+                await renderBrowseGallery();
+                break;
+            case 'themes':
+                await renderThemedGalleries();
+                break;
+            case 'members':
+                await renderMemberGalleries();
+                break;
+        }
+    } catch (error) {
+        content.innerHTML = `<div class="alert alert-danger m-3">Error loading ${tab} content: ${error.message}</div>`;
+    }
+}
+
+async function renderBrowseGallery() {
+    try {
+        const response = await fetch('/api/recent-orchids');
+        const data = await response.json();
+        
+        document.getElementById('gallery-content').innerHTML = `
+            <div class="p-3">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" placeholder="Search orchids..." id="gallery-search">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-control" id="genus-filter">
+                            <option value="">All Genera</option>
+                            <option value="Cattleya">Cattleya</option>
+                            <option value="Dendrobium">Dendrobium</option>
+                            <option value="Phalaenopsis">Phalaenopsis</option>
+                            <option value="Oncidium">Oncidium</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100" onclick="filterGallery()">
+                            <i data-feather="filter" class="me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="row" id="orchid-grid">
+                    ${data.orchids ? data.orchids.map(orchid => `
+                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="card bg-secondary h-100">
+                                <div class="position-relative">
+                                    <img src="${orchid.image_url || '/static/images/orchid_placeholder.svg'}" 
+                                         class="card-img-top" 
+                                         style="height: 200px; object-fit: cover;"
+                                         onerror="this.src='/static/images/orchid_placeholder.svg'">
+                                    <div class="position-absolute top-0 end-0 p-2">
+                                        <button class="btn btn-sm btn-outline-light" onclick="addToFavorites('${orchid.id}')">
+                                            <i data-feather="heart" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">${orchid.name || 'Unknown Orchid'}</h6>
+                                    <p class="card-text small text-muted">${orchid.genus || ''} ${orchid.species || ''}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">${orchid.location || 'Unknown'}</small>
+                                        <span class="badge bg-success">${orchid.climate || 'Temperate'}</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-outline-success btn-sm w-100" onclick="viewOrchidDetails('${orchid.id}')">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('') : '<div class="col-12"><p class="text-center">No orchids found</p></div>'}
+                </div>
+            </div>
+        `;
+        
+        if (typeof feather !== 'undefined') feather.replace();
+        
+    } catch (error) {
+        document.getElementById('gallery-content').innerHTML = `<div class="alert alert-danger m-3">Error loading gallery: ${error.message}</div>`;
+    }
+}
+
+function renderThemedGalleries() {
+    document.getElementById('gallery-content').innerHTML = `
+        <div class="p-3">
+            <h4>Themed Orchid Collections</h4>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('thailand')">
+                        <div class="card-body text-center">
+                            <i data-feather="map-pin" style="width: 48px; height: 48px;" class="text-info mb-3"></i>
+                            <h5>Thailand Orchids</h5>
+                            <p class="card-text">Explore the rich orchid diversity of Thailand</p>
+                            <span class="badge bg-info">127 specimens</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('rare')">
+                        <div class="card-body text-center">
+                            <i data-feather="award" style="width: 48px; height: 48px;" class="text-warning mb-3"></i>
+                            <h5>Rare Species</h5>
+                            <p class="card-text">Endangered and rare orchid species</p>
+                            <span class="badge bg-warning">43 specimens</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('hybrids')">
+                        <div class="card-body text-center">
+                            <i data-feather="git-branch" style="width: 48px; height: 48px;" class="text-success mb-3"></i>
+                            <h5>Hybrid Collections</h5>
+                            <p class="card-text">Modern and historic hybrid orchids</p>
+                            <span class="badge bg-success">89 specimens</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('miniature')">
+                        <div class="card-body text-center">
+                            <i data-feather="minimize-2" style="width: 48px; height: 48px;" class="text-primary mb-3"></i>
+                            <h5>Miniature Orchids</h5>
+                            <p class="card-text">Compact and miniature species</p>
+                            <span class="badge bg-primary">156 specimens</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('fragrant')">
+                        <div class="card-body text-center">
+                            <i data-feather="wind" style="width: 48px; height: 48px;" class="text-info mb-3"></i>
+                            <h5>Fragrant Orchids</h5>
+                            <p class="card-text">Orchids with notable fragrances</p>
+                            <span class="badge bg-info">72 specimens</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-secondary h-100" onclick="loadTheme('beginners')">
+                        <div class="card-body text-center">
+                            <i data-feather="smile" style="width: 48px; height: 48px;" class="text-success mb-3"></i>
+                            <h5>Beginner Friendly</h5>
+                            <p class="card-text">Easy to grow orchid varieties</p>
+                            <span class="badge bg-success">203 specimens</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function renderMemberGalleries() {
+    document.getElementById('gallery-content').innerHTML = `
+        <div class="p-3">
+            <h4>Member Photo Galleries</h4>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <p class="text-muted">Browse orchid photos submitted by community members</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-success" onclick="openSubmissionForm()">
+                        <i data-feather="upload" class="me-1"></i>Submit Photos
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6>Recent Submissions</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="user" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <strong>John Smith</strong><br>
+                                    <small class="text-muted">Cattleya hybrid - 2 days ago</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i data-feather="user" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div>
+                                    <strong>Mary Johnson</strong><br>
+                                    <small class="text-muted">Phalaenopsis collection - 1 week ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-secondary">
+                        <div class="card-body">
+                            <h6>Top Contributors</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Sarah Williams</span>
+                                <span class="badge bg-warning">47 photos</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Robert Davis</span>
+                                <span class="badge bg-info">32 photos</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Lisa Anderson</span>
+                                <span class="badge bg-success">28 photos</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="member-photo-grid" class="row">
+                <div class="col-12 text-center py-4">
+                    <i data-feather="image" style="width: 48px; height: 48px;" class="text-muted"></i>
+                    <p class="text-muted mt-2">Loading member galleries...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof feather !== 'undefined') feather.replace();
+}
+
+function loadTheme(theme) {
+    // Update URL and emit event
+    const url = new URL(window.location);
+    url.searchParams.set('theme', theme);
+    window.history.pushState({}, '', url);
+    
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: 'orchid_gallery_theme_select',
+            theme: theme,
+            source: 'orchid_continuum'
+        }, '*');
+    }
+    
+    // Load theme-specific content
+    fetch(`/api/orchid-ecosystem-data?genus=${theme === 'thailand' ? '' : theme}`)
+        .then(response => response.json())
+        .then(data => {
+            // Render theme-specific gallery
+            console.log(`Loading theme: ${theme}`, data);
+        })
+        .catch(error => console.error('Error loading theme:', error));
+}
+
+function filterGallery() {
+    const search = document.getElementById('gallery-search').value;
+    const genus = document.getElementById('genus-filter').value;
+    
+    // Implement filtering logic
+    console.log('Filtering:', { search, genus });
+}
+
+function addToFavorites(orchidId) {
+    console.log('Adding to favorites:', orchidId);
+    // Implement favorites functionality
+}
+
+function viewOrchidDetails(orchidId) {
+    window.open(`/orchid/${orchidId}`, '_blank');
+}
+
+function openSubmissionForm() {
+    window.open('/upload', '_blank');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTabContent(currentTab);
+    // Set active button
+    document.querySelector(`[onclick="switchTab('${currentTab}')"]`)?.click();
+});
+
+// Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

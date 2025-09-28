@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Care Wheel Generator - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary">🌺 Care Wheel Generator</h1>
+                <p class="lead">Generate detailed care wheels, cards, and sheets for different orchid genera</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i data-feather="settings"></i> Select Your Orchid Genus & Format
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="careWheelForm">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="orchidGenus" class="form-label">Orchid Genus</label>
+                                <select class="form-select form-select-lg" id="orchidGenus" name="genus" required>
+                                    <option value="">Choose an orchid genus...</option>
+                                    {% for genus in orchid_genera %}
+                                    <option value="{{ genus }}">{{ genus }} - {{ care_data[genus]['common_name'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="formatType" class="form-label">Format Type</label>
+                                <select class="form-select form-select-lg" id="formatType" name="format" required>
+                                    <option value="wheel">🎯 Care Wheel (Circular Visual)</option>
+                                    <option value="card">🎴 Care Card (4x6 Quick Reference)</option>
+                                    <option value="sheet">📄 Care Sheet (Comprehensive Guide)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="button" class="btn btn-primary btn-lg px-5" onclick="generateCareGuide()">
+                                <i data-feather="download"></i> Generate Care Guide
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Preview Section -->
+    <div class="row mt-5" id="previewSection" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i data-feather="eye"></i> Preview</h4>
+                </div>
+                <div class="card-body" id="previewContent">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Format Descriptions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Format Options</h3>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem;">🎯</div>
+                    <h5 class="card-title text-primary">Care Wheel</h5>
+                    <p class="card-text">Circular visual representation showing care factor intensities. Perfect for at-a-glance reference and visual learners.</p>
+                    <ul class="text-start">
+                        <li>Colorful segment visualization</li>
+                        <li>Care intensity percentages</li>
+                        <li>Quick reference format</li>
+                        <li>Printable on standard paper</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-success">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem;">🎴</div>
+                    <h5 class="card-title text-success">Care Card</h5>
+                    <p class="card-text">Compact 4x6 inch card with essential care information. Perfect for greenhouse reference or plant tags.</p>
+                    <ul class="text-start">
+                        <li>Wallet-sized convenience</li>
+                        <li>Essential care factors only</li>
+                        <li>Emoji icons for clarity</li>
+                        <li>Lamination-friendly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-info">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem;">📄</div>
+                    <h5 class="card-title text-info">Care Sheet</h5>
+                    <p class="card-text">Comprehensive guide with detailed care instructions, special notes, and source citations.</p>
+                    <ul class="text-start">
+                        <li>Complete care information</li>
+                        <li>Detailed explanations</li>
+                        <li>Special growing notes</li>
+                        <li>Academic-style citations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Available Genera -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="text-center mb-4">Available Orchid Genera</h3>
+            <div class="row">
+                {% for genus, data in care_data.items() %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card border-light">
+                        <div class="card-body">
+                            <h6 class="card-title text-primary">{{ genus }}</h6>
+                            <p class="card-text">
+                                <strong>{{ data.common_name }}</strong><br>
+                                <small class="text-muted">Care Level: {{ data.care_level }}</small>
+                            </p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="selectGenus('{{ genus }}')">
+                                Select This Genus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attribution Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            {{ attribution_html | safe }}
+        </div>
+    </div>
+</div>
+
+<script>
+    function generateCareGuide() {
+        const genus = document.getElementById('orchidGenus').value;
+        const format = document.getElementById('formatType').value;
+        
+        if (!genus || !format) {
+            alert('Please select both an orchid genus and format type.');
+            return;
+        }
+        
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Generating...';
+        button.disabled = true;
+        
+        // Generate the PDF using form submission for reliable download
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = `/generate-care-wheel/${genus}/${format}`;
+        form.target = '_blank'; // Open in new tab
+        form.style.display = 'none';
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+        // Reset button after short delay
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+        
+        // Show success message
+        setTimeout(() => {
+            alert(`${genus} care ${format} generated successfully! Check your downloads folder.`);
+        }, 500);
+    }
+    
+    function selectGenus(genus) {
+        document.getElementById('orchidGenus').value = genus;
+        document.getElementById('orchidGenus').focus();
+        
+        // Scroll to form
+        document.getElementById('careWheelForm').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function loadPreview() {
+        const genus = document.getElementById('orchidGenus').value;
+        const format = document.getElementById('formatType').value;
+        
+        if (genus && format) {
+            // Show preview section with care data
+            const previewSection = document.getElementById('previewSection');
+            const previewContent = document.getElementById('previewContent');
+            
+            fetch(`/api/care-wheel-data/${genus}`)
+                .then(response => response.json())
+                .then(data => {
+                    let preview = `<h5>${data.common_name} (${genus})</h5>`;
+                    preview += `<p><strong>Care Level:</strong> ${data.care_level}</p>`;
+                    preview += `<div class="row">`;
+                    preview += `<div class="col-md-6">`;
+                    preview += `<strong>Light:</strong> ${data.light.requirement}<br>`;
+                    preview += `<strong>Temperature:</strong> ${data.temperature.day} / ${data.temperature.night}<br>`;
+                    preview += `<strong>Humidity:</strong> ${data.humidity.range}`;
+                    preview += `</div>`;
+                    preview += `<div class="col-md-6">`;
+                    preview += `<strong>Watering:</strong> ${data.watering.frequency}<br>`;
+                    preview += `<strong>Blooming:</strong> ${data.blooming_season}<br>`;
+                    preview += `<strong>Format:</strong> ${format.charAt(0).toUpperCase() + format.slice(1)}`;
+                    preview += `</div>`;
+                    preview += `</div>`;
+                    
+                    previewContent.innerHTML = preview;
+                    previewSection.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Preview error:', error);
+                });
+        }
+    }
+    
+    // Add event listeners for preview
+    document.getElementById('orchidGenus').addEventListener('change', loadPreview);
+    document.getElementById('formatType').addEventListener('change', loadPreview);
+    
+    // Initialize Feather icons
+    feather.replace();
+</script>
+{% endblock %}

@@ -1,0 +1,843 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Your Orchid - Show & Tell Monthly Contest{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --fcos-purple: #6B3FA0;
+    --fcos-green: #28a745;
+    --fcos-light-purple: #f5f3ff;
+    --fcos-border: #e1d7f0;
+    --text-primary: #2c3e50;
+    --text-secondary: #6c757d;
+    --error-color: #dc3545;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+}
+
+.st-form {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.st-form h2 {
+    background: linear-gradient(135deg, var(--fcos-purple), var(--fcos-green));
+    color: white;
+    margin: -20px -20px 30px -20px;
+    padding: 30px 20px;
+    border-radius: 12px 12px 0 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.helper {
+    background: var(--fcos-light-purple);
+    border: 1px solid var(--fcos-border);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+    color: var(--fcos-purple);
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--fcos-light-purple);
+}
+
+.row {
+    margin-bottom: 20px;
+}
+
+.row:last-child {
+    margin-bottom: 0;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.req {
+    color: var(--error-color);
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--fcos-purple);
+    box-shadow: 0 0 0 3px rgba(107, 63, 160, 0.1);
+}
+
+input:disabled {
+    background: #f8f9fa;
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.hint {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.submission-counter {
+    background: linear-gradient(135deg, var(--fcos-purple), var(--fcos-green));
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.file-upload-area {
+    border: 3px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.file-upload-area:hover {
+    border-color: var(--fcos-purple);
+    background: var(--fcos-light-purple);
+}
+
+.file-upload-area.dragover {
+    border-color: var(--fcos-green);
+    background: #f0fff4;
+}
+
+.file-upload-area.has-file {
+    border-color: var(--fcos-green);
+    background: #f0fff4;
+}
+
+.upload-icon {
+    font-size: 2.5rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.file-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin: 15px auto;
+    display: block;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.file-info {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    display: none;
+}
+
+.file-info.visible {
+    display: block;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.char-counter.warning {
+    color: var(--warning-color);
+}
+
+.char-counter.danger {
+    color: var(--error-color);
+}
+
+.advanced {
+    margin-top: 20px;
+}
+
+.advanced summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--fcos-purple);
+    padding: 10px 0;
+    list-style: none;
+}
+
+.advanced summary::-webkit-details-marker {
+    display: none;
+}
+
+.advanced summary::before {
+    content: "▶";
+    margin-right: 8px;
+    transition: transform 0.3s ease;
+}
+
+.advanced[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    accent-color: var(--fcos-purple);
+    transform: scale(1.2);
+}
+
+.checkbox:last-child {
+    margin-bottom: 0;
+}
+
+.actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.primary,
+.ghost {
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    min-width: 140px;
+}
+
+.primary {
+    background: linear-gradient(135deg, var(--fcos-purple), var(--fcos-green));
+    color: white;
+    border: 2px solid transparent;
+}
+
+.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(107, 63, 160, 0.3);
+}
+
+.primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.ghost {
+    background: white;
+    color: var(--fcos-purple);
+    border: 2px solid var(--fcos-purple);
+}
+
+.ghost:hover {
+    background: var(--fcos-light-purple);
+}
+
+.footnote {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 25px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.error-message {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: var(--error-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.success-message {
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+    color: var(--success-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.deadline-status {
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+.deadline-status.open {
+    background: #f0fff4;
+    border: 1px solid var(--fcos-green);
+    color: var(--success-color);
+}
+
+.deadline-status.closed {
+    background: #fff5f5;
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+}
+
+.deadline-status.warning {
+    background: #fffbf0;
+    border: 1px solid var(--warning-color);
+    color: #b45309;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .st-form {
+        padding: 15px;
+        margin: 0 10px;
+    }
+    
+    .st-form h2 {
+        margin: -15px -15px 20px -15px;
+        padding: 25px 15px;
+        font-size: 1.3rem;
+    }
+    
+    .card {
+        padding: 20px 15px;
+    }
+    
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .primary,
+    .ghost {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .file-upload-area {
+        padding: 25px 15px;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    :root {
+        --fcos-purple: #4a2c6a;
+        --fcos-green: #1e6b32;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st-form">
+    <h2>🌿 Submit Your Orchid — Show & Tell Monthly Contest</h2>
+    
+    <div class="helper">
+        Members may submit up to <strong>5 currently blooming plants</strong> per month.<br>
+        Deadline: <strong>2nd Thursday, 7:00 PM PT</strong>
+    </div>
+
+    <!-- Deadline Status -->
+    <div class="deadline-status {{ 'open' if contest_open else 'closed' }}" id="deadlineStatus">
+        {% if contest_open %}
+        ✅ <strong>Submissions Open</strong> - Deadline: {{ deadline_date }}
+        {% else %}
+        🔒 <strong>Submissions Closed</strong> - Next contest opens {{ next_open_date }}
+        {% endif %}
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageArea"></div>
+
+    <form id="orchidSubmissionForm" {% if not contest_open %}style="display: none;"{% endif %}>
+        <!-- Member Information -->
+        <div class="card">
+            <h3>Member Information</h3>
+            <div class="row">
+                <label for="memberName">Member Name</label>
+                <input type="text" id="memberName" name="member_name" 
+                       value="{{ member_name or 'Auto-filled from login' }}" disabled>
+            </div>
+            <div class="row">
+                <label for="memberEmail">Email</label>
+                <input type="email" id="memberEmail" name="member_email" 
+                       value="{{ member_email or 'Auto-filled from login' }}" disabled>
+            </div>
+            <div class="submission-counter" id="submissionCounter">
+                You've submitted <strong id="currentCount">{{ submission_count or 0 }}</strong>/5 entries this month
+            </div>
+        </div>
+
+        <!-- Plant Details -->
+        <div class="card">
+            <h3>Plant Details</h3>
+            
+            <div class="row">
+                <label for="plantName">Plant Name <span class="req">*</span></label>
+                <input type="text" id="plantName" name="plant_name" 
+                       placeholder="Genus species or registered hybrid" 
+                       required aria-describedby="plantNameHint">
+                <small class="hint" id="plantNameHint">
+                    Example: <em>Cattleya trianae</em> or "Rlc. Memoria Helen Brown 'Sweet Afton' AM/AOS"
+                </small>
+            </div>
+
+            <div class="row">
+                <label for="category">Category <span class="req">*</span></label>
+                <select id="category" name="category" required aria-describedby="categoryHint">
+                    <option value="">Select a category…</option>
+                    <option value="species">Species</option>
+                    <option value="hybrids">Hybrids</option>
+                    <option value="cattleyas">Cattleyas</option>
+                    <option value="intergenerics">Intergenerics</option>
+                </select>
+                <small class="hint" id="categoryHint">
+                    Choose the category that best describes your orchid
+                </small>
+            </div>
+
+            <div class="row">
+                <label for="caption">Caption <span class="req">*</span></label>
+                <textarea id="caption" name="caption" rows="3" maxlength="240" 
+                          placeholder="What makes this bloom special? (max 240 chars)" 
+                          required aria-describedby="captionCounter"></textarea>
+                <div class="char-counter" id="captionCounter">0/240 characters</div>
+            </div>
+
+            <div class="row">
+                <label for="photoInput">Photo <span class="req">*</span></label>
+                <div class="file-upload-area" id="fileUploadArea" tabindex="0" role="button" 
+                     aria-label="Click to upload photo or drag and drop">
+                    <div class="upload-icon">📷</div>
+                    <div><strong>Click to upload</strong> or drag and drop</div>
+                    <div class="hint">JPG/PNG, max 10MB. Tip: crop square for best fit.</div>
+                </div>
+                <input type="file" id="photoInput" name="photo" accept="image/jpeg,image/png" 
+                       style="display: none;" required>
+                <div class="file-info" id="fileInfo">
+                    <img id="filePreview" class="file-preview" alt="Photo preview">
+                    <div><strong id="fileName"></strong></div>
+                    <div class="hint">
+                        <span id="fileSize"></span> • 
+                        <button type="button" onclick="removeFile()" class="ghost" style="padding: 4px 8px; font-size: 0.8rem; min-width: auto;">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <details class="advanced">
+                <summary>Optional: Culture Notes</summary>
+                <div class="row">
+                    <label for="culture">Light / Temperature / Growing Notes</label>
+                    <textarea id="culture" name="culture" rows="3" 
+                              placeholder="e.g., Bright shade, 58–75°F, watered twice weekly…"></textarea>
+                </div>
+            </details>
+        </div>
+
+        <!-- Compliance -->
+        <div class="card">
+            <h3>Confirmation</h3>
+            <label class="checkbox">
+                <input type="checkbox" id="originalPhoto" name="original_photo" required>
+                <span>I confirm this is my photo and plant, and I grant FCOS permission to display it on the website and newsletter.</span>
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" id="currentlyBlooming" name="currently_blooming" required>
+                <span>I confirm the plant is currently in bloom this month.</span>
+            </label>
+        </div>
+
+        <!-- Submit Actions -->
+        <div class="actions">
+            <button type="submit" class="primary" id="submitBtn">
+                Submit Entry
+            </button>
+            <button type="button" class="ghost" id="draftBtn">
+                Save Draft
+            </button>
+        </div>
+    </form>
+
+    <div class="footnote">
+        Submissions close <strong>2nd Thursday, 7:00 PM PT</strong>. 
+        You can edit or withdraw your entry until the deadline.
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+});
+
+function initializeForm() {
+    setupFileUpload();
+    setupCharacterCounter();
+    setupFormValidation();
+    setupFormSubmission();
+    updateSubmissionCounter();
+}
+
+function setupFileUpload() {
+    const uploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('photoInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const preview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    // Keyboard accessibility
+    uploadArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelection(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelection(file) {
+        // Validate file type
+        if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+            showMessage('Please select a JPG or PNG image file.', 'error');
+            return;
+        }
+
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            showMessage('Image size must be less than 10MB.', 'error');
+            return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('visible');
+            uploadArea.classList.add('has-file');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeFile() {
+    document.getElementById('photoInput').value = '';
+    document.getElementById('fileInfo').classList.remove('visible');
+    document.getElementById('fileUploadArea').classList.remove('has-file');
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function setupCharacterCounter() {
+    const captionInput = document.getElementById('caption');
+    const counter = document.getElementById('captionCounter');
+
+    captionInput.addEventListener('input', function() {
+        const length = this.value.length;
+        counter.textContent = `${length}/240 characters`;
+        
+        counter.className = 'char-counter';
+        if (length > 200) {
+            counter.classList.add('warning');
+        }
+        if (length > 230) {
+            counter.classList.add('danger');
+        }
+    });
+}
+
+function setupFormValidation() {
+    const form = document.getElementById('orchidSubmissionForm');
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', validateField);
+        input.addEventListener('input', clearFieldError);
+    });
+}
+
+function validateField(e) {
+    const field = e.target;
+    const value = field.value.trim();
+    
+    // Remove existing error styling
+    field.style.borderColor = '';
+    
+    if (field.hasAttribute('required') && !value) {
+        field.style.borderColor = 'var(--error-color)';
+        return false;
+    }
+    
+    // Category-specific validation
+    if (field.id === 'plantName' && value.length < 3) {
+        field.style.borderColor = 'var(--error-color)';
+        return false;
+    }
+    
+    if (field.id === 'caption' && value.length < 10) {
+        field.style.borderColor = 'var(--error-color)';
+        return false;
+    }
+    
+    field.style.borderColor = 'var(--fcos-green)';
+    return true;
+}
+
+function clearFieldError(e) {
+    e.target.style.borderColor = '';
+}
+
+function setupFormSubmission() {
+    const form = document.getElementById('orchidSubmissionForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const draftBtn = document.getElementById('draftBtn');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitEntry(false);
+    });
+    
+    draftBtn.addEventListener('click', function() {
+        submitEntry(true);
+    });
+}
+
+function submitEntry(isDraft) {
+    const form = document.getElementById('orchidSubmissionForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Validate form if not draft
+    if (!isDraft && !validateForm()) {
+        return;
+    }
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.textContent = isDraft ? 'Saving Draft...' : 'Submitting...';
+    
+    // Collect form data
+    const formData = new FormData();
+    formData.append('plant_name', document.getElementById('plantName').value);
+    formData.append('category', document.getElementById('category').value);
+    formData.append('caption', document.getElementById('caption').value);
+    formData.append('culture', document.getElementById('culture').value);
+    formData.append('original_photo', document.getElementById('originalPhoto').checked);
+    formData.append('currently_blooming', document.getElementById('currentlyBlooming').checked);
+    formData.append('is_draft', isDraft);
+    
+    const photoFile = document.getElementById('photoInput').files[0];
+    if (photoFile) {
+        formData.append('photo', photoFile);
+    }
+    
+    // Submit to server
+    fetch('/api/contest/enhanced-submit', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const message = isDraft ? 'Draft saved successfully!' : 'Entry submitted successfully! Pending admin approval.';
+            showMessage(message, 'success');
+            
+            if (!isDraft) {
+                updateSubmissionCounter();
+                setTimeout(() => {
+                    window.location.href = '/contest';
+                }, 2000);
+            }
+        } else {
+            showMessage(data.error || 'Error submitting entry', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Network error occurred', 'error');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Entry';
+    });
+}
+
+function validateForm() {
+    const requiredFields = [
+        'plantName',
+        'category', 
+        'caption',
+        'photoInput',
+        'originalPhoto',
+        'currentlyBlooming'
+    ];
+    
+    let isValid = true;
+    
+    for (const fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        
+        if (field.type === 'checkbox') {
+            if (!field.checked) {
+                field.style.accentColor = 'var(--error-color)';
+                isValid = false;
+            }
+        } else if (field.type === 'file') {
+            if (!field.files.length) {
+                showMessage('Please upload a photo of your orchid.', 'error');
+                isValid = false;
+            }
+        } else {
+            if (!field.value.trim()) {
+                field.style.borderColor = 'var(--error-color)';
+                isValid = false;
+            }
+        }
+    }
+    
+    if (!isValid) {
+        showMessage('Please fill in all required fields.', 'error');
+    }
+    
+    return isValid;
+}
+
+function updateSubmissionCounter() {
+    fetch('/api/contest/submission-count')
+        .then(response => response.json())
+        .then(data => {
+            if (data.count !== undefined) {
+                document.getElementById('currentCount').textContent = data.count;
+                
+                if (data.count >= 5) {
+                    document.getElementById('orchidSubmissionForm').style.display = 'none';
+                    showMessage('You have reached the maximum of 5 submissions for this month.', 'warning');
+                }
+            }
+        })
+        .catch(error => console.error('Error updating counter:', error));
+}
+
+function showMessage(message, type) {
+    const messageArea = document.getElementById('messageArea');
+    const messageClass = type === 'error' ? 'error-message' : 
+                        type === 'success' ? 'success-message' : 
+                        'error-message';
+    
+    messageArea.innerHTML = `<div class="${messageClass}">${message}</div>`;
+    
+    // Auto-hide success messages
+    if (type === 'success') {
+        setTimeout(() => {
+            messageArea.innerHTML = '';
+        }, 5000);
+    }
+}
+</script>
+{% endblock %}

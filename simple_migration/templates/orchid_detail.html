@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+
+{% block title %}{{ orchid.display_name }} - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('gallery') }}">Gallery</a></li>
+            <li class="breadcrumb-item active">{{ orchid.display_name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Image Section -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                {% if orchid.image_url or orchid.google_drive_id %}
+                    {% set image_url = '/api/drive-photo/' + orchid.google_drive_id if orchid.google_drive_id else orchid.image_url %}
+                    <img src="{{ image_url }}" class="card-img-top" alt="{{ orchid.display_name }}"
+                         style="max-height: 600px; object-fit: contain; cursor: pointer;"
+                         onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';"
+                         onclick="showImageModal('{{ image_url }}', '{{ orchid.display_name }}')"
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                         style="height: 400px;">
+                        <div class="text-center">
+                            <i data-feather="image" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                            <p class="text-muted">No image available</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-0">{{ orchid.display_name }} 
+                                <small class="text-muted">OC-{{ "%04d"|format(orchid.id) }}</small>
+                            </h5>
+                            {% if orchid.scientific_name %}
+                                <p class="text-muted fst-italic">{{ orchid.scientific_name }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if orchid.is_featured %}
+                                <span class="badge bg-warning">
+                                    <i data-feather="star" style="width: 14px; height: 14px;"></i> Featured
+                                </span>
+                            {% endif %}
+                            {% if orchid.validation_status == 'validated' %}
+                                <span class="badge bg-success">
+                                    <i data-feather="check-circle" style="width: 14px; height: 14px;"></i> Verified
+                                </span>
+                            {% elif orchid.validation_status == 'needs_review' %}
+                                <span class="badge bg-warning">
+                                    <i data-feather="alert-triangle" style="width: 14px; height: 14px;"></i> Needs Review
+                                </span>
+                            {% endif %}
+                            <!-- Report Issue Button -->
+                            <button class="btn btn-sm btn-outline-danger" onclick="reportIssue('{{ orchid.id }}', '{{ orchid.display_name }}')">
+                                <i data-feather="flag" style="width: 14px; height: 14px;"></i> Report Issue
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <small class="text-muted d-flex align-items-center">
+                                <i data-feather="eye" class="me-1" style="width: 16px; height: 16px;"></i>
+                                {{ orchid.view_count or 0 }} views
+                            </small>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted">
+                                {{ orchid.created_at.strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-lg-6">
+            <!-- Quick Care Sheet Generation -->
+            {% if care_available %}
+            <div class="alert alert-success border-0 shadow-sm mb-4">
+                <div class="row align-items-center">
+                    <div class="col-8">
+                        <h6 class="alert-heading mb-1">
+                            <i data-feather="printer" class="me-2"></i>Professional Care Sheet Available
+                        </h6>
+                        <p class="mb-0 small">Generate a printable care guide based on Charles Baker, AOS, and RHS expertise</p>
+                    </div>
+                    <div class="col-4 text-end">
+                        <a href="/generate-care-wheel/{{ orchid.genus }}" 
+                           class="btn btn-success btn-sm" target="_blank">
+                            <i data-feather="download" class="me-1" style="width: 16px; height: 16px;"></i>
+                            Generate PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Origin & Habitat Information -->
+            {% if habitat_info.origin_summary or habitat_info.habitat_description %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Origin & Natural Habitat
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if habitat_info.origin_summary %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Geographic Origin</label>
+                        <p class="fw-semibold"><i data-feather="map-pin" class="me-1" style="width: 16px; height: 16px;"></i>{{ habitat_info.origin_summary }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if habitat_info.habitat_description %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Natural Habitat</label>
+                        <p>{{ habitat_info.habitat_description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if habitat_info.conservation_notes %}
+                    <div class="alert alert-warning py-2 px-3 mb-0">
+                        <small><i data-feather="shield" class="me-1" style="width: 14px; height: 14px;"></i>
+                        {% for note in habitat_info.conservation_notes %}
+                            {{ note }}{% if not loop.last %} {% endif %}
+                        {% endfor %}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Basic Information -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="info" class="me-2"></i>Classification
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% if orchid.genus %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Genus</label>
+                            <p class="fw-semibold">{{ orchid.genus }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.species %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Species</label>
+                            <p class="fw-semibold">{{ orchid.species }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.author %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Author</label>
+                            <p class="fw-semibold">{{ orchid.author }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.region %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Region</label>
+                            <p class="fw-semibold">{{ orchid.region }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.native_habitat %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Native Habitat</label>
+                            <p class="fw-semibold">{{ orchid.native_habitat }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growing Characteristics -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="info" class="me-2"></i>Growing Characteristics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% if orchid.growth_habit %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Growth Habit</label>
+                            <span class="badge bg-primary fs-6">{{ orchid.growth_habit|title }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.climate_preference %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Climate Preference</label>
+                            <span class="badge bg-info fs-6">{{ orchid.climate_preference|title }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.bloom_time %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Bloom Time</label>
+                            <p class="fw-semibold">{{ orchid.bloom_time }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.leaf_form %}
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Leaf Form</label>
+                            <p class="fw-semibold">{{ orchid.leaf_form }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if orchid.pseudobulb_presence is not none %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Pseudobulbs</label>
+                            <span class="badge bg-{{ 'success' if orchid.pseudobulb_presence else 'secondary' }} fs-6">
+                                {% if orchid.pseudobulb_presence %}
+                                    <i data-feather="check" style="width: 14px; height: 14px;"></i> Present
+                                {% else %}
+                                    <i data-feather="x" style="width: 14px; height: 14px;"></i> Not Present
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Analysis -->
+            {% if orchid.ai_description or orchid.ai_confidence %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="cpu" class="me-2"></i>AI Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if orchid.ai_description %}
+                        <p class="card-text">{{ orchid.ai_description }}</p>
+                    {% endif %}
+                    
+                    {% if orchid.ai_confidence %}
+                        <div class="mt-3">
+                            <label class="form-label text-muted small">AI Confidence Level</label>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar {% if orchid.ai_confidence > 0.8 %}bg-success{% elif orchid.ai_confidence > 0.5 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                     style="width: {{ (orchid.ai_confidence * 100)|round }}%">
+                                    {{ (orchid.ai_confidence * 100)|round }}%
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enhanced Cultural Information with Baker Integration -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="book-open" class="me-2"></i>Cultural Recommendations & Expert Care
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Expert Care Data from Multiple Sources -->
+                    {% if care_data %}
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="sun" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Light Requirements</h6>
+                                <p class="small mb-1"><strong>{{ care_data.light.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.light.details }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="thermometer" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Temperature</h6>
+                                <p class="small mb-1"><strong>Day:</strong> {{ care_data.temperature.day }}</p>
+                                <p class="small mb-0"><strong>Night:</strong> {{ care_data.temperature.night }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="droplets" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Humidity</h6>
+                                <p class="small mb-1"><strong>{{ care_data.humidity.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.humidity.range }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="wind" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Air Flow</h6>
+                                <p class="small mb-1"><strong>{{ care_data.air_flow.requirement }}</strong></p>
+                                <small class="text-muted">{{ care_data.air_flow.details }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Care Instructions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i data-feather="droplets" class="me-1"></i>Watering</h6>
+                            <p class="small">{{ care_data.watering.details }}</p>
+                            
+                            <h6><i data-feather="package" class="me-1"></i>Fertilizer</h6>
+                            <p class="small">{{ care_data.fertilizer.details }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i data-feather="calendar" class="me-1"></i>Blooming & Rest</h6>
+                            <p class="small"><strong>Season:</strong> {{ care_data.blooming_season }}</p>
+                            <p class="small"><strong>Rest Period:</strong> {{ care_data.rest_period }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Special Notes from Experts -->
+                    {% if care_data.special_notes %}
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading"><i data-feather="lightbulb" class="me-1"></i>Expert Growing Tips</h6>
+                        <ul class="mb-0">
+                        {% for note in care_data.special_notes %}
+                            <li>{{ note }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Source Attribution -->
+                    {% if care_data.attribution %}
+                    <div class="border-top pt-3 mt-3">
+                        <small class="text-muted">
+                            {{ care_data.attribution|safe }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <!-- Fallback to database cultural information -->
+                    <div class="row g-4">
+                        {% if cultural_recommendations.light %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="sun" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Light</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.light }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cultural_recommendations.temperature %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="thermometer" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Temperature</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.temperature }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cultural_recommendations.water %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="droplets" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Water</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.water }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cultural_recommendations.fertilizer %}
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i data-feather="package" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                                <h6>Fertilizer</h6>
+                                <p class="small mb-0">{{ cultural_recommendations.fertilizer }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Growing Tips from Database Analysis -->
+                    {% if cultural_recommendations.growing_tips %}
+                    <div class="alert alert-info mt-4">
+                        <h6 class="alert-heading"><i data-feather="lightbulb" class="me-1"></i>Growing Tips</h6>
+                        <ul class="mb-0">
+                        {% for tip in cultural_recommendations.growing_tips %}
+                            <li>{{ tip }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- General Notes -->
+                    {% if cultural_recommendations.general_notes %}
+                    <div class="mt-4">
+                        <h6><i data-feather="bookmark" class="me-1"></i>Additional Notes</h6>
+                        <p class="small">{{ cultural_recommendations.general_notes }}</p>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+
+                    <!-- Climate Analysis -->
+                    {% if habitat_info.climate_analysis %}
+                    <div class="border-top pt-3 mt-3">
+                        <h6><i data-feather="cloud" class="me-1"></i>Climate Preferences</h6>
+                        <ul class="mb-0">
+                        {% for analysis in habitat_info.climate_analysis %}
+                            <li class="small">{{ analysis }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata and Source Information -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>Source Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if orchid.photographer %}
+                        <p><strong>Photographer:</strong> {{ orchid.photographer }}</p>
+                    {% endif %}
+                    {% if orchid.image_source %}
+                        <p><strong>Image Source:</strong> 
+                            {% if orchid.image_source.startswith('http') %}
+                                <a href="{{ orchid.image_source }}" target="_blank" class="text-decoration-none">
+                                    View Original <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                </a>
+                            {% else %}
+                                {{ orchid.image_source }}
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                    <p><strong>Ingestion Source:</strong> 
+                        <span class="badge bg-secondary">{{ orchid.ingestion_source|replace('_', ' ')|title }}</span>
+                    </p>
+                    {% if orchid.validation_status %}
+                        <p><strong>Validation Status:</strong> 
+                            <span class="badge bg-{{ 'success' if orchid.validation_status == 'validated' else 'warning' if orchid.validation_status == 'pending' else 'danger' }}">
+                                {{ orchid.validation_status|title }}
+                            </span>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if orchid.ocr_text %}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="file-text" class="me-2"></i>OCR Extracted Text
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="bg-light p-3 rounded">
+                        <small class="font-monospace">{{ orchid.ocr_text }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Related Orchids -->
+    {% if related_orchids %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="mb-4">
+                <i data-feather="grid" class="me-2"></i>Related Orchids
+                {% if orchid.genus %}
+                    <small class="text-muted">(Same genus: {{ orchid.genus }})</small>
+                {% endif %}
+            </h4>
+            
+            <div class="row g-4">
+                {% for related in related_orchids %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        {% if related.google_drive_id %}
+                            <img src="/api/drive-photo/{{ related.google_drive_id }}" class="card-img-top" alt="{{ related.display_name }}"
+                                 style="height: 200px; object-fit: cover;"
+                                 onerror="this.src='/static/images/fcos_placeholder_rect.png';"
+                                 onload="console.log('✅ Related orchid loaded:', '{{ related.display_name }}');">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                 style="height: 200px;">
+                                <i data-feather="image" class="text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                {% if related.scientific_name %}
+                                    <em>{{ related.scientific_name }}</em>
+                                {% else %}
+                                    {{ related.display_name }}
+                                {% endif %}
+                            </h6>
+                            {% if related.display_name and related.scientific_name and related.display_name != related.scientific_name %}
+                                <p class="text-muted small">{{ related.display_name }}</p>
+                            {% endif %}
+                            <a href="{{ url_for('orchid_detail', id=related.id) }}" class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
+                    <i data-feather="grid" class="me-2"></i>Back to Gallery
+                </a>
+                <a href="{{ url_for('search', q=orchid.genus) }}" class="btn btn-outline-primary">
+                    <i data-feather="search" class="me-2"></i>Search Similar
+                </a>
+                <a href="{{ url_for('weather_habitat.compare_orchid_habitat', orchid_id=orchid.id) }}" class="btn btn-outline-warning">
+                    <i data-feather="cloud-rain" class="me-2"></i>Weather vs Habitat
+                </a>
+                {% if orchid.google_drive_id %}
+                <a href="https://drive.google.com/file/d/{{ orchid.google_drive_id }}/view" target="_blank" class="btn btn-outline-info">
+                    <i data-feather="cloud" class="me-2"></i>View in Drive
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">{{ orchid.display_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="{{ orchid.image_url }}" alt="{{ orchid.display_name }}" class="img-fluid">
+            </div>
+            <div class="modal-footer">
+                {% if orchid.photographer %}
+                    <small class="text-muted">Photo by: {{ orchid.photographer }}</small>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showImageModal(imageUrl, title) {
+    document.getElementById('modalImage').src = imageUrl;
+    document.getElementById('imageModalTitle').textContent = title;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+
+function reportIssue(orchidId, orchidName) {
+    const issue = prompt(`Report an issue with "${orchidName}" (OC-${orchidId.toString().padStart(4, '0')}):
+    
+What's wrong? (e.g., "Wrong identification - this is a Cattleya, not Trichocentrum")`);
+    
+    if (issue && issue.trim()) {
+        fetch('/report-issue', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                orchid_id: orchidId,
+                issue_description: issue.trim(),
+                page_url: window.location.href
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Issue reported! Reference number: ' + data.reference_number + '\n\nThank you for helping improve the Orchid Continuum.');
+            } else {
+                alert('❌ Error reporting issue. Please try again.');
+            }
+        })
+        .catch(error => {
+            alert('❌ Error reporting issue. Please try again.');
+        });
+    }
+}
+
+// Initialize feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+{% endblock %}

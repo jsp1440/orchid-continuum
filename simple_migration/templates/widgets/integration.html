@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% set page_title = widget_name + " - Integration Code" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 text-light">
+                    <i data-feather="code" class="me-2"></i>{{ widget_name }} - Integration Code
+                </h1>
+                <a href="/widgets" class="btn btn-outline-primary">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Widgets
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Preview -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="eye" class="me-2"></i>Widget Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="bg-light p-3 rounded">
+                        <iframe src="/widgets/embed/{{ widget_type }}" 
+                                width="100%" 
+                                height="400" 
+                                frameborder="0" 
+                                scrolling="auto"
+                                style="border-radius: 4px;">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Code -->
+        <div class="col-md-6">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="code" class="me-2"></i>Embed Code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-success">Basic Iframe Embed:</h6>
+                    <div class="bg-secondary p-3 rounded mb-3">
+                        <pre class="text-light mb-0" style="font-size: 0.85rem; white-space: pre-wrap;"><code id="basic-embed">&lt;iframe 
+    src="{{ request.url_root }}widgets/embed/{{ widget_type }}"
+    width="100%" 
+    height="400"
+    frameborder="0"
+    scrolling="auto"
+    style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+&lt;/iframe&gt;</code></pre>
+                    </div>
+                    
+                    <button class="btn btn-outline-success btn-sm mb-3" onclick="copyToClipboard('basic-embed')">
+                        <i data-feather="copy" class="me-1"></i>Copy Basic Code
+                    </button>
+                    
+                    <h6 class="text-info">With Customization Options:</h6>
+                    <div class="bg-secondary p-3 rounded mb-3">
+                        <pre class="text-light mb-0" style="font-size: 0.85rem; white-space: pre-wrap;"><code id="advanced-embed">&lt;iframe 
+    src="{{ request.url_root }}widgets/embed/{{ widget_type }}?limit=8&amp;genus=Cattleya"
+    width="100%" 
+    height="500"
+    frameborder="0"
+    scrolling="auto"
+    style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"&gt;
+&lt;/iframe&gt;</code></pre>
+                    </div>
+                    
+                    <button class="btn btn-outline-success btn-sm mb-3" onclick="copyToClipboard('advanced-embed')">
+                        <i data-feather="copy" class="me-1"></i>Copy Advanced Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customization Options -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>Customization Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">URL Parameters:</h6>
+                            <table class="table table-dark table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Description</th>
+                                        <th>Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if widget_type == 'gallery' %}
+                                    <tr><td><code>limit</code></td><td>Number of orchids to display</td><td>?limit=8</td></tr>
+                                    <tr><td><code>genus</code></td><td>Filter by specific genus</td><td>?genus=Cattleya</td></tr>
+                                    {% elif widget_type == 'search' %}
+                                    <tr><td><code>query</code></td><td>Default search term</td><td>?query=purple</td></tr>
+                                    {% elif widget_type == 'featured' %}
+                                    <tr><td><code>rotation</code></td><td>Auto-rotate featured orchid</td><td>?rotation=daily</td></tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Styling Options:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Width:</strong> Use 100% for responsive, or fixed pixel values</li>
+                                <li><strong>Height:</strong> Recommended: 300-500px depending on content</li>
+                                <li><strong>Border:</strong> Add <code>border: 1px solid #ccc</code> if needed</li>
+                                <li><strong>Margin:</strong> Add spacing around the widget as needed</li>
+                            </ul>
+                            
+                            <h6 class="text-warning">Neon One Integration:</h6>
+                            <ol class="small">
+                                <li>Log into your Neon One admin panel</li>
+                                <li>Navigate to the page where you want to add the widget</li>
+                                <li>Look for an "HTML" or "Custom Code" block option</li>
+                                <li>Paste the iframe code into the HTML block</li>
+                                <li>Save and publish your page</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Integration -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>Advanced: JSON API Integration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>For custom JavaScript integration, use the JSON API:</p>
+                    
+                    <h6 class="text-info">API Endpoint:</h6>
+                    <div class="bg-secondary p-3 rounded mb-3">
+                        <code>{{ request.url_root }}widgets/api/{{ widget_type }}</code>
+                    </div>
+                    
+                    <h6 class="text-info">JavaScript Example:</h6>
+                    <div class="bg-secondary p-3 rounded">
+                        <pre class="text-light mb-0" style="font-size: 0.8rem;"><code>fetch('{{ request.url_root }}widgets/api/{{ widget_type }}')
+    .then(response => response.json())
+    .then(data => {
+        console.log('Widget data:', data);
+        // Use data.data to access widget content
+        // Render your custom widget here
+    })
+    .catch(error => {
+        console.error('Error loading widget data:', error);
+    });</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).textContent;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Find the button that was clicked
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+            button.classList.remove('btn-outline-success');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-success');
+                feather.replace();
+            }, 2000);
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            alert('Failed to copy to clipboard');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Code copied to clipboard!');
+    }
+    
+    feather.replace();
+}
+</script>
+{% endblock %}

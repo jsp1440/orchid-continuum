@@ -1,0 +1,2588 @@
+<!-- Enhanced Interactive Globe Weather Widget with Solar System Integration -->
+<div id="enhanced-globe-weather-{{ widget_data.widget_id }}" class="enhanced-globe-weather-widget">
+    <div class="widget-header">
+        <h3>
+            <span class="globe-icon">🌍</span>
+            EARTH & SUN ORCHID CLIMATE
+        </h3>
+        <p class="widget-subtitle">Explore Global Orchid Habitats in Real-Time</p>
+        <div class="fcos-badge">FCOS</div>
+        <div class="solar-activity-indicator">
+            <span class="solar-icon">☀️</span>
+            <span id="solar-activity-{{ widget_data.widget_id }}">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Main Display Area -->
+    <div class="main-display-area">
+        <!-- Globe Container -->
+        <div class="globe-container">
+            <div id="earth-sun-scene-{{ widget_data.widget_id }}" class="earth-sun-scene">
+                <!-- Earth Globe -->
+                <div id="earth-globe-{{ widget_data.widget_id }}" class="earth-globe"></div>
+                
+                <!-- Moon System -->
+                <div id="moon-orbit-{{ widget_data.widget_id }}" class="moon-orbit">
+                    <div id="moon-sphere-{{ widget_data.widget_id }}" class="moon-sphere">
+                        <div class="moon-surface"></div>
+                        <div class="moon-shadow"></div>
+                        <div class="moon-crater"></div>
+                    </div>
+                </div>
+                
+                <!-- Sun -->
+                <div id="sun-sphere-{{ widget_data.widget_id }}" class="sun-sphere">
+                    <div class="sun-corona"></div>
+                    <div class="solar-rays"></div>
+                </div>
+                
+                <!-- Day/Night Terminator -->
+                <div id="day-night-line-{{ widget_data.widget_id }}" class="day-night-line"></div>
+                <div id="day-night-overlay-{{ widget_data.widget_id }}" class="day-night-overlay" style="display: none;"></div>
+                
+                <!-- Country Highlights -->
+                <div id="country-highlights-{{ widget_data.widget_id }}" class="country-highlights"></div>
+            </div>
+            
+            <!-- Globe Controls -->
+            <div class="globe-controls">
+                <button id="pause-rotation-{{ widget_data.widget_id }}" class="globe-btn">⏸️ Pause</button>
+                <button id="random-country-{{ widget_data.widget_id }}" class="globe-btn">🎲 Random Feature</button>
+                <button id="tutorial-toggle-{{ widget_data.widget_id }}" class="globe-btn">❓ How to Use</button>
+                <button id="demo-mode-{{ widget_data.widget_id }}" class="globe-btn">🎬 Demo Tour</button>
+                <select id="rotation-speed-{{ widget_data.widget_id }}" class="speed-control">
+                    <option value="0.5">0.5x Speed</option>
+                    <option value="1" selected>1x Speed</option>
+                    <option value="2">2x Speed</option>
+                    <option value="5">5x Speed</option>
+                    <option value="10">10x Speed</option>
+                </select>
+            </div>
+
+            <!-- Status Strip with Usage Hints and Indicators -->
+            <div class="status-strip">
+                <div class="usage-hints">
+                    <span class="hint-item">👆 Tap markers</span>
+                    <span class="hint-item">🤏 Pinch to zoom</span>
+                    <span class="hint-item">👋 Drag to rotate</span>
+                </div>
+                <div class="quick-indicators">
+                    <span id="day-night-indicator-{{ widget_data.widget_id }}" class="indicator" title="Day/Night terminator">🌓 Day/Night</span>
+                    <span id="uv-indicator-{{ widget_data.widget_id }}" class="indicator" title="UV Index">☀️ UV 6</span>
+                    <span id="photoperiod-indicator-{{ widget_data.widget_id }}" class="indicator" title="Daylight hours">📅 12h</span>
+                </div>
+            </div>
+
+            <!-- Interactive Legend with Toggle Chips -->
+            <div class="interactive-legend">
+                <div class="legend-header">
+                    <strong>🎛️ Toggle Earth Features</strong>
+                    <button id="day-night-toggle-{{ widget_data.widget_id }}" class="day-night-btn">🌗 Day/Night</button>
+                </div>
+                <div class="legend-grid">
+                    <div class="legend-chip active" data-type="forest" id="forest-chip-{{ widget_data.widget_id }}">
+                        <div class="legend-marker forest"></div>
+                        <span>🌳 Rainforests</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                    <div class="legend-chip active" data-type="mountain" id="mountain-chip-{{ widget_data.widget_id }}">
+                        <div class="legend-marker mountain"></div>
+                        <span>🏔️ Mountains</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                    <div class="legend-chip active" data-type="desert" id="desert-chip-{{ widget_data.widget_id }}">
+                        <div class="legend-marker desert"></div>
+                        <span>🏜️ Deserts</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                    <div class="legend-chip active" data-type="climate-zone" id="climate-chip-{{ widget_data.widget_id }}">
+                        <div class="legend-marker climate-zone"></div>
+                        <span>🌡️ Climate Zones</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                    <div class="legend-chip active" data-type="orchid-hotspot" id="hotspot-chip-{{ widget_data.widget_id }}">
+                        <div class="legend-marker orchid-hotspot"></div>
+                        <span>🌺 Orchid Hotspots</span>
+                        <div class="chip-glow"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Celestial Mini-Panel -->
+            <div class="celestial-panel">
+                <div class="celestial-item" title="UV radiation affects orchid pigmentation and flowering cycles">
+                    <div class="celestial-icon">☀️</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Sun</div>
+                        <div id="uv-data-{{ widget_data.widget_id }}" class="data-value">UV: 6 • Spots: 12</div>
+                    </div>
+                </div>
+                <div class="celestial-item" title="Moon phases influence orchid blooming patterns and sap flow">
+                    <div class="celestial-icon">🌙</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Moon</div>
+                        <div id="moon-data-{{ widget_data.widget_id }}" class="data-value">Waning • Tide: Low</div>
+                    </div>
+                </div>
+                <div class="celestial-item" title="Daylight duration triggers orchid seasonal responses">
+                    <div class="celestial-icon">🌍</div>
+                    <div class="celestial-data">
+                        <div class="data-label">Earth</div>
+                        <div id="photoperiod-data-{{ widget_data.widget_id }}" class="data-value">12h 15m daylight</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tutorial Overlay -->
+            <div id="tutorial-overlay-{{ widget_data.widget_id }}" class="tutorial-overlay" style="display: none;">
+                <div class="tutorial-content">
+                    <h3>📖 How to Use the Globe</h3>
+                    
+                    <div class="mobile-tutorial-section">
+                        <p>
+                            🌍 <strong>Spin:</strong> Drag to rotate<br>
+                            🔎 <strong>Zoom:</strong> Pinch or scroll<br>
+                            🎯 <strong>Hotspots:</strong> Tap colored dots
+                        </p>
+                    </div>
+
+                    <div class="mobile-tutorial-section">
+                        <p><strong>Legend:</strong><br>
+                        🟢 Rainforest | 🟤 Mountain<br>
+                        🟠 Desert | 🟣 Climate Zone<br>
+                        🌸 Orchid Hotspot</p>
+                    </div>
+
+                    <div class="mobile-tutorial-section">
+                        <p><strong>Tools:</strong><br>
+                        🎲 Random → Jump anywhere<br>
+                        🎥 Demo Tour → Guided walk<br>
+                        🌞/🌙 Day/Night → Sunlight view<br>
+                        🌐 35th Parallel → Orchid trail<br>
+                        ⏩ Speed → Rotation control</p>
+                    </div>
+
+                    <div class="mobile-tutorial-tip">
+                        <p>💡 <strong>Tip:</strong> Some hotspots show orchid cards with photos, pollinators, and fun facts!</p>
+                    </div>
+                    
+                    <button id="close-tutorial-{{ widget_data.widget_id }}" class="close-tutorial-btn">Got it! ✨</button>
+                </div>
+            </div>
+            
+            <!-- Activity Status -->
+            <div class="activity-status">
+                <div id="rotation-status-{{ widget_data.widget_id }}" class="rotation-indicator">
+                    🔄 Auto-rotating
+                </div>
+                <div class="last-interaction">
+                    Last interaction: <span id="last-interaction-{{ widget_data.widget_id }}">now</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orchid Display Panel -->
+        <div class="orchid-display-panel">
+            <!-- Selected Orchid -->
+            <div id="selected-orchid-{{ widget_data.widget_id }}" class="selected-orchid">
+                <div class="orchid-image-container">
+                    <img id="orchid-image-{{ widget_data.widget_id }}" 
+                         src="{{ widget_data.orchids[0].image_url if widget_data.orchids else '/static/images/orchid_placeholder.svg' }}" 
+                         alt="Selected Orchid" class="current-orchid-image">
+                    <div class="image-overlay">
+                        <div class="country-badge" id="country-badge-{{ widget_data.widget_id }}">
+                            🌍 {{ widget_data.orchids[0].region if widget_data.orchids else 'Select Country' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="orchid-info">
+                    <h4 id="orchid-name-{{ widget_data.widget_id }}">
+                        {{ widget_data.orchids[0].display_name if widget_data.orchids else 'Select a country to explore orchids' }}
+                    </h4>
+                    <div id="scientific-name-{{ widget_data.widget_id }}" class="scientific-name">
+                        {{ widget_data.orchids[0].scientific_name if widget_data.orchids else '' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Climate Data Display -->
+            <div class="climate-data-display">
+                <div class="current-habitat-weather">
+                    <h5>Native Habitat Conditions</h5>
+                    <div id="habitat-weather-{{ widget_data.widget_id }}" class="weather-display">
+                        <div class="temp-display">--°C</div>
+                        <div class="humidity-display">--% humidity</div>
+                        <div class="photoperiod-display">-- hrs daylight</div>
+                    </div>
+                </div>
+                
+                <div class="solar-data-panel">
+                    <h6>☀️ Solar Conditions</h6>
+                    <div id="solar-data-{{ widget_data.widget_id }}" class="solar-metrics">
+                        <div class="solar-metric">
+                            <span class="metric-label">Solar Angle:</span>
+                            <span id="solar-angle-{{ widget_data.widget_id }}">--°</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">UV Index:</span>
+                            <span id="uv-index-{{ widget_data.widget_id }}">--</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">Day Length:</span>
+                            <span id="day-length-{{ widget_data.widget_id }}">-- hrs</span>
+                        </div>
+                        <div class="solar-metric">
+                            <span class="metric-label">Moon Phase:</span>
+                            <span id="moon-phase-{{ widget_data.widget_id }}">🌕 Full</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Educational Learning Panel -->
+            <div class="educational-panel">
+                <div class="learning-tabs">
+                    <button class="tab-btn active" data-tab="components">🌍 Components</button>
+                    <button class="tab-btn" data-tab="weather">🌤️ Weather</button>
+                    <button class="tab-btn" data-tab="orchids">🌺 Orchids</button>
+                    <button class="tab-btn" data-tab="connections">🔗 Connections</button>
+                </div>
+                
+                <!-- Components Tab -->
+                <div id="components-tab-{{ widget_data.widget_id }}" class="tab-content active">
+                    <h5>🌍 Solar System Components</h5>
+                    <div class="component-explanations">
+                        <div class="component-card" data-component="earth">
+                            <div class="component-icon">🌍</div>
+                            <div class="component-info">
+                                <h6>Earth</h6>
+                                <p>Our planet rotates every 24 hours, creating day/night cycles that affect temperature and humidity patterns.</p>
+                            </div>
+                        </div>
+                        <div class="component-card" data-component="sun">
+                            <div class="component-icon">☀️</div>
+                            <div class="component-info">
+                                <h6>Sun</h6>
+                                <p>Provides energy for photosynthesis and drives weather patterns through solar radiation and heat.</p>
+                            </div>
+                        </div>
+                        <div class="component-card" data-component="moon">
+                            <div class="component-icon">🌙</div>
+                            <div class="component-info">
+                                <h6>Moon</h6>
+                                <p>Influences ocean tides and can affect plant growth cycles through gravitational forces.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weather Tab -->
+                <div id="weather-tab-{{ widget_data.widget_id }}" class="tab-content">
+                    <h5>🌤️ Weather & Climate</h5>
+                    <div id="weather-explanation-{{ widget_data.widget_id }}" class="explanation-content">
+                        <p>Select a component above to learn how it affects weather patterns and climate conditions for orchid growth.</p>
+                    </div>
+                </div>
+                
+                <!-- Orchids Tab -->
+                <div id="orchids-tab-{{ widget_data.widget_id }}" class="tab-content">
+                    <h5>🌺 Orchid Relationships</h5>
+                    <div id="orchid-explanation-{{ widget_data.widget_id }}" class="explanation-content">
+                        <p>Click on components to discover how celestial bodies influence orchid growing conditions and natural habitats.</p>
+                    </div>
+                </div>
+                
+                <!-- Connections Tab -->
+                <div id="connections-tab-{{ widget_data.widget_id }}" class="tab-content">
+                    <h5>🔗 System Connections</h5>
+                    <div id="connections-explanation-{{ widget_data.widget_id }}" class="explanation-content">
+                        <p>Interactive learning: Click on Earth, Sun, or Moon to see the complete chain of relationships from space to your orchid collection.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Country Statistics Bar -->
+    <div class="country-stats-bar">
+        <div class="stats-grid">
+            <div class="stat-item" {% if not widget_data.countries_with_orchids or widget_data.countries_with_orchids|length == 0 %}style="display: none;"{% endif %}>
+                <div class="stat-value" id="total-countries-{{ widget_data.widget_id }}" title="{% if not widget_data.countries_with_orchids or widget_data.countries_with_orchids|length == 0 %}Not available for this view yet{% endif %}">{{ widget_data.countries_with_orchids|length if widget_data.countries_with_orchids else '—' }}</div>
+                <div class="stat-label">Countries</div>
+            </div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="selected-country-orchids-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
+                <div class="stat-label">Orchids</div>
+            </div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="growing-season-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
+                <div class="stat-label">Season</div>
+            </div>
+            <div class="stat-item" style="display: none;">
+                <div class="stat-value" id="local-time-{{ widget_data.widget_id }}" title="Not available for this view yet">—</div>
+                <div class="stat-label">Local Time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Explored -->
+    <div class="exploration-breadcrumbs">
+        <span class="breadcrumb-label">Recently explored:</span>
+        <div id="breadcrumbs-{{ widget_data.widget_id }}" class="breadcrumbs-container">
+            <span class="breadcrumb-item">🌍 Start exploring</span>
+        </div>
+    </div>
+
+    <!-- Widget Footer -->
+    <div class="widget-footer">
+        <div class="text-center mb-2">
+            <a href="/" class="btn btn-sm btn-outline-light">
+                <i data-feather="home" style="width: 14px; height: 14px;"></i> Homepage
+            </a>
+        </div>
+        <div class="data-sources">
+            Solar data: NOAA • Weather: OpenWeather • Orchids: Five Cities Orchid Society
+        </div>
+        <div class="last-updated">Updated: <span id="last-update-{{ widget_data.widget_id }}">now</span></div>
+        <div class="powered-by">Powered by FCOS Orchid Atlas</div>
+    </div>
+</div>
+
+<!-- Widget Styles -->
+<style>
+.enhanced-globe-weather-widget {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.widget-header {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 600;
+    background: linear-gradient(45deg, #ffd700, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.globe-icon {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+.widget-subtitle {
+    margin: 8px 0;
+    color: #b8c5d1;
+    font-size: 0.9em;
+}
+
+.fcos-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #4a7c59;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.solar-activity-indicator {
+    background: rgba(255, 215, 0, 0.2);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.main-display-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.globe-container {
+    position: relative;
+}
+
+.earth-sun-scene {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: radial-gradient(circle, #001122 0%, #000011 100%);
+}
+
+.earth-globe {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    --rotation-duration: 60s;
+    background: 
+        /* Ocean base */
+        radial-gradient(circle at 30% 40%, #1e6091 0%, #2980b9 50%, #3498db 100%),
+        /* Cloud layer */
+        radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.2) 0%, transparent 40%);
+    border: 2px solid #ffffff20;
+    box-shadow: 
+        inset 0 0 30px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(52, 152, 219, 0.4),
+        inset -20px -10px 40px rgba(0, 50, 100, 0.4);
+    animation: earthRotation var(--rotation-duration) linear infinite;
+    overflow: hidden;
+}
+
+/* Add continent overlays */
+.earth-globe::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* North America - clearly visible brown/green with distinct shape */
+        radial-gradient(ellipse 40px 60px at 25% 35%, #8B4513 0%, #D2B48C 20%, #228B22 40%, #90EE90 60%, transparent 80%),
+        /* South America - Amazon green with Andes brown */
+        radial-gradient(ellipse 25px 50px at 30% 65%, #8B4513 0%, #006400 30%, #228B22 50%, transparent 70%),
+        /* Africa - Sahara tan transitioning to green */
+        radial-gradient(ellipse 35px 55px at 50% 55%, #F4A460 0%, #DAA520 25%, #CD853F 40%, #228B22 60%, transparent 80%),
+        /* Europe - distinct green landmass */
+        radial-gradient(ellipse 20px 25px at 50% 30%, #228B22 0%, #90EE90 40%, transparent 70%),
+        /* Asia - massive continent with varied terrain */
+        radial-gradient(ellipse 50px 45px at 70% 40%, #A0522D 0%, #8B4513 25%, #228B22 50%, transparent 75%),
+        /* Australia - distinctive red center */
+        radial-gradient(ellipse 20px 15px at 75% 70%, #FF6347 0%, #CD853F 30%, #228B22 50%, transparent 70%);
+    animation: continentRotation var(--rotation-duration) linear infinite;
+}
+
+/* Add mountain ranges and geographical features */
+.earth-globe::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Himalayas - snow-capped peaks */
+        radial-gradient(ellipse 25px 8px at 68% 38%, rgba(255, 255, 255, 0.8) 0%, rgba(139, 69, 19, 0.6) 40%, transparent 70%),
+        /* Andes Mountains - prominent mountain range */
+        radial-gradient(ellipse 8px 40px at 28% 60%, rgba(139, 69, 19, 0.7) 0%, rgba(160, 82, 45, 0.5) 50%, transparent 70%),
+        /* Rocky Mountains */
+        radial-gradient(ellipse 15px 25px at 22% 40%, rgba(139, 69, 19, 0.6) 0%, transparent 60%),
+        /* Amazon Rainforest - deep green */
+        radial-gradient(ellipse 30px 25px at 32% 60%, rgba(0, 100, 0, 0.7) 0%, rgba(34, 139, 34, 0.5) 60%, transparent 80%),
+        /* Sahara Desert - visible golden sand */
+        radial-gradient(ellipse 35px 20px at 48% 45%, rgba(255, 218, 185, 0.8) 0%, rgba(238, 203, 173, 0.6) 50%, transparent 70%),
+        /* Gobi Desert */
+        radial-gradient(ellipse 20px 12px at 72% 42%, rgba(210, 180, 140, 0.6) 0%, transparent 60%),
+        /* Arctic ice cap */
+        radial-gradient(ellipse 60px 25px at 50% 15%, rgba(255, 255, 255, 0.6) 0%, rgba(240, 248, 255, 0.4) 50%, transparent 70%),
+        /* Antarctic ice */
+        radial-gradient(ellipse 50px 20px at 50% 85%, rgba(255, 255, 255, 0.7) 0%, rgba(240, 248, 255, 0.5) 50%, transparent 70%);
+    animation: featuresRotation var(--rotation-duration) linear infinite;
+}
+
+/* Moon System */
+.moon-orbit {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: moonOrbit 300s linear infinite;
+}
+
+.moon-sphere {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #f5f5f5, #ddd, #999);
+    box-shadow: 
+        inset -3px -3px 6px rgba(0, 0, 0, 0.4),
+        0 0 10px rgba(255, 255, 255, 0.3);
+    animation: moonRotation 300s linear infinite;
+    overflow: hidden;
+}
+
+.moon-surface {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Mare patterns */
+        radial-gradient(ellipse 6px 4px at 30% 40%, rgba(120, 120, 120, 0.6) 0%, transparent 50%),
+        radial-gradient(ellipse 4px 3px at 60% 30%, rgba(120, 120, 120, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 3px 5px at 50% 70%, rgba(120, 120, 120, 0.4) 0%, transparent 50%);
+}
+
+.moon-crater {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: 
+        /* Crater patterns */
+        radial-gradient(circle 2px at 40% 35%, rgba(80, 80, 80, 0.8) 30%, transparent 60%),
+        radial-gradient(circle 1.5px at 65% 45%, rgba(80, 80, 80, 0.7) 30%, transparent 60%),
+        radial-gradient(circle 1px at 30% 60%, rgba(80, 80, 80, 0.6) 30%, transparent 60%),
+        radial-gradient(circle 1px at 70% 65%, rgba(80, 80, 80, 0.5) 30%, transparent 60%);
+}
+
+.moon-shadow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(var(--moon-phase-angle, 90deg), 
+        transparent 0%, 
+        transparent var(--shadow-start, 40%), 
+        rgba(0, 0, 0, 0.7) var(--shadow-end, 60%), 
+        rgba(0, 0, 0, 0.7) 100%);
+    animation: moonPhases 300s linear infinite;
+}
+
+.sun-sphere {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    right: 20px;
+    top: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffff00, #ff6600);
+    box-shadow: 0 0 20px #ffff00, 0 0 40px #ff6600;
+    animation: solarPulse 4s ease-in-out infinite;
+}
+
+.sun-corona {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: -10px;
+    left: -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 30%, rgba(255, 255, 0, 0.1) 70%);
+    animation: coronaRotation 20s linear infinite;
+}
+
+.solar-rays {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    top: -20px;
+    left: -20px;
+    background: conic-gradient(from 0deg, 
+        transparent 0deg, rgba(255, 255, 0, 0.3) 10deg, transparent 20deg,
+        transparent 30deg, rgba(255, 255, 0, 0.3) 40deg, transparent 50deg,
+        transparent 60deg, rgba(255, 255, 0, 0.3) 70deg, transparent 80deg,
+        transparent 90deg, rgba(255, 255, 0, 0.3) 100deg, transparent 110deg);
+    animation: raysRotation 30s linear infinite;
+}
+
+.globe-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.globe-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.globe-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.speed-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.activity-status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.8em;
+    color: #b8c5d1;
+}
+
+.orchid-display-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.orchid-image-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.current-orchid-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+}
+
+.country-badge {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    display: inline-block;
+}
+
+.orchid-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1em;
+    color: #ffd700;
+}
+
+.scientific-name {
+    font-style: italic;
+    color: #b8c5d1;
+    font-size: 0.9em;
+}
+
+.climate-data-display {
+    margin: 16px 0;
+}
+
+.current-habitat-weather h5 {
+    margin: 0 0 8px 0;
+    font-size: 1em;
+    color: #4a90e2;
+}
+
+.weather-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.temp-display, .humidity-display, .photoperiod-display {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.solar-data-panel h6 {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+    color: #ffd700;
+}
+
+.solar-metrics {
+    display: grid;
+    gap: 4px;
+}
+
+.solar-metric {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    padding: 4px 0;
+}
+
+.growing-advice-panel {
+    background: rgba(74, 144, 226, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.advice-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ffd700;
+}
+
+.advice-content {
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: #e0e0e0;
+}
+
+.country-stats-bar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #ffd700;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: #b8c5d1;
+    margin-top: 4px;
+}
+
+.exploration-breadcrumbs {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 0.9em;
+}
+
+.breadcrumb-label {
+    color: #b8c5d1;
+    margin-right: 8px;
+}
+
+.breadcrumbs-container {
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.widget-footer {
+    text-align: center;
+    font-size: 0.8em;
+    color: #b8c5d1;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
+
+.data-sources {
+    margin-bottom: 4px;
+}
+
+/* Animations */
+@keyframes earthRotation {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes continentRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes featuresRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes moonOrbit {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes moonRotation {
+    from { transform: translateY(-50%) rotate(0deg); }
+    to { transform: translateY(-50%) rotate(360deg); }
+}
+
+@keyframes moonPhases {
+    0% { 
+        --moon-phase-angle: 90deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+    12.5% { 
+        --moon-phase-angle: 45deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    25% { 
+        --moon-phase-angle: 0deg;
+        --shadow-start: 0%;
+        --shadow-end: 100%;
+    }
+    37.5% { 
+        --moon-phase-angle: 315deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    50% { 
+        --moon-phase-angle: 270deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+    62.5% { 
+        --moon-phase-angle: 225deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    75% { 
+        --moon-phase-angle: 180deg;
+        --shadow-start: 0%;
+        --shadow-end: 100%;
+    }
+    87.5% { 
+        --moon-phase-angle: 135deg;
+        --shadow-start: 30%;
+        --shadow-end: 70%;
+    }
+    100% { 
+        --moon-phase-angle: 90deg;
+        --shadow-start: 45%;
+        --shadow-end: 55%;
+    }
+}
+
+@keyframes solarPulse {
+    0%, 100% { box-shadow: 0 0 20px #ffff00, 0 0 40px #ff6600; }
+    50% { box-shadow: 0 0 30px #ffff00, 0 0 60px #ff6600; }
+}
+
+@keyframes coronaRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes raysRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-display-area {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .weather-display {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Interactive hover effects */
+.earth-globe:hover {
+    animation-play-state: paused;
+    cursor: pointer;
+}
+
+.country-highlights {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Educational geographical markers */
+.geo-marker {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #FFD700;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: geoMarkerPulse 3s ease-in-out infinite;
+}
+
+.geo-marker:hover {
+    transform: scale(1.5);
+    background: #FF6347;
+    box-shadow: 0 0 15px rgba(255, 99, 71, 0.9);
+}
+
+.geo-marker.climate-zone {
+    background: #32CD32;
+    box-shadow: 0 0 10px rgba(50, 205, 50, 0.8);
+}
+
+.geo-marker.mountain {
+    background: #8B4513;
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.8);
+}
+
+.geo-marker.desert {
+    background: #F4A460;
+    box-shadow: 0 0 10px rgba(244, 164, 96, 0.8);
+}
+
+.geo-marker.forest {
+    background: #228B22;
+    box-shadow: 0 0 10px rgba(34, 139, 34, 0.8);
+}
+
+.geo-marker.orchid-hotspot {
+    background: #FF69B4;
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.8);
+}
+
+@keyframes geoMarkerPulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Interactive Legend Styling */
+.interactive-legend {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(52, 152, 219, 0.05));
+    border: 2px solid rgba(74, 144, 226, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.legend-header {
+    font-size: 1.1em;
+    margin-bottom: 12px;
+    color: #2c3e50;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 2px solid #4a90e2;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.legend-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.legend-marker.forest {
+    background: #228B22;
+    box-shadow: 0 0 8px rgba(34, 139, 34, 0.8);
+}
+
+.legend-marker.mountain {
+    background: #8B4513;
+    box-shadow: 0 0 8px rgba(139, 69, 19, 0.8);
+}
+
+.legend-marker.desert {
+    background: #F4A460;
+    box-shadow: 0 0 8px rgba(244, 164, 96, 0.8);
+}
+
+.legend-marker.climate-zone {
+    background: #32CD32;
+    box-shadow: 0 0 8px rgba(50, 205, 50, 0.8);
+}
+
+.legend-marker.orchid-hotspot {
+    background: #FF69B4;
+    box-shadow: 0 0 8px rgba(255, 105, 180, 0.8);
+}
+
+/* Tutorial Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-content h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.tutorial-content p {
+    color: #34495e;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.mobile-tutorial-section {
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
+    font-size: 0.95em;
+}
+
+.mobile-tutorial-section p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.mobile-tutorial-tip {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(52, 152, 219, 0.2));
+    padding: 12px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.mobile-tutorial-tip p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.tutorial-step {
+    padding: 15px;
+    margin: 15px 0;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 5px solid #4a90e2;
+}
+
+.color-guide {
+    margin: 10px 0;
+    padding: 15px;
+    background: #f0f8ff;
+    border-radius: 8px;
+    line-height: 1.8;
+}
+
+.color-example {
+    font-size: 1.2em;
+    margin-right: 8px;
+}
+
+.color-example.forest { color: #228B22; }
+.color-example.mountain { color: #8B4513; }
+.color-example.desert { color: #F4A460; }
+.color-example.climate-zone { color: #32CD32; }
+.color-example.orchid-hotspot { color: #FF69B4; }
+
+.close-tutorial-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.close-tutorial-btn:hover {
+    background: #357abd;
+    transform: translateY(-2px);
+}
+
+/* Status Strip Styling */
+.status-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(52, 73, 94, 0.9), rgba(44, 62, 80, 0.8));
+    border-radius: 25px;
+    padding: 8px 15px;
+    margin: 10px 0;
+    font-size: 0.85em;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.usage-hints {
+    display: flex;
+    gap: 12px;
+}
+
+.hint-item {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.hint-item:hover {
+    opacity: 1;
+}
+
+.quick-indicators {
+    display: flex;
+    gap: 8px;
+}
+
+.indicator {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-size: 0.8em;
+    cursor: help;
+    transition: all 0.3s ease;
+}
+
+.indicator:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Legend Chip Styling */
+.legend-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.legend-chip:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.legend-chip.active {
+    border-color: #4a90e2;
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.legend-chip.inactive {
+    opacity: 0.5;
+    background: #f5f5f5;
+    border-color: #ddd;
+}
+
+.chip-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(74, 144, 226, 0.3) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.legend-chip.active .chip-glow {
+    opacity: 1;
+}
+
+.day-night-btn {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 15px;
+}
+
+.day-night-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
+
+.day-night-btn.active {
+    background: linear-gradient(135deg, #e74c3c, #f39c12);
+}
+
+/* Day/Night Overlay */
+.day-night-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(0, 0, 0, 0.6) 0%,
+        rgba(0, 0, 0, 0.4) 25%,
+        transparent 50%,
+        rgba(255, 255, 0, 0.1) 75%,
+        rgba(255, 255, 0, 0.2) 100%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10;
+    animation: dayNightRotation 60s linear infinite;
+}
+
+@keyframes dayNightRotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Celestial Panel Styling */
+.celestial-panel {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(135deg, rgba(25, 35, 45, 0.95), rgba(15, 25, 35, 0.9));
+    border-radius: 15px;
+    padding: 12px;
+    margin: 10px 0;
+    gap: 10px;
+}
+
+.celestial-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    cursor: help;
+    transition: all 0.3s ease;
+    flex: 1;
+    min-width: 0;
+}
+
+.celestial-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.celestial-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.celestial-data {
+    min-width: 0;
+    flex: 1;
+}
+
+.data-label {
+    font-size: 0.75em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.data-value {
+    font-size: 0.8em;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Educational Learning System */
+.educational-panel {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(52, 152, 219, 0.1));
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.learning-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #b8c5d1;
+    padding: 8px 12px;
+    border-radius: 6px 6px 0 0;
+    font-size: 0.8em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    text-align: center;
+}
+
+.tab-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: 600;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-content h5 {
+    margin: 0 0 12px 0;
+    font-size: 1em;
+    color: #ffd700;
+}
+
+.component-explanations {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.component-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: translateX(4px);
+}
+
+.component-card.active {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+}
+
+.component-icon {
+    font-size: 1.5em;
+    width: 32px;
+    text-align: center;
+}
+
+.component-info h6 {
+    margin: 0 0 4px 0;
+    font-size: 0.9em;
+    color: #ffd700;
+}
+
+.component-info p {
+    margin: 0;
+    font-size: 0.8em;
+    line-height: 1.3;
+    color: #e8f4f8;
+}
+
+.explanation-content {
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: #e8f4f8;
+    padding: 8px 0;
+}
+
+.explanation-highlight {
+    background: rgba(255, 215, 0, 0.2);
+    padding: 8px;
+    border-radius: 6px;
+    border-left: 3px solid #ffd700;
+    margin: 8px 0;
+}
+
+.connection-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.chain-arrow {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- Widget JavaScript -->
+<script>
+(function() {
+    const widgetId = '{{ widget_data.widget_id }}';
+    let isRotating = true;
+    let rotationSpeed = 1;
+    let lastInteraction = Date.now();
+    let currentCountry = null;
+    let breadcrumbs = [];
+    let currentOrchidIndex = 0;
+    let countryOrchids = [];
+    
+    // Initialize widget
+    function initializeWidget() {
+        console.log('Initializing Enhanced Globe Weather Widget:', widgetId);
+        
+        // Load initial solar activity
+        loadSolarActivity();
+        
+        // Update moon phase
+        updateMoonPhase();
+        
+        // Setup globe interaction
+        setupGlobeInteraction();
+        
+        // Setup controls
+        setupControls();
+        
+        // Setup educational system
+        setupEducationalSystem();
+        
+        // Start monitoring user interaction
+        startInteractionMonitoring();
+        
+        // Load initial orchid data
+        loadInitialOrchid();
+        
+        // Start real-time updates
+        startRealTimeUpdates();
+    }
+    
+    function loadSolarActivity() {
+        // Simulate solar activity data (in real implementation, fetch from NOAA)
+        const solarData = {
+            activity: 'Moderate',
+            sunspots: 45,
+            uvIndex: 6,
+            solarFlares: 'Low'
+        };
+        
+        document.getElementById(`solar-activity-${widgetId}`).textContent = 
+            `${solarData.activity} Activity • ${solarData.sunspots} Sunspots`;
+    }
+    
+    function updateMoonPhase() {
+        // Calculate moon phase based on current time
+        const now = Date.now();
+        const lunarCycle = 29.5 * 24 * 60 * 60 * 1000; // 29.5 days in milliseconds (actual lunar cycle)
+        const cyclePosition = (now % lunarCycle) / lunarCycle;
+        
+        const phases = [
+            { name: '🌑 New', icon: '🌑', start: 0, end: 0.125 },
+            { name: '🌒 Waxing Crescent', icon: '🌒', start: 0.125, end: 0.25 },
+            { name: '🌓 First Quarter', icon: '🌓', start: 0.25, end: 0.375 },
+            { name: '🌔 Waxing Gibbous', icon: '🌔', start: 0.375, end: 0.5 },
+            { name: '🌕 Full', icon: '🌕', start: 0.5, end: 0.625 },
+            { name: '🌖 Waning Gibbous', icon: '🌖', start: 0.625, end: 0.75 },
+            { name: '🌗 Last Quarter', icon: '🌗', start: 0.75, end: 0.875 },
+            { name: '🌘 Waning Crescent', icon: '🌘', start: 0.875, end: 1 }
+        ];
+        
+        const currentPhase = phases.find(phase => 
+            cyclePosition >= phase.start && cyclePosition < phase.end
+        ) || phases[0];
+        
+        const moonPhaseEl = document.getElementById(`moon-phase-${widgetId}`);
+        if (moonPhaseEl) {
+            moonPhaseEl.textContent = currentPhase.name;
+        }
+        
+        return currentPhase;
+    }
+    
+    function setupEducationalSystem() {
+        // Setup tab switching
+        const tabButtons = document.querySelectorAll(`[data-tab]`);
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+        
+        // Setup component interactions
+        const componentCards = document.querySelectorAll('.component-card');
+        componentCards.forEach(card => {
+            card.addEventListener('click', () => explainComponent(card.dataset.component));
+        });
+        
+        // Make celestial objects clickable for education
+        const earth = document.getElementById(`earth-globe-${widgetId}`);
+        const sun = document.getElementById(`sun-sphere-${widgetId}`);
+        const moon = document.getElementById(`moon-sphere-${widgetId}`);
+        
+        if (earth) earth.addEventListener('click', () => explainComponent('earth'));
+        if (sun) sun.addEventListener('click', () => explainComponent('sun'));
+        if (moon) moon.addEventListener('click', () => explainComponent('moon'));
+    }
+    
+    function switchTab(tabName) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Remove active class from all buttons
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Show selected tab
+        const selectedTab = document.getElementById(`${tabName}-tab-${widgetId}`);
+        const selectedButton = document.querySelector(`[data-tab="${tabName}"]`);
+        
+        if (selectedTab) selectedTab.classList.add('active');
+        if (selectedButton) selectedButton.classList.add('active');
+        
+        updateLastInteraction();
+    }
+    
+    function explainComponent(component) {
+        // Highlight the component card
+        const componentCards = document.querySelectorAll('.component-card');
+        componentCards.forEach(card => card.classList.remove('active'));
+        
+        const selectedCard = document.querySelector(`[data-component="${component}"]`);
+        if (selectedCard) selectedCard.classList.add('active');
+        
+        // Update explanations for each tab
+        updateWeatherExplanation(component);
+        updateOrchidExplanation(component);
+        updateConnectionsExplanation(component);
+        
+        updateLastInteraction();
+    }
+    
+    function updateWeatherExplanation(component) {
+        const weatherEl = document.getElementById(`weather-explanation-${widgetId}`);
+        if (!weatherEl) return;
+        
+        const explanations = {
+            earth: `
+                <div class="explanation-highlight">
+                    <strong>🌍 Earth's Weather Systems:</strong>
+                    <p>Earth's 24-hour rotation creates day/night temperature cycles. Different regions experience varying seasons based on their position relative to the Sun.</p>
+                </div>
+                <p><strong>Key Weather Effects:</strong></p>
+                <ul>
+                    <li>🌡️ <strong>Temperature Cycles:</strong> Daily heating and cooling affects humidity levels</li>
+                    <li>🌧️ <strong>Precipitation Patterns:</strong> Ocean currents and land masses create regional rain patterns</li>
+                    <li>💨 <strong>Wind Systems:</strong> Earth's rotation drives global wind patterns and storm systems</li>
+                    <li>🌡️ <strong>Climate Zones:</strong> Tropical, temperate, and polar regions each have distinct climates</li>
+                </ul>
+            `,
+            sun: `
+                <div class="explanation-highlight">
+                    <strong>☀️ Solar Energy & Climate:</strong>
+                    <p>The Sun provides all energy for Earth's weather systems. Solar radiation drives evaporation, cloud formation, and atmospheric circulation.</p>
+                </div>
+                <p><strong>Solar Weather Influences:</strong></p>
+                <ul>
+                    <li>🌞 <strong>Solar Radiation:</strong> Powers photosynthesis and drives the water cycle</li>
+                    <li>🌡️ <strong>Seasonal Changes:</strong> Earth's tilt creates varying solar intensity throughout the year</li>
+                    <li>☀️ <strong>UV Levels:</strong> Affects plant growth and requires protection considerations</li>
+                    <li>🌪️ <strong>Weather Patterns:</strong> Solar heating creates pressure differences that drive storms</li>
+                </ul>
+            `,
+            moon: `
+                <div class="explanation-highlight">
+                    <strong>🌙 Lunar Weather Effects:</strong>
+                    <p>While subtle, the Moon influences Earth's weather through tidal forces and gravitational effects on atmospheric pressure.</p>
+                </div>
+                <p><strong>Lunar Influences:</strong></p>
+                <ul>
+                    <li>🌊 <strong>Tidal Effects:</strong> Ocean tides affect coastal humidity and temperature patterns</li>
+                    <li>🌀 <strong>Atmospheric Tides:</strong> Slight pressure changes during full and new moons</li>
+                    <li>🌙 <strong>Moonlight:</strong> Can affect nighttime temperature radiation</li>
+                    <li>📅 <strong>Lunar Cycles:</strong> Some studies suggest correlations with precipitation patterns</li>
+                </ul>
+            `
+        };
+        
+        weatherEl.innerHTML = explanations[component] || '<p>Select a component to learn about its weather effects.</p>';
+    }
+    
+    function updateOrchidExplanation(component) {
+        const orchidEl = document.getElementById(`orchid-explanation-${widgetId}`);
+        if (!orchidEl) return;
+        
+        const explanations = {
+            earth: `
+                <div class="explanation-highlight">
+                    <strong>🌍 Earth & Orchid Habitats:</strong>
+                    <p>Earth's diverse climates create specific orchid growing zones. Most orchids evolved in tropical and subtropical regions with high humidity.</p>
+                </div>
+                <p><strong>Earth's Orchid Environments:</strong></p>
+                <ul>
+                    <li>🌴 <strong>Tropical Rainforests:</strong> High humidity (70-90%), filtered light, stable temperatures</li>
+                    <li>🏔️ <strong>Mountain Slopes:</strong> Cool nights, bright days, excellent drainage</li>
+                    <li>🌿 <strong>Cloud Forests:</strong> Constant moisture, diffused light, moderate temperatures</li>
+                    <li>🌵 <strong>Seasonal Climates:</strong> Wet/dry cycles that trigger orchid blooming</li>
+                </ul>
+                <p><strong>Growing Tips:</strong> Recreate your orchid's native Earth environment with proper humidity, temperature, and light cycles.</p>
+            `,
+            sun: `
+                <div class="explanation-highlight">
+                    <strong>☀️ Solar Energy for Orchids:</strong>
+                    <p>Orchids have evolved specific light requirements. Too much sun burns leaves; too little prevents blooming. Most prefer bright, indirect light.</p>
+                </div>
+                <p><strong>Solar Orchid Relationships:</strong></p>
+                <ul>
+                    <li>🌱 <strong>Photosynthesis:</strong> Orchids need specific light intensities for healthy growth</li>
+                    <li>🌸 <strong>Blooming Triggers:</strong> Many orchids require seasonal light changes to flower</li>
+                    <li>🍃 <strong>Leaf Adaptation:</strong> Thick leaves for high light, thin leaves for shade</li>
+                    <li>⏰ <strong>Photoperiod:</strong> Day length changes signal blooming and dormancy periods</li>
+                </ul>
+                <p><strong>Growing Tips:</strong> Use grow lights or position near bright windows, but avoid direct afternoon sun.</p>
+            `,
+            moon: `
+                <div class="explanation-highlight">
+                    <strong>🌙 Lunar Orchid Folklore:</strong>
+                    <p>While scientific evidence is limited, many orchid growers believe lunar cycles affect plant growth and blooming patterns.</p>
+                </div>
+                <p><strong>Lunar Growing Theories:</strong></p>
+                <ul>
+                    <li>🌱 <strong>Growth Cycles:</strong> Some believe plants grow faster during waxing moon phases</li>
+                    <li>🌸 <strong>Blooming:</strong> Full moon periods may trigger flowering in some species</li>
+                    <li>💧 <strong>Water Absorption:</strong> Lunar gravity might affect plant water uptake</li>
+                    <li>🌿 <strong>Root Development:</strong> New moon periods traditionally favored for repotting</li>
+                </ul>
+                <p><strong>Traditional Practice:</strong> Many experienced growers time repotting and major care during specific moon phases.</p>
+            `
+        };
+        
+        orchidEl.innerHTML = explanations[component] || '<p>Click on a component to discover orchid relationships.</p>';
+    }
+    
+    function updateConnectionsExplanation(component) {
+        const connectionsEl = document.getElementById(`connections-explanation-${widgetId}`);
+        if (!connectionsEl) return;
+        
+        const explanations = {
+            earth: `
+                <div class="explanation-highlight">
+                    <strong>🌍 Earth Connection Chain:</strong>
+                </div>
+                <div class="connection-chain">
+                    <span>🌍 Earth Rotation</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌡️ Day/Night Cycles</span>
+                    <span class="chain-arrow">→</span>
+                    <span>💧 Humidity Changes</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌺 Orchid Growth</span>
+                </div>
+                <div class="connection-chain">
+                    <span>🏔️ Earth Geography</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌤️ Local Climate</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌿 Habitat Types</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌸 Orchid Species</span>
+                </div>
+                <p><strong>Growing Application:</strong> Match your indoor conditions to your orchid's native Earth region. If it's from a tropical rainforest, provide high humidity and warm temperatures. If it's from mountain slopes, ensure cool nights and bright days.</p>
+            `,
+            sun: `
+                <div class="explanation-highlight">
+                    <strong>☀️ Solar Connection Chain:</strong>
+                </div>
+                <div class="connection-chain">
+                    <span>☀️ Solar Energy</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌱 Photosynthesis</span>
+                    <span class="chain-arrow">→</span>
+                    <span>💪 Plant Strength</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌸 Flower Production</span>
+                </div>
+                <div class="connection-chain">
+                    <span>🌞 Seasonal Sun Angle</span>
+                    <span class="chain-arrow">→</span>
+                    <span>📅 Day Length Changes</span>
+                    <span class="chain-arrow">→</span>
+                    <span>⏰ Blooming Triggers</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌺 Orchid Flowers</span>
+                </div>
+                <p><strong>Growing Application:</strong> Position orchids for bright, indirect light. Use grow lights in winter to maintain consistent photoperiods. Adjust lighting seasonally to trigger natural blooming cycles.</p>
+            `,
+            moon: `
+                <div class="explanation-highlight">
+                    <strong>🌙 Lunar Connection Chain:</strong>
+                </div>
+                <div class="connection-chain">
+                    <span>🌙 Lunar Gravity</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌊 Tidal Forces</span>
+                    <span class="chain-arrow">→</span>
+                    <span>💧 Plant Fluids</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌱 Growth Patterns</span>
+                </div>
+                <div class="connection-chain">
+                    <span>🌕 Moon Phases</span>
+                    <span class="chain-arrow">→</span>
+                    <span>📅 Growing Cycles</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌿 Care Timing</span>
+                    <span class="chain-arrow">→</span>
+                    <span>🌸 Healthier Orchids</span>
+                </div>
+                <p><strong>Growing Application:</strong> Try timing major orchid care (repotting, fertilizing) with moon phases. Many experienced growers report better results when following lunar gardening calendars, though results may vary.</p>
+            `
+        };
+        
+        connectionsEl.innerHTML = explanations[component] || '<p>Click Earth, Sun, or Moon to see the complete relationship chain.</p>';
+    }
+    
+    function setupGlobeInteraction() {
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        
+        // Add educational geographical markers
+        addCountryHighlights();
+        
+        // Setup tutorial functionality
+        setupTutorial();
+        
+        // Setup legend chip toggles
+        setupLegendChips();
+        
+        // Setup day/night toggle
+        setupDayNightToggle();
+        
+        // Update celestial data
+        updateCelestialData();
+        
+        // Globe click handler
+        globe.addEventListener('click', handleGlobeClick);
+        
+        // Hover effects
+        globe.addEventListener('mouseenter', () => {
+            updateLastInteraction();
+        });
+    }
+    
+    function addCountryHighlights() {
+        const highlightsContainer = document.getElementById(`country-highlights-${widgetId}`);
+        
+        // Educational Earth Science markers with climate/geographical significance
+        const geoFeatures = [
+            // Climate zones affecting orchid distribution
+            { name: 'Amazon Rainforest', type: 'forest', x: 32, y: 65, info: 'World\'s largest tropical rainforest - orchid paradise with 30,000+ species' },
+            { name: 'Himalayan Range', type: 'mountain', x: 68, y: 38, info: 'High-altitude cloud forests where cool-climate orchids thrive' },
+            { name: 'Madagascar Hotspot', type: 'orchid-hotspot', x: 58, y: 78, info: 'Island evolution created 1,000+ endemic orchid species' },
+            { name: 'SE Asian Monsoon Zone', type: 'climate-zone', x: 75, y: 58, info: 'Seasonal rains create perfect conditions for epiphytic orchids' },
+            { name: 'Sahara Desert', type: 'desert', x: 48, y: 45, info: 'Creates global wind patterns that distribute moisture for orchids' },
+            { name: 'Andes Cloud Forests', type: 'mountain', x: 28, y: 60, info: 'High-altitude mist zones where rare orchids grow in clouds' },
+            { name: 'Equatorial Climate', type: 'climate-zone', x: 50, y: 55, info: 'Consistent sunlight and temperature drive global orchid distribution' },
+            { name: 'Australian Outback', type: 'desert', x: 78, y: 72, info: 'Shows contrast - how dry conditions limit orchid diversity' }
+        ];
+        
+        geoFeatures.forEach((feature, index) => {
+            const marker = document.createElement('div');
+            marker.className = `geo-marker ${feature.type}`;
+            marker.style.left = feature.x + '%';
+            marker.style.top = feature.y + '%';
+            marker.style.animationDelay = (index * 0.4) + 's';
+            marker.dataset.feature = feature.name;
+            marker.dataset.type = feature.type;
+            marker.dataset.info = feature.info;
+            marker.title = `${feature.name}: ${feature.info}`;
+            
+            marker.addEventListener('click', (e) => {
+                e.stopPropagation();
+                explainGeoFeature(feature);
+            });
+            
+            highlightsContainer.appendChild(marker);
+        });
+        
+        // Update total features display
+        document.getElementById(`total-countries-${widgetId}`).textContent = geoFeatures.length;
+    }
+    
+    function handleGlobeClick(event) {
+        updateLastInteraction();
+        
+        // Calculate approximate country based on click position
+        const rect = event.target.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        
+        // Find nearest country highlight
+        const highlights = document.querySelectorAll('.country-highlight');
+        let nearestCountry = null;
+        let minDistance = Infinity;
+        
+        highlights.forEach(highlight => {
+            const hx = parseFloat(highlight.style.left);
+            const hy = parseFloat(highlight.style.top);
+            const distance = Math.sqrt((x - hx) ** 2 + (y - hy) ** 2);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestCountry = {
+                    name: highlight.dataset.country,
+                    orchids: parseInt(highlight.dataset.orchids)
+                };
+            }
+        });
+        
+        if (nearestCountry && minDistance < 20) {
+            selectCountry(nearestCountry);
+        }
+    }
+    
+    function selectCountry(country) {
+        currentCountry = country;
+        updateLastInteraction();
+        
+        // Add to breadcrumbs
+        addToBreadcrumbs(country);
+        
+        // Load orchids from this country
+        loadCountryOrchids(country);
+        
+        // Update country statistics
+        updateCountryStats(country);
+        
+        // Load weather data for country
+        loadCountryWeather(country);
+        
+        // Generate growing advice
+        generateGrowingAdvice(country);
+        
+        console.log(`Selected country: ${country.name}`);
+    }
+    
+    function loadCountryOrchids(country) {
+        // Simulate loading orchids from selected country
+        fetch(`/api/orchids-by-country?country=${encodeURIComponent(country.name)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.orchids.length > 0) {
+                    countryOrchids = data.orchids;
+                    currentOrchidIndex = 0;
+                    displayOrchid(countryOrchids[0]);
+                } else {
+                    // Fallback to sample data
+                    loadSampleOrchidForCountry(country);
+                }
+            })
+            .catch(() => {
+                loadSampleOrchidForCountry(country);
+            });
+    }
+    
+    function loadSampleOrchidForCountry(country) {
+        // Sample orchid data for demonstration
+        const sampleOrchids = {
+            'Colombia': {
+                name: 'Cattleya trianae',
+                scientific: 'Cattleya trianae Linden & Rchb.f.',
+                image: '/static/images/cattleya_trianae.jpg'
+            },
+            'Thailand': {
+                name: 'Dendrobium nobile',
+                scientific: 'Dendrobium nobile Lindl.',
+                image: '/static/images/dendrobium_nobile.jpg'
+            },
+            'Ecuador': {
+                name: 'Dracula vampira',
+                scientific: 'Dracula vampira (Luer) Luer',
+                image: '/static/images/dracula_vampira.jpg'
+            }
+        };
+        
+        const orchid = sampleOrchids[country.name] || {
+            name: 'Unknown Orchid',
+            scientific: 'Species unknown',
+            image: '/static/images/orchid_placeholder.svg'
+        };
+        
+        displayOrchid(orchid);
+    }
+    
+    function displayOrchid(orchid) {
+        // Update orchid display
+        const imageEl = document.getElementById(`orchid-image-${widgetId}`);
+        const nameEl = document.getElementById(`orchid-name-${widgetId}`);
+        const scientificEl = document.getElementById(`scientific-name-${widgetId}`);
+        const countryBadgeEl = document.getElementById(`country-badge-${widgetId}`);
+        
+        if (imageEl) imageEl.src = orchid.image || orchid.image_url;
+        if (nameEl) nameEl.textContent = orchid.name || orchid.display_name;
+        if (scientificEl) scientificEl.textContent = orchid.scientific || orchid.scientific_name;
+        if (countryBadgeEl) countryBadgeEl.textContent = `🌍 ${currentCountry?.name || 'Unknown'}`;
+    }
+    
+    function updateCountryStats(country) {
+        document.getElementById(`selected-country-orchids-${widgetId}`).textContent = country.orchids;
+        
+        // Calculate season (simplified)
+        const now = new Date();
+        const month = now.getMonth();
+        let season = 'Spring';
+        if (month >= 5 && month <= 7) season = 'Summer';
+        else if (month >= 8 && month <= 10) season = 'Autumn';
+        else if (month >= 11 || month <= 1) season = 'Winter';
+        
+        document.getElementById(`growing-season-${widgetId}`).textContent = season;
+        
+        // Simulate local time (offset from UTC)
+        const localTime = new Date().toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+        document.getElementById(`local-time-${widgetId}`).textContent = localTime;
+    }
+    
+    function loadCountryWeather(country) {
+        // Simulate weather data for the selected country
+        const weatherData = {
+            temperature: Math.round(15 + Math.random() * 20),
+            humidity: Math.round(60 + Math.random() * 30),
+            photoperiod: Math.round(10 + Math.random() * 4),
+            solarAngle: Math.round(30 + Math.random() * 60),
+            uvIndex: Math.round(3 + Math.random() * 8),
+            dayLength: Math.round(10 + Math.random() * 4)
+        };
+        
+        // Update habitat weather display
+        document.querySelector(`#habitat-weather-${widgetId} .temp-display`).textContent = `${weatherData.temperature}°C`;
+        document.querySelector(`#habitat-weather-${widgetId} .humidity-display`).textContent = `${weatherData.humidity}%`;
+        document.querySelector(`#habitat-weather-${widgetId} .photoperiod-display`).textContent = `${weatherData.photoperiod}h`;
+        
+        // Update solar data
+        document.getElementById(`solar-angle-${widgetId}`).textContent = `${weatherData.solarAngle}°`;
+        document.getElementById(`uv-index-${widgetId}`).textContent = weatherData.uvIndex;
+        document.getElementById(`day-length-${widgetId}`).textContent = `${weatherData.dayLength}h`;
+    }
+    
+    function generateGrowingAdvice(country) {
+        const adviceContainer = document.getElementById(`ai-growing-advice-${widgetId}`);
+        
+        // Generate location-specific advice
+        const advice = `Based on ${country.name}'s climate, provide bright indirect light and maintain 60-70% humidity. ${country.name} orchids typically prefer temperature ranges of 18-25°C with good air circulation.`;
+        
+        adviceContainer.textContent = advice;
+    }
+    
+    function addToBreadcrumbs(country) {
+        breadcrumbs.push(country.name);
+        if (breadcrumbs.length > 5) breadcrumbs.shift();
+        
+        const breadcrumbsContainer = document.getElementById(`breadcrumbs-${widgetId}`);
+        breadcrumbsContainer.innerHTML = breadcrumbs.map(name => 
+            `<span class="breadcrumb-item">🌍 ${name}</span>`
+        ).join('');
+    }
+    
+    function setupControls() {
+        // Pause/Resume button
+        const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+        pauseBtn?.addEventListener('click', toggleRotation);
+        
+        // Random country button
+        const randomBtn = document.getElementById(`random-country-${widgetId}`);
+        randomBtn?.addEventListener('click', selectRandomCountry);
+        
+        // Speed control
+        const speedControl = document.getElementById(`rotation-speed-${widgetId}`);
+        speedControl?.addEventListener('change', updateRotationSpeed);
+    }
+    
+    function toggleRotation() {
+        isRotating = !isRotating;
+        updateLastInteraction();
+        
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        const moonOrbit = document.getElementById(`moon-orbit-${widgetId}`);
+        const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+        const statusEl = document.getElementById(`rotation-status-${widgetId}`);
+        
+        const playState = isRotating ? 'running' : 'paused';
+        
+        // Control Earth rotation
+        globe.style.animationPlayState = playState;
+        
+        // Control moon orbit and rotation
+        if (moonOrbit) {
+            moonOrbit.style.animationPlayState = playState;
+            const moonSphere = moonOrbit.querySelector('.moon-sphere');
+            if (moonSphere) {
+                moonSphere.style.animationPlayState = playState;
+                const moonShadow = moonSphere.querySelector('.moon-shadow');
+                if (moonShadow) {
+                    moonShadow.style.animationPlayState = playState;
+                }
+            }
+        }
+        
+        if (isRotating) {
+            pauseBtn.textContent = '⏸️ Pause';
+            statusEl.textContent = '🔄 Auto-rotating';
+        } else {
+            pauseBtn.textContent = '▶️ Resume';
+            statusEl.textContent = '⏸️ Paused';
+        }
+    }
+    
+    function selectRandomCountry() {
+        const markers = document.querySelectorAll('.geo-marker');
+        if (markers.length === 0) return;
+        
+        const randomMarker = markers[Math.floor(Math.random() * markers.length)];
+        
+        // Highlight the marker briefly
+        randomMarker.style.transform = 'scale(2)';
+        randomMarker.style.zIndex = '100';
+        randomMarker.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)';
+        
+        // Highlight matching legend item
+        const legendMarkers = document.querySelectorAll('.legend-marker');
+        legendMarkers.forEach(marker => {
+            if (marker.classList.contains(randomMarker.classList[1])) {
+                marker.parentElement.style.transform = 'scale(1.1)';
+                marker.parentElement.style.backgroundColor = 'rgba(74, 144, 226, 0.2)';
+                setTimeout(() => {
+                    marker.parentElement.style.transform = '';
+                    marker.parentElement.style.backgroundColor = '';
+                }, 2000);
+            }
+        });
+        
+        const feature = {
+            name: randomMarker.dataset.feature,
+            type: randomMarker.dataset.type,
+            info: randomMarker.dataset.info
+        };
+        
+        // Show feature information
+        explainGeoFeature(feature);
+        
+        // Reset marker after delay
+        setTimeout(() => {
+            randomMarker.style.transform = '';
+            randomMarker.style.zIndex = '';
+            randomMarker.style.boxShadow = '';
+        }, 2000);
+    }
+    
+    function explainGeoFeature(feature) {
+        updateLastInteraction();
+        
+        // Educational explanation based on geographical feature type
+        const explanations = {
+            'forest': {
+                icon: '🌳',
+                climate: 'High humidity, consistent rainfall, warm temperatures',
+                orchids: 'Perfect conditions for epiphytic orchids growing on trees',
+                science: 'Forests create their own weather patterns through transpiration and canopy protection'
+            },
+            'mountain': {
+                icon: '🏔️',
+                climate: 'Cool temperatures, high humidity from clouds, seasonal changes',
+                orchids: 'Cloud forest orchids thrive in misty, cool conditions',
+                science: 'Mountains force air upward, creating clouds and precipitation on windward slopes'
+            },
+            'desert': {
+                icon: '🏜️',
+                climate: 'Extreme heat, very low humidity, minimal rainfall',
+                orchids: 'Very few orchids can survive - shows contrast with orchid habitats',
+                science: 'High pressure systems create dry conditions and influence global wind patterns'
+            },
+            'climate-zone': {
+                icon: '🌡️',
+                climate: 'Specific temperature and rainfall patterns that define regions',
+                orchids: 'Each climate zone supports different orchid species adapted to local conditions',
+                science: 'Solar angle and ocean currents create distinct climate patterns across Earth'
+            },
+            'orchid-hotspot': {
+                icon: '🌺',
+                climate: 'Ideal combination of warmth, humidity, and seasonal variation',
+                orchids: 'Biodiversity hotspots with hundreds of endemic orchid species',
+                science: 'Isolated evolution on islands or mountains creates unique species'
+            }
+        };
+        
+        const featureType = explanations[feature.type] || explanations['climate-zone'];
+        
+        // Update status display
+        document.getElementById(`current-location-${widgetId}`).innerHTML = `
+            <div style="text-align: center; padding: 10px;">
+                <div style="font-size: 2em; margin-bottom: 5px;">${featureType.icon}</div>
+                <div style="font-weight: bold; color: #4a90e2; margin-bottom: 5px;">${feature.name}</div>
+                <div style="font-size: 0.9em; margin-bottom: 8px; color: #666;">${feature.info}</div>
+                <div style="background: rgba(74, 144, 226, 0.1); padding: 8px; border-radius: 6px; margin: 5px 0;">
+                    <strong>Climate:</strong> ${featureType.climate}
+                </div>
+                <div style="background: rgba(255, 105, 180, 0.1); padding: 8px; border-radius: 6px; margin: 5px 0;">
+                    <strong>Orchid Connection:</strong> ${featureType.orchids}
+                </div>
+                <div style="background: rgba(50, 205, 50, 0.1); padding: 8px; border-radius: 6px; margin: 5px 0;">
+                    <strong>Earth Science:</strong> ${featureType.science}
+                </div>
+            </div>
+        `;
+    }
+    
+    function setupTutorial() {
+        const tutorialBtn = document.getElementById(`tutorial-toggle-${widgetId}`);
+        const demoBtn = document.getElementById(`demo-mode-${widgetId}`);
+        const tutorialOverlay = document.getElementById(`tutorial-overlay-${widgetId}`);
+        const closeTutorialBtn = document.getElementById(`close-tutorial-${widgetId}`);
+        
+        // Tutorial button click
+        tutorialBtn.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'flex';
+        });
+        
+        // Close tutorial
+        closeTutorialBtn.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'none';
+        });
+        
+        // Close tutorial when clicking outside
+        tutorialOverlay.addEventListener('click', (e) => {
+            if (e.target === tutorialOverlay) {
+                tutorialOverlay.style.display = 'none';
+            }
+        });
+        
+        // Demo mode - automatically shows different features
+        demoBtn.addEventListener('click', () => {
+            startDemoTour();
+        });
+    }
+    
+    function startDemoTour() {
+        const markers = document.querySelectorAll('.geo-marker');
+        let currentIndex = 0;
+        let isRunning = false;
+        
+        if (markers.length === 0) return;
+        if (isRunning) return;
+        
+        isRunning = true;
+        
+        // Update demo button text
+        const demoBtn = document.getElementById(`demo-mode-${widgetId}`);
+        demoBtn.textContent = '⏳ Demo Running...';
+        demoBtn.disabled = true;
+        
+        function showNextFeature() {
+            if (currentIndex >= markers.length) {
+                // Demo complete
+                demoBtn.textContent = '🎬 Demo Tour';
+                demoBtn.disabled = false;
+                isRunning = false;
+                
+                // Show completion message
+                document.getElementById(`current-location-${widgetId}`).innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🎉</div>
+                        <div style="font-weight: bold; color: #4a90e2; margin-bottom: 10px;">Demo Tour Complete!</div>
+                        <div style="color: #666;">You've learned about all the major Earth features that affect orchid growing conditions.</div>
+                        <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 8px;">
+                            <strong>Next:</strong> Try clicking any colored dot to explore on your own!
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const marker = markers[currentIndex];
+            const feature = {
+                name: marker.dataset.feature,
+                type: marker.dataset.type,
+                info: marker.dataset.info
+            };
+            
+            // Reset any previous marker highlights
+            document.querySelectorAll('.geo-marker').forEach(m => {
+                m.style.transform = '';
+                m.style.zIndex = '';
+                m.style.boxShadow = '';
+            });
+            
+            // Highlight the current marker
+            marker.style.transform = 'scale(2.5)';
+            marker.style.zIndex = '100';
+            marker.style.boxShadow = '0 0 25px rgba(255, 255, 255, 1)';
+            
+            // Show feature information
+            explainGeoFeature(feature);
+            
+            // Add demo counter to info panel
+            setTimeout(() => {
+                const locationEl = document.getElementById(`current-location-${widgetId}`);
+                if (locationEl) {
+                    const demoCounter = document.createElement('div');
+                    demoCounter.style.cssText = `
+                        position: absolute; 
+                        top: 10px; 
+                        right: 10px; 
+                        background: #4a90e2; 
+                        color: white; 
+                        padding: 5px 10px; 
+                        border-radius: 15px; 
+                        font-size: 0.9em;
+                        z-index: 10;
+                    `;
+                    demoCounter.textContent = `Demo ${currentIndex + 1}/${markers.length}`;
+                    locationEl.style.position = 'relative';
+                    locationEl.appendChild(demoCounter);
+                }
+            }, 100);
+            
+            // Auto advance after 3 seconds
+            setTimeout(() => {
+                currentIndex++;
+                showNextFeature();
+            }, 3000);
+        }
+        
+        showNextFeature();
+    }
+    
+    function showSpeedToast(message) {
+        // Remove existing toast
+        const existingToast = document.getElementById(`speed-toast-${widgetId}`);
+        if (existingToast) existingToast.remove();
+        
+        // Create toast
+        const toast = document.createElement('div');
+        toast.id = `speed-toast-${widgetId}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(74, 144, 226, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+    
+    function setupLegendChips() {
+        const chips = document.querySelectorAll('.legend-chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const isActive = chip.classList.contains('active');
+                const markerType = chip.dataset.type;
+                
+                if (isActive) {
+                    chip.classList.remove('active');
+                    chip.classList.add('inactive');
+                    hideMarkers(markerType);
+                } else {
+                    chip.classList.remove('inactive');
+                    chip.classList.add('active');
+                    showMarkers(markerType);
+                }
+            });
+        });
+    }
+    
+    function hideMarkers(type) {
+        const markers = document.querySelectorAll(`.geo-marker.${type}`);
+        markers.forEach(marker => {
+            marker.style.display = 'none';
+        });
+    }
+    
+    function showMarkers(type) {
+        const markers = document.querySelectorAll(`.geo-marker.${type}`);
+        markers.forEach(marker => {
+            marker.style.display = 'block';
+        });
+    }
+    
+    function setupDayNightToggle() {
+        const dayNightBtn = document.getElementById(`day-night-toggle-${widgetId}`);
+        const dayNightOverlay = document.getElementById(`day-night-overlay-${widgetId}`);
+        const dayNightIndicator = document.getElementById(`day-night-indicator-${widgetId}`);
+        
+        let isActive = false;
+        
+        dayNightBtn.addEventListener('click', () => {
+            isActive = !isActive;
+            
+            if (isActive) {
+                dayNightBtn.classList.add('active');
+                dayNightBtn.textContent = '🌞 Day/Night ON';
+                dayNightOverlay.style.display = 'block';
+                dayNightIndicator.textContent = '🌗 ON';
+                dayNightIndicator.style.background = 'rgba(231, 76, 60, 0.3)';
+            } else {
+                dayNightBtn.classList.remove('active');
+                dayNightBtn.textContent = '🌗 Day/Night';
+                dayNightOverlay.style.display = 'none';
+                dayNightIndicator.textContent = '🌓 Day/Night';
+                dayNightIndicator.style.background = 'rgba(255, 255, 255, 0.2)';
+            }
+        });
+    }
+    
+    function updateCelestialData() {
+        // Calculate realistic data based on current time and location
+        const now = new Date();
+        const hour = now.getHours();
+        
+        // UV Index (0-12 scale, varies by time of day)
+        let uvIndex = Math.max(0, Math.round(10 * Math.sin((hour - 6) * Math.PI / 12)));
+        if (hour < 6 || hour > 18) uvIndex = 0;
+        
+        // Sunspot count (realistic range 0-200)
+        const sunspots = Math.floor(Math.random() * 50) + 20;
+        
+        // Moon phase calculation
+        const phases = ['New', 'Waxing', 'Full', 'Waning'];
+        const phase = phases[Math.floor((now.getDate() / 7.5) % 4)];
+        
+        // Tide effect
+        const tides = ['High', 'Low', 'Rising', 'Falling'];
+        const tide = tides[Math.floor(Math.random() * 4)];
+        
+        // Photoperiod (daylight hours)
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        const latitude = 40; // Approximate mid-latitude
+        const declination = 23.45 * Math.sin(2 * Math.PI * (284 + dayOfYear) / 365);
+        const hourAngle = Math.acos(-Math.tan(latitude * Math.PI / 180) * Math.tan(declination * Math.PI / 180));
+        const daylightHours = 2 * hourAngle * 12 / Math.PI;
+        const hours = Math.floor(daylightHours);
+        const minutes = Math.floor((daylightHours - hours) * 60);
+        
+        // Update displays
+        document.getElementById(`uv-data-${widgetId}`).textContent = `UV: ${uvIndex} • Spots: ${sunspots}`;
+        document.getElementById(`moon-data-${widgetId}`).textContent = `${phase} • Tide: ${tide}`;
+        document.getElementById(`photoperiod-data-${widgetId}`).textContent = `${hours}h ${minutes}m daylight`;
+        
+        // Update quick indicators
+        document.getElementById(`uv-indicator-${widgetId}`).textContent = `☀️ UV ${uvIndex}`;
+        document.getElementById(`photoperiod-indicator-${widgetId}`).textContent = `📅 ${hours}h${minutes}m`;
+        
+        // Schedule next update
+        setTimeout(updateCelestialData, 60000); // Update every minute
+    }
+    
+    function updateRotationSpeed() {
+        const speedControl = document.getElementById(`rotation-speed-${widgetId}`);
+        rotationSpeed = parseFloat(speedControl.value);
+        
+        // Show speed confirmation toast
+        showSpeedToast(`Auto-rotation: ${rotationSpeed}×`);
+        
+        updateLastInteraction();
+        
+        const globe = document.getElementById(`earth-globe-${widgetId}`);
+        const moonOrbit = document.getElementById(`moon-orbit-${widgetId}`);
+        const duration = (60 / rotationSpeed) + 's';
+        const moonDuration = (300 / rotationSpeed) + 's';
+        
+        // Update all Earth rotation animations to sync
+        globe.style.animationDuration = duration;
+        
+        // Update moon orbital and rotational animations
+        if (moonOrbit) {
+            moonOrbit.style.animationDuration = moonDuration;
+            const moonSphere = moonOrbit.querySelector('.moon-sphere');
+            if (moonSphere) {
+                moonSphere.style.animationDuration = moonDuration;
+                const moonShadow = moonSphere.querySelector('.moon-shadow');
+                if (moonShadow) {
+                    moonShadow.style.animationDuration = moonDuration;
+                }
+            }
+        }
+        
+        // Apply duration to pseudo-elements via CSS custom properties
+        globe.style.setProperty('--rotation-duration', duration);
+    }
+    
+    function updateLastInteraction() {
+        lastInteraction = Date.now();
+        document.getElementById(`last-interaction-${widgetId}`).textContent = 'now';
+    }
+    
+    function startInteractionMonitoring() {
+        setInterval(() => {
+            const timeSinceInteraction = Date.now() - lastInteraction;
+            const minutesSince = Math.floor(timeSinceInteraction / 60000);
+            
+            if (minutesSince >= 1 && !isRotating) {
+                // Auto-resume rotation after 1 minute of inactivity
+                isRotating = true;
+                const globe = document.getElementById(`earth-globe-${widgetId}`);
+                const pauseBtn = document.getElementById(`pause-rotation-${widgetId}`);
+                const statusEl = document.getElementById(`rotation-status-${widgetId}`);
+                
+                globe.style.animationPlayState = 'running';
+                pauseBtn.textContent = '⏸️ Pause';
+                statusEl.textContent = '🔄 Auto-rotating';
+            }
+            
+            // Update last interaction display
+            if (timeSinceInteraction > 5000) {
+                const seconds = Math.floor(timeSinceInteraction / 1000);
+                if (seconds < 60) {
+                    document.getElementById(`last-interaction-${widgetId}`).textContent = `${seconds}s ago`;
+                } else {
+                    document.getElementById(`last-interaction-${widgetId}`).textContent = `${minutesSince}m ago`;
+                }
+            }
+        }, 1000);
+    }
+    
+    function loadInitialOrchid() {
+        // Load the first orchid from the widget data
+        const orchids = {{ widget_data.orchids|tojson|safe }};
+        if (orchids && orchids.length > 0) {
+            displayOrchid(orchids[0]);
+            if (orchids[0].region) {
+                const country = { name: orchids[0].region, orchids: 1 };
+                updateCountryStats(country);
+                loadCountryWeather(country);
+                generateGrowingAdvice(country);
+            }
+        }
+    }
+    
+    function startRealTimeUpdates() {
+        // Update widget every 30 seconds
+        setInterval(() => {
+            document.getElementById(`last-update-${widgetId}`).textContent = 
+                new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+        }, 30000);
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWidget);
+    } else {
+        initializeWidget();
+    }
+})();
+</script>

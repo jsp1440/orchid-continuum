@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCOS Orchid of the Day Widget Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .demo-header h1 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .demo-header p {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .embed-code {
+            background: #f1f3f4;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 40px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        .embed-code h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        
+        .embed-code code {
+            color: #1a73e8;
+        }
+        
+        .widget-container {
+            margin: 40px 0;
+        }
+        
+        .note {
+            background: #e8f5e8;
+            border: 1px solid #2e7d32;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #1b5e20;
+        }
+        
+        .note strong {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>🌺 FCOS Orchid of the Day Widget</h1>
+        <p>Self-contained widget reading from your Orchid Continuum database</p>
+    </div>
+    
+    <div class="note">
+        <strong>Ready for FCOS.org:</strong> This widget is designed to embed seamlessly into your Neon One website. 
+        It shows a different orchid each day from your validated collection, with proper botanical formatting 
+        and senior-friendly accessibility.
+    </div>
+    
+    <div class="embed-code">
+        <h3>📊 Google Sheets Setup Instructions:</h3>
+        <p><strong>Step 1:</strong> Create a Google Sheet with these column headers (exact names):</p>
+        <code>
+genus, species, variety, hybrid, grex, clonal_name, infraspecific_rank, orchid_group, title, caption, image_url, photographer, credit, license, license_url, native_range, habitat, elevation_m, blooming_season, culture_notes, date, tags, accession_id
+        </code>
+        
+        <p><strong>Step 2:</strong> Fill in your orchid data. Required columns:</p>
+        <ul>
+            <li><strong>image_url</strong> - Direct link to orchid photo (required)</li>
+            <li><strong>genus</strong> - Orchid genus name</li>
+            <li><strong>species</strong> - Species name (or leave blank for hybrids)</li>
+            <li><strong>hybrid</strong> or <strong>grex</strong> - For hybrid orchids</li>
+            <li><strong>caption</strong> - Description of the orchid</li>
+        </ul>
+        
+        <p><strong>Step 3:</strong> Publish your sheet:</p>
+        <ul>
+            <li>Go to <strong>File > Share > Publish to web</strong></li>
+            <li>Choose <strong>Comma-separated values (.csv)</strong></li>
+            <li>Click <strong>Publish</strong></li>
+            <li>Copy the CSV URL</li>
+        </ul>
+        
+        <p><strong>Step 4:</strong> Update the widget config with your CSV URL</p>
+    </div>
+    
+    <div class="embed-code">
+        <h3>Embed Code (copy this to FCOS.org):</h3>
+        <code>
+&lt;script src="https://your-orchid-continuum-domain.com/static/js/orchid-of-the-day.js" defer&gt;&lt;/script&gt;<br>
+&lt;div id="orchid-of-the-day"&gt;&lt;/div&gt;
+        </code>
+    </div>
+    
+    <div class="widget-container">
+        <h2>Live Demo:</h2>
+        
+        <!-- This is where the widget will appear -->
+        <div id="orchid-of-the-day"></div>
+    </div>
+    
+    <div class="note">
+        <strong>Features:</strong>
+        <ul>
+            <li>✅ Reads from your existing Orchid Continuum database (no mock data!)</li>
+            <li>✅ One orchid per day with no repeats for 30+ days</li>
+            <li>✅ Proper botanical name formatting with italics</li>
+            <li>✅ Senior-friendly: 18px base font, high contrast colors</li>
+            <li>✅ WCAG AA accessible with focus states and alt text</li>
+            <li>✅ Shadow DOM prevents CSS conflicts with Neon One</li>
+            <li>✅ FCOS green branding (#2e7d32)</li>
+            <li>✅ Responsive design for mobile and desktop</li>
+            <li>✅ Caches data for fast loading</li>
+        </ul>
+    </div>
+    
+    <div class="embed-code">
+        <h3>Configuration Options:</h3>
+        <p>Edit the CONFIG object at the top of orchid-of-the-day.js:</p>
+        <code>
+const CONFIG = {<br>
+&nbsp;&nbsp;timezone: 'America/Los_Angeles',<br>
+&nbsp;&nbsp;DATA_SOURCE: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;type: 'json', // 'google_sheet' | 'json' | 'local'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;url: '/api/orchid-of-the-day-data' // Your API endpoint<br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;cacheTtlMinutes: 120,<br>
+&nbsp;&nbsp;maxRecentHistory: 30,<br>
+&nbsp;&nbsp;brand: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bg: '#f4fff4',    // Background color<br>
+&nbsp;&nbsp;&nbsp;&nbsp;title: '#2e7d32',  // Title color<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text: '#111'       // Text color<br>
+&nbsp;&nbsp;}<br>
+};
+        </code>
+    </div>
+    
+    <!-- Load the widget -->
+    <script src="/static/js/orchid-of-the-day.js" defer></script>
+</body>
+</html>

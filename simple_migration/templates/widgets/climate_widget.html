@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Habitat Comparator - {{ widget_data.orchid.display_name if widget_data.orchid else 'Orchid Continuum' }}</title>
+    
+    <!-- Bootstrap CSS with dark theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Climate Comparator JS -->
+    <script src="/static/js/orchid-climate-comparator.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e9ecef;
+            min-height: 100vh;
+        }
+        
+        .widget-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .orchid-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+        
+        .orchid-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #6f42c1;
+        }
+        
+        .orchid-info h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.5rem;
+        }
+        
+        .orchid-info p {
+            margin: 0;
+            color: #adb5bd;
+            font-style: italic;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(111, 66, 193, 0.3);
+            border-color: #6f42c1;
+        }
+        
+        .mode-btn.active {
+            background: #6f42c1;
+            border-color: #6f42c1;
+            color: #fff;
+        }
+        
+        .parallel35-badge {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: rgba(111, 66, 193, 0.2);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(111, 66, 193, 0.5);
+        }
+        
+        .climate-chart {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #climateCanvas {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            border-radius: 8px;
+        }
+        
+        .insights {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .insights h5 {
+            color: #28a745;
+            margin-bottom: 0.5rem;
+        }
+        
+        .insights ul {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+        
+        .insights li {
+            margin-bottom: 0.5rem;
+            color: #e9ecef;
+        }
+        
+        .location-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .location-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .location-card h6 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 0.25rem solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #6f42c1;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        .home-btn {
+            background: rgba(111, 66, 193, 0.2);
+            border: 1px solid #6f42c1;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .home-btn:hover {
+            background: rgba(111, 66, 193, 0.3);
+            color: #fff;
+            text-decoration: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Orbit controls styling */
+        .orbit-controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .orbit-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .orbit-controls label:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .orbit-controls input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #6f42c1;
+        }
+        
+        .orbit-controls input[type="range"] {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        
+        .orbit-controls input[type="range"]:hover {
+            opacity: 1;
+        }
+        
+        .orbit-controls input[type="range"]:focus {
+            outline: 2px solid #6f42c1;
+            outline-offset: 2px;
+        }
+        
+        /* High contrast for accessibility */
+        .orbit-controls input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6f42c1;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        
+        .orbit-controls input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6f42c1;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+        
+        /* Canvas accessibility */
+        #orbitCanvas {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        
+        #orbitCanvas:focus {
+            outline: 2px solid #6f42c1;
+            outline-offset: 2px;
+        }
+        
+        /* Enhanced color contrast for orbit elements */
+        .lat-line-35 {
+            stroke: #ff6b6b;
+            stroke-width: 3;
+        }
+        
+        .lat-line-other {
+            stroke: #ffffff;
+            stroke-width: 2;
+        }
+        
+        /* Enhanced ORBIT & RAYS VIEW Styles */
+        .oc-orbit-wrap{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#e9ecef}
+        .oc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+        .oc-toolbar button,.oc-toolbar label{font-size:14px}
+        .oc-btn{border:1px solid #6f42c1;background:rgba(111, 66, 193, 0.1);border-radius:6px;padding:6px 10px;cursor:pointer;color:#e9ecef}
+        .oc-btn[aria-pressed="true"]{background:#6f42c1;color:#fff;border-color:#6f42c1}
+        .oc-slider{width:320px;background:rgba(255,255,255,0.2);border-radius:5px}
+        .oc-grid{display:grid;grid-template-columns:1fr;gap:12px}
+        @media (min-width:960px){.oc-grid{grid-template-columns: 2fr 1fr}}
+        .oc-card{border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;background:rgba(255,255,255,0.05)}
+        .oc-sr-only{position:absolute;left:-9999px}
+        .oc-caption{font-size:13px;color:#adb5bd}
+        .oc-insights h4{margin:.3rem 0;color:#e9ecef}
+        .oc-insights p{margin:.3rem 0;font-size:14px;color:#e9ecef}
+        .oc-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#adb5bd;margin-top:6px}
+        .oc-legend span{display:inline-flex;align-items:center;gap:6px}
+        .oc-swatch{width:16px;height:2px;background:#fff;display:inline-block}
+        .sw-sun{background:#ff9800}.sw-orbit{background:#6b9fff}.sw-rays{background:#777}.sw-lat{background:#2f7d32}
+        /* high-contrast strokes */
+        .hc-stroke{stroke:#e9ecef;stroke-width:1.25}
+        .hc-thick{stroke-width:1.75}
+        
+        @media (max-width: 768px) {
+            .widget-container {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .orchid-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .location-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .mode-selector {
+                justify-content: center;
+            }
+            
+            .orbit-controls {
+                padding: 0.75rem;
+            }
+            
+            .orbit-controls > div {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            #orbitCanvas {
+                height: 250px;
+            }
+            
+            .oc-grid{grid-template-columns: 1fr}
+            .oc-toolbar{justify-content: center}
+            .oc-slider{width: 250px}
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Navigation Button -->
+    <div style="position: absolute; top: 20px; left: 20px; z-index: 1000;">
+        <a href="/partnership-demo/gary-yong-gee" style="
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00d4aa, #6B3FA0);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+            transition: all 0.3s ease;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 212, 170, 0.4)'" 
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 212, 170, 0.3)'">
+            <i data-feather="home" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+            Home
+        </a>
+    </div>
+    
+    <div class="widget-container">
+        {% if widget_data.error %}
+            <div class="alert alert-warning" role="alert">
+                <i data-feather="alert-triangle"></i>
+                {{ widget_data.error }}
+            </div>
+        {% else %}
+            <!-- Orchid Header -->
+            <div class="orchid-header">
+                {% if widget_data.orchid.image_url %}
+                    <img src="{{ widget_data.orchid.image_url }}" alt="{{ widget_data.orchid.display_name }}" class="orchid-image">
+                {% endif %}
+                <div class="orchid-info">
+                    <h2>{{ widget_data.orchid.display_name }}</h2>
+                    <p>{{ widget_data.orchid.scientific_name }}</p>
+                    {% if widget_data.both_near_35 %}
+                        <span class="parallel35-badge">🌍 35th Parallel Connection!</span>
+                    {% elif widget_data.parallel35_connection %}
+                        <span class="parallel35-badge">🌍 35th Parallel Region</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+                {% for mode in widget_data.comparison_modes %}
+                    <button class="mode-btn {% if mode.id == widget_data.mode %}active{% endif %}" 
+                            onclick="switchMode('{{ mode.id }}')" 
+                            title="{{ mode.description }}">
+                        {{ mode.name }}
+                    </button>
+                {% endfor %}
+                <button class="mode-btn" onclick="switchMode('orbit')" title="Earth orbital visualization with seasonal sun-ray dynamics">
+                    Orbit & Rays
+                </button>
+            </div>
+            
+            <!-- Badges -->
+            <div class="badges" id="badgeContainer">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Location Info -->
+            <div class="location-info">
+                <div class="location-card">
+                    <h6><i data-feather="home"></i> Your Location</h6>
+                    <p>{{ "%.2f"|format(widget_data.user_location.lat) }}°N, {{ "%.2f"|format(widget_data.user_location.lon) }}°W</p>
+                    <p>Elevation: {{ widget_data.user_location.elev }}m</p>
+                </div>
+                <div class="location-card">
+                    <h6><i data-feather="map-pin"></i> Orchid Habitat</h6>
+                    <p>{{ "%.2f"|format(widget_data.orchid.habitat_location.lat) }}°, {{ "%.2f"|format(widget_data.orchid.habitat_location.lon) }}°</p>
+                    <p>Elevation: {{ widget_data.orchid.habitat_location.elev }}m</p>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Analyzing climate patterns...</p>
+            </div>
+            
+            <!-- Climate Chart -->
+            <div class="climate-chart" id="chartContainer" style="display: none;">
+                <canvas id="climateCanvas"></canvas>
+            </div>
+            
+            <!-- Orbit & Rays View -->
+            <div class="climate-chart" id="orbitContainer" style="display: none;">
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <button class="mode-btn active" onclick="setOrbitView('charts')" id="chartsViewBtn">Charts</button>
+                        <button class="mode-btn" onclick="setOrbitView('orbit')" id="orbitViewBtn">Orbit & Rays</button>
+                    </div>
+                </div>
+                <canvas id="orbitCanvas" width="600" height="400" style="width: 100%; max-width: 600px; height: auto;" 
+                        tabindex="0" role="img" aria-label="Interactive Earth orbital visualization showing seasonal positions and solar dynamics"></canvas>
+                        
+                <!-- Enhanced ORBIT & RAYS VIEW -->
+                <div id="oc-orbitRays" class="oc-orbit-wrap" role="region" aria-label="Orbit and solar rays visualization" style="display: none;">
+                  <div class="oc-toolbar" role="toolbar" aria-label="Orbit view controls">
+                    <!-- Toggle (if you want to visually show Charts vs Orbit & Rays) -->
+                    <button class="oc-btn" id="oc-toggleCharts" aria-pressed="false" title="Switch to Charts">Charts</button>
+                    <button class="oc-btn" id="oc-toggleOrbit" aria-pressed="true" title="Orbit & Rays">Orbit & Rays</button>
+
+                    <!-- Date slider -->
+                    <label for="oc-day" style="margin-left:8px;">Date (DOY):</label>
+                    <input id="oc-day" class="oc-slider" type="range" min="0" max="365" step="1" value="172"
+                           aria-label="Day of year slider (0 to 365)" />
+                    <button class="oc-btn" id="oc-play" aria-pressed="false" aria-label="Play animation (space)" title="Play/Pause (space)">▶</button>
+
+                    <!-- Overlays -->
+                    <span style="margin-left:auto"></span>
+                    <label><input type="checkbox" id="oc-lat0" checked/> 0°</label>
+                    <label><input type="checkbox" id="oc-lat23" checked/> 23.4°</label>
+                    <label><input type="checkbox" id="oc-lat35" checked/> 35°</label>
+                    <label><input type="checkbox" id="oc-lat50" checked/> 50°</label>
+                  </div>
+
+                  <div class="oc-grid">
+                    <div class="oc-card">
+                      <!-- SVG canvas -->
+                      <svg id="oc-svg" viewBox="0 0 900 520" width="100%" height="auto" role="img"
+                           aria-label="Earth orbit with seasons, axial tilt, and solar rays">
+                        <desc>Sun at left focus; Earth moves along elliptical orbit with axial tilt shown.
+                          Parallel sun rays hit Earth; selectable latitude lines drawn on the globe.</desc>
+
+                        <!-- Sun -->
+                        <defs>
+                          <radialGradient id="sunG" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#fff7d1"/><stop offset="60%" stop-color="#ffd54d"/>
+                            <stop offset="100%" stop-color="#ff9800"/>
+                          </radialGradient>
+                          <clipPath id="earthClip"><circle id="earthClipCircle" cx="0" cy="0" r="66"/></clipPath>
+                        </defs>
+
+                        <!-- Orbit ellipse guide -->
+                        <g id="orbitLayer">
+                          <ellipse id="orbitPath" cx="240" cy="260" rx="300" ry="180"
+                                   fill="none" stroke="#6b9fff" stroke-width="1.5" class="hc-stroke"/>
+                          <!-- Sun at focus (left) -->
+                          <circle cx="240" cy="260" r="48" fill="url(#sunG)" stroke="#ff9800" class="hc-stroke hc-thick"/>
+                        </g>
+
+                        <!-- Rays layer (parallel to Sun->Earth vector) -->
+                        <g id="raysLayer"></g>
+
+                        <!-- Earth + axis + latitude lines -->
+                        <g id="earthLayer"></g>
+
+                        <!-- Season labels -->
+                        <g id="seasonLabels" font-size="12" fill="#111">
+                          <text x="560" y="70">≈ Jun 21 (N Summer Solstice)</text>
+                          <text x="560" y="460">≈ Dec 21 (N Winter Solstice)</text>
+                          <text x="835" y="260" text-anchor="end">≈ Mar / Sep Equinoxes</text>
+                        </g>
+                      </svg>
+
+                      <div class="oc-legend">
+                        <span><i class="oc-swatch sw-sun"></i> Sun</span>
+                        <span><i class="oc-swatch sw-orbit"></i> Orbit</span>
+                        <span><i class="oc-swatch sw-rays"></i> Sun Rays</span>
+                        <span><i class="oc-swatch sw-lat"></i> Latitude Lines (click to select)</span>
+                      </div>
+
+                      <div class="oc-caption" id="oc-caption" aria-live="polite" style="margin-top:8px;">
+                        <!-- Filled by JS -->
+                      </div>
+                    </div>
+
+                    <div class="oc-card oc-insights">
+                      <h4>Insights</h4>
+                      <p><strong>Hemisphere offset:</strong> Perihelion is ~early January (DOY ≈ 3), aphelion ~early July (≈ 185).
+                         Northern seasons are driven by <em>tilt</em>, not distance: N-summer happens at aphelion.</p>
+                      <p><strong>Photoperiod:</strong> Day length depends on latitude and solar declination.
+                         Short days + cool nights in autumn are classic floral triggers in 20–40° bands.</p>
+                      <p><strong>Why 35° is seasonally rich:</strong> Large swing in solar-noon altitude and day length
+                         gives strong "season signals" without polar extremes. Great for teaching spike induction logic.</p>
+                      <p class="oc-caption">Keyboard: <kbd>Space</kbd> play/pause, <kbd>←/→</kbd> adjust date, <kbd>0/2/3/5</kbd> jump to 0°, 23.4°, 35°, 50°.</p>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            
+            <!-- Insights -->
+            <div class="insights" id="insightsContainer" style="display: none;">
+                <h5><i data-feather="lightbulb"></i> Climate Insights</h5>
+                <ul id="insightsList">
+                    <!-- Populated by JavaScript -->
+                </ul>
+            </div>
+        {% endif %}
+        
+        <!-- Navigation -->
+        <a href="/partnership-demo/gary-yong-gee" class="home-btn">
+            <i data-feather="home"></i>
+            Back to Homepage
+        </a>
+    </div>
+    
+    <script>
+        // Initialize icons
+        feather.replace();
+        
+        // Widget data from server
+        const widgetData = {{ widget_data | tojson }};
+        let currentMode = '{{ widget_data.mode }}';
+        let climateAPI = new OrchidClimateComparator.MockClimateAPI();
+        
+        // Initialize widget
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!widgetData.error) {
+                runClimateComparison();
+            }
+        });
+        
+        async function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update active button
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Show/hide appropriate containers
+            if (mode === 'orbit') {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'none';
+                document.getElementById('orbitContainer').style.display = 'block';
+                document.getElementById('insightsContainer').style.display = 'block';
+                
+                // Run orbit comparison for insights
+                await runClimateComparison();
+                
+                // Initialize orbit view
+                setOrbitView('charts'); // Start with charts view
+                
+            } else {
+                // Show loading
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('chartContainer').style.display = 'none';
+                document.getElementById('orbitContainer').style.display = 'none';
+                document.getElementById('insightsContainer').style.display = 'none';
+                
+                // Run comparison
+                await runClimateComparison();
+            }
+        }
+        
+        async function runClimateComparison() {
+            try {
+                const userLocation = {
+                    lat: widgetData.user_location.lat,
+                    lon: widgetData.user_location.lon,
+                    elev: widgetData.user_location.elev
+                };
+                
+                const habitatLocation = {
+                    lat: widgetData.orchid.habitat_location.lat,
+                    lon: widgetData.orchid.habitat_location.lon,
+                    elev: widgetData.orchid.habitat_location.elev
+                };
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                const result = await OrchidClimateComparator.compareHabitat(
+                    climateAPI,
+                    userLocation,
+                    habitatLocation,
+                    today,
+                    currentMode
+                );
+                
+                // Update badges
+                updateBadges(result.badges);
+                
+                // Update insights
+                updateInsights(result.insights);
+                
+                // Render chart
+                OrchidClimateComparator.renderClimateChart('climateCanvas', result);
+                
+                // Show results
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('chartContainer').style.display = 'block';
+                document.getElementById('insightsContainer').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Climate comparison failed:', error);
+                document.getElementById('loadingState').innerHTML = '<p>Climate comparison failed. Please try again.</p>';
+            }
+        }
+        
+        function updateBadges(badges) {
+            const container = document.getElementById('badgeContainer');
+            container.innerHTML = badges.map(badge => 
+                `<span class="badge">${badge}</span>`
+            ).join('');
+        }
+        
+        function updateInsights(insights) {
+            const list = document.getElementById('insightsList');
+            list.innerHTML = insights.map(insight => 
+                `<li>${insight}</li>`
+            ).join('');
+        }
+        
+        // Orbit view functions
+        function setOrbitView(view) {
+            const chartsBtn = document.getElementById('chartsViewBtn');
+            const orbitBtn = document.getElementById('orbitViewBtn');
+            const climateCanvas = document.getElementById('climateCanvas');
+            const orbitCanvas = document.getElementById('orbitCanvas');
+            const enhancedOrbitRays = document.getElementById('oc-orbitRays');
+            
+            // Update button states
+            chartsBtn.classList.toggle('active', view === 'charts');
+            orbitBtn.classList.toggle('active', view === 'orbit');
+            
+            if (view === 'orbit') {
+                // Show enhanced orbit controls and SVG
+                climateCanvas.style.display = 'none';
+                orbitCanvas.style.display = 'none';
+                enhancedOrbitRays.style.display = 'block';
+                
+                // Initialize enhanced orbit visualization
+                if (window.showOrbitRays) {
+                    window.showOrbitRays();
+                }
+                
+            } else {
+                // Show charts
+                climateCanvas.style.display = 'block';
+                orbitCanvas.style.display = 'none';
+                enhancedOrbitRays.style.display = 'none';
+            }
+        }
+        
+        function toggleLatLine(latitude) {
+            const checkbox = document.getElementById(`lat${latitude === 23.4 ? '23' : latitude}Checkbox`);
+            
+            if (checkbox.checked) {
+                window.enabledLatLines.add(latitude);
+            } else {
+                window.enabledLatLines.delete(latitude);
+            }
+            
+            // If 35° is selected, enable parallel35 mode
+            if (latitude === 35 && checkbox.checked) {
+                window.focusLatitude = 35;
+                // Could trigger parallel35 mode for the current orchid here
+            }
+            
+            // Re-render orbit
+            const canvas = document.getElementById('orbitCanvas');
+            if (canvas && window.currentDayOfYear !== undefined) {
+                OrchidClimateComparator.renderOrbit(canvas, window.currentDayOfYear);
+                OrchidClimateComparator.updateOrbitCaption(window.currentDayOfYear);
+            }
+        }
+        
+        function updateOrbitDay(dayOfYear) {
+            window.currentDayOfYear = parseInt(dayOfYear);
+            
+            // Update slider and day display
+            const slider = document.getElementById('daySlider');
+            const dayValue = document.getElementById('dayValue');
+            
+            if (slider) slider.value = dayOfYear;
+            if (dayValue) {
+                const date = new Date(2024, 0, 1 + parseInt(dayOfYear));
+                dayValue.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            
+            // Render orbit
+            const canvas = document.getElementById('orbitCanvas');
+            if (canvas) {
+                OrchidClimateComparator.renderOrbit(canvas, parseInt(dayOfYear));
+                OrchidClimateComparator.updateOrbitCaption(parseInt(dayOfYear));
+            }
+        }
+        
+        function toggleAnimation() {
+            const playBtn = document.getElementById('playBtn');
+            
+            if (window.orbitAnimationRunning) {
+                // Stop animation
+                if (window.orbitAnimationId) {
+                    cancelAnimationFrame(window.orbitAnimationId);
+                }
+                window.orbitAnimationRunning = false;
+                playBtn.textContent = '▶';
+            } else {
+                // Start animation
+                window.orbitAnimationRunning = true;
+                playBtn.textContent = '⏸';
+                animateOrbit();
+            }
+        }
+        
+        function animateOrbit() {
+            if (!window.orbitAnimationRunning) return;
+            
+            window.currentDayOfYear = (window.currentDayOfYear + 1) % 365;
+            updateOrbitDay(window.currentDayOfYear);
+            
+            // Target 30 fps (throttled for performance)
+            setTimeout(() => {
+                window.orbitAnimationId = requestAnimationFrame(animateOrbit);
+            }, 33); // ~30 fps
+        }
+        
+        // Initialize global variables for orbit
+        window.orbitAnimationId = null;
+        window.orbitAnimationRunning = false;
+        window.currentDayOfYear = 0;
+        window.focusLatitude = 35;
+        window.enabledLatLines = new Set([35]);
+
+        // Enhanced ORBIT & RAYS VIEW JavaScript Implementation
+        (function(){
+          // ---- math helpers ----
+          const DEG = Math.PI/180, RAD2DEG = 180/Math.PI;
+          const OBLIQ = 23.44;                 // axial tilt in degrees
+          const ECC = 0.0167;                  // orbital eccentricity
+          const PERI_DOY = 3;                  // perihelion ~ Jan 3
+          function solarDeclination(doy){ // Cooper's formula
+            return 23.44 * Math.sin(2*Math.PI*(284 + doy)/365);
+          }
+          function dayLengthHours(latDeg, declDeg){
+            const phi = latDeg*DEG, d = declDeg*DEG;
+            const x = -Math.tan(phi)*Math.tan(d);
+            const clamped = Math.max(-1, Math.min(1, x));
+            const H0 = Math.acos(clamped); // radians
+            return 24 * H0/Math.PI;
+          }
+          function solarNoonAltitude(latDeg, declDeg){
+            const alt = 90 - Math.abs(latDeg - declDeg);
+            return Math.max(0, Math.min(90, alt));
+          }
+
+          // ---- simple Kepler solver (for Earth position on ellipse) ----
+          function earthState(doy){
+            const a = 300, b = 180; // ellipse radii (SVG units)
+            const cx = 240, cy = 260; // center of ellipse
+            const M = 2*Math.PI * ((doy - PERI_DOY) / 365); // mean anomaly
+            // Solve E - e sin E = M (Newton)
+            let E = M, i=0;
+            for(; i<8; i++){
+              const f = E - ECC*Math.sin(E) - M;
+              const fp = 1 - ECC*Math.cos(E);
+              E = E - f/fp;
+            }
+            const cosE = Math.cos(E), sinE = Math.sin(E);
+            const r = a*(1 - ECC*cosE);
+            // True anomaly
+            const nu = 2*Math.atan2(Math.sqrt(1+ECC)*sinE/Math.sqrt(1-ECC), (Math.sqrt(1+ECC)*cosE - Math.sqrt(1-ECC)));
+            // Parametric ellipse angle relative to center
+            // We align perihelion near the rightmost point of the ellipse visually (Sun at left focus).
+            // Convert polar at focus -> approximate param angle along ellipse:
+            const ex = a*Math.cos(nu); // ellipse x from center (approx)
+            const ey = b*Math.sin(nu);
+            // Place Sun at left focus (cx - c, cy), c = sqrt(a^2 - b^2)
+            const c = Math.sqrt(a*a - b*b);
+            const sun = {x: cx - c, y: cy};
+            const earth = {x: cx + ex, y: cy + ey};
+            // Vector Sun->Earth
+            const vx = earth.x - sun.x, vy = earth.y - sun.y;
+            const vlen = Math.hypot(vx, vy);
+            const vhat = {x: vx/vlen, y: vy/vlen};
+            return {sun, earth, dir:vhat};
+          }
+
+          // ---- drawing ----
+          const root = document.getElementById('oc-orbitRays');
+          if (!root) return; // Exit if enhanced view not available
+          
+          const svg  = document.getElementById('oc-svg');
+          const earthLayer = document.getElementById('earthLayer');
+          const raysLayer  = document.getElementById('raysLayer');
+          const caption = document.getElementById('oc-caption');
+          const daySlider = document.getElementById('oc-day');
+          const playBtn = document.getElementById('oc-play');
+
+          // state
+          let focusedLat = 35;     // default focused latitude
+          let playing = false;
+          let lastTs = 0;
+          let fpsTarget = 60;
+          let doy = +daySlider.value;
+          // overlays
+          const latChecks = {0: document.getElementById('oc-lat0'),
+                             23.4: document.getElementById('oc-lat23'),
+                             35: document.getElementById('oc-lat35'),
+                             50: document.getElementById('oc-lat50')};
+
+          // build earth group once; update transforms per frame
+          const earthGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+          earthLayer.appendChild(earthGroup);
+
+          // earth body
+          const earthCircle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+          earthCircle.setAttribute('r','66');
+          earthCircle.setAttribute('fill','#dff2ff');
+          earthCircle.setAttribute('stroke','#e9ecef');
+          earthCircle.setAttribute('stroke-width','1.2');
+          earthCircle.setAttribute('class','hc-stroke');
+          earthGroup.appendChild(earthCircle);
+
+          // axis line (tilt 23.44° relative to Earth's orbital plane)
+          const axis = document.createElementNS('http://www.w3.org/2000/svg','line');
+          axis.setAttribute('x1',0); axis.setAttribute('y1',-75);
+          axis.setAttribute('x2',0); axis.setAttribute('y2',75);
+          axis.setAttribute('stroke','#e9ecef'); axis.setAttribute('stroke-width','2');
+          axis.setAttribute('class','hc-stroke hc-thick');
+          earthGroup.appendChild(axis);
+
+          // latitude lines (paths inside earth clip)
+          const latGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+          latGroup.setAttribute('clip-path','url(#earthClip)');
+          earthGroup.appendChild(latGroup);
+
+          const LAT_LIST = [0, 23.4, 35, 50];
+          const latPaths = {};
+          LAT_LIST.forEach(lat => {
+            const p = document.createElementNS('http://www.w3.org/2000/svg','line');
+            p.setAttribute('x1',-72); p.setAttribute('x2',72);
+            p.setAttribute('y1',0);   p.setAttribute('y2',0);
+            p.setAttribute('stroke', lat===focusedLat ? '#2f7d32' : '#2f7d32');
+            p.setAttribute('stroke-width', lat===focusedLat ? '3' : '2');
+            p.setAttribute('opacity', latChecks[lat].checked ? '1' : '0');
+            p.style.cursor='pointer';
+            p.addEventListener('click', ()=>{
+              setFocusedLat(lat);
+              if (lat === 35) {
+                window.dispatchEvent(new CustomEvent('parallel35', {detail: {enabled:true, doy}}));
+              }
+            });
+            latGroup.appendChild(p);
+            latPaths[lat]=p;
+          });
+
+          // Earth clip circle follows Earth position
+          const clipCircle = document.getElementById('earthClipCircle');
+
+          // rays
+          function drawRays(sun, earth, dir){
+            raysLayer.innerHTML = '';
+            const rayCount = 7;
+            // Build rays across a band that envelopes the Earth
+            for (let i=-3; i<=3; i++){
+              const off = i*16;
+              const sx = sun.x + off * (-dir.y); // offset rays perpendicular to direction
+              const sy = sun.y + off * ( dir.x);
+              const ex = earth.x - dir.x*90 + off * (-dir.y);
+              const ey = earth.y - dir.y*90 + off * ( dir.x);
+              const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+              line.setAttribute('x1', sx); line.setAttribute('y1', sy);
+              line.setAttribute('x2', ex); line.setAttribute('y2', ey);
+              line.setAttribute('stroke', '#777'); line.setAttribute('stroke-width','1.2');
+              line.setAttribute('class','hc-stroke');
+              raysLayer.appendChild(line);
+            }
+          }
+
+          function setFocusedLat(lat){
+            focusedLat = lat;
+            Object.entries(latPaths).forEach(([L, path])=>{
+              const isF = +L === focusedLat;
+              path.setAttribute('stroke-width', isF ? '3' : '2');
+              path.setAttribute('opacity', latChecks[+L].checked ? '1' : '0');
+            });
+            if (typeof window.onLatitudeFocusChanged === 'function'){
+              window.onLatitudeFocusChanged(focusedLat);
+            }
+            updateCaption();
+          }
+
+          // update visibility from checkboxes
+          Object.entries(latChecks).forEach(([L, box])=>{
+            box.addEventListener('change', ()=>{
+              const p = latPaths[+L];
+              p.setAttribute('opacity', box.checked ? '1' : '0');
+              // Keep focus line visible even if toggled off? We respect the checkbox.
+              updateCaption();
+            });
+          });
+
+          function updateScene(){
+            const {sun, earth, dir} = earthState(doy);
+            // position Earth group
+            earthGroup.setAttribute('transform', `translate(${earth.x},${earth.y}) rotate(${OBLIQ})`);
+            clipCircle.setAttribute('cx', earth.x); clipCircle.setAttribute('cy', earth.y);
+
+            // y-positions for latitude lines: simple planar model
+            LAT_LIST.forEach(lat=>{
+              const y = -66 * Math.sin(lat*DEG); // negative is "up"
+              const p = latPaths[lat];
+              p.setAttribute('y1', y);
+              p.setAttribute('y2', y);
+            });
+
+            // axis orientation: keep drawn at OBLIQ within Earth group (already rotated)
+
+            // rays
+            drawRays(sun, earth, dir);
+
+            updateCaption();
+          }
+
+          function updateCaption(){
+            const dec = solarDeclination(doy);
+            const dl  = dayLengthHours(focusedLat, dec);
+            const alt = solarNoonAltitude(focusedLat, dec);
+            caption.textContent =
+              `DOY ${doy} — Solar declination: ${dec.toFixed(2)}°, `
+              + `Day length @ ${focusedLat}°: ${dl.toFixed(2)} h, `
+              + `Solar-noon altitude: ${alt.toFixed(1)}°.`;
+          }
+
+          // slider + keyboard
+          daySlider.addEventListener('input', ()=>{ doy = +daySlider.value; updateScene(); });
+          function setPlay(p){
+            playing = p;
+            playBtn.setAttribute('aria-pressed', playing?'true':'false');
+            playBtn.textContent = playing ? '⏸' : '▶';
+          }
+          playBtn.addEventListener('click', ()=> setPlay(!playing));
+          // space toggles play; arrows nudge
+          root.addEventListener('keydown', (e)=>{
+            if (e.code === 'Space'){ e.preventDefault(); setPlay(!playing); }
+            if (e.key === 'ArrowRight'){ doy = Math.min(365, doy+1); daySlider.value = doy; updateScene(); }
+            if (e.key === 'ArrowLeft'){  doy = Math.max(0,   doy-1); daySlider.value = doy; updateScene(); }
+            if (e.key === '0'){ setFocusedLat(0); }
+            if (e.key === '2'){ setFocusedLat(23.4); }
+            if (e.key === '3'){ setFocusedLat(35); window.dispatchEvent(new CustomEvent('parallel35',{detail:{enabled:true, doy}})); }
+            if (e.key === '5'){ setFocusedLat(50); }
+          });
+
+          // animation loop with graceful throttle (60 → 30 fps if slow)
+          let frameAccum = 0, slowFrames = 0;
+          function tick(ts){
+            if (!playing) return;
+            const dt = Math.min(64, ts - (lastTs || ts)); lastTs = ts;
+            frameAccum += dt;
+
+            const targetMs = (slowFrames >= 20) ? (1000/30) : (1000/fpsTarget); // degrade if 20 consecutive slow frames
+            if (frameAccum >= targetMs){
+              // advance ~0.5 day per 16ms @60fps → ~30 days in 1s; tune speed here
+              const speed = 0.5 * (frameAccum / (1000/60));
+              doy = (doy + speed) % 366; daySlider.value = Math.round(doy);
+              updateScene();
+              frameAccum = 0;
+            }
+            // detect slowness
+            if (dt > (1000/fpsTarget)+6) slowFrames++; else slowFrames = Math.max(0, slowFrames-1);
+            requestAnimationFrame(tick);
+          }
+
+          // public show/hide
+          window.showOrbitRays = function(){
+            document.getElementById('oc-orbitRays').style.display = 'block';
+            document.getElementById('oc-orbitRays').tabIndex = 0; // allow key focus
+            document.getElementById('oc-orbitRays').focus();
+            updateScene();
+          };
+          // optional hook for your Charts toggle
+          document.getElementById('oc-toggleCharts').addEventListener('click', ()=>{
+            // hide this view; your app can show Charts view
+            setOrbitView('charts');
+          });
+          document.getElementById('oc-toggleOrbit').addEventListener('click', ()=>{
+            setOrbitView('orbit');
+          });
+
+          // Respect prefers-reduced-motion: start paused
+          const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          setPlay(!reduced);
+
+          // Start animation if playing
+          if (playing) requestAnimationFrame(tick);
+
+          // Initial render
+          updateScene();
+        })();
+        
+        // Keyboard controls for accessibility
+        document.addEventListener('keydown', function(event) {
+            if (currentMode !== 'orbit') return;
+            
+            const orbitContainer = document.getElementById('orbitContainer');
+            if (!orbitContainer || orbitContainer.style.display === 'none') return;
+            
+            switch(event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    updateOrbitDay(Math.max(0, window.currentDayOfYear - 1));
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    updateOrbitDay(Math.min(365, window.currentDayOfYear + 1));
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    updateOrbitDay(Math.max(0, window.currentDayOfYear - 30));
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    updateOrbitDay(Math.min(365, window.currentDayOfYear + 30));
+                    break;
+                case ' ':
+                    event.preventDefault();
+                    toggleAnimation();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    updateOrbitDay(0);
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    updateOrbitDay(365);
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

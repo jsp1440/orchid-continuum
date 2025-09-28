@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Literature Review System - Orchid Research Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .database-selector {
+            margin-bottom: 20px;
+        }
+        
+        .database-option {
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .database-option:hover {
+            background: rgba(66, 153, 225, 0.3);
+            border-color: rgba(66, 153, 225, 0.5);
+        }
+        
+        .database-option.selected {
+            background: rgba(66, 153, 225, 0.5);
+            border-color: rgba(66, 153, 225, 0.8);
+        }
+        
+        .search-suggestions {
+            margin-top: 15px;
+        }
+        
+        .suggestion-tag {
+            display: inline-block;
+            background: rgba(142, 68, 173, 0.6);
+            color: white;
+            padding: 5px 12px;
+            margin: 3px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-tag:hover {
+            background: rgba(142, 68, 173, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .paper-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .paper-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .paper-title {
+            color: #4fd1c7;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .paper-authors {
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .paper-journal {
+            color: #68d391;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .paper-abstract {
+            color: #e2e8f0;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        .paper-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            background: rgba(66, 153, 225, 0.6);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(66, 153, 225, 0.8);
+            transform: translateY(-1px);
+        }
+        
+        .cite-btn { background: rgba(245, 101, 101, 0.6); }
+        .cite-btn:hover { background: rgba(245, 101, 101, 0.8); }
+        
+        .analyze-btn { background: rgba(72, 187, 120, 0.6); }
+        .analyze-btn:hover { background: rgba(72, 187, 120, 0.8); }
+        
+        .relevance-score {
+            background: rgba(142, 68, 173, 0.6);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            float: right;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .tools-nav {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .tool-link {
+            color: #4fd1c7;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .tool-link:hover {
+            background: rgba(79, 209, 199, 0.2);
+            color: #4fd1c7;
+        }
+        
+        .citation-modal {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+        }
+        
+        .citation-format-selector {
+            margin-bottom: 20px;
+        }
+        
+        .citation-output {
+            background: rgba(45, 55, 72, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin-top: 15px;
+        }
+        
+        .nav-buttons {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .nav-btn {
+            background: rgba(108, 117, 125, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(108, 117, 125, 1);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i data-feather="book-open" class="me-3"></i>Literature Review System</h1>
+            <p class="lead">Advanced academic literature search and citation management for orchid research</p>
+        </div>
+        
+        <!-- Tools Navigation -->
+        <div class="tools-nav text-center">
+            <a href="/research-lab/literature-review" class="tool-link">
+                <i data-feather="search" class="me-1"></i>Literature Search
+            </a>
+            <a href="/research-lab/literature-tools" class="tool-link">
+                <i data-feather="bookmark" class="me-1"></i>Citation Manager
+            </a>
+            <a href="/research-lab/writing-lab" class="tool-link">
+                <i data-feather="edit-3" class="me-1"></i>Writing Lab
+            </a>
+            <a href="/research-lab/data-visualization" class="tool-link">
+                <i data-feather="bar-chart-2" class="me-1"></i>Data Visualization
+            </a>
+        </div>
+        
+        <!-- Search Panel -->
+        <div class="search-panel">
+            <h3><i data-feather="search" class="me-2"></i>Literature Search</h3>
+            
+            <!-- Database Selection -->
+            <div class="database-selector">
+                <h5>Select Database:</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="database-option selected" data-db="crossref">
+                            <h6><i data-feather="globe" class="me-2"></i>CrossRef</h6>
+                            <small>Academic papers and journals</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="database-option" data-db="arxiv">
+                            <h6><i data-feather="file-text" class="me-2"></i>arXiv</h6>
+                            <small>Preprints and early research</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="database-option" data-db="pubmed">
+                            <h6><i data-feather="heart" class="me-2"></i>PubMed</h6>
+                            <small>Medical and biological sciences</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="database-option" data-db="orchid_sources">
+                            <h6><i data-feather="flower" class="me-2"></i>Orchid Databases</h6>
+                            <small>Specialized orchid resources</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary">
+                            <i data-feather="search" style="width: 18px; height: 18px;"></i>
+                        </span>
+                        <input type="text" class="form-control bg-dark border-secondary text-light" 
+                               id="search-query" placeholder="Enter research topic (e.g., 'Phalaenopsis pollination mechanisms')">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control bg-dark border-secondary text-light" 
+                           id="result-limit" placeholder="Limit" value="20" min="5" max="50">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="searchLiterature()">
+                        <i data-feather="search" class="me-1"></i>Search
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Search Suggestions -->
+            <div class="search-suggestions">
+                <button class="btn btn-outline-info btn-sm" onclick="getSuggestions()">
+                    <i data-feather="lightbulb" class="me-1"></i>Get Search Suggestions
+                </button>
+                <div id="suggestions-container" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-section" id="results-section" style="display: none;">
+            <h3><i data-feather="list" class="me-2"></i>Search Results</h3>
+            <div id="results-container"></div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-buttons">
+            <a href="/research-lab/" class="nav-btn">
+                <i data-feather="arrow-left"></i>Back to Research Lab
+            </a>
+            <a href="/research-lab/literature-tools" class="nav-btn">
+                <i data-feather="bookmark"></i>Citation Manager
+            </a>
+            <a href="/" class="nav-btn">
+                <i data-feather="home"></i>Homepage
+            </a>
+        </div>
+    </div>
+
+    <!-- Citation Modal -->
+    <div class="modal fade" id="citationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content citation-modal">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-light"><i data-feather="bookmark" class="me-2"></i>Generate Citation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="citation-format-selector">
+                        <label for="citation-format" class="form-label text-light">Citation Format:</label>
+                        <select class="form-select bg-dark border-secondary text-light" id="citation-format">
+                            <option value="apa">APA Style (7th Edition)</option>
+                            <option value="mla">MLA Style (9th Edition)</option>
+                            <option value="chicago">Chicago Style (17th Edition)</option>
+                            <option value="harvard">Harvard Style</option>
+                            <option value="vancouver">Vancouver Style</option>
+                            <option value="bibtex">BibTeX Format</option>
+                        </select>
+                    </div>
+                    <div class="citation-output" id="citation-output"></div>
+                    <div class="text-end mt-3">
+                        <button class="btn btn-primary" onclick="copyCitation()">
+                            <i data-feather="copy" class="me-1"></i>Copy Citation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        let selectedDatabase = 'crossref';
+        let currentPaper = null;
+        
+        // Database selection
+        document.querySelectorAll('.database-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.database-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedDatabase = this.dataset.db;
+            });
+        });
+        
+        // Search functionality
+        function searchLiterature() {
+            const query = document.getElementById('search-query').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            const limit = parseInt(document.getElementById('result-limit').value) || 20;
+            
+            // Show loading
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('results-container').innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Searching...</span>
+                    </div>
+                    <p class="mt-3">Searching ${selectedDatabase} database...</p>
+                </div>
+            `;
+            
+            // Make API call
+            fetch('/research-lab/api/literature/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    database: selectedDatabase,
+                    limit: limit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayResults(data);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                document.getElementById('results-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>Search Error</h5>
+                        <p>Unable to perform search. Please try again later.</p>
+                    </div>
+                `;
+            });
+        }
+        
+        // Display search results
+        function displayResults(data) {
+            const container = document.getElementById('results-container');
+            
+            if (data.error) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h5>Search Error</h5>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (!data.papers || data.papers.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <h5>No Results Found</h5>
+                        <p>Try different search terms or broaden your query.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="alert alert-success">
+                    <strong>Found ${data.total_found || data.papers.length} results</strong> from ${data.database}
+                </div>
+            `;
+            
+            data.papers.forEach((paper, index) => {
+                html += `
+                    <div class="paper-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="paper-title">${paper.title || 'Unknown Title'}</h5>
+                                <div class="paper-authors">
+                                    <i data-feather="users" style="width: 14px; height: 14px;"></i>
+                                    ${Array.isArray(paper.authors) ? paper.authors.join(', ') : (paper.authors || 'Unknown Authors')}
+                                </div>
+                                <div class="paper-journal">
+                                    <i data-feather="book" style="width: 14px; height: 14px;"></i>
+                                    ${paper.journal || 'Unknown Journal'} ${paper.year ? `(${paper.year})` : ''}
+                                </div>
+                                <div class="paper-abstract">
+                                    ${(paper.abstract || 'No abstract available').substring(0, 300)}${paper.abstract && paper.abstract.length > 300 ? '...' : ''}
+                                </div>
+                            </div>
+                            ${paper.relevance_score ? `<div class="relevance-score">${Math.round(paper.relevance_score * 100)}% relevant</div>` : ''}
+                        </div>
+                        <div class="paper-actions">
+                            <button class="action-btn cite-btn" onclick="generateCitation(${index})">
+                                <i data-feather="bookmark" style="width: 14px; height: 14px;"></i>
+                                Cite
+                            </button>
+                            <button class="action-btn analyze-btn" onclick="analyzePaper(${index})">
+                                <i data-feather="cpu" style="width: 14px; height: 14px;"></i>
+                                AI Analysis
+                            </button>
+                            ${paper.url ? `<a href="${paper.url}" target="_blank" class="action-btn">
+                                <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                View Paper
+                            </a>` : ''}
+                            ${paper.doi ? `<a href="https://doi.org/${paper.doi}" target="_blank" class="action-btn">
+                                <i data-feather="link" style="width: 14px; height: 14px;"></i>
+                                DOI
+                            </a>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Store papers for citation generation
+            window.searchResults = data.papers;
+            
+            // Re-initialize Feather icons
+            feather.replace();
+        }
+        
+        // Generate citation
+        function generateCitation(paperIndex) {
+            currentPaper = window.searchResults[paperIndex];
+            const modal = new bootstrap.Modal(document.getElementById('citationModal'));
+            modal.show();
+            updateCitation();
+        }
+        
+        // Update citation format
+        document.getElementById('citation-format').addEventListener('change', updateCitation);
+        
+        function updateCitation() {
+            if (!currentPaper) return;
+            
+            const format = document.getElementById('citation-format').value;
+            
+            fetch('/research-lab/api/literature/citation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    paper: currentPaper,
+                    format: format
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('citation-output').textContent = data.citation;
+            })
+            .catch(error => {
+                console.error('Citation error:', error);
+                document.getElementById('citation-output').textContent = 'Citation generation failed';
+            });
+        }
+        
+        // Copy citation to clipboard
+        function copyCitation() {
+            const citation = document.getElementById('citation-output').textContent;
+            navigator.clipboard.writeText(citation).then(() => {
+                // Show success message
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+                feather.replace();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    feather.replace();
+                }, 2000);
+            });
+        }
+        
+        // Get search suggestions
+        function getSuggestions() {
+            const query = document.getElementById('search-query').value.trim();
+            if (!query) {
+                alert('Please enter a research topic first');
+                return;
+            }
+            
+            fetch('/research-lab/api/literature/suggest-terms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic: query
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('suggestions-container');
+                if (data.suggested_terms && data.suggested_terms.length > 0) {
+                    container.innerHTML = data.suggested_terms.map(term => 
+                        `<span class="suggestion-tag" onclick="useSuggestion('${term}')">${term}</span>`
+                    ).join('');
+                }
+            })
+            .catch(error => {
+                console.error('Suggestion error:', error);
+            });
+        }
+        
+        // Use suggestion
+        function useSuggestion(term) {
+            document.getElementById('search-query').value = term;
+        }
+        
+        // Analyze paper
+        function analyzePaper(paperIndex) {
+            const paper = window.searchResults[paperIndex];
+            // This would integrate with the AI analysis system
+            alert(`AI analysis feature coming soon for: ${paper.title}`);
+        }
+        
+        // Enter key search
+        document.getElementById('search-query').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLiterature();
+            }
+        });
+    </script>
+</body>
+</html>

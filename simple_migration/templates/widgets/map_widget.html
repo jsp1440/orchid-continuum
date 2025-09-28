@@ -1,0 +1,594 @@
+<!-- Neon One Optimized World Map Widget -->
+<div class="orchid-map-widget neon-widget" data-widget-id="{{ widget_data.widget_id }}">
+    <!-- Widget Header -->
+    <div class="widget-header">
+        <div class="widget-title">
+            <span class="widget-icon">🌍</span>
+            <h5>Global Orchid Map</h5>
+        </div>
+        <button class="widget-collapse-btn" type="button" data-bs-toggle="collapse" data-bs-target="#widget-controls-{{ widget_data.widget_id }}">
+            <span class="collapse-icon">⚙️</span>
+        </button>
+    </div>
+    
+    <!-- Collapsible Controls (Mobile Optimized) -->
+    <div id="widget-controls-{{ widget_data.widget_id }}" class="widget-controls collapse">
+        <div class="controls-grid">
+            <select id="widget-filter-genus-{{ widget_data.widget_id }}" class="widget-select">
+                <option value="">All Genera</option>
+            </select>
+            <select id="widget-filter-climate-{{ widget_data.widget_id }}" class="widget-select">
+                <option value="">All Climates</option>
+                <option value="cool">Cool</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="warm">Warm</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="widget-map-container">
+        <div id="widget-orchid-map-{{ widget_data.widget_id }}" class="widget-map"></div>
+        <div class="map-overlay">
+            <div class="map-stats">
+                <span id="widget-location-count-{{ widget_data.widget_id }}">0</span> locations
+            </div>
+            <div class="database-stats mt-1">
+                <div class="small">
+                    <span id="widget-genera-count-{{ widget_data.widget_id }}">-</span> genera •
+                    <span id="widget-species-count-{{ widget_data.widget_id }}">-</span> species •
+                    <span id="widget-hybrids-count-{{ widget_data.widget_id }}">-</span> hybrids
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Widget Footer -->
+    <div class="widget-footer">
+        <div class="text-center mb-2">
+            <a href="/partnership-demo/gary-yong-gee" class="btn btn-sm btn-outline-primary me-2">
+                <i data-feather="home" style="width: 14px; height: 14px;"></i> Homepage
+            </a>
+            <a href="{{ widget_data.full_map_url or '/map' }}" target="_blank" class="widget-link">
+                View Full Interactive Map
+            </a>
+        </div>
+        <div class="copyright-notice" style="font-size: 9px; color: #999999; text-align: center; margin-top: 4px;">
+            <span class="copyright-full d-none d-md-inline">Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.</span>
+            <span class="copyright-short d-md-none" 
+                  title="Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.">
+                © 2025 Jeffery S. Parham — Licensed to FCOS
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const widgetId = '{{ widget_data.widget_id }}';
+    const mapElementId = `widget-orchid-map-${widgetId}`;
+    
+    // Mobile detection
+    const isMobile = window.innerWidth < 768;
+    const isNeonWidget = window.parent !== window; // Detect if in iframe
+    
+    // Wait for map container to be visible
+    const mapContainer = document.getElementById(mapElementId);
+    if (!mapContainer) return;
+    
+    // Optimize for Neon One widget environment
+    const mapOptions = {
+        zoomControl: false, // Hide zoom for cleaner widget UI
+        attributionControl: false, // Hide attribution for space
+        doubleClickZoom: true,
+        scrollWheelZoom: !isMobile && !isNeonWidget, // Disable on mobile and in widgets
+        touchZoom: true,
+        dragging: true,
+        tap: true,
+        tapTolerance: 20, // Larger tolerance for touch
+        maxZoom: isNeonWidget ? 8 : 10, // Limit zoom in widgets
+        minZoom: 1
+    };
+    
+    // Initialize the widget map
+    const map = L.map(mapElementId, mapOptions).setView([0, 0], 2);
+    
+    // Lightweight satellite layer for widget performance
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '',
+        maxZoom: isNeonWidget ? 8 : 10,
+        minZoom: 1,
+        updateWhenIdle: true, // Better performance
+        keepBuffer: 2, // Reduce memory usage
+        detectRetina: true
+    });
+    satelliteLayer.addTo(map);
+    
+    // Optimized marker cluster group for widgets
+    const markerClusterGroup = L.markerClusterGroup({
+        maxClusterRadius: isMobile ? 60 : 40,
+        disableClusteringAtZoom: isMobile ? 5 : 6,
+        spiderfyOnMaxZoom: false, // Disable for performance
+        showCoverageOnHover: false, // Disable for mobile
+        zoomToBoundsOnClick: true,
+        animate: !isMobile, // Disable animations on mobile
+        chunkedLoading: true
+    });
+    map.addLayer(markerClusterGroup);
+    
+    let allLocations = [];
+    let isDataLoaded = false;
+    
+    // Custom orchid icon optimized for widgets
+    const iconSize = isMobile || isNeonWidget ? 20 : 16;
+    const orchidIcon = L.divIcon({
+        className: 'widget-orchid-marker',
+        html: `<div class="widget-orchid-pin">
+            <div class="widget-pin-center"></div>
+        </div>`,
+        iconSize: [iconSize, iconSize],
+        iconAnchor: [iconSize/2, iconSize/2],
+        popupAnchor: [0, -(iconSize/2)]
+    });
+    
+    // Load orchid location data
+    const apiUrl = '{{ widget_data.api_base_url or "/api" }}/orchid-locations';
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.locations) {
+                allLocations = data.locations;
+                updateWidgetMarkers();
+                populateWidgetFilters();
+                
+                // Fit map to show all markers
+                if (allLocations.length > 0) {
+                    const bounds = L.latLngBounds();
+                    allLocations.forEach(loc => bounds.extend([loc.lat, loc.lng]));
+                    map.fitBounds(bounds.pad(0.1));
+                }
+                
+                document.getElementById(`widget-location-count-${widgetId}`).textContent = `${allLocations.length}`;
+            }
+        })
+        .catch(error => {
+            console.error('Widget map error:', error);
+            document.getElementById(mapElementId).innerHTML = 
+                '<div class="d-flex align-items-center justify-content-center h-100 text-muted">' +
+                '<div class="text-center"><i class="fas fa-exclamation-triangle mb-2"></i><br>Map data unavailable</div>' +
+                '</div>';
+        });
+    
+    // Load database statistics for widget
+    const statsUrl = '{{ widget_data.api_base_url or "/api" }}/database-statistics';
+    fetch(statsUrl)
+        .then(response => response.json())
+        .then(stats => {
+            updateWidgetStatistics(stats);
+        })
+        .catch(error => {
+            console.error('Error loading widget statistics:', error);
+        });
+    
+    function updateWidgetMarkers() {
+        markerClusterGroup.clearLayers();
+        
+        const genusFilter = document.getElementById(`widget-filter-genus-${widgetId}`).value;
+        const climateFilter = document.getElementById(`widget-filter-climate-${widgetId}`).value;
+        
+        let filtered = allLocations.filter(location => {
+            if (genusFilter && location.genus !== genusFilter) return false;
+            if (climateFilter && location.climate !== climateFilter) return false;
+            return true;
+        });
+        
+        filtered.forEach(location => {
+            const marker = L.marker([location.lat, location.lng], { icon: orchidIcon });
+            
+            // Optimize popup for widget environment
+            if (isMobile || isNeonWidget) {
+                // Simplified mobile/widget popup
+                marker.on('click', function() {
+                    if (isNeonWidget) {
+                        // For Neon One, use a custom tooltip instead of popup
+                        showWidgetTooltip(location, marker);
+                    } else {
+                        // Mobile modal
+                        showMobilePopup(location);
+                    }
+                });
+            } else {
+                // Desktop popup
+                const popupContent = `
+                    <div class="widget-popup">
+                        <h6>${location.name}</h6>
+                        ${location.scientific_name ? `<em class="text-muted">${location.scientific_name}</em><br>` : ''}
+                        ${location.region ? `<small>📍 ${location.region}</small><br>` : ''}
+                        <a href="${'{{ widget_data.base_url or "" }}'}/orchid/${location.id}" target="_blank" class="widget-popup-link">View Details</a>
+                    </div>
+                `;
+                marker.bindPopup(popupContent, {
+                    maxWidth: 200,
+                    className: 'widget-leaflet-popup'
+                });
+            }
+            
+            markerClusterGroup.addLayer(marker);
+        });
+        
+        document.getElementById(`widget-location-count-${widgetId}`).textContent = filtered.length;
+    }
+    
+    function populateWidgetFilters() {
+        const genera = [...new Set(allLocations.map(l => l.genus).filter(g => g))].sort();
+        const genusSelect = document.getElementById(`widget-filter-genus-${widgetId}`);
+        genera.forEach(genus => {
+            genusSelect.innerHTML += `<option value="${genus}">${genus}</option>`;
+        });
+    }
+    
+    function showWidgetTooltip(location, marker) {
+        // Custom tooltip for Neon One environment
+        const tooltip = document.createElement('div');
+        tooltip.className = 'neon-widget-tooltip';
+        tooltip.innerHTML = `
+            <div class="tooltip-content">
+                <h6>${location.name}</h6>
+                ${location.scientific_name ? `<em>${location.scientific_name}</em><br>` : ''}
+                ${location.region ? `<small>📍 ${location.region}</small>` : ''}
+            </div>
+        `;
+        
+        // Position tooltip near the marker
+        const markerPos = map.latLngToContainerPoint(marker.getLatLng());
+        tooltip.style.position = 'absolute';
+        tooltip.style.left = (markerPos.x + 10) + 'px';
+        tooltip.style.top = (markerPos.y - 10) + 'px';
+        
+        mapContainer.appendChild(tooltip);
+        
+        // Remove tooltip after 3 seconds
+        setTimeout(() => {
+            if (tooltip.parentNode) {
+                tooltip.parentNode.removeChild(tooltip);
+            }
+        }, 3000);
+    }
+    
+    function showMobilePopup(location) {
+        // Simple mobile alert for widget
+        const message = `${location.name}${location.scientific_name ? ' (' + location.scientific_name + ')' : ''}${location.region ? ' - ' + location.region : ''}`;
+        if (confirm(message + '\n\nView full details?')) {
+            window.open(`${'{{ widget_data.base_url or "" }}'}/orchid/${location.id}`, '_blank');
+        }
+    }
+    
+    // Debounced resize handler for responsive behavior
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            map.invalidateSize();
+        }, 250);
+    });
+    
+    // Event listeners
+    document.getElementById(`widget-filter-genus-${widgetId}`).addEventListener('change', updateWidgetMarkers);
+    document.getElementById(`widget-filter-climate-${widgetId}`).addEventListener('change', updateWidgetMarkers);
+    
+    // Initialize map size after a brief delay
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 100);
+});
+</script>
+
+<style>
+/* Neon One Optimized Widget Styles */
+.orchid-map-widget.neon-widget {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #ffffff;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    max-width: 100%;
+    position: relative;
+}
+
+/* Widget Header */
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.widget-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.widget-title h5 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.widget-icon {
+    font-size: 16px;
+}
+
+.widget-collapse-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.widget-collapse-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+/* Widget Controls */
+.widget-controls {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.widget-select {
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 12px;
+    background: white;
+    color: #495057;
+}
+
+/* Map Container */
+.widget-map-container {
+    position: relative;
+    height: 280px;
+    min-height: 200px;
+}
+
+@media (max-width: 480px) {
+    .widget-map-container {
+        height: 240px;
+    }
+}
+
+.widget-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Map Overlay */
+.map-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.map-stats {
+    background: rgba(255,255,255,0.9);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Widget Footer */
+.widget-footer {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+}
+
+.widget-link {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.widget-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Custom Markers */
+.widget-orchid-marker {
+    background: none;
+    border: none;
+}
+
+.widget-orchid-pin {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e91e63, #c2185b);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(233, 30, 99, 0.4);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.widget-pin-center {
+    width: 4px;
+    height: 4px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.widget-orchid-pin:hover {
+    transform: rotate(-45deg) scale(1.15);
+    box-shadow: 0 3px 8px rgba(233, 30, 99, 0.6);
+}
+
+/* Popup Styles */
+.widget-popup {
+    text-align: center;
+    font-size: 12px;
+    max-width: 180px;
+}
+
+.widget-popup h6 {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    color: #e91e63;
+    font-weight: 600;
+}
+
+.widget-popup-link {
+    display: inline-block;
+    margin-top: 4px;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.widget-popup-link:hover {
+    background: #007bff;
+    color: white;
+}
+
+.widget-leaflet-popup .leaflet-popup-content-wrapper {
+    background: white;
+    color: #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.widget-leaflet-popup .leaflet-popup-tip {
+    background: white;
+}
+
+/* Neon Widget Tooltip */
+.neon-widget-tooltip {
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    max-width: 200px;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: fadeInTooltip 0.3s ease-out;
+}
+
+.neon-widget-tooltip h6 {
+    margin: 0 0 4px 0;
+    color: #ffc107;
+    font-size: 12px;
+}
+
+@keyframes fadeInTooltip {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .widget-header {
+        padding: 10px 12px;
+    }
+    
+    .widget-title h5 {
+        font-size: 13px;
+    }
+    
+    .widget-controls {
+        padding: 10px 12px;
+    }
+    
+    .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .widget-footer {
+        padding: 6px 12px;
+    }
+}
+
+/* Leaflet Control Overrides for Widget */
+.neon-widget .leaflet-control-container {
+    display: none; /* Hide all controls for cleaner widget UI */
+}
+
+.neon-widget .leaflet-control-zoom {
+    display: none;
+}
+
+.neon-widget .leaflet-control-attribution {
+    display: none;
+}
+
+/* Cluster Styles for Widget */
+.neon-widget .marker-cluster {
+    border-radius: 50%;
+    border: 2px solid rgba(233, 30, 99, 0.8);
+    background: rgba(255, 255, 255, 0.95);
+    color: #e91e63;
+    font-weight: 600;
+    font-size: 10px;
+}
+
+.neon-widget .marker-cluster-small {
+    width: 30px;
+    height: 30px;
+    line-height: 26px;
+}
+
+.neon-widget .marker-cluster-medium {
+    width: 36px;
+    height: 36px;
+    line-height: 32px;
+}
+
+.neon-widget .marker-cluster-large {
+    width: 42px;
+    height: 42px;
+    line-height: 38px;
+}
+</style>

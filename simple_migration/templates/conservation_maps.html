@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}Conservation Status Maps - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="shield" class="me-2"></i>Orchid Conservation Maps
+            </h1>
+            <p class="lead text-muted">
+                Global patterns of orchid conservation status and biodiversity threats
+            </p>
+        </div>
+    </div>
+    
+    <!-- Alert Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning border-0 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <i data-feather="alert-triangle" class="me-3" style="width: 24px; height: 24px;"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">Conservation Crisis</h6>
+                        <p class="mb-0">Over 60% of orchid species face extinction threats due to habitat loss, climate change, and over-collection.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Conservation Status Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Conservation Status Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-danger text-center status-card" data-status="critically-endangered" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="alert-circle" class="text-danger mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-danger">Critically Endangered</h6>
+                                    <h4 class="text-danger">89</h4>
+                                    <small>Immediate extinction risk</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-warning text-center status-card" data-status="endangered" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="alert-triangle" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-warning">Endangered</h6>
+                                    <h4 class="text-warning">156</h4>
+                                    <small>High extinction risk</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-info text-center status-card" data-status="vulnerable" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="help-circle" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-info">Vulnerable</h6>
+                                    <h4 class="text-info">234</h4>
+                                    <small>Moderate risk</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-secondary text-center status-card" data-status="near-threatened" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="minus-circle" class="text-secondary mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-secondary">Near Threatened</h6>
+                                    <h4 class="text-secondary">345</h4>
+                                    <small>Close to qualifying</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-success text-center status-card" data-status="least-concern" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="check-circle" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-success">Least Concern</h6>
+                                    <h4 class="text-success">1,567</h4>
+                                    <small>Stable populations</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-sm-6">
+                            <div class="card border-dark text-center status-card" data-status="data-deficient" style="cursor: pointer;">
+                                <div class="card-body">
+                                    <i data-feather="x-circle" class="text-dark mb-2" style="width: 32px; height: 32px;"></i>
+                                    <h6 class="text-dark">Data Deficient</h6>
+                                    <h4 class="text-dark">1,782</h4>
+                                    <small>Insufficient data</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Conservation Map -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="conservationTitle">
+                        <i data-feather="map" class="me-2"></i>Global Conservation Overview
+                    </h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" id="showThreats">
+                            <i data-feather="alert-octagon" class="me-1"></i>Threats
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" id="showProtected">
+                            <i data-feather="shield" class="me-1"></i>Protected Areas
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" id="exportConservation">
+                            <i data-feather="download" class="me-1"></i>Report
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="conservationMapContainer" style="height: 600px;">
+                        <div class="p-4">
+                            <div style="height: 500px; background: linear-gradient(135deg, #dc3545, #fd7e14, #ffc107, #28a745); border-radius: 10px; position: relative;">
+                                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                                    <h3>🌍 Global Orchid Conservation Status</h3>
+                                    <div class="row mt-4">
+                                        <div class="col-md-3">
+                                            <div class="bg-danger bg-opacity-90 p-3 rounded mb-3">
+                                                <h6>High Risk Zones</h6>
+                                                <p class="small">Madagascar, Philippines, Ecuador</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-warning bg-opacity-90 p-3 rounded mb-3">
+                                                <h6>Moderate Risk</h6>
+                                                <p class="small">Brazil, Indonesia, Peru</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-info bg-opacity-90 p-3 rounded mb-3">
+                                                <h6>Protected Areas</h6>
+                                                <p class="small">National parks, reserves</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-success bg-opacity-90 p-3 rounded mb-3">
+                                                <h6>Stable Regions</h6>
+                                                <p class="small">Temperate zones, managed areas</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threat Analysis -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-header">
+                    <h6><i data-feather="trending-down" class="me-2"></i>Primary Threats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-danger" style="width: 65%">Habitat Loss (65%)</div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-warning" style="width: 45%">Climate Change (45%)</div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-info" style="width: 35%">Over-collection (35%)</div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-secondary" style="width: 25%">Invasive Species (25%)</div>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-dark" style="width: 15%">Pollution (15%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-header">
+                    <h6><i data-feather="shield" class="me-2"></i>Conservation Actions</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i data-feather="home" class="me-2 text-success"></i>
+                            <strong>Habitat Protection:</strong> Establishing reserves and protected areas
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="database" class="me-2 text-info"></i>
+                            <strong>Ex-situ Conservation:</strong> Seed banks and botanical garden collections
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="users" class="me-2 text-warning"></i>
+                            <strong>Community Involvement:</strong> Local conservation programs
+                        </li>
+                        <li class="mb-2">
+                            <i data-feather="book" class="me-2 text-primary"></i>
+                            <strong>Research & Monitoring:</strong> Population studies and threat assessment
+                        </li>
+                        <li>
+                            <i data-feather="globe" class="me-2 text-secondary"></i>
+                            <strong>International Cooperation:</strong> CITES and global initiatives
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Stories -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 border-success bg-light">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i data-feather="award" class="me-2"></i>Conservation Success Stories</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-success">Paphiopedilum wardii Recovery</h6>
+                            <p class="small">Population increased from 12 to 250+ plants through habitat restoration and protection in Myanmar.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-success">Costa Rican Cloud Forest Program</h6>
+                            <p class="small">Monteverde reserve protects over 400 orchid species, including 30+ endemics.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-success">Australian Terrestrial Recovery</h6>
+                            <p class="small">Successful reintroduction of Diuris fragrantissima after 50+ years of extinction.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Status card click handlers
+    document.querySelectorAll('.status-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const status = this.dataset.status;
+            loadConservationMap(status);
+        });
+    });
+});
+
+function loadConservationMap(status) {
+    const container = document.getElementById('conservationMapContainer');
+    const title = document.getElementById('conservationTitle');
+    
+    // Status data
+    const statusData = {
+        'critically-endangered': {
+            title: 'Critically Endangered Orchids - Immediate Action Needed',
+            mapContent: createCriticallyEndangeredMap()
+        },
+        'endangered': {
+            title: 'Endangered Orchids - High Risk Species',
+            mapContent: createEndangeredMap()
+        },
+        'vulnerable': {
+            title: 'Vulnerable Orchids - Species at Risk',
+            mapContent: createVulnerableMap()
+        },
+        'near-threatened': {
+            title: 'Near Threatened Orchids - Conservation Watch',
+            mapContent: createNearThreatenedMap()
+        },
+        'least-concern': {
+            title: 'Least Concern Orchids - Stable Populations',
+            mapContent: createLeastConcernMap()
+        },
+        'data-deficient': {
+            title: 'Data Deficient Orchids - Research Priorities',
+            mapContent: createDataDeficientMap()
+        }
+    };
+    
+    const data = statusData[status];
+    if (!data) return;
+    
+    // Update title
+    title.innerHTML = `<i data-feather="map" class="me-2"></i>${data.title}`;
+    
+    // Show loading
+    container.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center" style="height: 500px;">
+            <div class="text-center">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Loading conservation status map...</p>
+            </div>
+        </div>
+    `;
+    
+    // Load map content
+    setTimeout(() => {
+        container.innerHTML = data.mapContent;
+        feather.replace();
+        console.log(`🛡️ Loaded ${status} conservation map`);
+    }, 1500);
+}
+
+function createCriticallyEndangeredMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #8b0000, #dc143c, #ff4500); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🚨 Critically Endangered Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-90 p-3 rounded mb-3">
+                                <h6>Madagascar</h6>
+                                <p class="small">34 CR species • Habitat destruction</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-90 p-3 rounded mb-3">
+                                <h6>Philippines</h6>
+                                <p class="small">23 CR species • Deforestation</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-90 p-3 rounded mb-3">
+                                <h6>Ecuador</h6>
+                                <p class="small">18 CR species • Mining threats</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createEndangeredMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #ff6347, #ffa500, #ffd700); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <h3>⚠️ Endangered Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded mb-3">
+                                <h6>Primary Threats</h6>
+                                <p class="small">• Agricultural expansion<br>• Urban development<br>• Climate change</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded mb-3">
+                                <h6>Geographic Hotspots</h6>
+                                <p class="small">• Andean cloud forests<br>• Southeast Asian islands<br>• Madagascar highlands</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createVulnerableMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(90deg, #4682b4, #87ceeb, #98fb98); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <h3>📊 Vulnerable Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded">
+                                <h6>Conservation Strategies</h6>
+                                <p class="small">Habitat management • Population monitoring • Ex-situ conservation • Threat mitigation</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createNearThreatenedMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #daa520, #f0e68c, #9acd32); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <h3>⏰ Near Threatened Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded">
+                                <h6>Preventive Conservation</h6>
+                                <p class="small">Early intervention • Habitat protection • Sustainable management • Research priorities</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createLeastConcernMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #228b22, #32cd32, #90ee90); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                    <h3>✅ Least Concern Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="bg-dark bg-opacity-75 text-white p-3 rounded">
+                                <h6>Stable Populations</h6>
+                                <p class="small">Wide distribution • Adaptable species • Protected habitats • Minimal threats</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createDataDeficientMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(90deg, #2f4f4f, #696969, #a9a9a9); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>❓ Data Deficient Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="bg-dark bg-opacity-90 p-3 rounded">
+                                <h6>Research Priorities</h6>
+                                <p class="small">Population surveys • Taxonomy clarification • Threat assessment • Habitat mapping</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

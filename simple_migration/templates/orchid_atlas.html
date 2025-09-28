@@ -1,0 +1,803 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Atlas - Interactive Map & Gallery{% endblock %}
+
+{% block head %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    /* Atlas-specific styles */
+    .atlas-container {
+        height: calc(100vh - 80px);
+        overflow: hidden;
+    }
+    
+    .atlas-split {
+        display: flex;
+        height: 100%;
+    }
+    
+    .atlas-map {
+        flex: 1;
+        position: relative;
+        background: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .atlas-gallery {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+    }
+    
+    .atlas-header {
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+    
+    .filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .filter-chip {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .filter-chip .btn-close {
+        background: none;
+        border: none;
+        color: #1976d2;
+        font-size: 0.75rem;
+        padding: 0;
+        margin-left: 0.25rem;
+    }
+    
+    .map-placeholder {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+    }
+    
+    .gallery-grid {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+    
+    .orchid-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .orchid-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .orchid-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .orchid-card.selected {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+    
+    .orchid-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        background: #f8f9fa;
+    }
+    
+    .orchid-info {
+        padding: 0.75rem;
+    }
+    
+    .orchid-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+    
+    .orchid-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .orchid-location {
+        font-size: 0.75rem;
+        color: #28a745;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .atlas-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .atlas-stats {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .detail-drawer {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background: white;
+        box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+        transition: right 0.3s;
+        z-index: 2000;
+        overflow-y: auto;
+    }
+    
+    .detail-drawer.open {
+        right: 0;
+    }
+    
+    .detail-drawer .drawer-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem;
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+    
+    .detail-drawer .drawer-content {
+        padding: 1rem;
+    }
+    
+    .detail-image {
+        width: 100%;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .atlas-split {
+            flex-direction: column;
+        }
+        
+        .atlas-map {
+            height: 50%;
+            border-right: none;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .atlas-gallery {
+            height: 50%;
+        }
+        
+        .atlas-filters {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .detail-drawer {
+            width: 100%;
+            right: -100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="atlas-container">
+    <!-- Header with filters -->
+    <div class="atlas-header">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h1 class="h4 mb-0">
+                <i data-feather="map" class="me-2"></i>Orchid Atlas
+            </h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="clearFiltersBtn">
+                    <i data-feather="x" class="me-1"></i>Clear All
+                </button>
+                <button class="btn btn-outline-success btn-sm" id="exportBtn">
+                    <i data-feather="download" class="me-1"></i>Export
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="atlas-filters">
+            <div class="filter-group">
+                <label class="form-label mb-0">Country:</label>
+                <select class="form-select form-select-sm" id="countryFilter" style="width: 150px;">
+                    <option value="">All Countries</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="form-label mb-0">Genus:</label>
+                <select class="form-select form-select-sm" id="genusFilter" style="width: 150px;">
+                    <option value="">All Genera</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hybridFilter">
+                    <label class="form-check-label" for="hybridFilter">Hybrids only</label>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <label class="form-label mb-0">Year:</label>
+                <input type="number" class="form-control form-control-sm" id="yearStartFilter" 
+                       placeholder="Start" style="width: 80px;" min="2000" max="2025">
+                <span>-</span>
+                <input type="number" class="form-control form-control-sm" id="yearEndFilter" 
+                       placeholder="End" style="width: 80px;" min="2000" max="2025">
+            </div>
+            
+            <div class="filter-group">
+                <button class="btn btn-primary btn-sm" id="applyFiltersBtn">
+                    <i data-feather="search" class="me-1"></i>Search & Filter
+                </button>
+            </div>
+        </div>
+        
+        <!-- Active filter chips -->
+        <div class="filter-chips" id="filterChips"></div>
+    </div>
+    
+    <!-- Split view -->
+    <div class="atlas-split">
+        <!-- Map Section -->
+        <div class="atlas-map">
+            <div class="map-placeholder" id="atlasMap">
+                <div>
+                    <h3>🗺️ Interactive Map</h3>
+                    <p>Orchid distribution across the globe</p>
+                    <div class="mt-3">
+                        <div class="badge bg-primary me-2">Clustering</div>
+                        <div class="badge bg-success me-2">Heatmap</div>
+                        <div class="badge bg-info">Time Animation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gallery Section -->
+        <div class="atlas-gallery">
+            <div class="gallery-grid">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Gallery (<span id="recordCount">0</span> records)</h5>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="sortBy" style="width: 120px;">
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="alpha">A-Z</option>
+                            <option value="photographer">Photographer</option>
+                        </select>
+                        <button class="btn btn-outline-secondary btn-sm" id="toggleView" title="Toggle view">
+                            <i data-feather="grid"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="orchid-grid" id="orchidGrid">
+                    <!-- Dynamic content -->
+                </div>
+                
+                <div class="loading-spinner d-none" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats footer -->
+            <div class="atlas-stats" id="atlasStats">
+                Loading statistics...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Drawer -->
+<div class="detail-drawer" id="detailDrawer">
+    <div class="drawer-header">
+        <h5 class="mb-0">Orchid Details</h5>
+        <button class="btn btn-sm btn-outline-secondary" id="closeDrawer">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+    <div class="drawer-content" id="drawerContent">
+        <!-- Dynamic content -->
+    </div>
+</div>
+
+<script>
+class OrchidAtlas {
+    constructor() {
+        this.currentFilters = {};
+        this.currentPage = 1;
+        this.totalRecords = 0;
+        this.records = [];
+        this.selectedRecord = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.loadInitialData();
+        feather.replace();
+    }
+    
+    setupEventListeners() {
+        // Filter controls
+        document.getElementById('applyFiltersBtn').addEventListener('click', () => this.applyFilters());
+        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
+        
+        // Detail drawer
+        document.getElementById('closeDrawer').addEventListener('click', () => this.closeDetailDrawer());
+        
+        // Sort controls
+        document.getElementById('sortBy').addEventListener('change', (e) => this.changeSorting(e.target.value));
+        
+        // Export
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportData());
+    }
+    
+    async loadInitialData() {
+        try {
+            // Load filter options
+            await Promise.all([
+                this.loadCountries(),
+                this.loadGenera(),
+                this.loadStats()
+            ]);
+            
+            // Load initial records
+            await this.loadRecords();
+            
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+        }
+    }
+    
+    async loadCountries() {
+        const response = await fetch('/api/atlas/countries');
+        const countries = await response.json();
+        
+        const select = document.getElementById('countryFilter');
+        countries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = `${country.name} (${country.count})`;
+            select.appendChild(option);
+        });
+    }
+    
+    async loadGenera() {
+        const response = await fetch('/api/atlas/genera');
+        const genera = await response.json();
+        
+        const select = document.getElementById('genusFilter');
+        genera.forEach(genus => {
+            const option = document.createElement('option');
+            option.value = genus.genus;
+            option.textContent = `${genus.genus} (${genus.count})`;
+            select.appendChild(option);
+        });
+    }
+    
+    async loadStats() {
+        const response = await fetch('/api/atlas/stats');
+        const stats = await response.json();
+        
+        document.getElementById('atlasStats').innerHTML = `
+            <strong>${stats.total_records.toLocaleString()}</strong> records • 
+            <strong>${stats.total_genera}</strong> genera • 
+            <strong>${stats.total_species}</strong> species • 
+            <strong>${stats.total_photographers}</strong> photographers
+        `;
+    }
+    
+    async loadRecords(page = 1) {
+        this.showLoading(true);
+        
+        try {
+            const params = new URLSearchParams({
+                page: page,
+                per_page: 50,
+                ...this.currentFilters
+            });
+            
+            const response = await fetch(`/api/atlas/records?${params}`);
+            const data = await response.json();
+            
+            this.records = data.records;
+            this.totalRecords = data.pagination.total;
+            this.currentPage = data.pagination.page;
+            
+            this.renderGallery();
+            this.renderMap();
+            this.updateRecordCount();
+            
+        } catch (error) {
+            console.error('Error loading records:', error);
+        } finally {
+            this.showLoading(false);
+        }
+    }
+    
+    renderGallery() {
+        const grid = document.getElementById('orchidGrid');
+        
+        if (this.records.length === 0) {
+            grid.innerHTML = `
+                <div class="col-12 text-center py-4">
+                    <i data-feather="search" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                    <h5 class="text-muted">No orchids found</h5>
+                    <p class="text-muted">Try adjusting your filters</p>
+                </div>
+            `;
+            feather.replace();
+            return;
+        }
+        
+        grid.innerHTML = this.records.map(record => `
+            <div class="orchid-card" data-record-id="${record.id}" onclick="atlas.selectRecord('${record.id}')">
+                <img src="${record.image_url || '/static/images/placeholder-orchid.jpg'}" 
+                     alt="${record.scientific_name}" 
+                     class="orchid-image"
+                     data-record-id="${record.id}"
+                     onerror="console.log('Image failed for record ${record.id}:', this.src); this.src='/static/images/placeholder-orchid.jpg'">
+                <div class="orchid-info">
+                    <div class="orchid-name" title="${record.scientific_name}">
+                        ${record.scientific_name}
+                        ${record.hybrid_flag ? '<small class="badge bg-warning ms-1">Hybrid</small>' : ''}
+                    </div>
+                    <div class="orchid-meta">
+                        ${record.photographer_name || 'Unknown photographer'}
+                    </div>
+                    <div class="orchid-location">
+                        <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                        ${record.country || 'Unknown location'}
+                    </div>
+                    <small class="text-muted">ID: ${record.id} | Source: ${record.source_display || record.source}</small>
+                </div>
+            </div>
+        `).join('');
+        
+        feather.replace();
+    }
+    
+    renderMap() {
+        // Placeholder map visualization
+        const mapElement = document.getElementById('atlasMap');
+        
+        if (this.records.length > 0) {
+            const sampleLocations = this.records.slice(0, 5).map(r => r.country).filter(Boolean);
+            mapElement.innerHTML = `
+                <div>
+                    <h3>🗺️ ${this.records.length} Orchid Locations</h3>
+                    <div class="mt-3">
+                        ${sampleLocations.map(loc => `<div class="badge bg-primary me-2 mb-2">${loc}</div>`).join('')}
+                    </div>
+                    <p class="mt-3 text-white-50">Interactive map with clustering and heatmap coming soon</p>
+                </div>
+            `;
+        }
+    }
+    
+    applyFilters() {
+        this.currentFilters = {};
+        
+        // Collect filter values
+        const country = document.getElementById('countryFilter').value;
+        if (country) this.currentFilters.country = country;
+        
+        const genus = document.getElementById('genusFilter').value;
+        if (genus) this.currentFilters.genus = genus;
+        
+        const hybridOnly = document.getElementById('hybridFilter').checked;
+        if (hybridOnly) this.currentFilters.hybrid_flag = true;
+        
+        const yearStart = document.getElementById('yearStartFilter').value;
+        const yearEnd = document.getElementById('yearEndFilter').value;
+        if (yearStart) this.currentFilters.year_start = yearStart;
+        if (yearEnd) this.currentFilters.year_end = yearEnd;
+        
+        this.renderFilterChips();
+        this.loadRecords(1);
+    }
+    
+    clearFilters() {
+        this.currentFilters = {};
+        
+        // Reset form controls
+        document.getElementById('countryFilter').value = '';
+        document.getElementById('genusFilter').value = '';
+        document.getElementById('hybridFilter').checked = false;
+        document.getElementById('yearStartFilter').value = '';
+        document.getElementById('yearEndFilter').value = '';
+        
+        this.renderFilterChips();
+        this.loadRecords(1);
+    }
+    
+    renderFilterChips() {
+        const container = document.getElementById('filterChips');
+        const chips = [];
+        
+        Object.entries(this.currentFilters).forEach(([key, value]) => {
+            let label = '';
+            switch(key) {
+                case 'country': label = `Country: ${value}`; break;
+                case 'genus': label = `Genus: ${value}`; break;
+                case 'hybrid_flag': label = 'Hybrids only'; break;
+                case 'year_start': label = `From: ${value}`; break;
+                case 'year_end': label = `To: ${value}`; break;
+            }
+            
+            if (label) {
+                chips.push(`
+                    <div class="filter-chip">
+                        ${label}
+                        <button class="btn-close" onclick="atlas.removeFilter('${key}')"></button>
+                    </div>
+                `);
+            }
+        });
+        
+        container.innerHTML = chips.join('');
+    }
+    
+    removeFilter(key) {
+        delete this.currentFilters[key];
+        this.renderFilterChips();
+        this.loadRecords(1);
+    }
+    
+    selectRecord(recordId) {
+        this.selectedRecord = this.records.find(r => r.id == recordId);
+        
+        // Highlight selected card
+        document.querySelectorAll('.orchid-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelector(`[data-record-id="${recordId}"]`).classList.add('selected');
+        
+        this.openDetailDrawer();
+    }
+    
+    openDetailDrawer() {
+        if (!this.selectedRecord) return;
+        
+        const record = this.selectedRecord;
+        const content = document.getElementById('drawerContent');
+        
+        content.innerHTML = `
+            <img src="${record.image_url || '/static/images/placeholder-orchid.jpg'}" 
+                 alt="${record.scientific_name}" 
+                 class="detail-image"
+                 onerror="this.src='/static/images/placeholder-orchid.jpg'">
+            
+            <h5 class="mb-3">${record.scientific_name || record.display_name}</h5>
+            
+            <!-- Classification -->
+            <div class="mb-3">
+                <h6><i data-feather="info" class="me-2"></i>Classification</h6>
+                <p class="mb-1"><strong>Genus:</strong> ${record.genus || '—'}</p>
+                <p class="mb-1"><strong>Species:</strong> ${record.species || '—'}</p>
+                <p class="mb-1"><strong>Hybrid:</strong> ${record.hybrid_flag ? 'Yes' : 'No'}</p>
+                <p class="mb-1"><strong>Growth Habit:</strong> ${record.growth_habit || 'Epiphytic'}</p>
+            </div>
+            
+            <!-- Geographic Origin -->
+            <div class="mb-3">
+                <h6><i data-feather="map-pin" class="me-2"></i>Geographic Origin</h6>
+                <p class="mb-1"><strong>Country:</strong> ${record.country || 'Unknown'}</p>
+                <p class="mb-1"><strong>Region:</strong> ${record.region || 'Not specified'}</p>
+                <p class="mb-1"><strong>Native Status:</strong> ${record.native_status || 'Unknown'}</p>
+                <p class="mb-1"><strong>Conservation:</strong> ${record.conservation_status || 'Status unknown'}</p>
+            </div>
+            
+            <!-- Photography Details -->
+            <div class="mb-3">
+                <h6><i data-feather="camera" class="me-2"></i>Photography Details</h6>
+                <p class="mb-1"><strong>Photographer:</strong> ${record.photographer_name || 'Unknown photographer'}</p>
+                <p class="mb-1"><strong>Photo Date:</strong> ${record.photo_date || 'Date unknown'}</p>
+                <p class="mb-1"><strong>Source:</strong> ${record.source_display || record.source}</p>
+                <p class="mb-1"><strong>License:</strong> ${record.license}</p>
+                <p class="mb-1"><strong>Attribution:</strong> ${record.attribution}</p>
+            </div>
+            
+            <!-- AI Insights & Analysis -->
+            ${record.ai_insights ? `
+                <div class="mb-3">
+                    <h6><i data-feather="cpu" class="me-2"></i>AI Analysis & Insights</h6>
+                    <div class="bg-light p-2 rounded small">
+                        ${record.ai_insights.split('\\n').map(line => line.trim()).filter(line => line).map(line => `<p class="mb-1">${line}</p>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- Interesting Facts -->
+            ${record.interesting_facts && record.interesting_facts.length > 0 ? `
+                <div class="mb-3">
+                    <h6><i data-feather="lightbulb" class="me-2"></i>Interesting Facts</h6>
+                    <ul class="list-unstyled small">
+                        ${record.interesting_facts.map(fact => `<li class="mb-2">• ${fact}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+            
+            <!-- Cultural Notes -->
+            ${record.cultural_notes ? `
+                <div class="mb-3">
+                    <h6><i data-feather="book-open" class="me-2"></i>Cultural & Research Notes</h6>
+                    <div class="bg-light p-2 rounded small">
+                        <p class="mb-0">${record.cultural_notes}</p>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" onclick="atlas.viewInGallery()">
+                    <i data-feather="eye" class="me-2"></i>View in Gallery
+                </button>
+                <button class="btn btn-outline-secondary" onclick="atlas.copyCitation()">
+                    <i data-feather="copy" class="me-2"></i>Copy Citation
+                </button>
+                <button class="btn btn-outline-info" onclick="atlas.showComparison()">
+                    <i data-feather="compare" class="me-2"></i>Compare Similar
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('detailDrawer').classList.add('open');
+        feather.replace();
+    }
+    
+    closeDetailDrawer() {
+        document.getElementById('detailDrawer').classList.remove('open');
+        this.selectedRecord = null;
+        
+        // Remove selection highlight
+        document.querySelectorAll('.orchid-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+    }
+    
+    changeSorting(sortBy) {
+        // Add sorting logic here
+        console.log('Sorting by:', sortBy);
+    }
+    
+    exportData() {
+        // Create CSV export
+        const csvContent = this.records.map(record => {
+            return [
+                record.photo_id,
+                record.scientific_name,
+                record.genus,
+                record.species,
+                record.country,
+                record.photographer_name,
+                record.license
+            ].join(',');
+        }).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'orchid_atlas_export.csv';
+        a.click();
+    }
+    
+    viewInGallery() {
+        this.closeDetailDrawer();
+        // Scroll to selected card
+        const card = document.querySelector(`[data-record-id="${this.selectedRecord.id}"]`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    copyCitation() {
+        if (!this.selectedRecord) return;
+        
+        const record = this.selectedRecord;
+        const citation = `${record.photographer_name}. ${record.scientific_name}. [Photograph]. ${record.source_display}. Orchid Atlas. Retrieved ${new Date().toLocaleDateString()}.`;
+        
+        navigator.clipboard.writeText(citation).then(() => {
+            alert('Citation copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = citation;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Citation copied to clipboard!');
+        });
+    }
+    
+    showComparison() {
+        if (!this.selectedRecord) return;
+        // Open comparison page for this orchid
+        window.open(`/compare?orchid_id=${this.selectedRecord.id}`, '_blank');
+        
+        navigator.clipboard.writeText(citation).then(() => {
+            alert('Citation copied to clipboard!');
+        });
+    }
+    
+    updateRecordCount() {
+        document.getElementById('recordCount').textContent = this.totalRecords.toLocaleString();
+    }
+    
+    showLoading(show) {
+        const spinner = document.getElementById('loadingSpinner');
+        if (show) {
+            spinner.classList.remove('d-none');
+        } else {
+            spinner.classList.add('d-none');
+        }
+    }
+}
+
+// Initialize the atlas
+const atlas = new OrchidAtlas();
+</script>
+{% endblock %}

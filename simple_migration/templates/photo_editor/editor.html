@@ -1,0 +1,1017 @@
+{% extends "base.html" %}
+{% set page_title = "Photo Editor - " + session_data.orchid_name %}
+
+{% block content %}
+<div class="container-fluid photo-editor-container">
+    <div class="row">
+        <!-- Sidebar Controls -->
+        <div class="col-md-3 bg-dark text-light photo-editor-sidebar">
+            <div class="p-3">
+                <!-- Header -->
+                <div class="mb-4">
+                    <h5>
+                        <i data-feather="edit-3" class="me-2"></i>Photo Editor
+                    </h5>
+                    <p class="small text-muted mb-0">{{ session_data.orchid_name }}</p>
+                    <p class="small text-muted">Session: {{ session_id[:8] }}...</p>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mb-4">
+                    <div class="btn-group w-100 mb-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="undoLastOperation()">
+                            <i data-feather="rotate-ccw" class="me-1"></i>Undo
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="resetToOriginal()">
+                            <i data-feather="refresh-cw" class="me-1"></i>Reset
+                        </button>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-sm" onclick="showSaveOptions()">
+                            <i data-feather="save" class="me-1"></i>Save & Export
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="showSocialSharing()">
+                            <i data-feather="share-2" class="me-1"></i>Share
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tools Accordion -->
+                <div class="accordion accordion-flush" id="editingTools">
+                    <!-- Basic Adjustments -->
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button bg-dark text-light" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#basicAdjustments">
+                                <i data-feather="sliders" class="me-2"></i>Basic Adjustments
+                            </button>
+                        </h2>
+                        <div id="basicAdjustments" class="accordion-collapse collapse show" data-bs-parent="#editingTools">
+                            <div class="accordion-body">
+                                <div class="mb-3">
+                                    <label for="brightness" class="form-label small">Brightness</label>
+                                    <input type="range" class="form-range" id="brightness" min="0.1" max="2" step="0.1" value="1">
+                                    <span class="small text-muted" id="brightnessValue">100%</span>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="contrast" class="form-label small">Contrast</label>
+                                    <input type="range" class="form-range" id="contrast" min="0.1" max="2" step="0.1" value="1">
+                                    <span class="small text-muted" id="contrastValue">100%</span>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="saturation" class="form-label small">Saturation</label>
+                                    <input type="range" class="form-range" id="saturation" min="0" max="2" step="0.1" value="1">
+                                    <span class="small text-muted" id="saturationValue">100%</span>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="sharpness" class="form-label small">Sharpness</label>
+                                    <input type="range" class="form-range" id="sharpness" min="0" max="3" step="0.1" value="1">
+                                    <span class="small text-muted" id="sharpnessValue">100%</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm w-100" onclick="applyBasicAdjustments()">
+                                    Apply Adjustments
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Crop & Resize -->
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-dark text-light" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#cropResize">
+                                <i data-feather="crop" class="me-2"></i>Crop & Resize
+                            </button>
+                        </h2>
+                        <div id="cropResize" class="accordion-collapse collapse" data-bs-parent="#editingTools">
+                            <div class="accordion-body">
+                                <div class="mb-3">
+                                    <button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="enableCropTool()">
+                                        <i data-feather="crop" class="me-1"></i>Enable Crop Tool
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm w-100" onclick="showResizeOptions()">
+                                        <i data-feather="maximize-2" class="me-1"></i>Resize Options
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-dark text-light" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#filters">
+                                <i data-feather="filter" class="me-2"></i>Filters
+                            </button>
+                        </h2>
+                        <div id="filters" class="accordion-collapse collapse" data-bs-parent="#editingTools">
+                            <div class="accordion-body">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('sharpen')">
+                                            Sharpen
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('blur')">
+                                            Blur
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('botanical_enhance')">
+                                            Botanical
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('vintage')">
+                                            Vintage
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('sepia')">
+                                            Sepia
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-light btn-sm w-100" onclick="applyFilter('grayscale')">
+                                            B&W
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Analysis -->
+                    <div class="accordion-item bg-dark">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed bg-dark text-light" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#aiAnalysis">
+                                <i data-feather="cpu" class="me-2"></i>AI Plant Analysis
+                            </button>
+                        </h2>
+                        <div id="aiAnalysis" class="accordion-collapse collapse" data-bs-parent="#editingTools">
+                            <div class="accordion-body">
+                                <button class="btn btn-primary btn-sm w-100 mb-3" onclick="runPlantAnalysis()">
+                                    <i data-feather="zap" class="me-1"></i>Analyze Plant Features
+                                </button>
+                                <div id="analysisResults" class="small text-muted">
+                                    Click "Analyze" to get detailed plant analysis including morphological features, 
+                                    identification markers, and 3D spatial characteristics.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Info -->
+                <div class="mt-4 p-2 bg-secondary rounded">
+                    <h6 class="small mb-2">Session Info</h6>
+                    <div class="small text-muted">
+                        <div>Operations: <span id="operationCount">0</span></div>
+                        <div>Original Size: {{ session_data.original_size[0] }}×{{ session_data.original_size[1] }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Editing Area -->
+        <div class="col-md-9 photo-editor-main">
+            <div class="p-3">
+                <!-- Toolbar -->
+                <div class="bg-light rounded p-2 mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="zoomIn()">
+                                    <i data-feather="zoom-in"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="zoomOut()">
+                                    <i data-feather="zoom-out"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="fitToScreen()">
+                                    <i data-feather="maximize"></i>
+                                </button>
+                            </div>
+                            <span class="ms-3 small text-muted">Zoom: <span id="zoomLevel">100%</span></span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('photo_editor.photo_editor_home') }}" class="btn btn-outline-secondary">
+                                    <i data-feather="arrow-left" class="me-1"></i>Back
+                                </a>
+                                <button class="btn btn-outline-primary" onclick="downloadCurrentImage()">
+                                    <i data-feather="download" class="me-1"></i>Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Canvas Area -->
+                <div class="photo-canvas-container">
+                    <div id="imageContainer" class="position-relative">
+                        <canvas id="photoCanvas" style="max-width: 100%; border: 1px solid #ddd;"></canvas>
+                        <div id="loadingOverlay" class="position-absolute top-50 start-50 translate-middle d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Options Modal -->
+<div class="modal fade" id="saveOptionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save & Export Options</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Format Options</h6>
+                        <div class="mb-3">
+                            <label for="exportFormat" class="form-label">File Format</label>
+                            <select class="form-select" id="exportFormat">
+                                <option value="JPEG">JPEG (Recommended)</option>
+                                <option value="PNG">PNG (Lossless)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportQuality" class="form-label">Quality</label>
+                            <input type="range" class="form-range" id="exportQuality" min="60" max="100" value="95">
+                            <span class="small text-muted" id="qualityValue">95%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Export Options</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="saveOriginal" checked>
+                            <label class="form-check-label" for="saveOriginal">
+                                Keep original separate
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="uploadToDrive" checked>
+                            <label class="form-check-label" for="uploadToDrive">
+                                Upload to Google Drive
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="createPackage">
+                            <label class="form-check-label" for="createPackage">
+                                Create export package
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Social Media & Caption Options -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Social Media & Caption Options</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="createCaptioned">
+                            <label class="form-check-label" for="createCaptioned">
+                                Add caption overlay to image
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="generateSocialCaption" checked>
+                            <label class="form-check-label" for="generateSocialCaption">
+                                Generate social media caption
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeAnalysis">
+                            <label class="form-check-label" for="includeAnalysis">
+                                Include AI analysis in caption
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <label for="captionStyle" class="form-label small">Caption Style</label>
+                            <select class="form-select form-select-sm" id="captionStyle">
+                                <option value="classic">Classic</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="detailed">Detailed</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label for="captionPosition" class="form-label small">Caption Position</label>
+                            <select class="form-select form-select-sm" id="captionPosition">
+                                <option value="bottom">Bottom</option>
+                                <option value="top">Top</option>
+                                <option value="center">Center</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview Social Caption -->
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="previewSocialCaption()">
+                        <i data-feather="eye" class="me-1"></i>Preview Social Caption
+                    </button>
+                    <div id="captionPreview" class="mt-2 p-2 bg-light rounded small" style="display: none;">
+                        <!-- Caption preview will appear here -->
+                    </div>
+                </div>
+                
+                <!-- Usage Rights & Waivers -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Usage Rights & Permissions</h6>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantEducationalUse">
+                            <label class="form-check-label" for="grantEducationalUse">
+                                <strong>Educational Use Waiver:</strong> I grant Orchid Continuum permission to use this photo for educational purposes including presentations, research publications, and teaching materials.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantResearchUse">
+                            <label class="form-check-label" for="grantResearchUse">
+                                <strong>Research Use Waiver:</strong> I grant Orchid Continuum permission to use this photo for scientific research, botanical studies, and conservation efforts.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="grantDatabaseUse">
+                            <label class="form-check-label" for="grantDatabaseUse">
+                                <strong>Database Use Waiver:</strong> I grant Orchid Continuum permission to include this photo in the public database and use it for AI training to improve orchid identification systems.
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="retainAttribution">
+                            <label class="form-check-label" for="retainAttribution">
+                                <strong>Attribution Required:</strong> I require proper attribution when this photo is used (photographer credit and Orchid Continuum source).
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>Preview & Share</h6>
+                    <div class="bg-light p-3 rounded">
+                        <small class="text-muted">
+                            <strong>Rights & Attribution:</strong> Your edited photo will be saved with botanical information and 
+                            proper attribution. Usage permissions above determine how the Orchid Continuum project can use 
+                            your shared photos for educational and research purposes while respecting your rights as the photographer.
+                            <br><br>
+                            <strong>Copyright Notice:</strong> All images are tagged with "Orchid Continuum project, Copyright 2025" 
+                            and your selected usage permissions are recorded with the photo.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditedImage()">
+                    <i data-feather="save" class="me-1"></i>Save & Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Social Sharing Modal -->
+<div class="modal fade" id="socialSharingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Your Orchid Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Social Media Platforms</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="shareToFacebook()">
+                                <i data-feather="facebook" class="me-2"></i>Share on Facebook
+                            </button>
+                            <button class="btn btn-info" onclick="shareToTwitter()">
+                                <i data-feather="twitter" class="me-2"></i>Share on Twitter/X
+                            </button>
+                            <button class="btn btn-danger" onclick="shareToInstagram()">
+                                <i data-feather="instagram" class="me-2"></i>Copy for Instagram
+                            </button>
+                            <button class="btn btn-success" onclick="shareToWhatsApp()">
+                                <i data-feather="message-circle" class="me-2"></i>Share on WhatsApp
+                            </button>
+                            <button class="btn btn-dark" onclick="copyToClipboard()">
+                                <i data-feather="copy" class="me-2"></i>Copy Caption & Link
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Generated Caption</h6>
+                        <div id="socialCaptionContent" class="p-3 bg-light rounded small" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Social media caption will appear here -->
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="editCaption()">
+                                <i data-feather="edit-2" class="me-1"></i>Edit Caption
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="regenerateCaption()">
+                                <i data-feather="refresh-cw" class="me-1"></i>Regenerate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <small class="text-muted">All shares include proper attribution: "Orchid Continuum project, Copyright 2025"</small>
+                    <br>
+                    <small class="text-success" id="permissionsStatus">
+                        <!-- Usage permissions status will appear here -->
+                    </small>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resize Modal -->
+<div class="modal fade" id="resizeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resize Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newWidth" class="form-label">Width (pixels)</label>
+                    <input type="number" class="form-control" id="newWidth" value="{{ session_data.original_size[0] }}">
+                </div>
+                <div class="mb-3">
+                    <label for="newHeight" class="form-label">Height (pixels)</label>
+                    <input type="number" class="form-control" id="newHeight" value="{{ session_data.original_size[1] }}">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="maintainAspect" checked>
+                    <label class="form-check-label" for="maintainAspect">
+                        Maintain aspect ratio
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="applyResize()">Apply Resize</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const sessionId = '{{ session_id }}';
+let currentZoom = 1;
+let operationCount = 0;
+let canvas, ctx;
+let currentImage = null;
+
+// Initialize editor
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEditor();
+    updateSliderValues();
+});
+
+function initializeEditor() {
+    canvas = document.getElementById('photoCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Load initial image (placeholder for now)
+    loadInitialImage();
+}
+
+function loadInitialImage() {
+    // In production, this would load the actual image
+    // For now, create a placeholder
+    canvas.width = 800;
+    canvas.height = 600;
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#666';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('{{ session_data.orchid_name }}', canvas.width/2, canvas.height/2 - 20);
+    ctx.fillText('Photo Editor', canvas.width/2, canvas.height/2 + 20);
+}
+
+function updateSliderValues() {
+    // Update slider value displays
+    document.getElementById('brightness').oninput = function() {
+        document.getElementById('brightnessValue').textContent = Math.round(this.value * 100) + '%';
+    };
+    document.getElementById('contrast').oninput = function() {
+        document.getElementById('contrastValue').textContent = Math.round(this.value * 100) + '%';
+    };
+    document.getElementById('saturation').oninput = function() {
+        document.getElementById('saturationValue').textContent = Math.round(this.value * 100) + '%';
+    };
+    document.getElementById('sharpness').oninput = function() {
+        document.getElementById('sharpnessValue').textContent = Math.round(this.value * 100) + '%';
+    };
+    document.getElementById('exportQuality').oninput = function() {
+        document.getElementById('qualityValue').textContent = this.value + '%';
+    };
+}
+
+// Photo editing functions
+function applyBasicAdjustments() {
+    showLoading(true);
+    
+    const adjustments = {
+        session_id: sessionId,
+        brightness: parseFloat(document.getElementById('brightness').value),
+        contrast: parseFloat(document.getElementById('contrast').value),
+        saturation: parseFloat(document.getElementById('saturation').value),
+        sharpness: parseFloat(document.getElementById('sharpness').value)
+    };
+    
+    fetch('/photo-editor/api/adjust', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(adjustments)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update canvas with new image
+            updateCanvasFromBase64(data.image_data);
+            operationCount++;
+            updateOperationCount();
+            showSuccess('Adjustments applied successfully');
+        } else {
+            showError(data.error || 'Failed to apply adjustments');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    })
+    .finally(() => {
+        showLoading(false);
+    });
+}
+
+function applyFilter(filterType) {
+    showLoading(true);
+    
+    fetch('/photo-editor/api/filter', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            session_id: sessionId,
+            filter_type: filterType,
+            intensity: 1.0
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateCanvasFromBase64(data.image_data);
+            operationCount++;
+            updateOperationCount();
+            showSuccess(`${filterType} filter applied`);
+        } else {
+            showError(data.error || 'Failed to apply filter');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    })
+    .finally(() => {
+        showLoading(false);
+    });
+}
+
+function runPlantAnalysis() {
+    showLoading(true);
+    document.getElementById('analysisResults').innerHTML = 'Analyzing plant features...';
+    
+    fetch('/photo-editor/api/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayAnalysisResults(data);
+            showSuccess('Plant analysis completed');
+        } else {
+            showError(data.error || 'Analysis failed');
+            document.getElementById('analysisResults').innerHTML = 'Analysis failed. Please try again.';
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+        document.getElementById('analysisResults').innerHTML = 'Analysis failed due to network error.';
+    })
+    .finally(() => {
+        showLoading(false);
+    });
+}
+
+function displayAnalysisResults(data) {
+    let html = '<div class="small">';
+    if (data.features_detected && data.features_detected.length > 0) {
+        html += '<strong>Features Detected:</strong><br>';
+        html += data.features_detected.slice(0, 5).join(', ') + '<br><br>';
+    }
+    if (data.quality_score) {
+        html += `<strong>Quality Score:</strong> ${Math.round(data.quality_score * 100)}%<br><br>`;
+    }
+    if (data.recommendations && data.recommendations.length > 0) {
+        html += '<strong>Recommendations:</strong><br>';
+        data.recommendations.slice(0, 3).forEach(rec => {
+            html += `• ${rec}<br>`;
+        });
+    }
+    html += '</div>';
+    document.getElementById('analysisResults').innerHTML = html;
+}
+
+function showSaveOptions() {
+    const modal = new bootstrap.Modal(document.getElementById('saveOptionsModal'));
+    modal.show();
+}
+
+function showResizeOptions() {
+    const modal = new bootstrap.Modal(document.getElementById('resizeModal'));
+    modal.show();
+}
+
+function saveEditedImage() {
+    const saveOptions = {
+        format: document.getElementById('exportFormat').value,
+        quality: parseInt(document.getElementById('exportQuality').value),
+        save_original: document.getElementById('saveOriginal').checked,
+        upload_to_drive: document.getElementById('uploadToDrive').checked,
+        create_package: document.getElementById('createPackage').checked,
+        create_captioned: document.getElementById('createCaptioned').checked,
+        include_analysis: document.getElementById('includeAnalysis').checked,
+        caption_options: {
+            style: document.getElementById('captionStyle').value,
+            position: document.getElementById('captionPosition').value,
+            add_overlay: document.getElementById('createCaptioned').checked
+        },
+        usage_waivers: {
+            educational_use: document.getElementById('grantEducationalUse').checked,
+            research_use: document.getElementById('grantResearchUse').checked,
+            database_use: document.getElementById('grantDatabaseUse').checked,
+            attribution_required: document.getElementById('retainAttribution').checked,
+            waiver_timestamp: new Date().toISOString()
+        }
+    };
+    
+    showLoading(true);
+    
+    fetch('/photo-editor/api/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            session_id: sessionId,
+            save_options: saveOptions
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Image saved successfully!');
+            
+            // Store social caption for sharing
+            window.currentSocialCaption = data.social_caption;
+            window.currentImageUrl = data.social_sharing_data?.image_url;
+            
+            bootstrap.Modal.getInstance(document.getElementById('saveOptionsModal')).hide();
+            
+            // Store usage permissions for sharing
+            window.currentUsagePermissions = data.usage_permissions;
+            
+            // Show sharing modal if social caption was generated
+            if (data.social_caption && document.getElementById('generateSocialCaption').checked) {
+                setTimeout(() => showSocialSharing(), 500);
+            }
+        } else {
+            showError(data.error || 'Save failed');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    })
+    .finally(() => {
+        showLoading(false);
+    });
+}
+
+function previewSocialCaption() {
+    fetch('/photo-editor/api/generate-caption', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            session_id: sessionId,
+            include_analysis: document.getElementById('includeAnalysis').checked
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const preview = document.getElementById('captionPreview');
+            preview.innerHTML = data.caption.replace(/\n/g, '<br>');
+            preview.style.display = 'block';
+        } else {
+            showError(data.error || 'Failed to generate caption preview');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    });
+}
+
+function showSocialSharing() {
+    // Load current social caption if available
+    if (window.currentSocialCaption) {
+        document.getElementById('socialCaptionContent').innerHTML = 
+            window.currentSocialCaption.replace(/\n/g, '<br>');
+    } else {
+        // Generate new caption
+        regenerateCaption();
+    }
+    
+    // Update permissions status
+    updatePermissionsStatus();
+    
+    const modal = new bootstrap.Modal(document.getElementById('socialSharingModal'));
+    modal.show();
+}
+
+function updatePermissionsStatus() {
+    const permissions = window.currentUsagePermissions || {};
+    const statusEl = document.getElementById('permissionsStatus');
+    
+    if (!permissions || Object.keys(permissions).length === 0) {
+        statusEl.innerHTML = '<i data-feather="alert-circle" style="width: 12px; height: 12px;"></i> No usage permissions granted - personal use only';
+        statusEl.className = 'text-warning';
+        return;
+    }
+    
+    const grants = [];
+    if (permissions.educational_use) grants.push('Educational');
+    if (permissions.research_use) grants.push('Research'); 
+    if (permissions.database_use) grants.push('Database');
+    
+    if (grants.length > 0) {
+        statusEl.innerHTML = `<i data-feather="check-circle" style="width: 12px; height: 12px;"></i> Permissions granted: ${grants.join(', ')} use`;
+        statusEl.className = 'text-success';
+    } else {
+        statusEl.innerHTML = '<i data-feather="alert-circle" style="width: 12px; height: 12px;"></i> No usage permissions granted';
+        statusEl.className = 'text-warning';
+    }
+    
+    // Refresh icons
+    feather.replace();
+}
+
+function shareToFacebook() {
+    const caption = window.currentSocialCaption || '';
+    const imageUrl = window.currentImageUrl || '';
+    
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrl)}&quote=${encodeURIComponent(caption)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+}
+
+function shareToTwitter() {
+    const caption = window.currentSocialCaption || '';
+    const imageUrl = window.currentImageUrl || '';
+    
+    // Twitter has character limits, so truncate if needed
+    let tweetText = caption;
+    if (tweetText.length > 240) {
+        tweetText = tweetText.substring(0, 240) + '...';
+    }
+    
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(imageUrl)}`;
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+}
+
+function shareToInstagram() {
+    // Instagram doesn't have direct web sharing, so copy caption
+    copyToClipboard();
+    alert('Caption copied to clipboard! Open Instagram and paste it with your photo upload.');
+}
+
+function shareToWhatsApp() {
+    const caption = window.currentSocialCaption || '';
+    const imageUrl = window.currentImageUrl || '';
+    
+    const message = `${caption}\n\nImage: ${imageUrl}`;
+    const shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(shareUrl, '_blank');
+}
+
+function copyToClipboard() {
+    const caption = window.currentSocialCaption || '';
+    const imageUrl = window.currentImageUrl || '';
+    
+    const textToCopy = `${caption}\n\nImage URL: ${imageUrl}`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        showSuccess('Caption and image URL copied to clipboard!');
+    }).catch(err => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showSuccess('Caption and image URL copied to clipboard!');
+    });
+}
+
+function editCaption() {
+    const currentCaption = window.currentSocialCaption || '';
+    const newCaption = prompt('Edit your social media caption:', currentCaption);
+    
+    if (newCaption !== null && newCaption !== currentCaption) {
+        window.currentSocialCaption = newCaption;
+        document.getElementById('socialCaptionContent').innerHTML = 
+            newCaption.replace(/\n/g, '<br>');
+    }
+}
+
+function regenerateCaption() {
+    fetch('/photo-editor/api/generate-caption', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            session_id: sessionId,
+            include_analysis: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.currentSocialCaption = data.caption;
+            document.getElementById('socialCaptionContent').innerHTML = 
+                data.caption.replace(/\n/g, '<br>');
+        } else {
+            showError(data.error || 'Failed to regenerate caption');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    });
+}
+
+function undoLastOperation() {
+    fetch('/photo-editor/api/undo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess(`Undid: ${data.undone_operation}`);
+            operationCount = data.operations_remaining;
+            updateOperationCount();
+            // Reload the image
+            location.reload();
+        } else {
+            showError(data.error || 'Nothing to undo');
+        }
+    })
+    .catch(error => {
+        showError('Network error: ' + error.message);
+    });
+}
+
+function downloadCurrentImage() {
+    window.open(`/photo-editor/download/${sessionId}`, '_blank');
+}
+
+// Utility functions
+function updateCanvasFromBase64(base64Data) {
+    const img = new Image();
+    img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        currentImage = img;
+    };
+    img.src = 'data:image/jpeg;base64,' + base64Data;
+}
+
+function updateOperationCount() {
+    document.getElementById('operationCount').textContent = operationCount;
+}
+
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (show) {
+        overlay.classList.remove('d-none');
+    } else {
+        overlay.classList.add('d-none');
+    }
+}
+
+function showSuccess(message) {
+    // Simple alert for now - could be enhanced with toast notifications
+    console.log('Success:', message);
+}
+
+function showError(message) {
+    console.error('Error:', message);
+    alert('Error: ' + message);
+}
+
+// Zoom functions
+function zoomIn() {
+    currentZoom = Math.min(currentZoom * 1.2, 5);
+    updateZoom();
+}
+
+function zoomOut() {
+    currentZoom = Math.max(currentZoom / 1.2, 0.1);
+    updateZoom();
+}
+
+function fitToScreen() {
+    currentZoom = 1;
+    updateZoom();
+}
+
+function updateZoom() {
+    canvas.style.transform = `scale(${currentZoom})`;
+    document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+}
+
+// Initialize feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+</script>
+
+<style>
+.photo-editor-container {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.photo-editor-sidebar {
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid #dee2e6;
+}
+
+.photo-editor-main {
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.photo-canvas-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    min-height: 400px;
+}
+
+#photoCanvas {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+.accordion-button {
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+
+.form-range {
+    margin-bottom: 0.5rem;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}

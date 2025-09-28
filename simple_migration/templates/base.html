@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}The Orchid Continuum - Orchid Database{% endblock %}</title>
+    
+    <!-- Bootstrap CSS with Replit theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons with Safe Loading -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Safe Widget Error Handling -->
+    <script>
+    // Safe Feather Icon Handler
+    function safeFeatherReplace() {
+        try {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        } catch (error) {
+            console.warn('Feather icons failed to load:', error);
+            // Fallback: hide broken icons
+            document.querySelectorAll('[data-feather]').forEach(el => {
+                if (!el.innerHTML.trim()) {
+                    el.style.display = 'none';
+                }
+            });
+        }
+    }
+    
+    // Safe JSON parsing for user preferences
+    function safeJsonParse(jsonString, fallback = {}) {
+        try {
+            if (!jsonString || jsonString.trim() === '') return fallback;
+            return JSON.parse(jsonString);
+        } catch (error) {
+            console.warn('JSON parse error:', error);
+            return fallback;
+        }
+    }
+    
+    // Safe favorites management
+    function safeGetFavorites() {
+        try {
+            const favorites = localStorage.getItem('orchid_favorites');
+            return safeJsonParse(favorites, []);
+        } catch (error) {
+            console.warn('Error accessing favorites:', error);
+            return [];
+        }
+    }
+    
+    function safeSetFavorites(favorites) {
+        try {
+            localStorage.setItem('orchid_favorites', JSON.stringify(favorites || []));
+        } catch (error) {
+            console.warn('Error saving favorites:', error);
+        }
+    }
+    
+    // Widget timeout handler
+    function withTimeout(promise, timeout = 30000) {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Operation timeout')), timeout)
+            )
+        ]);
+    }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link href="/static/css/custom.css" rel="stylesheet">
+</head>
+<body>
+    <!-- The Orchid Continuum Header with Dropdown Navigation -->
+    <div class="container-fluid header" style="background: var(--brand-cream, #FBF8F3); box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1.5rem 0;">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <!-- Logo -->
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('index') }}" class="text-decoration-none">
+                        <img src="/static/images/orchid_continuum_new_logo.png" 
+                             alt="The Orchid Continuum" 
+                             style="height: 210px; width: auto; filter: drop-shadow(1px 1px 3px rgba(0,0,0,0.2));" 
+                             class="logo-main"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <i data-feather="star" class="me-3" style="display: none; width: 60px; height: 60px; color: var(--brand-purple, #6B3FA0);"></i>
+                    </a>
+                </div>
+                
+                <!-- Centered Title -->
+                <div class="text-center" style="margin-left: -50px;">
+                    <h1 class="fw-bold" style="font-size: 2rem; color: #8B4F9C; margin-bottom: 5px;">The Orchid Continuum</h1>
+                    <p class="fw-semibold" style="font-size: 1.1rem; color: #4CAF50; margin-bottom: 2px;">Global Orchid Experience</p>
+                    <p class="small opacity-75" style="font-size: 0.9rem; color: #6B3FA0;">Online Digital Platform</p>
+                </div>
+                <!-- Compact Dropdown Navigation -->
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle fw-bold px-4 py-2" type="button" id="mainMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background: var(--brand-purple, #6B3FA0); color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative; z-index: 1000;">
+                        <i data-feather="menu" class="me-2" style="width: 18px; height: 18px;"></i>
+                        <span class="d-none d-sm-inline">Explore</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 280px; max-height: 70vh; overflow-y: auto;">
+                        <!-- 🖼️ BROWSE & DISCOVER -->
+                        <li><h6 class="dropdown-header text-primary fw-bold border-bottom border-primary pb-1 mb-2">
+                            <i data-feather="grid" class="me-2" style="width: 14px; height: 14px;"></i>Browse & Discover
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('gallery') }}">
+                            <i data-feather="grid" class="me-3" style="width: 16px; height: 16px;"></i>Gallery Browser
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('enhanced_gallery_ecosystem') }}" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="map" class="me-3" style="width: 16px; height: 16px;"></i>Ecosystem Gallery
+                        </a></li>
+                        
+                        <!-- Themed Galleries Submenu -->
+                        <li class="dropend">
+                            <a class="dropdown-item dropdown-toggle py-2" href="#" id="themedGalleriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #6B3FA0; font-weight: bold;">
+                                <i data-feather="image" class="me-3" style="width: 16px; height: 16px;"></i>Themed Galleries
+                            </a>
+                            <ul class="dropdown-menu" style="min-width: 220px;">
+                                <li><a class="dropdown-item py-2" href="{{ url_for('thailand_gallery') }}">
+                                    <i data-feather="map-pin" class="me-3" style="width: 14px; height: 14px; color: #00d4aa;"></i>Thailand Orchids
+                                </a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('madagascar_gallery') }}">
+                                    <i data-feather="map-pin" class="me-3" style="width: 14px; height: 14px; color: #dc3545;"></i>Madagascar Orchids  
+                                </a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('fragrant_gallery') }}">
+                                    <i data-feather="star" class="me-3" style="width: 14px; height: 14px; color: #ffc107;"></i>Fragrant Orchids
+                                </a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('night_blooming_gallery') }}">
+                                    <i data-feather="moon" class="me-3" style="width: 14px; height: 14px; color: #e6e6fa;"></i>Night Blooming
+                                </a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('members_gallery') }}">
+                                    <i data-feather="users" class="me-3" style="width: 14px; height: 14px; color: #20c997;"></i>Members Collection
+                                </a></li>
+                            </ul>
+                        </li>
+                        
+                        <li><a class="dropdown-item py-2" href="{{ url_for('search') }}">
+                            <i data-feather="search" class="me-3" style="width: 16px; height: 16px;"></i>Advanced Search
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/orchid-explorer">
+                            <i data-feather="compass" class="me-3" style="width: 16px; height: 16px;"></i>Ecosystem Explorer
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/global-satellite-map">
+                            <i data-feather="globe" class="me-3" style="width: 16px; height: 16px;"></i>🛰️ Satellite Map
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/space-earth-globe">
+                            <i data-feather="globe" class="me-3" style="width: 16px; height: 16px;"></i>🌍 Earth from Space
+                        </a></li>
+
+                        <!-- 🤖 AI & ANALYSIS -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-warning fw-bold border-bottom border-warning pb-1 mb-2">
+                            <i data-feather="zap" class="me-2" style="width: 14px; height: 14px;"></i>AI & Analysis
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/ai/identify" style="color: #7A4B8E; font-weight: bold;">
+                            <i data-feather="zap" class="me-3" style="width: 16px; height: 16px;"></i>AI Identify
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/ai-research-assistant" style="color: #9d4edd; font-weight: bold;">
+                            <i data-feather="brain" class="me-3" style="width: 16px; height: 16px;"></i>🧠 AI Research Assistant
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/enhanced-science-lab" style="color: #ffc107; font-weight: bold;">
+                            <i data-feather="search" class="me-3" style="width: 16px; height: 16px;"></i>Science Lab
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/bulk-analyzer/bulk-upload" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="upload-cloud" class="me-3" style="width: 16px; height: 16px;"></i>Bulk Analyzer
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/comparison">
+                            <i data-feather="layers" class="me-3" style="width: 16px; height: 16px;"></i>Compare & Analyze
+                        </a></li>
+
+                        <!-- 🌱 CARBON REVOLUTION -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-success fw-bold border-bottom border-success pb-1 mb-2">
+                            <i data-feather="globe" class="me-2" style="width: 14px; height: 14px;"></i>Carbon Revolution
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/command-center" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="command" class="me-3" style="width: 16px; height: 16px;"></i>🎯 Command Center
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/command-center/research-lab" style="color: #17a2b8; font-weight: bold;">
+                            <i data-feather="search" class="me-3" style="width: 16px; height: 16px;"></i>🔬 Research Lab
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/mycorrhizal/super-colonies-dashboard" style="color: #9932cc; font-weight: bold;">
+                            <i data-feather="globe" class="me-3" style="width: 16px; height: 16px;"></i>🍄 Super Fungal Colonies
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/mycorrhizal" style="color: #228b22; font-weight: bold;">
+                            <i data-feather="git-branch" class="me-3" style="width: 16px; height: 16px;"></i>🌱 Mycorrhizal Networks
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/research-director" style="color: #ff6b35; font-weight: bold;">
+                            <i data-feather="cpu" class="me-3" style="width: 16px; height: 16px;"></i>🤖 Autonomous AI Director
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/climate-research">
+                            <i data-feather="thermometer" class="me-3" style="width: 16px; height: 16px;"></i>🌡️ Climate Research
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/global-analysis">
+                            <i data-feather="map" class="me-3" style="width: 16px; height: 16px;"></i>🌍 Global Analysis
+                        </a></li>
+
+                        <!-- 🧬 BREEDING RESEARCH -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-danger fw-bold border-bottom border-danger pb-1 mb-2">
+                            <i data-feather="cpu" class="me-2" style="width: 14px; height: 14px;"></i>Breeding Research
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/breeding-assistant" style="color: #e74c3c; font-weight: bold;">
+                            <i data-feather="shuffle" class="me-3" style="width: 16px; height: 16px;"></i>AI Breeding Assistant
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/breeder-assist-prototype" style="color: #6B3FA0; font-weight: bold;">
+                            <i data-feather="cpu" class="me-3" style="width: 16px; height: 16px;"></i>🧬 Breeder Assist Pro
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/botany-lab/" style="color: #17a2b8; font-weight: bold;">
+                            <i data-feather="activity" class="me-3" style="width: 16px; height: 16px;"></i>Botany Lab Stats
+                        </a></li>
+
+                        <!-- 🌱 CARE & CULTIVATION -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-success fw-bold border-bottom border-success pb-1 mb-2">
+                            <i data-feather="eye" class="me-2" style="width: 14px; height: 14px;"></i>Care & Cultivation
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('care_wheel') }}" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="pie-chart" class="me-3" style="width: 16px; height: 16px;"></i>Care Wheel Generator
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/my-collection" style="color: #e74c3c; font-weight: bold;">
+                            <i data-feather="heart" class="me-3" style="width: 16px; height: 16px;"></i>My Collection
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('user_weather.orchid_collections') }}">
+                            <i data-feather="cloud" class="me-3" style="width: 16px; height: 16px;"></i>Climate Tracker
+                        </a></li>
+
+                        <!-- 🎓 EDUCATION & GAMES -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-info fw-bold border-bottom border-info pb-1 mb-2">
+                            <i data-feather="book" class="me-2" style="width: 14px; height: 14px;"></i>Education & Games
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/articles" style="color: #17a2b8; font-weight: bold;">
+                            <i data-feather="book-open" class="me-3" style="width: 16px; height: 16px;"></i>Featured Articles
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/educational-games/learning-activities" style="color: #ffc107; font-weight: bold;">
+                            <i data-feather="book-open" class="me-3" style="width: 16px; height: 16px;"></i>Learning Activities
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/games">
+                            <i data-feather="play" class="me-3" style="width: 16px; height: 16px;"></i>Games & Quizzes
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/contest" style="color: #9b59b6; font-weight: bold;">
+                            <i data-feather="award" class="me-3" style="width: 16px; height: 16px;"></i>Monthly Contest
+                        </a></li>
+
+                        <!-- 🔧 TOOLS & UTILITIES -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-secondary fw-bold border-bottom border-secondary pb-1 mb-2">
+                            <i data-feather="tool" class="me-2" style="width: 14px; height: 14px;"></i>Tools & Utilities
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('upload') }}">
+                            <i data-feather="upload" class="me-3" style="width: 16px; height: 16px;"></i>Upload Photos
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('photo_editor.photo_editor_home') }}">
+                            <i data-feather="edit-3" class="me-3" style="width: 16px; height: 16px;"></i>Photo Editor
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/citation">
+                            <i data-feather="bookmark" class="me-3" style="width: 16px; height: 16px;"></i>Citations
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/provenance/dashboard" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="camera" class="me-3" style="width: 16px; height: 16px;"></i>Photo Sources
+                        </a></li>
+
+                        <!-- 🏢 FIVE CITIES ORCHID SOCIETY -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-muted fw-bold border-bottom border-muted pb-1 mb-2">
+                            <i data-feather="users" class="me-2" style="width: 14px; height: 14px;"></i>Five Cities Orchid Society
+                        </h6></li>
+                        <li><a class="dropdown-item py-1" href="/fcos/how-to-join">
+                            <i data-feather="user-plus" class="me-3" style="width: 14px; height: 14px;"></i>How to Join
+                        </a></li>
+                        <li><a class="dropdown-item py-1" href="/fcos/member-benefits">
+                            <i data-feather="gift" class="me-3" style="width: 14px; height: 14px;"></i>Member Benefits
+                        </a></li>
+                        <li><a class="dropdown-item py-1" href="/fcos/orchid-fest-2025">
+                            <i data-feather="calendar" class="me-3" style="width: 14px; height: 14px;"></i>OrchidFest 2025
+                        </a></li>
+                        <li><a class="dropdown-item py-1" href="/fcos/top-10-tips">
+                            <i data-feather="info" class="me-3" style="width: 14px; height: 14px;"></i>Top 10 Tips
+                        </a></li>
+
+                        <!-- 🤝 PARTNERSHIPS & DEMOS -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-success fw-bold border-bottom border-success pb-1 mb-2">
+                            <i data-feather="users" class="me-2" style="width: 14px; height: 14px;"></i>Partnerships
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/partnerships" style="color: #6B3FA0; font-weight: bold;">
+                            <i data-feather="users" class="me-3" style="width: 16px; height: 16px;"></i>🌟 Our Partners
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/partnership-demo/gary-yong-gee" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="globe" class="me-3" style="width: 16px; height: 16px;"></i>🇦🇺 Gary Yong Gee Demo
+                        </a></li>
+                        
+                        <!-- 🛠️ DEVELOPER TOOLS -->
+                        <li><hr class="dropdown-divider my-3"></li>
+                        <li><h6 class="dropdown-header text-muted fw-bold border-bottom border-muted pb-1 mb-2">
+                            <i data-feather="code" class="me-2" style="width: 14px; height: 14px;"></i>Developer Tools
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="/widgets">
+                            <i data-feather="code" class="me-3" style="width: 16px; height: 16px;"></i>Widget System
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/admin" style="color: #20c997; font-weight: bold;">
+                            <i data-feather="user-check" class="me-3" style="width: 16px; height: 16px;"></i>Admin Panel
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/debugger" style="color: #17a2b8; font-weight: bold;">
+                            <i data-feather="search" class="me-3" style="width: 16px; height: 16px;"></i>System Debugger
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('admin') }}">
+                            <i data-feather="settings" class="me-3" style="width: 16px; height: 16px;"></i>Admin
+                        </a></li>
+                        {% if current_tier != 'visitor' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item py-2" href="/member/dashboard" style="color: #28a745; font-weight: bold;">
+                            <i data-feather="user" class="me-3" style="width: 16px; height: 16px;"></i>Member Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/member/personalization">
+                            <i data-feather="palette" class="me-3" style="width: 16px; height: 16px;"></i>Personalization
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/member/notebook">
+                            <i data-feather="book" class="me-3" style="width: 16px; height: 16px;"></i>My Notebook
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/member/care-manager">
+                            <i data-feather="calendar" class="me-3" style="width: 16px; height: 16px;"></i>Care Manager
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/logout">
+                            <i data-feather="log-out" class="me-3" style="width: 16px; height: 16px;"></i>Logout
+                        </a></li>
+                        {% else %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-info fw-bold border-bottom border-info pb-1 mb-2">
+                            <i data-feather="log-in" class="me-2" style="width: 14px; height: 14px;"></i>Authentication
+                        </h6></li>
+                        <li><a class="dropdown-item py-2" href="{{ url_for('replit_auth.login') }}" style="color: #20c997; font-weight: bold;">
+                            <i data-feather="user" class="me-3" style="width: 16px; height: 16px;"></i>Login with Replit
+                        </a></li>
+                        <li><a class="dropdown-item py-2" href="/auth/login" style="color: #6c757d;">
+                            <i data-feather="user-check" class="me-3" style="width: 16px; height: 16px;"></i>Admin Login
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item py-2" href="/membership" style="color: #ffc107; font-weight: bold;">
+                            <i data-feather="unlock" class="me-3" style="width: 16px; height: 16px;"></i>Become a Member
+                        </a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Demo Timer (for active demo sessions) -->
+    {% include 'components/demo_timer.html' %}
+
+    <!-- Main content -->
+    <main class="flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Floating Feedback Button -->
+    <div class="floating-feedback-btn">
+        <a href="{{ url_for('feedback') }}" class="btn btn-primary btn-lg rounded-circle shadow" 
+           title="Share Feedback" data-bs-toggle="tooltip" data-bs-placement="left">
+            <i data-feather="message-circle" width="24" height="24"></i>
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Orchid Continuum</h5>
+                    <p class="text-muted">AI-enhanced orchid database and automation system for orchid enthusiasts.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('gallery') }}" class="text-muted">Gallery</a></li>
+                        <li><a href="{{ url_for('upload') }}" class="text-muted">Upload</a></li>
+                        <li><a href="{{ url_for('feedback') }}" class="text-muted">Feedback</a></li>
+                        <li><a href="{{ url_for('search') }}" class="text-muted">Search</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Resources</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-muted">Cultural Tips</a></li>
+                        <li><a href="#" class="text-muted">Growing Guide</a></li>
+                        <li><a href="#" class="text-muted">Taxonomy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">Empowering orchid enthusiasts with AI-enhanced tools since 2025</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <!-- Full Copyright Notice (default) -->
+                    <div class="d-none d-lg-block">
+                        <small class="text-muted" style="font-size: 10px; color: #999999;">
+                            Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.
+                        </small>
+                    </div>
+                    <!-- Short Copyright Notice (mobile/constrained) -->
+                    <div class="d-lg-none">
+                        <small class="text-muted" style="font-size: 11px; color: #999999;">
+                            <a href="#" class="text-muted text-decoration-none copyright-link" 
+                               data-bs-toggle="modal" data-bs-target="#copyrightModal"
+                               title="Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.">
+                                © 2025 Jeffery S. Parham — Licensed to FCOS
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Copyright & Photo Policy Modal -->
+    <div class="modal fade" id="copyrightModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        <i data-feather="info" class="me-2"></i>🌸 Copyright & Photo Policy
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <p class="fw-bold text-primary">Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.</p>
+                    </div>
+                    
+                    <p class="text-light">The Orchid Continuum is built on community trust. Every photo in this gallery is contributed by orchid lovers, researchers, or shared under open licenses.</p>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <span class="me-2">📷</span>
+                                <div>
+                                    <strong class="text-light">Contributors retain full ownership</strong> of their images.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <span class="me-2">🌱</span>
+                                <div>
+                                    <strong class="text-light">Every photo is credited</strong> to its source.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <span class="me-2">✨</span>
+                                <div>
+                                    <strong class="text-light">Sharing photos</strong> helps expand orchid knowledge, supports education, and strengthens conservation.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <span class="me-2">🚫</span>
+                                <div>
+                                    <strong class="text-light">No copyrighted images</strong> are used without permission.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="text-muted mb-3">Together, we are creating a living gallery of orchids for everyone to enjoy.</p>
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                            <i data-feather="upload" class="me-2"></i>Contribute Your Photos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Integration System -->
+    <script src="/static/js/widget_integration.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/image-debug.js"></script>
+    
+    <!-- Initialize Feather icons -->
+    <script>
+        feather.replace();
+        
+        // Initialize tooltips for copyright notices
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+    </script>
+    
+    <!-- Tawk.to chat widget removed - using Replit Agent instead -->
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

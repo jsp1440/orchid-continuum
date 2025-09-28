@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% block title %}SVO Analysis - Orchid Language Processing{% endblock %}
+
+{% block head %}
+<style>
+    .svo-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
+    }
+    
+    .svo-header {
+        background: linear-gradient(135deg, #3aa681 0%, #2c8563 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .svo-form {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .url-input-group {
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .url-input {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .url-input:focus {
+        border-color: #3aa681;
+        box-shadow: 0 0 0 0.2rem rgba(58, 166, 129, 0.25);
+    }
+    
+    .btn-add-url {
+        background: #3aa681;
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-add-url:hover {
+        background: #2c8563;
+        transform: translateY(-1px);
+    }
+    
+    .btn-remove-url {
+        background: #dc3545;
+        border: none;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-analyze {
+        background: linear-gradient(135deg, #3aa681 0%, #2c8563 100%);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .btn-analyze:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(58, 166, 129, 0.3);
+    }
+    
+    .btn-analyze:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .progress-container {
+        display: none;
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .progress-bar {
+        height: 25px;
+        border-radius: 12px;
+        background: linear-gradient(90deg, #3aa681 0%, #58c4a3 100%);
+        transition: width 0.5s ease;
+    }
+    
+    .recent-sessions {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .session-card {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .session-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-running { background: #fff3cd; color: #856404; }
+    .status-failed { background: #f8d7da; color: #721c24; }
+    .status-pending { background: #d1ecf1; color: #0c5460; }
+    
+    .suggested-urls {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .url-suggestion {
+        display: inline-block;
+        background: #3aa681;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        margin: 0.25rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .url-suggestion:hover {
+        background: #2c8563;
+        transform: scale(1.05);
+    }
+
+    .orchid-icon {
+        color: #3aa681;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Header -->
+    <div class="svo-header">
+        <h1><i data-feather="search" class="orchid-icon"></i>SVO Language Analysis</h1>
+        <p class="lead mb-0">Analyze orchid websites for Subject-Verb-Object patterns</p>
+        <small>Extract linguistic patterns from orchid cultivation sites, nurseries, and botanical resources</small>
+    </div>
+
+    <div class="row">
+        <!-- Analysis Form -->
+        <div class="col-lg-8">
+            <div class="svo-form">
+                <h3><i data-feather="play-circle" class="orchid-icon"></i>Start New Analysis</h3>
+                <p class="text-muted">Enter URLs of orchid websites to analyze for Subject-Verb-Object patterns.</p>
+                
+                <!-- Suggested URLs -->
+                <div class="suggested-urls">
+                    <h6><i data-feather="star" class="orchid-icon"></i>Popular Orchid Sites:</h6>
+                    <span class="url-suggestion" onclick="addSuggestedUrl('https://sunsetvalleyorchids.com')">Sunset Valley Orchids</span>
+                    <span class="url-suggestion" onclick="addSuggestedUrl('https://aos.org')">American Orchid Society</span>
+                    <span class="url-suggestion" onclick="addSuggestedUrl('https://repotme.com')">repotme.com</span>
+                    <span class="url-suggestion" onclick="addSuggestedUrl('https://orchidwire.com')">OrchidWire</span>
+                    <span class="url-suggestion" onclick="addSuggestedUrl('https://orchids.org')">orchids.org</span>
+                </div>
+
+                <form id="svoAnalysisForm">
+                    <div class="mb-3">
+                        <label for="sessionName" class="form-label">
+                            <i data-feather="tag" class="orchid-icon"></i>Analysis Session Name
+                        </label>
+                        <input type="text" class="form-control url-input" id="sessionName" 
+                               placeholder="e.g., Orchid Care Terminology Study" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i data-feather="link" class="orchid-icon"></i>Website URLs to Analyze
+                        </label>
+                        <div id="urlInputs">
+                            <div class="url-input-group">
+                                <div class="input-group">
+                                    <input type="url" class="form-control url-input" 
+                                           placeholder="https://example-orchid-site.com" required>
+                                    <button type="button" class="btn btn-remove-url" onclick="removeUrlInput(this)" style="display: none;">
+                                        <i data-feather="x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-add-url mt-2" onclick="addUrlInput()">
+                            <i data-feather="plus"></i> Add Another URL
+                        </button>
+                    </div>
+
+                    <button type="submit" class="btn btn-analyze" id="analyzeBtn">
+                        <i data-feather="zap"></i> Start SVO Analysis
+                    </button>
+                </form>
+
+                <!-- Progress Display -->
+                <div class="progress-container" id="progressContainer">
+                    <h5><i data-feather="activity" class="orchid-icon"></i>Analysis in Progress</h5>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div id="progressStatus">Initializing analysis...</div>
+                    <div id="progressDetails" class="mt-2 text-muted"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="col-lg-4">
+            <div class="recent-sessions">
+                <h4><i data-feather="clock" class="orchid-icon"></i>Recent Analysis Sessions</h4>
+                
+                {% if recent_sessions %}
+                    {% for session in recent_sessions %}
+                    <div class="session-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">{{ session.session_name }}</h6>
+                            <span class="status-badge status-{{ session.status }}">{{ session.status }}</span>
+                        </div>
+                        
+                        <div class="text-muted small mb-2">
+                            <i data-feather="calendar"></i> {{ session.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i data-feather="link"></i> {{ session.urls|length }} URL(s) |
+                                <i data-feather="hash"></i> {{ session.total_svo_found }} SVO patterns
+                            </small>
+                        </div>
+                        
+                        {% if session.status == 'completed' %}
+                            <a href="{{ url_for('svo_analysis.view_results', session_id=session.id) }}" 
+                               class="btn btn-sm btn-outline-success">
+                                <i data-feather="eye"></i> View Results
+                            </a>
+                        {% elif session.status == 'running' %}
+                            <button class="btn btn-sm btn-outline-warning" onclick="checkProgress('{{ session.id }}')">
+                                <i data-feather="refresh-cw"></i> Check Progress
+                            </button>
+                        {% elif session.status == 'failed' %}
+                            <small class="text-danger">
+                                <i data-feather="alert-circle"></i> {{ session.error_message[:50] }}...
+                            </small>
+                        {% endif %}
+                        
+                        <button class="btn btn-sm btn-outline-danger float-end" 
+                                onclick="deleteSession('{{ session.id }}')">
+                            <i data-feather="trash-2"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i data-feather="inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p>No analysis sessions yet.<br>Start your first SVO analysis!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSessionId = null;
+let progressInterval = null;
+
+// Add URL input field
+function addUrlInput() {
+    const urlInputs = document.getElementById('urlInputs');
+    const newInputGroup = document.createElement('div');
+    newInputGroup.className = 'url-input-group';
+    newInputGroup.innerHTML = `
+        <div class="input-group">
+            <input type="url" class="form-control url-input" 
+                   placeholder="https://example-orchid-site.com" required>
+            <button type="button" class="btn btn-remove-url" onclick="removeUrlInput(this)">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+    `;
+    urlInputs.appendChild(newInputGroup);
+    safeFeatherReplace();
+}
+
+// Remove URL input field
+function removeUrlInput(button) {
+    const urlInputGroup = button.closest('.url-input-group');
+    urlInputGroup.remove();
+}
+
+// Add suggested URL
+function addSuggestedUrl(url) {
+    const inputs = document.querySelectorAll('#urlInputs input[type="url"]');
+    
+    // Check if URL already exists
+    for (let input of inputs) {
+        if (input.value === url) {
+            input.focus();
+            return;
+        }
+    }
+    
+    // Find first empty input or add new one
+    let emptyInput = null;
+    for (let input of inputs) {
+        if (!input.value.trim()) {
+            emptyInput = input;
+            break;
+        }
+    }
+    
+    if (!emptyInput) {
+        addUrlInput();
+        const newInputs = document.querySelectorAll('#urlInputs input[type="url"]');
+        emptyInput = newInputs[newInputs.length - 1];
+    }
+    
+    emptyInput.value = url;
+    emptyInput.focus();
+}
+
+// Handle form submission
+document.getElementById('svoAnalysisForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const sessionName = document.getElementById('sessionName').value.trim();
+    const urlInputs = document.querySelectorAll('#urlInputs input[type="url"]');
+    
+    // Collect URLs
+    const urls = [];
+    urlInputs.forEach(input => {
+        const url = input.value.trim();
+        if (url) {
+            urls.push(url);
+        }
+    });
+    
+    if (urls.length === 0) {
+        alert('Please enter at least one URL to analyze.');
+        return;
+    }
+    
+    // Disable form
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('analyzeBtn').innerHTML = '<i data-feather="loader"></i> Starting Analysis...';
+    safeFeatherReplace();
+    
+    try {
+        // Start analysis
+        const response = await fetch('/svo/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_name: sessionName,
+                urls: urls
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentSessionId = result.session_id;
+            showProgress();
+            startProgressTracking();
+        } else {
+            alert('Error starting analysis: ' + result.error);
+            resetForm();
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to start analysis. Please try again.');
+        resetForm();
+    }
+});
+
+// Show progress container
+function showProgress() {
+    document.getElementById('progressContainer').style.display = 'block';
+    document.querySelector('.svo-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Start progress tracking
+function startProgressTracking() {
+    progressInterval = setInterval(checkCurrentProgress, 2000);
+}
+
+// Check current progress
+async function checkCurrentProgress() {
+    if (!currentSessionId) return;
+    
+    try {
+        const response = await fetch(`/svo/status/${currentSessionId}`);
+        const status = await response.json();
+        
+        updateProgress(status);
+        
+        if (status.status === 'completed' || status.status === 'failed') {
+            clearInterval(progressInterval);
+            
+            if (status.status === 'completed') {
+                setTimeout(() => {
+                    window.location.href = `/svo/results/${currentSessionId}`;
+                }, 2000);
+            } else {
+                document.getElementById('progressStatus').innerHTML = 
+                    '<i data-feather="alert-circle"></i> Analysis failed: ' + (status.error_message || 'Unknown error');
+                safeFeatherReplace();
+                resetForm();
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error checking progress:', error);
+    }
+}
+
+// Update progress display
+function updateProgress(status) {
+    const progressBar = document.getElementById('progressBar');
+    const progressStatus = document.getElementById('progressStatus');
+    const progressDetails = document.getElementById('progressDetails');
+    
+    progressBar.style.width = status.progress_percent + '%';
+    
+    let statusText = '';
+    let detailsText = '';
+    
+    switch (status.status) {
+        case 'pending':
+            statusText = '<i data-feather="clock"></i> Waiting to start...';
+            break;
+        case 'running':
+            statusText = '<i data-feather="zap"></i> Analyzing websites...';
+            if (status.current_url_index >= 0 && status.urls) {
+                const currentUrl = status.urls[status.current_url_index];
+                detailsText = `Processing URL ${status.current_url_index + 1} of ${status.urls.length}: ${currentUrl}`;
+            }
+            break;
+        case 'completed':
+            statusText = '<i data-feather="check-circle"></i> Analysis completed successfully!';
+            detailsText = `Found ${status.total_svo_found} SVO patterns. Redirecting to results...`;
+            break;
+        case 'failed':
+            statusText = '<i data-feather="x-circle"></i> Analysis failed';
+            detailsText = status.error_message || 'Unknown error occurred';
+            break;
+    }
+    
+    progressStatus.innerHTML = statusText;
+    progressDetails.innerHTML = detailsText;
+    safeFeatherReplace();
+}
+
+// Reset form
+function resetForm() {
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('analyzeBtn').innerHTML = '<i data-feather="zap"></i> Start SVO Analysis';
+    document.getElementById('progressContainer').style.display = 'none';
+    currentSessionId = null;
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+    safeFeatherReplace();
+}
+
+// Check progress for existing session
+function checkProgress(sessionId) {
+    currentSessionId = sessionId;
+    showProgress();
+    startProgressTracking();
+}
+
+// Delete session
+async function deleteSession(sessionId) {
+    if (!confirm('Are you sure you want to delete this analysis session?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/svo/delete/${sessionId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Failed to delete session');
+        }
+        
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        alert('Failed to delete session');
+    }
+}
+
+// Initialize feather icons when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    safeFeatherReplace();
+});
+</script>
+{% endblock %}

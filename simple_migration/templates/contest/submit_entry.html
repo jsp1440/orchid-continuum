@@ -1,0 +1,611 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Contest Entry - Monthly Show & Tell{% endblock %}
+
+{% block extra_css %}
+<style>
+.submission-header {
+    background: linear-gradient(135deg, #6B3FA0 0%, #28a745 100%);
+    color: white;
+    padding: 50px 0;
+    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 40px;
+}
+
+.submission-form {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.form-section {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section-title {
+    color: #6B3FA0;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-upload-area {
+    border: 3px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-upload-area:hover {
+    border-color: #6B3FA0;
+    background: #f5f3ff;
+}
+
+.image-upload-area.drag-over {
+    border-color: #28a745;
+    background: #f0fff4;
+}
+
+.preview-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 12px;
+    margin: 20px auto;
+    display: block;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.category-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.category-card {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.category-card:hover {
+    border-color: #6B3FA0;
+    background: #f5f3ff;
+}
+
+.category-card.selected {
+    border-color: #6B3FA0;
+    background: #6B3FA0;
+    color: white;
+}
+
+.category-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.category-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.category-desc {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.submission-rules {
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.rules-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0 0 0;
+}
+
+.rules-list li {
+    padding: 8px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.rules-list li:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.current-submissions {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.submission-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.submission-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #e9ecef;
+}
+
+.submission-info {
+    flex: 1;
+}
+
+.submission-name {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.submission-details {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.submission-status {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.submission-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.submission-status.approved {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.char-counter {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 5px;
+}
+
+.char-counter.warning {
+    color: #e74c3c;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .submission-header {
+        padding: 30px 20px;
+    }
+    
+    .submission-form {
+        padding: 25px 20px;
+    }
+    
+    .category-selection {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .image-upload-area {
+        padding: 30px 20px;
+    }
+    
+    .submission-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="submission-container">
+    <!-- Header -->
+    <div class="submission-header">
+        <div class="container">
+            <h1 class="display-5 mb-3">Submit Your Orchid Entry</h1>
+            <p class="lead mb-3">
+                {{ period.month_name }} {{ period.year }} Contest
+            </p>
+            <p class="mb-0">
+                Deadline: <strong>{{ period.deadline_str }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Submission Rules -->
+        <div class="submission-rules">
+            <h5 class="mb-0">
+                <i data-feather="info" class="me-2"></i>
+                Contest Rules & Guidelines
+            </h5>
+            <ul class="rules-list">
+                <li>Submit up to 5 currently blooming orchids per month</li>
+                <li>Each entry must include full orchid name and caption</li>
+                <li>Photos must be your own, taken within the last 30 days</li>
+                <li>Choose the correct category: Species, Hybrids, Cattleyas, or Intergenerics</li>
+                <li>Entries close on the 2nd Thursday at 7:00 PM PST</li>
+                <li>All submissions require admin approval before voting</li>
+            </ul>
+        </div>
+
+        <!-- Current Submissions -->
+        {% if submissions %}
+        <div class="current-submissions">
+            <h5 class="mb-3">
+                <i data-feather="list" class="me-2"></i>
+                Your Current Submissions ({{ submissions|length }}/5)
+            </h5>
+            
+            {% for submission in submissions %}
+            <div class="submission-item">
+                <img src="{{ submission.image_url or '/static/images/placeholder.png' }}" 
+                     alt="{{ submission.orchid_name }}" class="submission-thumb">
+                <div class="submission-info">
+                    <div class="submission-name">{{ submission.orchid_name }}</div>
+                    <div class="submission-details">
+                        {{ submission.category }} • {{ submission.caption[:50] }}{% if submission.caption|length > 50 %}...{% endif %}
+                    </div>
+                </div>
+                <span class="submission-status {{ submission.status }}">
+                    {{ submission.status.title() }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Submission Form -->
+        {% if remaining > 0 %}
+        <div class="submission-form">
+            <form id="entrySubmissionForm">
+                <!-- Image Upload Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i data-feather="camera"></i>
+                        Upload Orchid Photo
+                    </h4>
+                    
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <i data-feather="upload" style="width: 48px; height: 48px; margin-bottom: 15px; color: #6c757d;"></i>
+                        <h5>Click to upload or drag and drop</h5>
+                        <p class="text-muted mb-0">PNG, JPG up to 10MB</p>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <img id="previewImage" class="preview-image" style="display: none;">
+                </div>
+
+                <!-- Orchid Details Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i data-feather="edit-3"></i>
+                        Orchid Information
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="orchidName" class="form-label">
+                                Full Orchid Name * 
+                                <small class="text-muted">(Genus species or Hybrid name)</small>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="orchidName" 
+                                   required placeholder="e.g., Laelia anceps or Cattleya Chocolate Drop">
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Category *</label>
+                            <div class="category-selection">
+                                {% for category in categories %}
+                                <div class="category-card" data-category="{{ category }}">
+                                    <div class="category-icon">
+                                        {% if category == 'Species' %}🌸
+                                        {% elif category == 'Hybrids' %}🌺
+                                        {% elif category == 'Cattleyas' %}🏵️
+                                        {% elif category == 'Intergenerics' %}🌷
+                                        {% endif %}
+                                    </div>
+                                    <div class="category-name">{{ category }}</div>
+                                    <div class="category-desc">
+                                        {% if category == 'Species' %}Natural species
+                                        {% elif category == 'Hybrids' %}Bred varieties
+                                        {% elif category == 'Cattleyas' %}Cattleya alliance
+                                        {% elif category == 'Intergenerics' %}Multi-genus crosses
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" id="selectedCategory" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Caption Section -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i data-feather="message-square"></i>
+                        Caption & Story
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <label for="orchidCaption" class="form-label">
+                            Share your orchid's story *
+                        </label>
+                        <textarea class="form-control" id="orchidCaption" rows="4" required
+                                  maxlength="500" placeholder="Tell us about your orchid - where you got it, growing conditions, what makes it special..."></textarea>
+                        <div class="char-counter" id="charCounter">0/500 characters</div>
+                    </div>
+                </div>
+
+                <!-- Submit Section -->
+                <div class="text-center">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="agreementCheck" required>
+                            <label class="form-check-label" for="agreementCheck">
+                                I confirm this photo is my own work and the orchid is currently blooming
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="/contest" class="btn btn-outline-secondary btn-lg">
+                            <i data-feather="arrow-left" class="me-2"></i>Back to Contest
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i data-feather="send" class="me-2"></i>Submit Entry
+                        </button>
+                    </div>
+                    
+                    <p class="text-muted mt-3 mb-0">
+                        Remaining submissions: <strong>{{ remaining }}</strong>
+                    </p>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="check-circle" style="width: 64px; height: 64px; color: #28a745;" class="mb-3"></i>
+            <h3>All Entries Submitted!</h3>
+            <p class="text-muted mb-4">You've reached the maximum of 5 entries for this month.</p>
+            <a href="/contest" class="btn btn-primary btn-lg">
+                <i data-feather="eye" class="me-2"></i>View Contest
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    initializeUpload();
+    initializeForm();
+});
+
+function initializeUpload() {
+    const uploadArea = document.getElementById('imageUploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const previewImage = document.getElementById('previewImage');
+    
+    // Click to upload
+    uploadArea.addEventListener('click', () => imageInput.click());
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleImageUpload(files[0]);
+        }
+    });
+    
+    // File input change
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleImageUpload(e.target.files[0]);
+        }
+    });
+}
+
+function handleImageUpload(file) {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showOrchidToast('Please select an image file', 'error');
+        return;
+    }
+    
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        showOrchidToast('Image size must be less than 10MB', 'error');
+        return;
+    }
+    
+    // Preview image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const previewImage = document.getElementById('previewImage');
+        previewImage.src = e.target.result;
+        previewImage.style.display = 'block';
+        
+        // Hide upload area text
+        const uploadArea = document.getElementById('imageUploadArea');
+        uploadArea.innerHTML = '';
+        uploadArea.appendChild(previewImage);
+    };
+    reader.readAsDataURL(file);
+    
+    // Store file for submission
+    window.selectedImage = file;
+}
+
+function initializeForm() {
+    // Category selection
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove active from all cards
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+            
+            // Add active to clicked card
+            this.classList.add('selected');
+            
+            // Set hidden input value
+            document.getElementById('selectedCategory').value = this.dataset.category;
+        });
+    });
+    
+    // Character counter
+    const captionInput = document.getElementById('orchidCaption');
+    const charCounter = document.getElementById('charCounter');
+    
+    captionInput.addEventListener('input', function() {
+        const length = this.value.length;
+        charCounter.textContent = `${length}/500 characters`;
+        
+        if (length > 450) {
+            charCounter.classList.add('warning');
+        } else {
+            charCounter.classList.remove('warning');
+        }
+    });
+    
+    // Form submission
+    document.getElementById('entrySubmissionForm').addEventListener('submit', handleSubmission);
+}
+
+function handleSubmission(e) {
+    e.preventDefault();
+    
+    const orchidName = document.getElementById('orchidName').value.trim();
+    const category = document.getElementById('selectedCategory').value;
+    const caption = document.getElementById('orchidCaption').value.trim();
+    const agreement = document.getElementById('agreementCheck').checked;
+    
+    // Validation
+    if (!window.selectedImage) {
+        showOrchidToast('Please upload an orchid photo', 'error');
+        return;
+    }
+    
+    if (!orchidName) {
+        showOrchidToast('Please enter the orchid name', 'error');
+        return;
+    }
+    
+    if (!category) {
+        showOrchidToast('Please select a category', 'error');
+        return;
+    }
+    
+    if (!caption) {
+        showOrchidToast('Please add a caption', 'error');
+        return;
+    }
+    
+    if (!agreement) {
+        showOrchidToast('Please confirm the agreement', 'error');
+        return;
+    }
+    
+    // Disable submit button
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-feather="loader" class="me-2"></i>Submitting...';
+    feather.replace();
+    
+    // For demo, we'll use a placeholder image URL
+    // In real implementation, upload the image first
+    const imageUrl = '/static/images/placeholder.png';
+    
+    const entryData = {
+        orchid_name: orchidName,
+        category: category,
+        caption: caption,
+        image_url: imageUrl
+    };
+    
+    fetch('/api/contest/submit', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entryData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showOrchidToast('Entry submitted successfully! Pending admin approval.', 'success');
+            setTimeout(() => {
+                window.location.href = '/contest';
+            }, 2000);
+        } else {
+            showOrchidToast(data.error || 'Error submitting entry', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-feather="send" class="me-2"></i>Submit Entry';
+            feather.replace();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showOrchidToast('Network error occurred', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-feather="send" class="me-2"></i>Submit Entry';
+        feather.replace();
+    });
+}
+</script>
+{% endblock %}

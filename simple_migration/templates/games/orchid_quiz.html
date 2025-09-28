@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Orchid Quiz - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-dark">
+                <div class="card-body text-center">
+                    <h1 class="display-5 text-success mb-3">
+                        <i data-feather="help-circle" class="me-3"></i>
+                        Orchid Identification Quiz
+                    </h1>
+                    <p class="lead text-light">Can you identify these beautiful orchids?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Game Area -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark border-success">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-success">Question <span id="questionNumber">1</span></h4>
+                    <div class="text-light">
+                        <strong>Score: <span id="score">0</span></strong>
+                    </div>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Loading State -->
+                    <div id="loadingState" class="py-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-light mt-3">Loading orchid quiz...</p>
+                    </div>
+
+                    <!-- Quiz Question -->
+                    <div id="quizContent" style="display: none;">
+                        <!-- Orchid Image -->
+                        <div class="mb-4">
+                            <img id="orchidImage" src="" alt="Orchid to identify" 
+                                 class="img-fluid rounded shadow" style="max-height: 400px; object-fit: cover;">
+                        </div>
+
+                        <!-- Question -->
+                        <h5 class="text-light mb-4">What is the name of this orchid?</h5>
+
+                        <!-- Hint -->
+                        <div id="hintSection" class="mb-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <i data-feather="lightbulb" class="me-2"></i>
+                                <strong>Hint:</strong> <span id="hintText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Multiple Choice Options -->
+                        <div id="optionsContainer" class="row g-3 mb-4">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-center gap-3">
+                            <button id="hintBtn" class="btn btn-outline-info">
+                                <i data-feather="help-circle" class="me-2"></i>Show Hint
+                            </button>
+                            <button id="nextBtn" class="btn btn-success" style="display: none;">
+                                <i data-feather="arrow-right" class="me-2"></i>Next Question
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Complete -->
+                    <div id="quizComplete" style="display: none;">
+                        <div class="py-5">
+                            <i data-feather="award" style="width: 4rem; height: 4rem;" class="text-warning mb-3"></i>
+                            <h3 class="text-success mb-3">Quiz Complete!</h3>
+                            <p class="text-light mb-4">
+                                You scored <strong id="finalScore">0</strong> out of <strong id="totalQuestions">10</strong> questions!
+                            </p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <button id="playAgainBtn" class="btn btn-success btn-lg">
+                                    <i data-feather="refresh-cw" class="me-2"></i>Play Again
+                                </button>
+                                <a href="{{ url_for('games.games_home') }}" class="btn btn-outline-light btn-lg">
+                                    <i data-feather="arrow-left" class="me-2"></i>Back to Games
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('games.games_home') }}" class="btn btn-outline-light">
+                <i data-feather="arrow-left" class="me-2"></i>Back to Games
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+class OrchidQuiz {
+    constructor() {
+        this.currentQuestion = 0;
+        this.score = 0;
+        this.totalQuestions = 10;
+        this.correctAnswer = '';
+        this.hasUsedHint = false;
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadQuestion();
+    }
+    
+    bindEvents() {
+        document.getElementById('hintBtn').addEventListener('click', () => this.showHint());
+        document.getElementById('nextBtn').addEventListener('click', () => this.nextQuestion());
+        document.getElementById('playAgainBtn').addEventListener('click', () => this.restart());
+    }
+    
+    async loadQuestion() {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('quizContent').style.display = 'none';
+        
+        try {
+            const response = await fetch('/games/api/quiz-question');
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            this.correctAnswer = data.correct_answer;
+            this.hasUsedHint = false;
+            
+            // Update UI
+            document.getElementById('orchidImage').src = data.image_url;
+            document.getElementById('hintText').textContent = data.hint;
+            document.getElementById('questionNumber').textContent = this.currentQuestion + 1;
+            
+            // Create option buttons
+            this.createOptions(data.options);
+            
+            // Hide hint section and next button
+            document.getElementById('hintSection').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('hintBtn').style.display = 'inline-block';
+            
+            // Show quiz content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('quizContent').style.display = 'block';
+            
+        } catch (error) {
+            console.error('Error loading question:', error);
+            alert('Error loading question. Please try again.');
+        }
+    }
+    
+    createOptions(options) {
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = '';
+        
+        options.forEach((option, index) => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
+            
+            const button = document.createElement('button');
+            button.className = 'btn btn-outline-light btn-lg w-100 option-btn';
+            button.textContent = option;
+            button.addEventListener('click', () => this.selectAnswer(option, button));
+            
+            col.appendChild(button);
+            container.appendChild(col);
+        });
+    }
+    
+    selectAnswer(selectedAnswer, button) {
+        const isCorrect = selectedAnswer === this.correctAnswer;
+        
+        // Disable all option buttons
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.disabled = true;
+            
+            if (btn.textContent === this.correctAnswer) {
+                btn.classList.remove('btn-outline-light');
+                btn.classList.add('btn-success');
+            } else if (btn === button && !isCorrect) {
+                btn.classList.remove('btn-outline-light');
+                btn.classList.add('btn-danger');
+            }
+        });
+        
+        // Update score
+        if (isCorrect) {
+            const points = this.hasUsedHint ? 1 : 2; // Less points if hint was used
+            this.score += points;
+            document.getElementById('score').textContent = this.score;
+        }
+        
+        // Hide hint button, show next button
+        document.getElementById('hintBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'inline-block';
+    }
+    
+    showHint() {
+        document.getElementById('hintSection').style.display = 'block';
+        document.getElementById('hintBtn').style.display = 'none';
+        this.hasUsedHint = true;
+        feather.replace();
+    }
+    
+    nextQuestion() {
+        this.currentQuestion++;
+        
+        if (this.currentQuestion >= this.totalQuestions) {
+            this.showResults();
+        } else {
+            this.loadQuestion();
+        }
+    }
+    
+    showResults() {
+        document.getElementById('quizContent').style.display = 'none';
+        document.getElementById('finalScore').textContent = this.score;
+        document.getElementById('totalQuestions').textContent = this.totalQuestions;
+        document.getElementById('quizComplete').style.display = 'block';
+        
+        // Submit score
+        this.submitScore();
+        
+        feather.replace();
+    }
+    
+    async submitScore() {
+        try {
+            await fetch('/games/api/submit-score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    game_type: 'orchid_quiz',
+                    score: this.score
+                })
+            });
+        } catch (error) {
+            console.error('Error submitting score:', error);
+        }
+    }
+    
+    restart() {
+        this.currentQuestion = 0;
+        this.score = 0;
+        this.correctAnswer = '';
+        this.hasUsedHint = false;
+        
+        document.getElementById('score').textContent = '0';
+        document.getElementById('quizComplete').style.display = 'none';
+        
+        this.loadQuestion();
+    }
+}
+
+// Initialize quiz when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    new OrchidQuiz();
+});
+</script>
+
+<style>
+.option-btn {
+    transition: all 0.3s ease;
+    min-height: 60px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.option-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+#orchidImage {
+    border: 3px solid #198754;
+    transition: transform 0.3s ease;
+}
+
+#orchidImage:hover {
+    transform: scale(1.02);
+}
+
+.alert {
+    border: none;
+    background: rgba(13, 202, 240, 0.1);
+    border-left: 4px solid #0dcaf0;
+}
+</style>
+{% endblock %}

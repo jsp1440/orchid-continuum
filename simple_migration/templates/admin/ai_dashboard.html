@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}AI Batch Processing Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i data-feather="cpu" class="me-2"></i>
+                    AI Batch Processing Dashboard
+                </h1>
+                <div class="d-flex gap-2">
+                    <button id="refreshBtn" class="btn btn-outline-secondary">
+                        <i data-feather="refresh-cw" class="me-1"></i>Refresh
+                    </button>
+                    <button id="startBtn" class="btn btn-primary">
+                        <i data-feather="play" class="me-1"></i>Start AI Analysis
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>
+                        <i data-feather="stop-circle" class="me-1"></i>Stop Processing
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Total Orchids</h4>
+                                    <h2 id="totalOrchids">0</h2>
+                                </div>
+                                <i data-feather="database" style="width: 48px; height: 48px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Processed</h4>
+                                    <h2 id="processedCount">0</h2>
+                                </div>
+                                <i data-feather="check-circle" style="width: 48px; height: 48px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Errors</h4>
+                                    <h2 id="errorsCount">0</h2>
+                                </div>
+                                <i data-feather="alert-triangle" style="width: 48px; height: 48px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Rate</h4>
+                                    <h2 id="processingRate">0</h2>
+                                    <small>/min</small>
+                                </div>
+                                <i data-feather="activity" style="width: 48px; height: 48px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Processing Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Status: <span id="processingStatus" class="badge bg-secondary">Idle</span></span>
+                            <span id="progressPercentage">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Current Orchid:</strong></p>
+                            <p id="currentOrchid" class="text-muted">None</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Estimated Completion:</strong></p>
+                            <p id="estimatedCompletion" class="text-muted">N/A</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>
+                        Processing Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="limitInput" class="form-label">Batch Limit (0 = All)</label>
+                                <input type="number" class="form-control" id="limitInput" min="0" max="1000" value="10" placeholder="Enter batch size">
+                                <div class="form-text">Process up to this many orchids in this batch (0 for all)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">OpenAI API Status</label>
+                                <div id="apiStatus" class="alert alert-warning">
+                                    <i data-feather="alert-triangle" class="me-2"></i>
+                                    API key needs to be configured
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart-2" class="me-2"></i>
+                        Database Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="dbStats">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-primary" id="totalOrchidsDb">0</h3>
+                                <p class="mb-0">Total Orchids</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-success" id="withAiAnalysis">0</h3>
+                                <p class="mb-0">With AI Analysis</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-info" id="withImages">0</h3>
+                                <p class="mb-0">With Images</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-warning" id="needingAi">0</h3>
+                                <p class="mb-0">Needing AI Analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let updateInterval;
+
+function updateProgress() {
+    fetch('/admin/ai-batch-progress')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const progress = data.progress;
+                
+                // Update progress cards
+                document.getElementById('totalOrchids').textContent = progress.total_orchids;
+                document.getElementById('processedCount').textContent = progress.processed;
+                document.getElementById('errorsCount').textContent = progress.errors;
+                document.getElementById('processingRate').textContent = progress.processing_rate.toFixed(1);
+                
+                // Update progress bar
+                const percentage = progress.percentage || 0;
+                document.getElementById('progressPercentage').textContent = percentage.toFixed(1) + '%';
+                document.getElementById('progressBar').style.width = percentage + '%';
+                
+                // Update status
+                const statusElement = document.getElementById('processingStatus');
+                statusElement.textContent = progress.status;
+                statusElement.className = 'badge bg-' + getStatusClass(progress.status);
+                
+                // Update current orchid
+                if (progress.current_orchid) {
+                    document.getElementById('currentOrchid').textContent = 
+                        `${progress.current_orchid.name} (ID: ${progress.current_orchid.id})`;
+                } else {
+                    document.getElementById('currentOrchid').textContent = 'None';
+                }
+                
+                // Update estimated completion
+                if (progress.estimated_completion) {
+                    const date = new Date(progress.estimated_completion * 1000);
+                    document.getElementById('estimatedCompletion').textContent = date.toLocaleString();
+                } else {
+                    document.getElementById('estimatedCompletion').textContent = 'N/A';
+                }
+                
+                // Update button states
+                const isRunning = progress.status === 'processing' || progress.status === 'starting';
+                document.getElementById('startBtn').disabled = isRunning;
+                document.getElementById('stopBtn').disabled = !isRunning;
+            }
+        })
+        .catch(error => console.error('Error updating progress:', error));
+}
+
+function getStatusClass(status) {
+    switch(status) {
+        case 'processing': return 'primary';
+        case 'completed': return 'success';
+        case 'stopped': return 'warning';
+        case 'error': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function startProcessing() {
+    const limit = document.getElementById('limitInput').value;
+    const requestBody = limit && limit !== '0' ? {limit: parseInt(limit)} : {};
+    
+    fetch('/admin/start-ai-batch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('AI batch processing started!');
+            startAutoUpdate();
+        } else {
+            alert('Error starting processing: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error starting processing');
+    });
+}
+
+function stopProcessing() {
+    fetch('/admin/stop-ai-batch', {method: 'POST'})
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Stop request sent');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error stopping processing');
+        });
+}
+
+function startAutoUpdate() {
+    if (updateInterval) clearInterval(updateInterval);
+    updateInterval = setInterval(updateProgress, 2000); // Update every 2 seconds
+}
+
+function stopAutoUpdate() {
+    if (updateInterval) clearInterval(updateInterval);
+}
+
+function loadDbStats() {
+    fetch('/api/database-stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalOrchidsDb').textContent = data.total_orchids || 0;
+            document.getElementById('withAiAnalysis').textContent = data.with_ai_analysis || 0;
+            document.getElementById('withImages').textContent = data.with_images || 0;
+            document.getElementById('needingAi').textContent = data.needing_ai || 0;
+        })
+        .catch(error => console.error('Error loading DB stats:', error));
+}
+
+// Event listeners
+document.getElementById('startBtn').addEventListener('click', startProcessing);
+document.getElementById('stopBtn').addEventListener('click', stopProcessing);
+document.getElementById('refreshBtn').addEventListener('click', function() {
+    updateProgress();
+    loadDbStats();
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    updateProgress();
+    loadDbStats();
+    startAutoUpdate();
+});
+
+// Stop auto-update when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        stopAutoUpdate();
+    } else {
+        startAutoUpdate();
+    }
+});
+</script>
+
+{% endblock %}

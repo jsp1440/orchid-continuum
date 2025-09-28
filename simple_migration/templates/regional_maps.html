@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Regional Orchid Maps - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="map" class="me-2"></i>Regional Orchid Maps
+            </h1>
+            <p class="lead text-muted">
+                Detailed regional views of orchid distributions across major biogeographic zones
+            </p>
+        </div>
+    </div>
+    
+    <!-- Region Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Select Region
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-success h-100 region-card" data-region="neotropics" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="sun" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Neotropics</h5>
+                                    <p class="small text-muted">Central & South America</p>
+                                    <span class="badge bg-success">1,245 species</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-info h-100 region-card" data-region="southeast-asia" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="cloud-rain" class="text-info mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Southeast Asia</h5>
+                                    <p class="small text-muted">Malaysia, Indonesia, Philippines</p>
+                                    <span class="badge bg-info">987 species</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-warning h-100 region-card" data-region="africa-madagascar" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="sunrise" class="text-warning mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Africa & Madagascar</h5>
+                                    <p class="small text-muted">Continental Africa & Islands</p>
+                                    <span class="badge bg-warning">456 species</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-primary h-100 region-card" data-region="north-america" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="snowflake" class="text-primary mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>North America</h5>
+                                    <p class="small text-muted">USA, Canada, Mexico</p>
+                                    <span class="badge bg-primary">234 species</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-secondary h-100 region-card" data-region="europe" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="mountain" class="text-secondary mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Europe</h5>
+                                    <p class="small text-muted">Mediterranean & Temperate</p>
+                                    <span class="badge bg-secondary">189 species</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card border-danger h-100 region-card" data-region="oceania" style="cursor: pointer;">
+                                <div class="card-body text-center">
+                                    <i data-feather="anchor" class="text-danger mb-3" style="width: 48px; height: 48px;"></i>
+                                    <h5>Oceania</h5>
+                                    <p class="small text-muted">Australia, New Zealand, Pacific</p>
+                                    <span class="badge bg-danger">167 species</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Regional Map -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="regionTitle">
+                        <i data-feather="map-pin" class="me-2"></i>Select a region above
+                    </h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" id="toggleSatellite">
+                            <i data-feather="camera" class="me-1"></i>Satellite
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" id="toggleTerrain">
+                            <i data-feather="mountain" class="me-1"></i>Terrain
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" id="exportRegion">
+                            <i data-feather="download" class="me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="regionalMapContainer" style="height: 600px; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center text-muted">
+                            <i data-feather="map" style="width: 64px; height: 64px;" class="mb-3"></i>
+                            <h4>Choose a Region</h4>
+                            <p>Select one of the biogeographic regions above to explore detailed orchid distributions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Regional Statistics -->
+    <div class="row mt-4" id="regionStats" style="display: none;">
+        <div class="col-md-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <h4 id="regionSpecies" class="text-primary">0</h4>
+                    <small>Species Count</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <h4 id="regionGenera" class="text-success">0</h4>
+                    <small>Genera Count</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <h4 id="regionEndemic" class="text-warning">0</h4>
+                    <small>Endemic Species</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center">
+                    <h4 id="regionThreatened" class="text-danger">0</h4>
+                    <small>Threatened Species</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Region card click handlers
+    document.querySelectorAll('.region-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const region = this.dataset.region;
+            loadRegionalMap(region);
+        });
+    });
+});
+
+function loadRegionalMap(region) {
+    const container = document.getElementById('regionalMapContainer');
+    const title = document.getElementById('regionTitle');
+    const stats = document.getElementById('regionStats');
+    
+    // Region data
+    const regionData = {
+        'neotropics': {
+            title: 'Neotropical Region - Central & South America',
+            species: 1245,
+            genera: 156,
+            endemic: 892,
+            threatened: 67,
+            mapContent: createNeotropicalMap()
+        },
+        'southeast-asia': {
+            title: 'Southeast Asian Region - Tropical Asia',
+            species: 987,
+            genera: 134,
+            endemic: 756,
+            threatened: 89,
+            mapContent: createSoutheastAsianMap()
+        },
+        'africa-madagascar': {
+            title: 'African Region - Continental Africa & Madagascar',
+            species: 456,
+            genera: 89,
+            endemic: 334,
+            threatened: 45,
+            mapContent: createAfricanMap()
+        },
+        'north-america': {
+            title: 'North American Region - Temperate Americas',
+            species: 234,
+            genera: 67,
+            endemic: 123,
+            threatened: 23,
+            mapContent: createNorthAmericanMap()
+        },
+        'europe': {
+            title: 'European Region - Mediterranean & Temperate',
+            species: 189,
+            genera: 45,
+            endemic: 87,
+            threatened: 34,
+            mapContent: createEuropeanMap()
+        },
+        'oceania': {
+            title: 'Oceanian Region - Australia & Pacific',
+            species: 167,
+            genera: 78,
+            endemic: 145,
+            threatened: 12,
+            mapContent: createOceanianMap()
+        }
+    };
+    
+    const data = regionData[region];
+    if (!data) return;
+    
+    // Update title
+    title.innerHTML = `<i data-feather="map-pin" class="me-2"></i>${data.title}`;
+    
+    // Show loading
+    container.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading ${data.title}...</p>
+        </div>
+    `;
+    
+    // Load map content
+    setTimeout(() => {
+        container.innerHTML = data.mapContent;
+        
+        // Update statistics
+        document.getElementById('regionSpecies').textContent = data.species.toLocaleString();
+        document.getElementById('regionGenera').textContent = data.genera.toLocaleString();
+        document.getElementById('regionEndemic').textContent = data.endemic.toLocaleString();
+        document.getElementById('regionThreatened').textContent = data.threatened.toLocaleString();
+        
+        stats.style.display = 'flex';
+        feather.replace();
+        
+        console.log(`🗺️ Loaded ${region} regional map`);
+    }, 1500);
+}
+
+function createNeotropicalMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #28a745, #ffc107, #dc3545); border-radius: 10px; position: relative; overflow: hidden;">
+                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.1);"></div>
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🌺 Neotropical Orchid Hotspots</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇨🇴 Colombia</h5>
+                                <p class="small mb-1">4,270+ species</p>
+                                <p class="small">World's richest orchid flora</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇪🇨 Ecuador</h5>
+                                <p class="small mb-1">3,500+ species</p>
+                                <p class="small">Cloud forest specialists</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇧🇷 Brazil</h5>
+                                <p class="small mb-1">2,400+ species</p>
+                                <p class="small">Atlantic Forest endemics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createSoutheastAsianMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #17a2b8, #28a745, #ffc107); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🌿 Southeast Asian Orchid Centers</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇲🇾 Borneo</h5>
+                                <p class="small">2,500+ species, epiphyte paradise</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇵🇭 Philippines</h5>
+                                <p class="small">1,100+ species, island endemics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createAfricanMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(90deg, #fd7e14, #dc3545, #6f42c1); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🌍 African Orchid Diversity</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇲🇬 Madagascar</h5>
+                                <p class="small">85% endemic species</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇿🇦 South Africa</h5>
+                                <p class="small">Terrestrial specialists</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createNorthAmericanMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(180deg, #6c757d, #198754, #ffc107); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🍁 North American Orchids</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>Pacific Northwest</h5>
+                                <p class="small">Temperate rainforest</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>Great Lakes</h5>
+                                <p class="small">Bog specialists</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>Florida</h5>
+                                <p class="small">Subtropical diversity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createEuropeanMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(45deg, #6f42c1, #0d6efd, #198754); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🏔️ European Orchid Regions</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>Mediterranean</h5>
+                                <p class="small">Ophrys diversity hotspot</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>Alpine</h5>
+                                <p class="small">Cold-adapted species</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createOceanianMap() {
+    return `
+        <div class="p-4">
+            <div style="height: 500px; background: linear-gradient(135deg, #fd7e14, #dc3545, #0dcaf0); border-radius: 10px; position: relative;">
+                <div class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                    <h3>🦘 Oceanian Orchid Endemics</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇦🇺 Australia</h5>
+                                <p class="small">Unique terrestrial genera</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark bg-opacity-75 p-3 rounded mb-3">
+                                <h5>🇳🇿 New Zealand</h5>
+                                <p class="small">Isolated evolution</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

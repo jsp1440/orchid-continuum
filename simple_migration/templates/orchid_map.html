@@ -1,0 +1,812 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Orchid World Map - Five Cities Orchid Society{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+    #map { 
+        height: 600px; 
+        border-radius: 0.375rem; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .map-control-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        max-height: 580px;
+        overflow-y: auto;
+    }
+    
+    .filter-section {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1rem;
+    }
+    
+    .filter-section:last-child {
+        border-bottom: none;
+    }
+    
+    .filter-section h6 {
+        color: #6b46c1;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .filter-checkbox {
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-checkbox input[type="checkbox"] {
+        margin-right: 0.5rem;
+        accent-color: #6b46c1;
+    }
+    
+    .timeline-slider {
+        width: 100%;
+        margin: 1rem 0;
+    }
+    
+    .thematic-controls {
+        background: linear-gradient(135deg, #6b46c1 0%, #8b5cf6 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .export-controls {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .orchid-popup {
+        max-width: 300px;
+    }
+    
+    .orchid-popup img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .map-legend {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 1000;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .stats-panel {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .time-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .play-button {
+        background: #6b46c1;
+        border: none;
+        color: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    .orchid-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    
+    .marker-fragrant { background-color: #f59e0b; }
+    .marker-night-blooming { background-color: #1f2937; }
+    .marker-day-blooming { background-color: #fbbf24; }
+    .marker-cool-grower { background-color: #3b82f6; }
+    .marker-warm-grower { background-color: #ef4444; }
+    .marker-epiphytic { background-color: #10b981; }
+    .marker-terrestrial { background-color: #84cc16; }
+    .marker-default { background-color: #6b46c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-5 mb-2">
+                    <i data-feather="globe" class="me-2"></i>Interactive Orchid World Map
+                </h1>
+                <p class="lead text-muted">Explore orchid diversity across the globe with advanced filtering and research tools</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Control Panel -->
+        <div class="col-lg-3">
+            <div class="map-control-panel sticky-top" style="top: 2rem;">
+                <!-- Stats Panel -->
+                <div class="stats-panel">
+                    <h6 class="mb-2"><i data-feather="bar-chart-2" class="me-2"></i>Current View</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h4 mb-0" id="visible-count">{{ total_orchids }}</div>
+                            <small>Orchids</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 mb-0" id="country-count">0</div>
+                            <small>Countries</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search & Location -->
+                <div class="filter-section">
+                    <h6><i data-feather="search" class="me-2"></i>Search & Location</h6>
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-sm" id="location-search" 
+                               placeholder="Enter country/region/orchid name">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select form-select-sm" id="country-filter">
+                            <option value="">All Countries</option>
+                            {% for country in countries %}
+                            <option value="{{ country }}">{{ country }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100" onclick="zoomToSelection()">
+                        <i data-feather="target" class="me-1"></i>Zoom to Region
+                    </button>
+                </div>
+                
+                <!-- Orchid Traits -->
+                <div class="filter-section">
+                    <h6><i data-feather="star" class="me-2"></i>Orchid Traits</h6>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="fragrant" class="trait-filter"> Fragrant</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="night-blooming" class="trait-filter"> Night-blooming</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="day-blooming" class="trait-filter"> Day-blooming</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="cool-grower" class="trait-filter"> Cool grower</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="warm-grower" class="trait-filter"> Warm grower</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="epiphytic" class="trait-filter"> Epiphytic</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="terrestrial" class="trait-filter"> Terrestrial</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="lithophytic" class="trait-filter"> Lithophytic</label>
+                    </div>
+                </div>
+                
+                <!-- Pollinators -->
+                <div class="filter-section">
+                    <h6><i data-feather="zap" class="me-2"></i>Pollinators</h6>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="bees" class="pollinator-filter"> Bees</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="hummingbirds" class="pollinator-filter"> Hummingbirds</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="hawkmoths" class="pollinator-filter"> Hawkmoths</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="flies" class="pollinator-filter"> Flies</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="ants" class="pollinator-filter"> Ants</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="butterflies" class="pollinator-filter"> Butterflies</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <label><input type="checkbox" value="other" class="pollinator-filter"> Other</label>
+                    </div>
+                </div>
+                
+                <!-- Time Filter -->
+                <div class="filter-section">
+                    <h6><i data-feather="clock" class="me-2"></i>Time Filter</h6>
+                    <div class="mb-3">
+                        <label for="time-range" class="form-label small">Photo Collection Period</label>
+                        <input type="range" class="form-range timeline-slider" id="time-range" 
+                               min="1980" max="2025" value="2025" step="1">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>1980</span>
+                            <span id="current-year">2025</span>
+                            <span>2025</span>
+                        </div>
+                    </div>
+                    <div class="time-controls">
+                        <button class="play-button" id="play-timeline" title="Play Timeline">
+                            <i data-feather="play" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="compare-decades">
+                            <label class="form-check-label small" for="compare-decades">Compare decades</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Thematic Maps -->
+                <div class="thematic-controls">
+                    <h6><i data-feather="layers" class="me-2"></i>Thematic Maps</h6>
+                    <div class="mb-3">
+                        <select class="form-select form-select-sm" id="thematic-type">
+                            <option value="">Select thematic map type</option>
+                            <option value="pollinator">By Pollinator Type</option>
+                            <option value="trait">By Orchid Traits</option>
+                            <option value="climate">By Climate Zone</option>
+                            <option value="fungi">By Mycorrhizal Fungi</option>
+                            <option value="continent">By Continent</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-light btn-sm w-100" onclick="generateThematicMap()">
+                        <i data-feather="map" class="me-1"></i>Generate Map
+                    </button>
+                </div>
+                
+                <!-- Mycorrhizal Associations -->
+                <div class="filter-section">
+                    <h6><i data-feather="git-branch" class="me-2"></i>Mycorrhizal Fungi</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="show-fungi">
+                        <label class="form-check-label small" for="show-fungi">Show fungi data layer</label>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select form-select-sm" id="fungi-filter">
+                            <option value="">All fungal associations</option>
+                            <option value="rhizoctonia">Rhizoctonia</option>
+                            <option value="tulasnella">Tulasnella</option>
+                            <option value="ceratobasidium">Ceratobasidium</option>
+                            <option value="sebacina">Sebacina</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Export Controls -->
+                <div class="export-controls">
+                    <h6><i data-feather="download" class="me-2"></i>Export & Share</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-light btn-sm" onclick="downloadSnapshot()">
+                            <i data-feather="camera" class="me-1"></i>Download Map
+                        </button>
+                        <button class="btn btn-light btn-sm" onclick="exportData()">
+                            <i data-feather="download" class="me-1"></i>Export Data
+                        </button>
+                        <button class="btn btn-light btn-sm" onclick="shareMapView()">
+                            <i data-feather="share-2" class="me-1"></i>Share View
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Reset -->
+                <div class="filter-section">
+                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="resetAllFilters()">
+                        <i data-feather="refresh-cw" class="me-1"></i>Reset All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map Container -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div id="map"></div>
+                    
+                    <!-- Map Legend -->
+                    <div class="map-legend">
+                        <h6 class="mb-2 small">Legend</h6>
+                        <div class="legend-item">
+                            <div class="legend-color marker-fragrant"></div>
+                            <span class="small">Fragrant</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color marker-night-blooming"></div>
+                            <span class="small">Night-blooming</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color marker-cool-grower"></div>
+                            <span class="small">Cool grower</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color marker-warm-grower"></div>
+                            <span class="small">Warm grower</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color marker-epiphytic"></div>
+                            <span class="small">Epiphytic</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color marker-default"></div>
+                            <span class="small">Other orchids</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+// Global map variables
+let map;
+let orchidData = [];
+let markers = new L.MarkerClusterGroup();
+let currentFilters = {
+    traits: [],
+    pollinators: [],
+    country: '',
+    yearRange: [1980, 2025],
+    fungi: false
+};
+
+// Initialize map
+function initMap() {
+    map = L.map('map').setView([20, 0], 2);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    map.addLayer(markers);
+    loadOrchidData();
+}
+
+// Load orchid data from API
+async function loadOrchidData() {
+    try {
+        const response = await fetch('/api/orchid-map-data');
+        orchidData = await response.json();
+        updateMap();
+        updateStats();
+    } catch (error) {
+        console.error('Error loading orchid data:', error);
+    }
+}
+
+// Update map markers based on filters
+function updateMap() {
+    markers.clearLayers();
+    
+    const filteredOrchids = orchidData.filter(orchid => {
+        // Apply trait filters
+        if (currentFilters.traits.length > 0) {
+            const hasMatchingTrait = currentFilters.traits.some(trait => {
+                switch(trait) {
+                    case 'fragrant': return orchid.is_fragrant;
+                    case 'night-blooming': return orchid.flowering_time === 'night';
+                    case 'day-blooming': return orchid.flowering_time === 'day';
+                    case 'cool-grower': return orchid.climate_zone === 'cool';
+                    case 'warm-grower': return orchid.climate_zone === 'warm';
+                    case 'epiphytic': return orchid.growth_habit === 'epiphytic';
+                    case 'terrestrial': return orchid.growth_habit === 'terrestrial';
+                    case 'lithophytic': return orchid.growth_habit === 'lithophytic';
+                    default: return false;
+                }
+            });
+            if (!hasMatchingTrait) return false;
+        }
+        
+        // Apply pollinator filters
+        if (currentFilters.pollinators.length > 0) {
+            const hasMatchingPollinator = orchid.pollinator_types && 
+                orchid.pollinator_types.some(p => currentFilters.pollinators.includes(p));
+            if (!hasMatchingPollinator) return false;
+        }
+        
+        // Apply country filter
+        if (currentFilters.country && orchid.country !== currentFilters.country) {
+            return false;
+        }
+        
+        // Apply time filter
+        if (orchid.photo_date) {
+            const photoYear = new Date(orchid.photo_date).getFullYear();
+            if (photoYear < currentFilters.yearRange[0] || photoYear > currentFilters.yearRange[1]) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    // Add filtered orchids to map
+    filteredOrchids.forEach(orchid => {
+        if (orchid.latitude && orchid.longitude) {
+            const marker = createOrchidMarker(orchid);
+            markers.addLayer(marker);
+        }
+    });
+    
+    updateStats();
+}
+
+// Create marker for orchid
+function createOrchidMarker(orchid) {
+    let markerClass = 'marker-default';
+    
+    // Determine marker color based on primary trait
+    if (orchid.is_fragrant) markerClass = 'marker-fragrant';
+    else if (orchid.flowering_time === 'night') markerClass = 'marker-night-blooming';
+    else if (orchid.climate_zone === 'cool') markerClass = 'marker-cool-grower';
+    else if (orchid.climate_zone === 'warm') markerClass = 'marker-warm-grower';
+    else if (orchid.growth_habit === 'epiphytic') markerClass = 'marker-epiphytic';
+    
+    const customIcon = L.divIcon({
+        className: `orchid-marker ${markerClass}`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+    });
+    
+    const marker = L.marker([orchid.latitude, orchid.longitude], { icon: customIcon });
+    
+    // Create popup
+    const imageUrl = orchid.google_drive_id ? 
+        `/api/drive-photo/${orchid.google_drive_id}` : 
+        (orchid.image_url || '/static/images/orchid_placeholder.svg');
+    
+    const popupContent = `
+        <div class="orchid-popup">
+            <img src="${imageUrl}" alt="${orchid.display_name}" 
+                 onerror="this.src='/static/images/orchid_placeholder.svg'">
+            <h6 class="mb-2">${orchid.display_name}</h6>
+            <p class="small mb-1"><strong>Location:</strong> ${orchid.country || 'Unknown'}</p>
+            <p class="small mb-1"><strong>Habitat:</strong> ${orchid.native_habitat || 'Not specified'}</p>
+            ${orchid.genus ? `<p class="small mb-1"><strong>Genus:</strong> ${orchid.genus}</p>` : ''}
+            ${orchid.pollinator_types ? `<p class="small mb-2"><strong>Pollinators:</strong> ${orchid.pollinator_types.join(', ')}</p>` : ''}
+            <a href="/orchid/${orchid.id}" class="btn btn-primary btn-sm" target="_blank">
+                View Details
+            </a>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    return marker;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    
+    // Trait filters
+    document.querySelectorAll('.trait-filter').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                currentFilters.traits.push(this.value);
+            } else {
+                currentFilters.traits = currentFilters.traits.filter(t => t !== this.value);
+            }
+            updateMap();
+        });
+    });
+    
+    // Pollinator filters
+    document.querySelectorAll('.pollinator-filter').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                currentFilters.pollinators.push(this.value);
+            } else {
+                currentFilters.pollinators = currentFilters.pollinators.filter(p => p !== this.value);
+            }
+            updateMap();
+        });
+    });
+    
+    // Country filter
+    document.getElementById('country-filter').addEventListener('change', function() {
+        currentFilters.country = this.value;
+        updateMap();
+    });
+    
+    // Timeline slider
+    const timeRange = document.getElementById('time-range');
+    const currentYear = document.getElementById('current-year');
+    
+    timeRange.addEventListener('input', function() {
+        currentYear.textContent = this.value;
+        currentFilters.yearRange = [1980, parseInt(this.value)];
+        updateMap();
+    });
+    
+    // Location search
+    document.getElementById('location-search').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            searchLocation(this.value);
+        }
+    });
+});
+
+// Utility functions
+function updateStats() {
+    const visibleCount = markers.getLayers().length;
+    const countries = new Set();
+    
+    orchidData.forEach(orchid => {
+        if (orchid.country) countries.add(orchid.country);
+    });
+    
+    document.getElementById('visible-count').textContent = visibleCount;
+    document.getElementById('country-count').textContent = countries.size;
+}
+
+function zoomToSelection() {
+    if (markers.getLayers().length > 0) {
+        map.fitBounds(markers.getBounds(), { padding: [20, 20] });
+    }
+}
+
+function generateThematicMap() {
+    const thematicType = document.getElementById('thematic-type').value;
+    if (!thematicType) {
+        alert('Please select a thematic map type');
+        return;
+    }
+    
+    // Clear existing layers and apply thematic styling
+    markers.clearLayers();
+    
+    const colorMap = getThematicColors(thematicType);
+    
+    orchidData.forEach(orchid => {
+        if (orchid.latitude && orchid.longitude) {
+            const color = getThematicColor(orchid, thematicType, colorMap);
+            const marker = createThemedMarker(orchid, color);
+            markers.addLayer(marker);
+        }
+    });
+}
+
+function getThematicColors(type) {
+    const colorMaps = {
+        pollinator: {
+            'bees': '#fbbf24',
+            'hummingbirds': '#ef4444', 
+            'hawkmoths': '#1f2937',
+            'flies': '#6b7280',
+            'butterflies': '#f59e0b',
+            'default': '#6b46c1'
+        },
+        climate: {
+            'cool': '#3b82f6',
+            'warm': '#ef4444',
+            'intermediate': '#10b981',
+            'default': '#6b46c1'
+        },
+        trait: {
+            'fragrant': '#f59e0b',
+            'epiphytic': '#10b981',
+            'terrestrial': '#84cc16',
+            'default': '#6b46c1'
+        }
+    };
+    return colorMaps[type] || colorMaps.trait;
+}
+
+function getThematicColor(orchid, type, colorMap) {
+    switch(type) {
+        case 'pollinator':
+            return orchid.pollinator_types && orchid.pollinator_types[0] ? 
+                colorMap[orchid.pollinator_types[0]] || colorMap.default : colorMap.default;
+        case 'climate':
+            return colorMap[orchid.climate_zone] || colorMap.default;
+        case 'trait':
+            if (orchid.is_fragrant) return colorMap.fragrant;
+            if (orchid.growth_habit === 'epiphytic') return colorMap.epiphytic;
+            if (orchid.growth_habit === 'terrestrial') return colorMap.terrestrial;
+            return colorMap.default;
+        default:
+            return colorMap.default;
+    }
+}
+
+function createThemedMarker(orchid, color) {
+    const customIcon = L.divIcon({
+        className: 'orchid-marker',
+        html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+    });
+    
+    const marker = L.marker([orchid.latitude, orchid.longitude], { icon: customIcon });
+    
+    // Same popup as before
+    const imageUrl = orchid.google_drive_id ? 
+        `/api/drive-photo/${orchid.google_drive_id}` : 
+        (orchid.image_url || '/static/images/orchid_placeholder.svg');
+    
+    const popupContent = `
+        <div class="orchid-popup">
+            <img src="${imageUrl}" alt="${orchid.display_name}" 
+                 onerror="this.src='/static/images/orchid_placeholder.svg'">
+            <h6 class="mb-2">${orchid.display_name}</h6>
+            <p class="small mb-1"><strong>Location:</strong> ${orchid.country || 'Unknown'}</p>
+            <p class="small mb-1"><strong>Habitat:</strong> ${orchid.native_habitat || 'Not specified'}</p>
+            <a href="/orchid/${orchid.id}" class="btn btn-primary btn-sm" target="_blank">
+                View Details
+            </a>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    return marker;
+}
+
+function searchLocation(query) {
+    // Simple search - in a real implementation, you'd use a geocoding service
+    const filtered = orchidData.filter(orchid => 
+        orchid.country && orchid.country.toLowerCase().includes(query.toLowerCase()) ||
+        orchid.region && orchid.region.toLowerCase().includes(query.toLowerCase()) ||
+        orchid.native_habitat && orchid.native_habitat.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (filtered.length > 0) {
+        const bounds = new L.LatLngBounds();
+        filtered.forEach(orchid => {
+            if (orchid.latitude && orchid.longitude) {
+                bounds.extend([orchid.latitude, orchid.longitude]);
+            }
+        });
+        map.fitBounds(bounds);
+    }
+}
+
+function resetAllFilters() {
+    currentFilters = {
+        traits: [],
+        pollinators: [],
+        country: '',
+        yearRange: [1980, 2025],
+        fungi: false
+    };
+    
+    // Reset all checkboxes and selects
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+    document.getElementById('time-range').value = 2025;
+    document.getElementById('current-year').textContent = '2025';
+    document.getElementById('location-search').value = '';
+    
+    updateMap();
+}
+
+function downloadSnapshot() {
+    // In a real implementation, you'd capture the map as an image
+    alert('Map snapshot feature would capture the current view as PNG/JPEG');
+}
+
+function exportData() {
+    // Export filtered data as CSV
+    const filteredData = orchidData.filter(orchid => {
+        // Apply same filters as updateMap()
+        return true; // Simplified for now
+    });
+    
+    const csv = convertToCSV(filteredData);
+    downloadCSV(csv, 'orchid_map_data.csv');
+}
+
+function shareMapView() {
+    // Generate shareable URL with current filter state
+    const params = new URLSearchParams();
+    params.set('traits', currentFilters.traits.join(','));
+    params.set('pollinators', currentFilters.pollinators.join(','));
+    params.set('country', currentFilters.country);
+    params.set('yearRange', currentFilters.yearRange.join('-'));
+    
+    const shareUrl = window.location.origin + window.location.pathname + '?' + params.toString();
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Share URL copied to clipboard!');
+    });
+}
+
+function convertToCSV(data) {
+    const headers = ['id', 'display_name', 'genus', 'species', 'country', 'region', 'latitude', 'longitude', 'native_habitat'];
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+    
+    return csvContent;
+}
+
+function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// Timeline animation
+let timelineInterval;
+document.getElementById('play-timeline').addEventListener('click', function() {
+    const button = this;
+    const icon = button.querySelector('i');
+    
+    if (timelineInterval) {
+        // Stop animation
+        clearInterval(timelineInterval);
+        timelineInterval = null;
+        icon.setAttribute('data-feather', 'play');
+        feather.replace();
+    } else {
+        // Start animation
+        icon.setAttribute('data-feather', 'pause');
+        feather.replace();
+        
+        let currentYear = 1980;
+        timelineInterval = setInterval(() => {
+            if (currentYear > 2025) {
+                currentYear = 1980;
+            }
+            
+            document.getElementById('time-range').value = currentYear;
+            document.getElementById('current-year').textContent = currentYear;
+            currentFilters.yearRange = [1980, currentYear];
+            updateMap();
+            
+            currentYear += 2;
+        }, 500);
+    }
+});
+</script>
+{% endblock %}

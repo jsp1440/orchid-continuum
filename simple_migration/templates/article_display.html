@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<style>
+        body {
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%);
+            color: #e6ddd4;
+            min-height: 100vh;
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+        }
+        .article-header {
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('/static/orchid-background.jpg');
+            background-size: cover;
+            background-position: center;
+            padding: 100px 0;
+            text-align: center;
+            border-bottom: 3px solid #d4af37;
+        }
+        .article-meta {
+            color: #b8a690;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .category-badge {
+            background: rgba(212,175,55,0.2);
+            color: #d4af37;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(212,175,55,0.3);
+            font-weight: 600;
+        }
+        .article-content {
+            background: rgba(42,31,20,0.9);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 3rem 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid #6b5b47;
+        }
+        .article-content h1, .article-content h2, .article-content h3 {
+            color: #d4af37;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .article-content h1 {
+            font-size: 2.2rem;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 0.5rem;
+        }
+        .article-content h2 {
+            font-size: 1.8rem;
+        }
+        .article-content h3 {
+            font-size: 1.4rem;
+        }
+        .article-content p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .article-content strong {
+            color: #d4af37;
+        }
+        .article-content em {
+            color: #c4b5a0;
+        }
+        .orchid-reference {
+            background: rgba(212,175,55,0.1);
+            border-left: 4px solid #d4af37;
+            padding: 1rem 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .back-btn {
+            background: linear-gradient(45deg, #d4af37, #b8941f);
+            border: none;
+            color: #1a0f0a;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212,175,55,0.3);
+            color: #1a0f0a;
+        }
+        .article-navigation {
+            background: rgba(42,31,20,0.7);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        .share-buttons {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .share-btn {
+            background: rgba(212,175,55,0.2);
+            color: #d4af37;
+            border: 1px solid rgba(212,175,55,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            text-decoration: none;
+            margin: 0 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .share-btn:hover {
+            background: rgba(212,175,55,0.3);
+            color: #d4af37;
+        }
+    </style>
+    <div class="article-header">
+        <div class="container">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb justify-content-center" style="background: none; margin-bottom: 1rem;">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-light" style="color: #d4af37 !important;">🏠 Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('featured_articles') }}" class="text-light" style="color: #d4af37 !important;">Articles</a></li>
+                    <li class="breadcrumb-item active text-light" aria-current="page">{{ title|truncate(50) }}</li>
+                </ol>
+            </nav>
+            <h1 class="display-4 mb-4">{{ title }}</h1>
+            <div class="article-meta">
+                <span class="category-badge">{{ category }}</span>
+                <span><i data-feather="clock"></i> {{ read_time }}</span>
+                <span><i data-feather="calendar"></i> Featured Article</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="article-content">
+            {% if content %}
+                <div id="article-text">
+                    {{ content | replace('\n\n', '</p><p>') | replace('\n', '<br>') | safe | replace('<p></p>', '') }}
+                </div>
+            {% else %}
+                <p>Article content is being prepared for display.</p>
+            {% endif %}
+        </div>
+
+        <div class="article-navigation">
+            <a href="{{ url_for('featured_articles') }}" class="back-btn">
+                <i data-feather="arrow-left"></i> Back to Articles
+            </a>
+            <a href="{{ url_for('index') }}" class="back-btn" style="margin-left: 1rem;">
+                <i data-feather="home"></i> Home
+            </a>
+            
+            <div class="share-buttons">
+                <h5>Share This Article</h5>
+                <a href="#" class="share-btn" onclick="copyToClipboard()">
+                    <i data-feather="link"></i> Copy Link
+                </a>
+                <a href="mailto:?subject={{ title }}&body=Check out this fascinating article: {{ request.url }}" class="share-btn">
+                    <i data-feather="mail"></i> Email
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            navigator.clipboard.writeText(window.location.href).then(function() {
+                alert('Article link copied to clipboard!');
+            });
+        }
+        
+        // Format the article content better
+        document.addEventListener('DOMContentLoaded', function() {
+            const articleText = document.getElementById('article-text');
+            if (articleText) {
+                let content = articleText.innerHTML;
+                
+                // Better paragraph handling
+                content = content.replace(/([a-z])\n([A-Z])/g, '$1</p><p>$2');
+                content = content.replace(/^\s*<br>\s*/gm, '');
+                
+                // Handle orchid names better
+                content = content.replace(/(Cattleya|Dendrobium|Phragmipedium|Paphiopedilum|Orchis|Cymbidium|Phalaenopsis|Angraecum|Oncidium)\s+'([^']+)'/g, 
+                    '<span class="orchid-reference"><strong>$1 \'$2\'</strong></span>');
+                
+                // Handle section headers
+                content = content.replace(/^([A-Z][^:]+):\s*(.+)$/gm, '<h3>$1</h3><p>$2</p>');
+                
+                articleText.innerHTML = '<p>' + content + '</p>';
+            }
+        });
+    </script>
+
+{% endblock %}

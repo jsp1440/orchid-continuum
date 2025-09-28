@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Weather Dashboard - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Weather Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="cloud" class="me-2"></i>Weather Dashboard
+            </h1>
+            <p class="lead text-muted">Monitor weather conditions for optimal orchid care</p>
+        </div>
+    </div>
+    
+    <!-- Active Alerts -->
+    {% if active_alerts %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning alert-dismissible">
+                <h5><i data-feather="alert-triangle" class="me-2"></i>Weather Alerts</h5>
+                {% for alert in active_alerts[:3] %}
+                <div class="mb-2">
+                    <strong>{{ alert.title }}</strong> - {{ alert.message }}
+                    {% if alert.orchid_care_advice %}
+                    <br><small class="text-muted">💡 {{ alert.orchid_care_advice }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if active_alerts|length > 3 %}
+                <a href="{{ url_for('weather_alerts') }}" class="btn btn-sm btn-outline-warning">View All Alerts ({{ active_alerts|length }})</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Current Conditions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i data-feather="thermometer" class="me-2"></i>Current Conditions</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_weather %}
+                        {% set latest = recent_weather[0] %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h2 class="text-primary">{{ "%.1f"|format(latest.temperature) if latest.temperature }}°C</h2>
+                                    <p class="text-muted">{{ latest.description or 'Current Temperature' }}</p>
+                                    <small class="text-muted">{{ latest.location_name or 'Location' }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="row g-3">
+                                    {% if latest.humidity %}
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body text-center p-3">
+                                                <i data-feather="droplets" class="text-info mb-2"></i>
+                                                <h6>{{ "%.0f"|format(latest.humidity) }}%</h6>
+                                                <small class="text-muted">Humidity</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if latest.wind_speed %}
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body text-center p-3">
+                                                <i data-feather="wind" class="text-success mb-2"></i>
+                                                <h6>{{ "%.1f"|format(latest.wind_speed) }} km/h</h6>
+                                                <small class="text-muted">Wind Speed</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if latest.pressure %}
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body text-center p-3">
+                                                <i data-feather="compass" class="text-warning mb-2"></i>
+                                                <h6>{{ "%.0f"|format(latest.pressure) }} hPa</h6>
+                                                <small class="text-muted">Pressure</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if latest.vpd %}
+                                    <div class="col-sm-6 col-lg-3">
+                                        <div class="card border-0 bg-light">
+                                            <div class="card-body text-center p-3">
+                                                <i data-feather="activity" class="text-danger mb-2"></i>
+                                                <h6>{{ "%.2f"|format(latest.vpd) }} kPa</h6>
+                                                <small class="text-muted">VPD</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Orchid Conditions Indicator -->
+                                <div class="mt-3">
+                                    {% set is_orchid_friendly = latest.is_orchid_friendly() %}
+                                    <div class="alert alert-{{ 'success' if is_orchid_friendly else 'warning' }} py-2">
+                                        <i data-feather="{{ 'check-circle' if is_orchid_friendly else 'alert-circle' }}" class="me-2"></i>
+                                        {% if is_orchid_friendly %}
+                                            <strong>Excellent conditions</strong> for orchid growing
+                                        {% else %}
+                                            <strong>Challenging conditions</strong> - monitor your orchids carefully
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="cloud-off" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">No weather data available</p>
+                            <a href="{{ url_for('add_weather_location') }}" class="btn btn-primary">Add Location</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Forecast and Historical Data -->
+    <div class="row mb-4">
+        <!-- 7-Day Forecast -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="calendar" class="me-2"></i>7-Day Forecast</h5>
+                </div>
+                <div class="card-body">
+                    {% if forecast_data %}
+                        <div class="forecast-container">
+                            {% for forecast in forecast_data[:7] %}
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <strong>{{ forecast.recorded_at.strftime('%a') }}</strong>
+                                    <br><small class="text-muted">{{ forecast.recorded_at.strftime('%m/%d') }}</small>
+                                </div>
+                                <div class="text-center">
+                                    <small>{{ forecast.description or 'Forecast' }}</small>
+                                </div>
+                                <div class="text-end">
+                                    {% if forecast.temperature_max and forecast.temperature_min %}
+                                        <strong>{{ "%.0f"|format(forecast.temperature_max) }}°</strong>
+                                        <span class="text-muted">{{ "%.0f"|format(forecast.temperature_min) }}°</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="calendar-x" class="text-muted mb-2"></i>
+                            <p class="text-muted">No forecast data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Weather Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="trending-up" class="me-2"></i>Recent Trends</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_weather|length > 1 %}
+                        <canvas id="weatherChart" width="400" height="300"></canvas>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="bar-chart-2" class="text-muted mb-2"></i>
+                            <p class="text-muted">Need more data for trends</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tracked Locations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i data-feather="map-pin" class="me-2"></i>Tracked Locations</h5>
+                    <a href="{{ url_for('add_weather_location') }}" class="btn btn-sm btn-primary">
+                        <i data-feather="plus" class="me-1"></i>Add Location
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if locations %}
+                        <div class="row">
+                            {% for location in locations %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ location.name }}</h6>
+                                        <p class="card-text small text-muted">
+                                            {{ location.city }}{% if location.state_province %}, {{ location.state_province }}{% endif %}
+                                            <br>{{ location.growing_type|title }} growing
+                                        </p>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="loadLocationWeather({{ location.id }})">
+                                            View Current
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="map" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <h6>No locations tracked yet</h6>
+                            <p class="text-muted">Add your growing locations to start tracking weather conditions</p>
+                            <a href="{{ url_for('add_weather_location') }}" class="btn btn-primary">
+                                <i data-feather="plus" class="me-2"></i>Add First Location
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex gap-3 flex-wrap">
+                <a href="{{ url_for('weather_alerts') }}" class="btn btn-outline-warning">
+                    <i data-feather="bell" class="me-2"></i>Weather Alerts
+                </a>
+                <a href="{{ url_for('weather_orchid_correlation') }}" class="btn btn-outline-info">
+                    <i data-feather="bar-chart" class="me-2"></i>Weather Analysis
+                </a>
+                <a href="{{ url_for('add_weather_location') }}" class="btn btn-outline-success">
+                    <i data-feather="map-pin" class="me-2"></i>Add Location
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Location Weather Modal -->
+<div class="modal fade" id="locationWeatherModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Location Weather Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="locationWeatherContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Chart.js for weather trends
+{% if recent_weather|length > 1 %}
+const ctx = document.getElementById('weatherChart').getContext('2d');
+const weatherData = {
+    labels: [
+        {% for weather in recent_weather[-7:] %}
+        '{{ weather.recorded_at.strftime("%m/%d") }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Temperature (°C)',
+        data: [
+            {% for weather in recent_weather[-7:] %}
+            {{ weather.temperature or 'null' }},
+            {% endfor %}
+        ],
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        tension: 0.1
+    }, {
+        label: 'Humidity (%)',
+        data: [
+            {% for weather in recent_weather[-7:] %}
+            {{ weather.humidity or 'null' }},
+            {% endfor %}
+        ],
+        borderColor: 'rgb(54, 162, 235)',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        tension: 0.1,
+        yAxisID: 'y1'
+    }]
+};
+
+new Chart(ctx, {
+    type: 'line',
+    data: weatherData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Temperature (°C)'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Humidity (%)'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true
+            }
+        }
+    }
+});
+{% endif %}
+
+// Load location weather details
+function loadLocationWeather(locationId) {
+    const modal = new bootstrap.Modal(document.getElementById('locationWeatherModal'));
+    const content = document.getElementById('locationWeatherContent');
+    
+    // Show loading spinner
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading weather data...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch weather data
+    fetch(`/weather/current/${locationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                content.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            const weather = data.weather;
+            const alerts = data.alerts || [];
+            const conditions = data.conditions || {};
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Conditions</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Temperature:</strong> ${weather.temperature ? weather.temperature.toFixed(1) + '°C' : 'N/A'}</li>
+                            <li><strong>Humidity:</strong> ${weather.humidity ? weather.humidity.toFixed(0) + '%' : 'N/A'}</li>
+                            <li><strong>Wind:</strong> ${weather.wind_speed ? weather.wind_speed.toFixed(1) + ' km/h' : 'N/A'}</li>
+                            <li><strong>Pressure:</strong> ${weather.pressure ? weather.pressure.toFixed(0) + ' hPa' : 'N/A'}</li>
+                            <li><strong>VPD:</strong> ${weather.vpd ? weather.vpd.toFixed(2) + ' kPa' : 'N/A'}</li>
+                        </ul>
+                        
+                        <div class="alert alert-${weather.orchid_friendly ? 'success' : 'warning'} py-2">
+                            <i data-feather="${weather.orchid_friendly ? 'check-circle' : 'alert-circle'}" class="me-2"></i>
+                            ${weather.orchid_friendly ? 'Good' : 'Challenging'} conditions for orchids
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Alerts & Recommendations</h6>
+                        ${alerts.length > 0 ? 
+                            alerts.map(alert => `
+                                <div class="alert alert-warning py-2">
+                                    <strong>${alert.title}</strong><br>
+                                    <small>${alert.advice}</small>
+                                </div>
+                            `).join('') : 
+                            '<p class="text-muted">No active alerts</p>'
+                        }
+                        
+                        ${conditions.recommendations && conditions.recommendations.length > 0 ? `
+                            <h6 class="mt-3">Growing Tips</h6>
+                            <ul class="small">
+                                ${conditions.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Re-initialize feather icons
+            feather.replace();
+        })
+        .catch(error => {
+            content.innerHTML = `<div class="alert alert-danger">Error loading weather data: ${error.message}</div>`;
+        });
+}
+
+// Auto-refresh weather data every 15 minutes
+setInterval(() => {
+    window.location.reload();
+}, 15 * 60 * 1000);
+</script>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

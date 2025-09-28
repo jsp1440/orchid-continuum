@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% set title = "My Orchid Collection" %}
+
+{% block head %}
+<style>
+.collection-card {
+    background: linear-gradient(135deg, #4a7c59 0%, #6fa16c 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.orchid-collection-item {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.orchid-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+}
+
+.add-orchid-form {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.climate-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: white;
+}
+
+.climate-cool { background: #4CAF50; }
+.climate-intermediate { background: #2196F3; }
+.climate-warm { background: #FF9800; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('user_weather.my_weather_dashboard') }}">My Weather</a></li>
+                    <li class="breadcrumb-item active">Orchid Collection</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="collection-card">
+                <h2><i data-feather="heart" class="me-2"></i>My Orchid Collection</h2>
+                <p class="mb-0">Manage the orchids shown in your weather comparison widget</p>
+            </div>
+
+            {% if collections %}
+            <h4>Your Collection ({{ collections|length }} orchids)</h4>
+            {% for collection in collections %}
+            <div class="orchid-collection-item">
+                {% if collection.orchid.image_url %}
+                <img src="{{ collection.orchid.image_url }}" alt="{{ collection.collection_name }}" class="orchid-thumb">
+                {% else %}
+                <div class="orchid-thumb d-flex align-items-center justify-content-center" style="background: #f0f0f0;">🌺</div>
+                {% endif %}
+                
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">{{ collection.collection_name }}</h6>
+                    <small class="text-muted">{{ collection.orchid.scientific_name }}</small>
+                    {% if collection.orchid.climate_preference %}
+                    <div class="mt-1">
+                        <span class="climate-badge climate-{{ collection.orchid.climate_preference }}">
+                            {{ collection.orchid.climate_preference|title }} Climate
+                        </span>
+                        {% if collection.orchid.region %}
+                        <small class="ms-2 text-muted">📍 {{ collection.orchid.region }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if collection.notes %}
+                    <div class="mt-1"><small><strong>Notes:</strong> {{ collection.notes }}</small></div>
+                    {% endif %}
+                </div>
+                
+                <div class="text-end">
+                    {% if collection.is_primary %}
+                    <span class="badge bg-primary mb-2">Primary</span><br>
+                    {% endif %}
+                    {% if collection.show_in_widget %}
+                    <span class="badge bg-success mb-2">In Widget</span><br>
+                    {% endif %}
+                    <small class="text-muted">Priority: {{ collection.widget_priority }}</small>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="alert alert-info">
+                <h5><i data-feather="info" class="me-2"></i>No Orchids in Collection</h5>
+                <p>Add orchids to your collection to see personalized weather comparisons in the widget.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="add-orchid-form">
+                <h5><i data-feather="plus-circle" class="me-2"></i>Add to Collection</h5>
+                <form method="POST" action="{{ url_for('user_weather.add_orchid_to_collection') }}">
+                    <div class="mb-3">
+                        <label for="orchid_id" class="form-label">Select Orchid</label>
+                        <select class="form-select" id="orchid_id" name="orchid_id" required onchange="updateOrchidPreview()">
+                            <option value="">Choose an orchid...</option>
+                            {% for orchid in available_orchids %}
+                            <option value="{{ orchid.id }}" 
+                                    data-climate="{{ orchid.climate_preference }}"
+                                    data-region="{{ orchid.region or '' }}"
+                                    data-image="{{ orchid.image_url or '' }}">
+                                {{ orchid.display_name }} - {{ orchid.scientific_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="orchid-preview" class="mb-3" style="display: none;">
+                        <div class="border rounded p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <img id="preview-image" src="" alt="" class="orchid-thumb">
+                                <div>
+                                    <h6 id="preview-name"></h6>
+                                    <small id="preview-scientific" class="text-muted"></small>
+                                    <div id="preview-climate" class="mt-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="collection_name" class="form-label">Your Name for This Orchid (optional)</label>
+                        <input type="text" class="form-control" id="collection_name" name="collection_name"
+                               placeholder="e.g., My White Cattleya, Mom's Phal">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Growing Notes (optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"
+                                  placeholder="Growing conditions, flowering history, etc."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i data-feather="plus" class="me-2"></i>Add to Collection
+                    </button>
+                </form>
+            </div>
+
+            <!-- Widget Preview -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="eye" class="me-2"></i>Widget Preview
+                    </h6>
+                </div>
+                <div class="card-body p-2">
+                    <div id="widget-preview-container" style="max-width: 300px; margin: 0 auto;">
+                        <!-- Widget will load here -->
+                        <div class="text-center text-muted py-4">
+                            <i data-feather="cloud" style="width: 32px; height: 32px;"></i>
+                            <div class="mt-2">Add orchids to see widget preview</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateOrchidPreview() {
+    const select = document.getElementById('orchid_id');
+    const preview = document.getElementById('orchid-preview');
+    const option = select.selectedOptions[0];
+    
+    if (!option.value) {
+        preview.style.display = 'none';
+        return;
+    }
+    
+    const image = document.getElementById('preview-image');
+    const name = document.getElementById('preview-name');
+    const scientific = document.getElementById('preview-scientific');
+    const climate = document.getElementById('preview-climate');
+    
+    // Update preview
+    const imageUrl = option.dataset.image;
+    if (imageUrl) {
+        image.src = imageUrl;
+        image.style.display = 'block';
+    } else {
+        image.style.display = 'none';
+    }
+    
+    name.textContent = option.text.split(' - ')[0];
+    scientific.textContent = option.text.split(' - ')[1] || '';
+    
+    const climateType = option.dataset.climate;
+    const region = option.dataset.region;
+    
+    if (climateType) {
+        climate.innerHTML = `
+            <span class="climate-badge climate-${climateType}">${climateType.charAt(0).toUpperCase() + climateType.slice(1)} Climate</span>
+            ${region ? `<small class="ms-2 text-muted">📍 ${region}</small>` : ''}
+        `;
+    }
+    
+    preview.style.display = 'block';
+    
+    // Auto-fill collection name if empty
+    const nameField = document.getElementById('collection_name');
+    if (!nameField.value) {
+        nameField.value = name.textContent;
+    }
+}
+
+// Load widget preview if user has orchids
+{% if collections %}
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/widgets/embed/weather?user_id={{ current_user.id }}')
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('widget-preview-container').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading widget preview:', error);
+        });
+});
+{% endif %}
+</script>
+{% endblock %}

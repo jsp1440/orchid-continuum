@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Lab - Five Cities Orchid Society</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .research-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .research-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='9' cy='9' r='1'/%3E%3Cpath d='m19 19 2-2v4l-2-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+        
+        .stage-card {
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stage-card.completed {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+        
+        .stage-card.active {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .stage-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .stage-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .example-project {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .example-project:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .research-wizard-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .research-wizard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+        }
+        
+        .integration-panel {
+            background: rgba(155, 89, 182, 0.1);
+            border: 1px solid rgba(155, 89, 182, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+        }
+        
+        .data-caveats {
+            background: rgba(241, 196, 15, 0.1);
+            border-left: 4px solid #f1c40f;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+        
+        .conservation-links {
+            background: rgba(39, 174, 96, 0.1);
+            border: 1px solid rgba(39, 174, 96, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .research-header {
+                padding: 2rem 0;
+            }
+            
+            .stage-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Research Lab Header -->
+    <div class="research-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="search" class="me-3" style="width: 60px; height: 60px; position: relative; z-index: 2;"></i>
+                        <div style="position: relative; z-index: 2;">
+                            <h1 class="display-4 fw-bold mb-2">🔬 Research Lab</h1>
+                            <p class="lead mb-0">Complete Scientific Method Workflow • Statistical Analysis • Paper Generation</p>
+                            <p class="mb-0"><small>Professional research platform for orchid studies and conservation</small></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-light me-2">
+                        <i data-feather="home" class="me-2"></i>Home
+                    </a>
+                    <button class="research-wizard-btn" onclick="startResearchWizard()">
+                        <i data-feather="play" class="me-2"></i>Start New Research
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <!-- Research Progress Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4><i data-feather="activity" class="me-2"></i>Research Progress</h4>
+                                <p class="mb-0">Complete all 7 stages to generate your research paper</p>
+                            </div>
+                            <div class="text-end">
+                                <h2 class="mb-0" id="progressPercentage">0%</h2>
+                                <small>Completed</small>
+                            </div>
+                        </div>
+                        <div class="progress-bar-custom mt-3">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Research Method Stages -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-4"><i data-feather="list" class="me-2"></i>Scientific Method Workflow</h3>
+            </div>
+        </div>
+        
+        <div class="row" id="stagesContainer">
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="observation" onclick="navigateToStage('observation')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #3498db;">
+                            <i data-feather="eye"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">1. Observation</h5>
+                            <p class="mb-0 small text-muted">Make detailed observations about orchids</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Use existing orchid data to identify patterns and interesting phenomena worth investigating.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-primary">Start Here</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="hypothesis" onclick="navigateToStage('hypothesis')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #f39c12;">
+                            <i data-feather="lightbulb"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">2. Hypothesis</h5>
+                            <p class="mb-0 small text-muted">Form testable predictions (H₀ & H₁)</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Create null and alternative hypotheses with clear, measurable predictions.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-warning">Required</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="methods" onclick="navigateToStage('methods')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #9b59b6;">
+                            <i data-feather="settings"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">3. Methods</h5>
+                            <p class="mb-0 small text-muted">Design research methodology</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Plan data collection methods, variables, and statistical analysis approach.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-purple">Methods</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="data_collection" onclick="navigateToStage('data_collection')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #1abc9c;">
+                            <i data-feather="database"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">4. Data Collection</h5>
+                            <p class="mb-0 small text-muted">Gather data with filters</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Apply filters (genus, region, elevation, wild/cultivated) to collect relevant data.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-info">Data</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="analysis" onclick="navigateToStage('analysis')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #34495e;">
+                            <i data-feather="bar-chart-2"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">5. Analysis</h5>
+                            <p class="mb-0 small text-muted">Statistical tests (t-test, Mann-Whitney U)</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Run Welch's t-test or Mann-Whitney U test to analyze your data.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-dark">Statistics</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-xl-4">
+                <div class="stage-card" data-stage="conclusions" onclick="navigateToStage('conclusions')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #27ae60;">
+                            <i data-feather="check-circle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">6. Conclusions</h5>
+                            <p class="mb-0 small text-muted">Interpret results and limitations</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Draw conclusions from your analysis and identify study limitations.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-success">Conclusions</span>
+                        <i data-feather="arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-12 col-xl-4">
+                <div class="stage-card" data-stage="paper_draft" onclick="navigateToStage('paper_draft')">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="stage-icon" style="background: #e74c3c;">
+                            <i data-feather="file-text"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="mb-1">7. Paper Draft</h5>
+                            <p class="mb-0 small text-muted">Generate IMRaD format paper</p>
+                        </div>
+                    </div>
+                    <p class="mb-3">Automatically generate a complete research paper with all sections and references.</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-danger">Final Step</span>
+                        <i data-feather="download" style="width: 20px; height: 20px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Integration with Map/Gallery -->
+        <div class="integration-panel mt-5">
+            <h4><i data-feather="map-pin" class="me-2"></i>Map & Gallery Integration</h4>
+            <p>Connect your research with existing orchid data from our comprehensive database.</p>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i data-feather="map" style="width: 40px; height: 40px; color: #3498db;" class="mb-2"></i>
+                        <h6>World Map</h6>
+                        <p class="small">Select orchids by location and send to Research Lab</p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='/enhanced-mapping'">
+                            Open Map
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i data-feather="grid" style="width: 40px; height: 40px; color: #27ae60;" class="mb-2"></i>
+                        <h6>Gallery</h6>
+                        <p class="small">Browse 230+ specimens with detailed data</p>
+                        <button class="btn btn-outline-success btn-sm" onclick="window.location.href='/gallery'">
+                            Browse Gallery
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i data-feather="search" style="width: 40px; height: 40px; color: #f39c12;" class="mb-2"></i>
+                        <h6>Advanced Search</h6>
+                        <p class="small">Filter by genus, region, characteristics</p>
+                        <button class="btn btn-outline-warning btn-sm" onclick="window.location.href='/search'">
+                            Search Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Example Research Projects -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h4><i data-feather="book-open" class="me-2"></i>Guided Example Projects</h4>
+                <p class="text-muted">Perfect for learning - start with pre-configured research questions and data</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="example-project">
+                    <h6>🌡️ Cymbidium at 35°N Parallel</h6>
+                    <p class="small mb-2"><strong>Question:</strong> How does location affect Cymbidium flowering?</p>
+                    <p class="small mb-3"><strong>Method:</strong> Compare flowering patterns across regions</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary">Beginner</span>
+                        <button class="btn btn-outline-light btn-sm" onclick="loadExampleProject('cymbidium_35n')">
+                            Try Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="example-project">
+                    <h6>🌿 Epiphytic vs Terrestrial</h6>
+                    <p class="small mb-2"><strong>Question:</strong> Do growth habits affect morphology?</p>
+                    <p class="small mb-3"><strong>Method:</strong> Statistical comparison of characteristics</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-warning">Intermediate</span>
+                        <button class="btn btn-outline-light btn-sm" onclick="loadExampleProject('epiphyte_terrestrial')">
+                            Try Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="example-project">
+                    <h6>🌍 Biodiversity Hotspots</h6>
+                    <p class="small mb-2"><strong>Question:</strong> Which regions have highest diversity?</p>
+                    <p class="small mb-3"><strong>Method:</strong> Geographic distribution analysis</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-danger">Advanced</span>
+                        <button class="btn btn-outline-light btn-sm" onclick="loadExampleProject('biodiversity_hotspots')">
+                            Try Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Sources & Conservation -->
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="conservation-links">
+                    <h5><i data-feather="globe" class="me-2"></i>Conservation & Attribution</h5>
+                    <p class="small mb-3">Our research platform integrates data from leading botanical institutions:</p>
+                    <ul class="list-unstyled small">
+                        <li>• <a href="https://www.gbif.org" target="_blank" class="text-success">GBIF</a> - Global Biodiversity Information Facility</li>
+                        <li>• <a href="https://www.ipni.org" target="_blank" class="text-success">IPNI</a> - International Plant Names Index</li>
+                        <li>• <a href="http://www.worldfloraonline.org" target="_blank" class="text-success">WFO</a> - World Flora Online</li>
+                        <li>• <a href="https://orchids.yonggee.name" target="_blank" class="text-success">Gary Yong Gee</a> - Orchid Gallery Collection</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="data-caveats">
+                    <h6><i data-feather="alert-triangle" class="me-2"></i>Data Caveats Notice</h6>
+                    <p class="small mb-0"><strong>Important:</strong> Research findings should account for:</p>
+                    <ul class="small mb-0 mt-2">
+                        <li>Sampling bias in geographic distribution</li>
+                        <li>Differences between wild vs. cultivated specimens</li>
+                        <li>Seasonal and temporal variations in observations</li>
+                        <li>Data quality limitations from various sources</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Database Statistics -->
+        <div class="row mt-5">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <h3 class="text-primary mb-1">230+</h3>
+                    <p class="mb-0 small">Orchid Specimens</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <h3 class="text-success mb-1">40+</h3>
+                    <p class="mb-0 small">Genera Available</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <h3 class="text-warning mb-1">15+</h3>
+                    <p class="mb-0 small">Geographic Regions</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <h3 class="text-danger mb-1">∞</h3>
+                    <p class="mb-0 small">Research Possibilities</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            updateProgressDisplay();
+            checkStageCompletion();
+            console.log('🔬 Research Lab Dashboard initialized');
+        });
+        
+        // Navigation functions
+        function navigateToStage(stageId) {
+            window.location.href = `/research-lab/stage/${stageId}`;
+        }
+        
+        function startResearchWizard() {
+            // Clear any existing research data
+            localStorage.removeItem('currentResearchProject');
+            window.location.href = '/research-lab/stage/observation';
+        }
+        
+        // Example project loading
+        function loadExampleProject(projectType) {
+            const projects = {
+                'cymbidium_35n': {
+                    title: 'Cymbidium Flowering Patterns at 35°N Latitude',
+                    research_question: 'How does geographic location along the 35th parallel affect Cymbidium orchid flowering time?',
+                    null_hypothesis: 'There is no significant difference in flowering time for Cymbidium orchids across different regions at 35°N latitude',
+                    alternative_hypothesis: 'Cymbidium orchids show significantly different flowering times based on their geographic location along the 35th parallel',
+                    variables: ['latitude', 'longitude', 'flowering_time', 'climate_zone', 'elevation'],
+                    filters: {genus: 'Cymbidium', latitude_min: 34.5, latitude_max: 35.5},
+                    suggested_analysis: 'mann_whitney_u'
+                },
+                'epiphyte_terrestrial': {
+                    title: 'Morphological Differences: Epiphytic vs Terrestrial Orchids',
+                    research_question: 'Do epiphytic orchids have significantly different morphological characteristics compared to terrestrial orchids?',
+                    null_hypothesis: 'There is no significant difference in flower size between epiphytic and terrestrial orchids',
+                    alternative_hypothesis: 'Epiphytic orchids have significantly different flower sizes compared to terrestrial orchids',
+                    variables: ['growth_habit', 'flower_size_mm', 'flower_count', 'root_type'],
+                    filters: {},
+                    suggested_analysis: 'welch_t_test'
+                },
+                'biodiversity_hotspots': {
+                    title: 'Orchid Species Diversity Across Geographic Regions',
+                    research_question: 'Which geographic regions exhibit the highest orchid species diversity?',
+                    null_hypothesis: 'There is no significant difference in orchid species count between tropical and temperate regions',
+                    alternative_hypothesis: 'Tropical regions contain significantly more orchid species than temperate regions',
+                    variables: ['region', 'species_count', 'climate_type', 'latitude', 'elevation'],
+                    filters: {},
+                    suggested_analysis: 'mann_whitney_u'
+                }
+            };
+            
+            const project = projects[projectType];
+            if (project) {
+                // Save project as current research
+                localStorage.setItem('currentResearchProject', JSON.stringify(project));
+                localStorage.setItem('isExampleProject', 'true');
+                
+                // Navigate to hypothesis stage (since example projects pre-fill this)
+                window.location.href = '/research-lab/stage/hypothesis';
+            }
+        }
+        
+        // Progress tracking
+        function updateProgressDisplay() {
+            const completedStages = getCompletedStages();
+            const totalStages = 7;
+            const percentage = Math.round((completedStages.length / totalStages) * 100);
+            
+            document.getElementById('progressPercentage').textContent = percentage + '%';
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+        
+        function getCompletedStages() {
+            const projectData = localStorage.getItem('currentResearchProject');
+            if (!projectData) return [];
+            
+            const project = JSON.parse(projectData);
+            const completed = [];
+            
+            // Check which stages have data
+            const stages = ['observation', 'hypothesis', 'methods', 'data_collection', 'analysis', 'conclusions', 'paper_draft'];
+            stages.forEach(stage => {
+                if (project[stage] && Object.keys(project[stage]).length > 0) {
+                    completed.push(stage);
+                }
+            });
+            
+            return completed;
+        }
+        
+        function checkStageCompletion() {
+            const completedStages = getCompletedStages();
+            
+            // Update stage cards visual state
+            const stageCards = document.querySelectorAll('.stage-card');
+            stageCards.forEach(card => {
+                const stageId = card.getAttribute('data-stage');
+                if (completedStages.includes(stageId)) {
+                    card.classList.add('completed');
+                }
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        navigateToStage('observation');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        navigateToStage('hypothesis');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        navigateToStage('methods');
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        startResearchWizard();
+                        break;
+                }
+            }
+        });
+        
+        // Auto-save functionality
+        setInterval(() => {
+            const projectData = localStorage.getItem('currentResearchProject');
+            if (projectData) {
+                // Could send to server for backup
+                console.log('🔄 Auto-saving research progress...');
+            }
+        }, 30000); // Auto-save every 30 seconds
+    </script>
+</body>
+</html>
