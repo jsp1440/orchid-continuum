@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Orchid Grower Dashboard - The Orchid Continuum</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        :root {
+            --orchid-primary: #8A2BE2;
+            --orchid-secondary: #9370DB;
+            --orchid-accent: #BA55D3;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --light-purple: #f8f4ff;
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 10px 30px rgba(138, 43, 226, 0.1);
+        }
+        
+        body {
+            background: var(--gradient-bg);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .master-dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-accent));
+            color: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .dashboard-icon {
+            width: 60px;
+            height: 60px;
+            stroke-width: 1.5;
+        }
+        
+        .header-title h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .header-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .dashboard-stats {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tools-navigation {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .nav-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-header h2 {
+            color: var(--orchid-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-color: var(--orchid-secondary);
+        }
+        
+        .tool-card.active {
+            border-color: var(--orchid-primary);
+            background: var(--light-purple);
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-accent));
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .tool-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: var(--orchid-primary);
+        }
+        
+        .tool-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tool-description {
+            color: #6c757d;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .tool-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-tag {
+            background: var(--light-purple);
+            color: var(--orchid-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .tool-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-badge.ready {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .launch-btn {
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-secondary));
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .launch-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
+            color: white;
+        }
+        
+        .quick-actions {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .actions-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .actions-header h3 {
+            color: var(--orchid-primary);
+            margin: 0;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .action-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 4px solid var(--info-color);
+            transition: all 0.2s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateX(3px);
+            border-left-color: var(--orchid-primary);
+            background: var(--light-purple);
+        }
+        
+        .action-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .workflow-section {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .workflow-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .workflow-header h3 {
+            color: var(--orchid-primary);
+            margin: 0;
+        }
+        
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--orchid-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .step-content h6 {
+            margin: 0 0 0.25rem 0;
+            color: #333;
+        }
+        
+        .step-content p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .workflow-arrow {
+            color: var(--orchid-secondary);
+            font-size: 1.5rem;
+        }
+        
+        .widget-container {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .widget-container.active {
+            display: block;
+        }
+        
+        .widget-frame {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .widget-header {
+            background: linear-gradient(45deg, var(--orchid-primary), var(--orchid-accent));
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .widget-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+        
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .shared-data-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            display: none;
+        }
+        
+        .shared-data-panel.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .data-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .data-panel-header h4 {
+            color: var(--orchid-primary);
+            margin: 0;
+        }
+        
+        .shared-orchid-info {
+            background: var(--light-purple);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .orchid-summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .orchid-image-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        .orchid-details h5 {
+            margin: 0 0 0.25rem 0;
+            color: #333;
+        }
+        
+        .orchid-details p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .cross-tool-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .insight-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 3px solid var(--info-color);
+        }
+        
+        .insight-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .insight-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .master-dashboard {
+                padding: 1rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-title h1 {
+                font-size: 2rem;
+            }
+            
+            .dashboard-stats {
+                justify-content: center;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .workflow-steps {
+                flex-direction: column;
+            }
+            
+            .workflow-step {
+                min-width: auto;
+            }
+            
+            .workflow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="master-dashboard">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <div class="header-title">
+                        <i data-feather="grid" class="dashboard-icon"></i>
+                        <div>
+                            <h1>Master Grower Dashboard</h1>
+                            <div class="header-subtitle">Comprehensive orchid analysis and management platform</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Specialized Tools</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">5,888+</div>
+                        <div class="stat-label">Orchid Database</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">AI</div>
+                        <div class="stat-label">Powered</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Shared Data Panel -->
+        <div class="shared-data-panel" id="sharedDataPanel">
+            <div class="data-panel-header">
+                <i data-feather="share-2"></i>
+                <h4>Active Analysis Session</h4>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearSharedData()">
+                    <i data-feather="x" class="me-1"></i>Clear
+                </button>
+            </div>
+            <div class="shared-orchid-info" id="sharedOrchidInfo">
+                <!-- Shared orchid data will be populated here -->
+            </div>
+            <div class="cross-tool-insights" id="crossToolInsights">
+                <!-- Cross-tool insights will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Navigation View -->
+        <div class="navigation-view" id="navigationView">
+            <div class="tools-navigation">
+                <div class="nav-header">
+                    <h2>Specialized Grower Tools</h2>
+                    <p class="nav-subtitle">Select a tool to begin your orchid analysis journey</p>
+                </div>
+                
+                <div class="tools-grid">
+                    <!-- Health Diagnostic Tool -->
+                    <div class="tool-card" onclick="launchTool('health-diagnostic')">
+                        <i data-feather="heart" class="tool-icon"></i>
+                        <div class="tool-title">AI Health Diagnostic</div>
+                        <div class="tool-description">
+                            Upload photos of your orchid for AI-powered health analysis and disease diagnosis
+                        </div>
+                        <div class="tool-features">
+                            <span class="feature-tag">Disease Detection</span>
+                            <span class="feature-tag">Health Scoring</span>
+                            <span class="feature-tag">Treatment Plans</span>
+                        </div>
+                        <div class="tool-status">
+                            <span class="status-badge ready">Ready</span>
+                            <button class="btn launch-btn">Launch Tool</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Growing Conditions Tool -->
+                    <div class="tool-card" onclick="launchTool('growing-conditions')">
+                        <i data-feather="map-pin" class="tool-icon"></i>
+                        <div class="tool-title">Growing Condition Matcher</div>
+                        <div class="tool-description">
+                            Find orchids perfectly suited to your location and growing environment
+                        </div>
+                        <div class="tool-features">
+                            <span class="feature-tag">Location Analysis</span>
+                            <span class="feature-tag">Weather Integration</span>
+                            <span class="feature-tag">Personalized Matches</span>
+                        </div>
+                        <div class="tool-status">
+                            <span class="status-badge ready">Ready</span>
+                            <button class="btn launch-btn">Launch Tool</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Breeding Predictor Tool -->
+                    <div class="tool-card" onclick="launchTool('breeding-predictor')">
+                        <i data-feather="git-merge" class="tool-icon"></i>
+                        <div class="tool-title">Breeding Compatibility Predictor</div>
+                        <div class="tool-description">
+                            AI-powered analysis of genetic lineage to predict breeding success rates
+                        </div>
+                        <div class="tool-features">
+                            <span class="feature-tag">Genetic Analysis</span>
+                            <span class="feature-tag">Success Prediction</span>
+                            <span class="feature-tag">Breeding Guidance</span>
+                        </div>
+                        <div class="tool-status">
+                            <span class="status-badge ready">Ready</span>
+                            <button class="btn launch-btn">Launch Tool</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Care Calendar Tool -->
+                    <div class="tool-card" onclick="launchTool('care-calendar')">
+                        <i data-feather="calendar" class="tool-icon"></i>
+                        <div class="tool-title">Adaptive Care Calendar</div>
+                        <div class="tool-description">
+                            Generate personalized care schedules that adapt to weather and seasons
+                        </div>
+                        <div class="tool-features">
+                            <span class="feature-tag">Weather Adaptive</span>
+                            <span class="feature-tag">Personalized</span>
+                            <span class="feature-tag">Calendar Export</span>
+                        </div>
+                        <div class="tool-status">
+                            <span class="status-badge ready">Ready</span>
+                            <button class="btn launch-btn">Launch Tool</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Authentication Tool -->
+                    <div class="tool-card" onclick="launchTool('authentication')">
+                        <i data-feather="shield-check" class="tool-icon"></i>
+                        <div class="tool-title">Orchid Authentication</div>
+                        <div class="tool-description">
+                            Detect mislabeling and verify orchid authenticity using AI analysis
+                        </div>
+                        <div class="tool-features">
+                            <span class="feature-tag">Fraud Detection</span>
+                            <span class="feature-tag">Authentication</span>
+                            <span class="feature-tag">Database Cross-check</span>
+                        </div>
+                        <div class="tool-status">
+                            <span class="status-badge ready">Ready</span>
+                            <button class="btn launch-btn">Launch Tool</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="actions-header">
+                    <i data-feather="zap"></i>
+                    <h3>Quick Actions</h3>
+                </div>
+                <div class="actions-grid">
+                    <div class="action-card" onclick="quickAction('health-check')">
+                        <div class="action-title">Quick Health Check</div>
+                        <div class="action-description">Upload a photo for instant health assessment</div>
+                    </div>
+                    <div class="action-card" onclick="quickAction('location-match')">
+                        <div class="action-title">Find My Perfect Orchid</div>
+                        <div class="action-description">Get recommendations based on your location</div>
+                    </div>
+                    <div class="action-card" onclick="quickAction('breeding-analysis')">
+                        <div class="action-title">Breeding Compatibility</div>
+                        <div class="action-description">Check breeding potential between two orchids</div>
+                    </div>
+                    <div class="action-card" onclick="quickAction('care-schedule')">
+                        <div class="action-title">Generate Care Plan</div>
+                        <div class="action-description">Create a personalized care calendar</div>
+                    </div>
+                    <div class="action-card" onclick="window.open('/ai-widget-manager/dashboard', '_blank')">
+                        <div class="action-title">AI Widget Manager</div>
+                        <div class="action-description">Monitor and optimize all widgets with AI</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommended Workflow -->
+            <div class="workflow-section">
+                <div class="workflow-header">
+                    <i data-feather="arrow-right-circle"></i>
+                    <h3>Recommended Workflow</h3>
+                </div>
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h6>Health Check</h6>
+                            <p>Diagnose any health issues</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h6>Environment Match</h6>
+                            <p>Verify growing conditions</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h6>Care Planning</h6>
+                            <p>Generate adaptive schedule</p>
+                        </div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h6>Authentication</h6>
+                            <p>Verify orchid identity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Widget Container -->
+        <div class="widget-container" id="widgetContainer">
+            <div class="widget-frame">
+                <div class="widget-header">
+                    <h3 class="widget-title">
+                        <i data-feather="tool" class="me-2"></i>
+                        <span id="currentToolName">Analysis Tool</span>
+                    </h3>
+                    <button class="btn back-btn" onclick="returnToDashboard()">
+                        <i data-feather="arrow-left" class="me-2"></i>Back to Dashboard
+                    </button>
+                </div>
+                <div class="widget-content" id="widgetContent">
+                    <!-- Tool widgets will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Widget Communication System -->
+    <script src="/static/js/widget-communication.js"></script>
+    
+    <!-- Dashboard JavaScript -->
+    <script>
+        // Global dashboard state
+        let currentTool = null;
+        let sharedData = {
+            activeOrchid: null,
+            analyses: {},
+            insights: {}
+        };
+        
+        // Communication adapter for dashboard
+        let dashboardComm = null;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            loadDashboardState();
+            initializeCommunication();
+        });
+        
+        // Initialize communication system
+        function initializeCommunication() {
+            // Wait for communication system to be ready
+            setTimeout(() => {
+                if (typeof window.WidgetCommunication !== 'undefined') {
+                    dashboardComm = window.WidgetCommunication.createAdapter('dashboard');
+                    
+                    // Subscribe to communication events
+                    dashboardComm.onOrchidSelected((orchidData) => {
+                        console.log('🌺 Orchid selected via communication:', orchidData);
+                        setSharedOrchid(orchidData);
+                    });
+                    
+                    dashboardComm.onAnalysisCompleted((analysisData, message) => {
+                        console.log('📊 Analysis completed via communication:', message.source, analysisData);
+                        addAnalysisResult(message.source, analysisData);
+                    });
+                    
+                    dashboardComm.onInsightsGenerated((insights) => {
+                        console.log('💡 Cross-tool insights generated:', insights);
+                        updateCrossToolInsights(insights);
+                    });
+                    
+                    dashboardComm.onRecommendationsUpdated((recommendations) => {
+                        console.log('🎯 Recommendations updated:', recommendations);
+                        showRecommendations(recommendations);
+                    });
+                    
+                    console.log('✅ Dashboard communication initialized');
+                } else {
+                    console.warn('⚠️ Widget Communication not available, retrying...');
+                    setTimeout(initializeCommunication, 1000);
+                }
+            }, 500);
+        }
+        
+        // Tool launching
+        function launchTool(toolId) {
+            const toolMap = {
+                'health-diagnostic': {
+                    name: 'AI Health Diagnostic',
+                    url: '/widgets/ai-orchid-health-diagnostic',
+                    icon: 'heart'
+                },
+                'growing-conditions': {
+                    name: 'Growing Condition Matcher',
+                    url: '/widgets/personalized-growing-condition-matcher',
+                    icon: 'map-pin'
+                },
+                'breeding-predictor': {
+                    name: 'Breeding Compatibility Predictor',
+                    url: '/widgets/breeding-compatibility-predictor',
+                    icon: 'git-merge'
+                },
+                'care-calendar': {
+                    name: 'Adaptive Care Calendar',
+                    url: '/widgets/adaptive-care-calendar',
+                    icon: 'calendar'
+                },
+                'authentication': {
+                    name: 'Orchid Authentication',
+                    url: '/widgets/orchid-authentication-detector',
+                    icon: 'shield-check'
+                }
+            };
+            
+            const tool = toolMap[toolId];
+            if (!tool) {
+                console.error('Unknown tool:', toolId);
+                return;
+            }
+            
+            currentTool = toolId;
+            
+            // Update UI
+            document.getElementById('currentToolName').innerHTML = `
+                <i data-feather="${tool.icon}" class="me-2"></i>${tool.name}
+            `;
+            
+            // Show widget container
+            document.getElementById('navigationView').style.display = 'none';
+            document.getElementById('widgetContainer').style.display = 'block';
+            
+            // Load widget content
+            loadWidget(tool.url);
+            
+            // Update shared data panel if there's active data
+            if (sharedData.activeOrchid) {
+                showSharedDataPanel();
+            }
+            
+            feather.replace();
+        }
+        
+        // Load widget content
+        async function loadWidget(url) {
+            try {
+                const response = await fetch(url);
+                const html = await response.text();
+                document.getElementById('widgetContent').innerHTML = html;
+                
+                // Execute any scripts in the loaded content
+                const scripts = document.getElementById('widgetContent').querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.head.appendChild(newScript);
+                });
+                
+                // Initialize any widgets that might need it
+                setTimeout(() => {
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error loading widget:', error);
+                document.getElementById('widgetContent').innerHTML = `
+                    <div class="alert alert-warning m-4">
+                        <h5>Widget Loading</h5>
+                        <p>This tool is loading... Please check that all services are running properly.</p>
+                        <button class="btn btn-primary" onclick="loadWidget('${url}')">Retry</button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Return to dashboard
+        function returnToDashboard() {
+            currentTool = null;
+            
+            // Hide widget container
+            document.getElementById('widgetContainer').style.display = 'none';
+            document.getElementById('navigationView').style.display = 'block';
+            
+            // Clear widget content to free memory
+            document.getElementById('widgetContent').innerHTML = '';
+            
+            // Hide shared data panel if no active data
+            if (!hasActiveAnalysis()) {
+                hideSharedDataPanel();
+            }
+        }
+        
+        // Quick actions
+        function quickAction(actionId) {
+            const actionMap = {
+                'health-check': 'health-diagnostic',
+                'location-match': 'growing-conditions',
+                'breeding-analysis': 'breeding-predictor',
+                'care-schedule': 'care-calendar'
+            };
+            
+            const toolId = actionMap[actionId];
+            if (toolId) {
+                launchTool(toolId);
+            }
+        }
+        
+        // Enhanced shared data management with communication
+        function setSharedOrchid(orchidData) {
+            sharedData.activeOrchid = orchidData;
+            updateSharedDataPanel();
+            showSharedDataPanel();
+            saveDashboardState();
+            
+            // Broadcast via communication system
+            if (dashboardComm) {
+                dashboardComm.setActiveOrchid(orchidData);
+            }
+        }
+        
+        function addAnalysisResult(toolId, result) {
+            sharedData.analyses[toolId] = result;
+            updateCrossToolInsights();
+            saveDashboardState();
+            
+            // Broadcast via communication system  
+            if (dashboardComm) {
+                dashboardComm.reportAnalysis(result);
+            }
+        }
+        
+        function updateSharedDataPanel() {
+            if (!sharedData.activeOrchid) return;
+            
+            const orchidInfo = document.getElementById('sharedOrchidInfo');
+            const orchid = sharedData.activeOrchid;
+            
+            orchidInfo.innerHTML = `
+                <div class="orchid-summary">
+                    ${orchid.image ? `
+                        <img src="${orchid.image}" alt="${orchid.name}" class="orchid-image-thumb">
+                    ` : `
+                        <div class="orchid-image-thumb d-flex align-items-center justify-content-center bg-light">
+                            <i data-feather="flower"></i>
+                        </div>
+                    `}
+                    <div class="orchid-details">
+                        <h5>${orchid.name || 'Unknown Orchid'}</h5>
+                        <p>${orchid.genus || 'Unknown'} ${orchid.species || ''}</p>
+                        <p><small>ID: ${orchid.id} • Added: ${new Date(orchid.timestamp || Date.now()).toLocaleDateString()}</small></p>
+                    </div>
+                </div>
+            `;
+            
+            feather.replace();
+        }
+        
+        function updateCrossToolInsights(communicationInsights) {
+            const insights = document.getElementById('crossToolInsights');
+            const analyses = sharedData.analyses;
+            
+            let insightsHtml = '';
+            
+            // Show communication-generated insights first (priority insights)
+            if (communicationInsights) {
+                Object.entries(communicationInsights).forEach(([key, insight]) => {
+                    const priorityClass = insight.priority === 'high' ? 'border-danger' : 
+                                        insight.priority === 'medium' ? 'border-warning' : 'border-info';
+                    insightsHtml += `
+                        <div class="insight-card ${priorityClass}">
+                            <div class="insight-label">${insight.title}</div>
+                            <div class="insight-value" style="font-size: 0.85rem;">${insight.message}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Show individual analysis results
+            if (analyses['health-diagnostic']) {
+                insightsHtml += `
+                    <div class="insight-card">
+                        <div class="insight-label">Health Status</div>
+                        <div class="insight-value">${analyses['health-diagnostic'].health_score || 'Analyzed'}</div>
+                    </div>
+                `;
+            }
+            
+            if (analyses['growing-conditions']) {
+                insightsHtml += `
+                    <div class="insight-card">
+                        <div class="insight-label">Location Match</div>
+                        <div class="insight-value">${analyses['growing-conditions'].compatibility || 'Compatible'}</div>
+                    </div>
+                `;
+            }
+            
+            if (analyses['breeding-predictor']) {
+                insightsHtml += `
+                    <div class="insight-card">
+                        <div class="insight-label">Breeding Score</div>
+                        <div class="insight-value">${analyses['breeding-predictor'].compatibility_score || 'Analyzed'}%</div>
+                    </div>
+                `;
+            }
+            
+            if (analyses['care-calendar']) {
+                insightsHtml += `
+                    <div class="insight-card">
+                        <div class="insight-label">Care Intensity</div>
+                        <div class="insight-value">${analyses['care-calendar'].care_intensity || 'Scheduled'}</div>
+                    </div>
+                `;
+            }
+            
+            if (analyses['authentication']) {
+                insightsHtml += `
+                    <div class="insight-card">
+                        <div class="insight-label">Authenticity</div>
+                        <div class="insight-value">${analyses['authentication'].authenticity_level || 'Verified'}</div>
+                    </div>
+                `;
+            }
+            
+            insights.innerHTML = insightsHtml;
+        }
+        
+        // Show smart recommendations from communication system
+        function showRecommendations(recommendations) {
+            if (!recommendations || recommendations.length === 0) return;
+            
+            // Create or update recommendations panel
+            let recPanel = document.getElementById('recommendationsPanel');
+            if (!recPanel) {
+                recPanel = document.createElement('div');
+                recPanel.id = 'recommendationsPanel';
+                recPanel.className = 'shared-data-panel show';
+                recPanel.style.marginTop = '1rem';
+                
+                document.querySelector('.shared-data-panel').insertAdjacentElement('afterend', recPanel);
+            }
+            
+            let recHtml = `
+                <div class="data-panel-header">
+                    <i data-feather="lightbulb"></i>
+                    <h4>Smart Recommendations</h4>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearRecommendations()">
+                        <i data-feather="x" class="me-1"></i>Dismiss
+                    </button>
+                </div>
+                <div class="recommendations-list">
+            `;
+            
+            recommendations.forEach(rec => {
+                const toolIcon = getToolIcon(rec.tool);
+                recHtml += `
+                    <div class="action-card" onclick="launchTool('${rec.tool}')">
+                        <div class="d-flex align-items-start gap-2">
+                            <i data-feather="${toolIcon}" class="flex-shrink-0 mt-1" style="width: 18px; height: 18px;"></i>
+                            <div>
+                                <div class="action-title">${rec.action}</div>
+                                <div class="action-description">${rec.reason}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            recHtml += '</div>';
+            recPanel.innerHTML = recHtml;
+            
+            // Replace feather icons
+            feather.replace();
+        }
+        
+        function getToolIcon(tool) {
+            const iconMap = {
+                'health': 'heart',
+                'conditions': 'map-pin', 
+                'breeding': 'git-merge',
+                'care': 'calendar',
+                'authentication': 'shield-check'
+            };
+            return iconMap[tool] || 'tool';
+        }
+        
+        function clearRecommendations() {
+            const recPanel = document.getElementById('recommendationsPanel');
+            if (recPanel) {
+                recPanel.remove();
+            }
+        }
+        
+        function showSharedDataPanel() {
+            const panel = document.getElementById('sharedDataPanel');
+            panel.classList.add('show');
+        }
+        
+        function hideSharedDataPanel() {
+            const panel = document.getElementById('sharedDataPanel');
+            panel.classList.remove('show');
+        }
+        
+        function clearSharedData() {
+            sharedData = {
+                activeOrchid: null,
+                analyses: {},
+                insights: {}
+            };
+            hideSharedDataPanel();
+            clearRecommendations();
+            saveDashboardState();
+            
+            // Clear communication state
+            if (dashboardComm) {
+                dashboardComm.clearState();
+            }
+        }
+        
+        function hasActiveAnalysis() {
+            return sharedData.activeOrchid || Object.keys(sharedData.analyses).length > 0;
+        }
+        
+        // State persistence
+        function saveDashboardState() {
+            try {
+                localStorage.setItem('orchidDashboardState', JSON.stringify(sharedData));
+            } catch (error) {
+                console.warn('Could not save dashboard state:', error);
+            }
+        }
+        
+        function loadDashboardState() {
+            try {
+                const saved = localStorage.getItem('orchidDashboardState');
+                if (saved) {
+                    sharedData = JSON.parse(saved);
+                    if (hasActiveAnalysis()) {
+                        updateSharedDataPanel();
+                        updateCrossToolInsights();
+                        showSharedDataPanel();
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not load dashboard state:', error);
+            }
+        }
+        
+        // Global functions for widgets to use
+        window.dashboardAPI = {
+            setSharedOrchid: setSharedOrchid,
+            addAnalysisResult: addAnalysisResult,
+            getSharedData: () => sharedData,
+            launchTool: launchTool,
+            returnToDashboard: returnToDashboard
+        };
+    </script>
+</body>
+</html>

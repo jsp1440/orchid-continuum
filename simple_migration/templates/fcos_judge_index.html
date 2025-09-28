@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#5B2A6E">
+    <title>FCOS Orchid Judge (Beta)</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icons/orchid-icon-192.png">
+    <link rel="apple-touch-icon" href="/static/icons/orchid-icon-192.png">
+    <link rel="stylesheet" href="/static/css/fcos-judge.css">
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>FCOS Orchid Judge</h1>
+                <p>Educational Practice Tool (Beta)</p>
+            </div>
+            <div style="text-align: right;">
+                <a href="/" class="btn btn-outline" style="margin-right: 10px;">← Back to Orchid Continuum</a>
+                <a href="/gallery" class="btn btn-secondary">Gallery</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Banner -->
+    <div class="educational-banner">
+        Educational tool only — not affiliated with or approved by AOS/AOC/NZ/RHS. For learning & pre-judging practice.
+    </div>
+
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen active">
+            <div class="card">
+                <h2>Welcome to FCOS Orchid Judge</h2>
+                <p>Practice judging orchids with AI assistance and educational scoring. Perfect for learning judging criteria and preparing for shows.</p>
+                
+                <div class="action-buttons">
+                    <button id="start-new-entry" class="btn btn-primary btn-large">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        Start New Entry
+                    </button>
+                    
+                    <button id="view-history" class="btn btn-secondary btn-large">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3h18v18H3zM9 9h6v6H9z"></path>
+                        </svg>
+                        View My Last 10
+                    </button>
+                    
+                    <button id="about-btn" class="btn btn-outline btn-large">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9,9h0a3,3,0,0,1,6,0c0,2-3,3-3,3"></path>
+                            <path d="M12,17h0"></path>
+                        </svg>
+                        About
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings Card -->
+            <div class="card">
+                <h3>Settings</h3>
+                <div class="settings-grid">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="dark-mode-toggle">
+                        Dark Mode
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="large-text-toggle">
+                        Large Text
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Capture Screen -->
+        <div id="capture-screen" class="screen">
+            <div class="card">
+                <h2>Capture Photos</h2>
+                <p>Take two photos: your blooming plant and the identification tag.</p>
+                
+                <div class="capture-controls">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reference-toggle">
+                        Show Reference Card (for scale)
+                    </label>
+                </div>
+
+                <div class="photo-capture-grid">
+                    <div id="plant-photo-slot" class="photo-slot">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <p>Tap to capture plant photo</p>
+                    </div>
+                    
+                    <div id="tag-photo-slot" class="photo-slot">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                            <path d="M7 8h10M7 12h4"></path>
+                        </svg>
+                        <p>Tap to capture tag photo</p>
+                    </div>
+                </div>
+
+                <!-- Hidden file inputs for fallback -->
+                <input type="file" id="plant-file-input" accept="image/*" style="display: none;">
+                <input type="file" id="tag-file-input" accept="image/*" style="display: none;">
+
+                <div class="empty-state" id="capture-empty-state">
+                    <p>Let's take two photos to begin: plant and tag.</p>
+                </div>
+
+                <div class="screen-navigation">
+                    <button id="capture-back-btn" class="btn btn-outline">
+                        Back to Home
+                    </button>
+                    <button id="next-step-btn" class="btn btn-primary" disabled>
+                        Take Both Photos First
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OCR & Taxonomy Screen -->
+        <div id="taxonomy-screen" class="screen">
+            <div class="card">
+                <h2>Plant Information</h2>
+                <p>Review and edit the extracted plant information from your tag photo.</p>
+            </div>
+            
+            <div id="ocr-results">
+                <!-- OCR results will be inserted here -->
+            </div>
+
+            <div class="screen-navigation">
+                <button id="taxonomy-back-btn" class="btn btn-outline">
+                    Back to Photos
+                </button>
+                <button id="taxonomy-next-btn" class="btn btn-primary">
+                    Continue to Analysis
+                </button>
+            </div>
+        </div>
+
+        <!-- AI Analysis Screen -->
+        <div id="analysis-screen" class="screen">
+            <div class="card">
+                <h2>AI Image Analysis</h2>
+                <p>AI analysis of your plant photo. You can edit any values that seem incorrect.</p>
+            </div>
+            
+            <div id="analysis-results">
+                <!-- Analysis results will be inserted here -->
+            </div>
+
+            <div class="screen-navigation">
+                <button id="analysis-back-btn" class="btn btn-outline">
+                    Back to Information
+                </button>
+                <button id="analysis-next-btn" class="btn btn-primary">
+                    Continue to Scoring
+                </button>
+            </div>
+        </div>
+
+        <!-- Judging & Scoring Screen -->
+        <div id="scoring-screen" class="screen">
+            <div class="card">
+                <h2>Educational Scoring</h2>
+                <p>Practice scoring using established judging criteria. This is for learning only.</p>
+            </div>
+            
+            <div id="scoring-interface">
+                <!-- Scoring interface will be inserted here -->
+            </div>
+
+            <div class="screen-navigation">
+                <button id="scoring-back-btn" class="btn btn-outline">
+                    Back to Analysis
+                </button>
+                <button id="scoring-next-btn" class="btn btn-primary">
+                    Generate Certificate
+                </button>
+            </div>
+        </div>
+
+        <!-- Certificate & Save Screen -->
+        <div id="certificate-screen" class="screen">
+            <div class="card">
+                <h2>Practice Certificate</h2>
+                <p>Your educational judging certificate is ready.</p>
+            </div>
+            
+            <div id="certificate-preview">
+                <!-- Certificate preview will be inserted here -->
+            </div>
+
+            <div class="save-actions">
+                <button id="generate-pdf-btn" class="btn btn-primary btn-large">
+                    Generate Certificate (PDF)
+                </button>
+                
+                <div class="save-bar">
+                    <button id="save-to-fcos-btn" class="btn btn-secondary">
+                        Save to FCOS
+                    </button>
+                    <button id="email-copy-btn" class="btn btn-secondary">
+                        Email me a copy
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-navigation">
+                <button id="certificate-back-btn" class="btn btn-outline">
+                    Back to Scoring
+                </button>
+                <button id="start-over-btn" class="btn btn-primary">
+                    Start New Entry
+                </button>
+            </div>
+        </div>
+
+        <!-- About Screen -->
+        <div id="about-screen" class="screen">
+            <div class="card">
+                <h2>About FCOS Orchid Judge</h2>
+                <p>This educational tool was created for the Five Cities Orchid Society to help members practice judging orchids and learn about different judging systems.</p>
+                
+                <h3>Features</h3>
+                <ul>
+                    <li>Photo capture with reference scaling</li>
+                    <li>OCR text extraction from tags</li>
+                    <li>AI-powered flower analysis</li>
+                    <li>Multiple judging systems (AOS, AOC, NZ, RHS)</li>
+                    <li>Educational scoring and certificates</li>
+                    <li>Offline capability for field use</li>
+                </ul>
+
+                <h3>Disclaimer</h3>
+                <p><strong>This is an educational tool only.</strong> It is not affiliated with or approved by the American Orchid Society (AOS), Australian Orchid Council (AOC), New Zealand orchid societies, or the Royal Horticultural Society (RHS). Scores and certificates are for learning purposes only and do not represent official judging.</p>
+
+                <h3>Five Cities Orchid Society</h3>
+                <p>Learn more about FCOS and our activities at our website and newsletter.</p>
+                
+                <div class="about-links">
+                    <a href="#" class="btn btn-outline">FCOS Website</a>
+                    <a href="#" class="btn btn-outline">Newsletter</a>
+                </div>
+            </div>
+
+            <div class="screen-navigation">
+                <button id="about-back-btn" class="btn btn-primary">
+                    Back to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <p>Five Cities Orchid Society · Learn · Grow · Share</p>
+            <div>
+                <a href="/" style="color: white; text-decoration: none; margin-right: 20px;">🏠 Home</a>
+                <a href="/gallery" style="color: white; text-decoration: none; margin-right: 20px;">🖼️ Gallery</a>
+                <a href="/search" style="color: white; text-decoration: none;">🔍 Search</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consent Modal -->
+    <div id="consent-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Photo & Data Consent</h3>
+            <p>Before proceeding, please confirm:</p>
+            <label class="checkbox-label">
+                <input type="checkbox" id="consent-checkbox" required>
+                I own these photos / have permission. I agree to store them for FCOS educational use.
+            </label>
+            <div class="modal-actions">
+                <button id="consent-decline" class="btn btn-outline">Decline</button>
+                <button id="consent-accept" class="btn btn-primary" disabled>Accept & Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="/static/js/photo-capture.js"></script>
+    <script src="/static/js/ocr-analyzer.js"></script>
+    <script src="/static/js/ai-analysis.js"></script>
+    <script src="/static/js/judging-systems.js"></script>
+    <script src="/static/js/fcos-judge.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/service-worker.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+        
+        // Ensure buttons work - direct fallback
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('FCOS Judge: DOM loaded, checking buttons...');
+            
+            const startBtn = document.getElementById('start-new-entry');
+            const historyBtn = document.getElementById('view-history');
+            const aboutBtn = document.getElementById('about-btn');
+            
+            if (startBtn) {
+                console.log('FCOS Judge: Start button found');
+                startBtn.addEventListener('click', function() {
+                    console.log('Start New Entry clicked!');
+                    alert('AI Analysis starting! Click OK to continue.');
+                    // Show capture screen
+                    document.getElementById('home-screen').classList.remove('active');
+                    document.getElementById('capture-screen').classList.add('active');
+                });
+            }
+            
+            if (historyBtn) {
+                console.log('FCOS Judge: History button found');
+                historyBtn.addEventListener('click', function() {
+                    console.log('View History clicked!');
+                    alert('History feature coming soon! Use Start New Entry to analyze your orchid specimens.');
+                });
+            }
+            
+            if (aboutBtn) {
+                console.log('FCOS Judge: About button found');
+                aboutBtn.addEventListener('click', function() {
+                    console.log('About clicked!');
+                    alert('FCOS Orchid Judge PWA - Educational AI analysis tool for orchid judging practice. Perfect for your Neuwiedia zollingeri and other specimens!');
+                });
+            }
+            
+            console.log('FCOS Judge: Button setup complete');
+        });
+    </script>
+</body>
+</html>

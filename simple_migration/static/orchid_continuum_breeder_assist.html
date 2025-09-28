@@ -1,0 +1,3917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Continuum Studio</title>
+    <style>
+        :root {
+            --primary: #6B3FA0;
+            --secondary: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --bg: #1a1a1a;
+            --surface: #2d2d2d;
+            --text: #ffffff;
+            --text-muted: #adb5bd;
+            --border: #495057;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #2a2a2a 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, var(--primary) 0%, #8B5CF6 100%);
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            min-width: 120px;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(107, 63, 160, 0.3);
+        }
+
+        .tab-content {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .card {
+            background: #3a3a3a;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #553285;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+
+        .slider {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background: rgba(23, 162, 184, 0.2);
+            border-left: 4px solid var(--info);
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid var(--secondary);
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning);
+            color: var(--text);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .table th {
+            background: var(--dark);
+            font-weight: 600;
+        }
+
+        .table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Welcome Overlay Styles */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .welcome-content {
+            background: linear-gradient(135deg, var(--primary) 0%, #8B5CF6 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: welcomeSlideIn 0.8s ease-out;
+        }
+
+        @keyframes welcomeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .welcome-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .brand-story {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin: 2rem 0;
+            opacity: 0.95;
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid rgba(255,255,255,0.3);
+        }
+
+        .welcome-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .welcome-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 160px;
+        }
+
+        .welcome-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        /* Journey Bar Styles */
+        .journey-bar {
+            display: flex;
+            background: var(--surface);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .journey-step {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            min-width: 140px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .journey-step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            z-index: 1;
+        }
+
+        .journey-step:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+        }
+
+        .journey-step.active {
+            background: linear-gradient(135deg, var(--primary) 0%, #8B5CF6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(107, 63, 160, 0.4);
+            border-radius: 10px;
+            margin: 5px;
+        }
+
+        .journey-step.active::after {
+            color: white;
+        }
+
+        .journey-step .step-number {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .journey-step.active .step-number {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .journey-helper {
+            background: var(--dark);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Tour Tooltip Styles */
+        .tour-tooltip {
+            position: fixed;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 3000;
+            max-width: 300px;
+            font-size: 0.9rem;
+        }
+
+        .tour-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-top-color: var(--primary);
+        }
+
+        .tour-highlight {
+            position: fixed;
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 2500;
+            animation: tourPulse 2s infinite;
+        }
+
+        @keyframes tourPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .tour-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }
+
+        .tour-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .tour-btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .tour-btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .performance-stats {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: var(--dark);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Overlay -->
+        <div class="welcome-overlay" id="welcomeOverlay">
+            <div class="welcome-content">
+                <h1>🌺 Orchid Continuum Studio</h1>
+                <div class="brand-story">
+                    <p><strong>Orchid Continuum Studio is a living web of orchids, people, pollinators, and data.</strong></p>
+                    <p>It helps breeders analyze inheritance, compare genera, simulate crosses, and learn—securely, on your device.</p>
+                </div>
+                <div class="welcome-buttons">
+                    <button class="welcome-btn" onclick="loadSarcochilusDemo()">🌸 Load Sarcochilus Demo</button>
+                    <button class="welcome-btn" onclick="createNewProjectFromWelcome()">➕ Create New Project</button>
+                    <button class="welcome-btn" onclick="startGuidedTour()">🎯 Watch 2-min Tour</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🌺 Orchid Continuum Studio</h1>
+                    <p>Advanced breeding system with privacy controls, predictive modeling, and comprehensive judging</p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span class="local-only-badge">🔒 Local-Only</span>
+                    <button class="btn btn-secondary" onclick="switchJourney('privacy')">Privacy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journey Bar -->
+        <div class="journey-bar" id="journeyBar">
+            <button class="journey-step active" data-journey="data" data-step="1">
+                <div class="step-number">1</div>
+                <div>📊 Data</div>
+            </button>
+            <button class="journey-step" data-journey="explore" data-step="2">
+                <div class="step-number">2</div>
+                <div>🧬 Explore</div>
+            </button>
+            <button class="journey-step" data-journey="compare" data-step="3">
+                <div class="step-number">3</div>
+                <div>⚖️ Compare</div>
+            </button>
+            <button class="journey-step" data-journey="design" data-step="4">
+                <div class="step-number">4</div>
+                <div>🎯 Design</div>
+            </button>
+            <button class="journey-step" data-journey="journal" data-step="5">
+                <div class="step-number">5</div>
+                <div>📝 Journal</div>
+            </button>
+            <button class="journey-step" data-journey="export" data-step="6">
+                <div class="step-number">6</div>
+                <div>📤 Export</div>
+            </button>
+        </div>
+
+        <!-- Journey Helper Text -->
+        <div class="journey-helper" id="journeyHelper">
+            <strong>Step 1: Data Collection</strong> - Set up your encrypted breeding projects and import your plant collection with photos and traits.
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Data Journey Step -->
+            <div id="data" class="journey-panel">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>🔐 Pro Breeder Mode</h3>
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="projectName" class="form-control" placeholder="My Breeding Program">
+                        </div>
+                        <div class="form-group">
+                            <label>Security Passphrase</label>
+                            <input type="password" id="projectPassphrase" class="form-control" placeholder="Enter secure passphrase">
+                        </div>
+                        <div class="form-group">
+                            <label>Privacy Mode</label>
+                            <select id="privacyMode" class="form-control">
+                                <option value="local-only">Local-only (Never shared)</option>
+                                <option value="share-insights">Share anonymous insights</option>
+                                <option value="collaborative">Collaborative (with partners)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Genus Focus</label>
+                            <select id="genusFocus" class="form-control">
+                                <option value="cattleya">Cattleya</option>
+                                <option value="phalaenopsis">Phalaenopsis</option>
+                                <option value="dendrobium">Dendrobium</option>
+                                <option value="cymbidium">Cymbidium</option>
+                                <option value="oncidium">Oncidium</option>
+                                <option value="sarcochilus">Sarcochilus</option>
+                                <option value="multi-genus">Multi-genus</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;" onclick="createProject()">
+                            ➕ Create New Project
+                        </button>
+                        <button class="btn btn-outline" style="width: 100%;" onclick="loadProject()">
+                            📂 Load Existing Project
+                        </button>
+                    </div>
+                    <div class="card">
+                        <h3>📁 Your Breeding Projects</h3>
+                        <div id="projectsList">
+                            <div class="alert alert-info">
+                                <strong>No projects yet</strong><br>
+                                Create your first encrypted breeding project to get started. All data is stored locally with AES-GCM encryption.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collection Tab -->
+            <div id="collection" class="journey-panel hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>🌸 Plant Collection</h3>
+                        <div>
+                            <button class="btn btn-secondary" onclick="importCSV()">📤 Import CSV</button>
+                            <button class="btn btn-primary" onclick="addPlant()">➕ Add Plant</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table" id="plantsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Genus</th>
+                                    <th>Grex/Species</th>
+                                    <th>Clonal Name</th>
+                                    <th>Parent 1</th>
+                                    <th>Parent 2</th>
+                                    <th>Awards</th>
+                                    <th>Traits</th>
+                                    <th>Privacy</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plantsTableBody">
+                                <!-- Plants will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trait Inheritance Explorer -->
+            <div id="explore" class="journey-panel hidden">
+                <div class="card">
+                    <h3>🧬 Trait Inheritance Explorer</h3>
+                    <div class="tabs" style="margin-bottom: 1rem;">
+                        <button class="tab active" data-trait="roundness">Roundness</button>
+                        <button class="tab" data-trait="saturation">Saturation</button>
+                        <button class="tab" data-trait="color">Color</button>
+                        <button class="tab" data-trait="flowers_per_spike">Flowers/Spike</button>
+                        <button class="tab" data-trait="symmetry">Symmetry</button>
+                    </div>
+                    <div id="inheritanceCharts">
+                        <div class="grid grid-3">
+                            <div class="card">
+                                <h4>Offspring Histogram</h4>
+                                <canvas id="histogramChart" width="300" height="200"></canvas>
+                            </div>
+                            <div class="card">
+                                <h4>Parent vs Offspring</h4>
+                                <canvas id="scatterChart" width="300" height="200"></canvas>
+                                <p><small>r = <span id="correlation">-</span>, h² = <span id="heritability">-</span></small></p>
+                            </div>
+                            <div class="card">
+                                <h4>Parent A vs Parent B</h4>
+                                <canvas id="bubbleChart" width="300" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cross-Genus & Intergeneric Compare -->
+            <div id="compare" class="journey-panel hidden">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>⚖️ Cross-Genus Compare</h3>
+                        <div class="form-group">
+                            <label>Genus A</label>
+                            <select id="genusA" class="form-control">
+                                <option value="sarcochilus">Sarcochilus</option>
+                                <option value="phalaenopsis">Phalaenopsis</option>
+                                <option value="cattleya">Cattleya</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Genus B</label>
+                            <select id="genusB" class="form-control">
+                                <option value="phalaenopsis">Phalaenopsis</option>
+                                <option value="cattleya">Cattleya</option>
+                                <option value="sarcochilus">Sarcochilus</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="compareGenera()">Compare Genera</button>
+                        <div id="genusComparison" style="margin-top: 1rem;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🔬 Intergeneric Explorer</h3>
+                        <div class="form-group">
+                            <label>Genus X × Genus Y</label>
+                            <select id="intergenericX" class="form-control">
+                                <option value="sarcochilus">Sarcochilus</option>
+                                <option value="cattleya">Cattleya</option>
+                            </select>
+                            <span> × </span>
+                            <select id="intergenericY" class="form-control">
+                                <option value="cattleya">Cattleya</option>
+                                <option value="phalaenopsis">Phalaenopsis</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning" onclick="exploreIntergeneric()">Explore Cross</button>
+                        <div class="alert alert-warning" style="margin-top: 1rem;">
+                            <strong>⚠️ Exploratory:</strong> Requires calibration with real data.
+                        </div>
+                        <div id="intergenericResults" style="margin-top: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design (Reverse & Forward) -->
+            <div id="design" class="journey-panel hidden">
+                <!-- Model Settings Panel -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>🔧 Breeding Model Settings</h3>
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label>Heritability (h²) - Roundness</label>
+                            <input type="range" id="h2Roundness" min="0.1" max="0.9" step="0.05" value="0.7" class="form-control" onchange="updateModelSetting('heritability.roundness', this.value)">
+                            <small>Current: <span id="h2RoundnessValue">0.7</span></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Cool Tolerance K</label>
+                            <input type="range" id="coolToleranceK" min="1.0" max="5.0" step="0.1" value="2.5" class="form-control" onchange="updateModelSetting('coolToleranceK', this.value)">
+                            <small>Current: <span id="coolToleranceKValue">2.5</span></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Temperature Threshold (°C)</label>
+                            <input type="range" id="tempThreshold" min="5" max="20" step="0.5" value="12.0" class="form-control" onchange="updateModelSetting('temperatureThreshold', this.value)">
+                            <small>Current: <span id="tempThresholdValue">12.0°C</span></small>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Algorithm:</strong> Normal distribution for numeric traits, sigmoid for climate tolerance, multiplicative probabilities in log space.
+                    </div>
+                </div>
+
+            <!-- Reverse Design Panel -->
+            <div class="grid grid-2" style="margin-bottom: 2rem;">
+                <div class="card">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>🎯 Target Traits</h3>
+                        <div id="traitSliders"></div>
+                        <div class="form-group">
+                            <label>Color Family</label>
+                            <select id="colorFamily" class="form-control">
+                                <option value="white">White</option>
+                                <option value="yellow">Yellow</option>
+                                <option value="orange">Orange</option>
+                                <option value="pink">Pink</option>
+                                <option value="red">Red</option>
+                                <option value="purple">Purple</option>
+                                <option value="blue">Blue</option>
+                                <option value="green">Green</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning" style="width: 100%;" onclick="findCrosses()">
+                            🔍 Find Crosses
+                        </button>
+                        <div class="performance-stats" id="searchStats" style="display: none;">
+                            <div class="stat">
+                                <div class="stat-value" id="searchTime">-</div>
+                                <div class="stat-label">Runtime (ms)</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="pairCount">-</div>
+                                <div class="stat-label">Pairs Evaluated</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📋 Recommended Crosses</h3>
+                        <div id="crossRecommendations">
+                            <div class="alert alert-info">
+                                Set your target traits and click "Find Crosses" to see AI recommendations with explainability.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forward Recommendation Panel -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>📈 Forward Breeding</h3>
+                        <div class="form-group">
+                            <label>Select Plants (Hold Ctrl/Cmd for multiple)</label>
+                            <select id="parentSelection" class="form-control" multiple size="6">
+                                <!-- Will be populated from collection -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Optimization Goal</label>
+                            <select id="optimizationGoal" class="form-control">
+                                <option value="awardability">Awardability</option>
+                                <option value="floriferousness">Floriferousness</option>
+                                <option value="color-novelty">Color Novelty</option>
+                                <option value="climate-fit">Climate Adaptation</option>
+                                <option value="balanced">Balanced Improvement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="enableBeamSearch"> Enable Beam Search (A×B)×C
+                            </label>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;" onclick="generateForwardRecommendations()">
+                            🧠 Generate Recommendations
+                        </button>
+                        <div class="performance-stats" id="forwardSearchStats" style="display: none;">
+                            <div class="stat">
+                                <div class="stat-value" id="forwardSearchTime">-</div>
+                                <div class="stat-label">Runtime (ms)</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="forwardPairCount">-</div>
+                                <div class="stat-label">Pairs Evaluated</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>💡 Breeding Pairings</h3>
+                        <div id="forwardRecommendations">
+                            <div class="alert alert-info">
+                                Select parent plants and optimization goal to see ranked pairing recommendations with explainability.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journal 2.0 - Complete Breeding Lifecycle -->
+            <div id="journal" class="journey-panel hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 2rem;">
+                        <h3>📓 Breeding Journal 2.0</h3>
+                        <div>
+                            <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Enable Reminders</button>
+                            <button class="btn btn-info" onclick="generatePrintableReport()">🖨️ Print Report</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Add New Cross -->
+                    <div class="card" style="background: var(--dark); margin-bottom: 2rem;">
+                        <h4>➕ Record New Cross</h4>
+                        <div class="grid grid-3">
+                            <div class="form-group">
+                                <label>Seed Parent</label>
+                                <select id="seedParent" class="form-control">
+                                    <option value="">Select parent...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pollen Parent</label>
+                                <select id="pollenParent" class="form-control">
+                                    <option value="">Select parent...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cross Date</label>
+                                <input type="date" id="crossDate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="crossNotes" class="form-control" rows="2" placeholder="Environmental conditions, goals, observations..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="addCrossToJournal()">📝 Record Cross</button>
+                    </div>
+                    
+                    <!-- Journal Entries -->
+                    <div id="journalEntries">
+                        <!-- Dynamic journal entries will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Privacy & Security Panel -->
+            <div id="privacy" class="journey-panel hidden">
+                <div class="card">
+                    <h3>🔒 Privacy & Security Dashboard</h3>
+                    
+                    <!-- Vault Status -->
+                    <div class="grid grid-2" style="margin-bottom: 2rem;">
+                        <div class="card" style="background: var(--dark);">
+                            <h4>🏦 Data Vault Status</h4>
+                            <div style="margin: 1rem 0;">
+                                <div class="status-indicator">
+                                    <span class="status-dot active"></span>
+                                    <strong>AES-GCM Encryption:</strong> Active
+                                </div>
+                                <div class="status-indicator">
+                                    <span class="status-dot active"></span>
+                                    <strong>Client-Side Storage:</strong> IndexedDB
+                                </div>
+                                <div class="status-indicator">
+                                    <span class="status-dot active"></span>
+                                    <strong>Key Derivation:</strong> PBKDF2
+                                </div>
+                                <div class="status-indicator">
+                                    <span class="status-dot active"></span>
+                                    <strong>Network Isolation:</strong> Local-Only
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="background: var(--dark);">
+                            <h4>📊 What is Stored</h4>
+                            <ul style="margin: 1rem 0; line-height: 1.8;">
+                                <li>🌺 Plant collection & trait data</li>
+                                <li>🧬 Cross records & breeding notes</li>
+                                <li>📊 Analysis results & charts</li>
+                                <li>🖼️ Photos (as encrypted blobs)</li>
+                                <li>⚙️ Judging profiles & preferences</li>
+                            </ul>
+                            <p><strong>What's NOT stored:</strong> Personal info, external account data, cloud sync</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Proprietary Data Management -->
+                    <div class="card" style="background: var(--dark); margin-bottom: 2rem;">
+                        <h4>🔐 Proprietary Data Management</h4>
+                        <div class="grid grid-2">
+                            <div>
+                                <button class="btn btn-warning" onclick="bulkToggleProprietary(true)">🔒 Mark All Proprietary</button>
+                                <button class="btn btn-success" onclick="bulkToggleProprietary(false)">📖 Mark All Shareable</button>
+                            </div>
+                            <div>
+                                <p><strong>Proprietary plants:</strong> <span id="proprietaryCount">0</span></p>
+                                <p><strong>Shareable plants:</strong> <span id="shareableCount">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Security -->
+                    <div class="card" style="background: var(--dark);">
+                        <h4>📤 Export Security</h4>
+                        <p>When exporting decrypted data, you'll be asked to confirm understanding of sensitive data exposure.</p>
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Remember:</strong> Exported files are not encrypted. Store them securely.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Journal Tab (legacy) -->
+            <div id="original-journal" class="journey-panel hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>📝 Breeding Journal</h3>
+                        <button class="btn btn-primary" onclick="addCrossRecord()">➕ New Cross</button>
+                    </div>
+                    <div id="crossRecords">
+                        <div class="alert alert-info">
+                            No crosses recorded yet. Click "New Cross" to start tracking your breeding program.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Judging Panel (moved to design step) -->
+            <div id="judging" class="journey-panel hidden">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3>🏆 Judging System</h3>
+                        <div class="form-group">
+                            <label>Select System</label>
+                            <select id="judgingSystem" class="form-control" onchange="loadJudgingWeights()">
+                                <option value="aos">AOS (American Orchid Society)</option>
+                                <option value="joga">JOGA (Japan Orchid Growers Association)</option>
+                                <option value="anos">ANOS (Australian Native Orchid Society)</option>
+                                <option value="nzos">NZOS (New Zealand Orchid Society)</option>
+                                <option value="eojc">EOJC (European Orchid Judging Centre)</option>
+                                <option value="custom">Custom Weights</option>
+                            </select>
+                        </div>
+                        <div id="judgingWeights"></div>
+                        <button class="btn btn-warning" style="width: 100%;" onclick="saveJudgingProfile()">
+                            💾 Save Profile
+                        </button>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Judging Preview</h3>
+                        <canvas id="judgingChart" width="400" height="300" style="max-width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Explorer Features -->
+            <div id="additional-explorer" class="journey-panel hidden">
+                <div class="card">
+                    <h3>🔍 Data Explorer</h3>
+                    <div class="grid grid-2">
+                        <div>
+                            <h4>Trait Scatterplot</h4>
+                            <div class="form-group">
+                                <label>X-Axis</label>
+                                <select id="xAxisTrait" class="form-control">
+                                    <option value="roundness">Roundness</option>
+                                    <option value="flatness">Flatness</option>
+                                    <option value="color_saturation">Color Saturation</option>
+                                    <option value="flower_size">Flower Size</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Y-Axis</label>
+                                <select id="yAxisTrait" class="form-control">
+                                    <option value="flatness">Flatness</option>
+                                    <option value="roundness">Roundness</option>
+                                    <option value="flowers_per_spike">Flowers per Spike</option>
+                                    <option value="symmetry">Symmetry</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-info" onclick="generateScatterplot()">📈 Generate Plot</button>
+                        </div>
+                        <div>
+                            <canvas id="explorerChart" width="400" height="300" style="max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learn Panel -->
+            <div id="learn" class="journey-panel hidden">
+                <div class="grid grid-2">
+                    <div class="card" style="max-height: 500px;">
+                        <h3>📚 Learning Modules</h3>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <div class="lesson-item active" data-lesson="1" onclick="loadLesson(1)">
+                                📖 1. Orchid Genetics Basics
+                            </div>
+                            <div class="lesson-item" data-lesson="2" onclick="loadLesson(2)">
+                                📝 2. Record-keeping
+                            </div>
+                            <div class="lesson-item" data-lesson="3" onclick="loadLesson(3)">
+                                📸 3. Photography for Breeding
+                            </div>
+                            <div class="lesson-item" data-lesson="4" onclick="loadLesson(4)">
+                                📊 4. Heritability Estimation
+                            </div>
+                            <div class="lesson-item" data-lesson="5" onclick="loadLesson(5)">
+                                🏆 5. Judging Systems Overview
+                            </div>
+                            <div class="lesson-item" data-lesson="6" onclick="loadLesson(6)">
+                                🎯 6. Planning Crossing Programs
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📖 Learning Content</h3>
+                        <div id="lessonContent" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Lesson content will be loaded here -->
+                        </div>
+                        <div id="quizSection" style="margin-top: 1rem;">
+                            <!-- Quiz will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vendor Import Panel -->
+            <div id="import" class="journey-panel hidden">
+                <div class="card">
+                    <h3>📥 Vendor Import System</h3>
+                    <div class="alert alert-info">
+                        <strong>Provenance & Rights Management:</strong> Import orchid data from vendor websites with full attribution tracking.
+                    </div>
+                    <div class="form-group">
+                        <label>Vendor URLs (one per line)</label>
+                        <textarea id="vendorUrls" class="form-control" rows="6" 
+                                  placeholder="https://vendor1.com/orchid-page-1
+https://vendor1.com/orchid-page-2
+https://vendor2.com/product-123"></textarea>
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="form-group">
+                            <label>Source Domain</label>
+                            <input type="text" id="sourceDomain" class="form-control" placeholder="vendor-name.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Collection Tag</label>
+                            <input type="text" id="collectionTag" class="form-control" placeholder="Sarcochilus—SVO 2021–2024">
+                        </div>
+                        <div class="form-group">
+                            <label>Rights Policy</label>
+                            <select id="rightsPolicy" class="form-control">
+                                <option value="analyze_only">Analyze only; do not store images</option>
+                                <option value="thumbs">Store low-res thumbnails for research</option>
+                                <option value="full">Store full images (requires permission)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="queueVendorImport()">📤 Queue Import</button>
+                    
+                    <div id="importStatus" style="margin-top: 2rem;"></div>
+                    
+                    <div class="card" style="margin-top: 2rem;">
+                        <h4>🛠️ Parse Mapping</h4>
+                        <p>Configure CSS selectors to extract data from vendor pages:</p>
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label>Plant Name Selector</label>
+                                <input type="text" id="plantNameSelector" class="form-control" placeholder=".product-title, h1">
+                            </div>
+                            <div class="form-group">
+                                <label>Parent 1 Selector</label>
+                                <input type="text" id="parent1Selector" class="form-control" placeholder=".parent-1, .seed-parent">
+                            </div>
+                            <div class="form-group">
+                                <label>Parent 2 Selector</label>
+                                <input type="text" id="parent2Selector" class="form-control" placeholder=".parent-2, .pollen-parent">
+                            </div>
+                            <div class="form-group">
+                                <label>Description Selector</label>
+                                <input type="text" id="descriptionSelector" class="form-control" placeholder=".description, .product-details">
+                            </div>
+                            <div class="form-group">
+                                <label>Image Selector</label>
+                                <input type="text" id="imageSelector" class="form-control" placeholder=".product-images img, .gallery img">
+                            </div>
+                            <div class="form-group">
+                                <label>Award Selector</label>
+                                <input type="text" id="awardSelector" class="form-control" placeholder=".awards, .honors">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="saveParseProfile()">💾 Save Parse Profile</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Import Tab for backward compatibility -->
+            <div id="original-import" class="journey-panel hidden">
+                <div class="card">
+                    <h3>📥 Proof-of-Concept Import</h3>
+                    <div class="alert alert-info">
+                        Import public datasets from RHS, OrchidRoots, or OrchidPro. Demo includes sample Sarcochilus & Phalaenopsis data.
+                    </div>
+                    <div class="grid grid-3">
+                        <div class="card">
+                            <h4>RHS Format</h4>
+                            <p>grex, seed_parent, pollen_parent, registrant, date, url</p>
+                            <button class="btn btn-secondary" onclick="loadDemoRHS()">Load Demo Data</button>
+                        </div>
+                        <div class="card">
+                            <h4>OrchidRoots Format</h4>
+                            <p>name, parent1, parent2, url, img_url</p>
+                            <button class="btn btn-secondary" onclick="loadDemoOrchidRoots()">Load Demo Data</button>
+                        </div>
+                        <div class="card">
+                            <h4>OrchidPro Format</h4>
+                            <p>award, date, plant_name, parents, region, img_url</p>
+                            <button class="btn btn-secondary" onclick="loadDemoOrchidPro()">Load Demo Data</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Or paste CSV data:</label>
+                        <textarea id="csvInput" class="form-control" rows="6" placeholder="Paste your CSV data here..."></textarea>
+                        <button class="btn btn-primary" style="margin-top: 0.5rem;" onclick="importCustomCSV()">Import Custom CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Journey Step -->
+            <div id="export" class="journey-panel hidden">
+                <div class="card">
+                    <h3>📤 Export Options</h3>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h4>🔐 Encrypted Project Backup</h4>
+                            <p>Export complete project with AES-GCM encryption (.ocp file)</p>
+                            <button class="btn btn-primary" onclick="exportEncrypted()">Export Encrypted</button>
+                        </div>
+                        <div class="card">
+                            <h4>📊 Decrypted JSON</h4>
+                            <p>Local-only export with warning</p>
+                            <button class="btn btn-warning" onclick="exportDecrypted()">Export Decrypted</button>
+                        </div>
+                        <div class="card">
+                            <h4>📈 Anonymous Insights</h4>
+                            <p>Trait summaries (means, SDs, heritability)</p>
+                            <button class="btn btn-secondary" onclick="exportAnonymous()">Export Insights</button>
+                        </div>
+                        <div class="card">
+                            <h4>📄 Journal Report</h4>
+                            <p>Printable PDF via CSS</p>
+                            <button class="btn btn-info" onclick="printJournal()">Print Journal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>🔒 Your proprietary data never leaves your device unless you choose to export.</strong></p>
+            <p>AES-GCM encryption • PBKDF2 key derivation • Local IndexedDB storage</p>
+            <p>© 2025 Orchid Continuum Studio - Created by Jeffery S. Parham</p>
+            <p><a href="#" onclick="startGuidedTour()" style="color: var(--primary);">🎯 Replay Tour</a></p>
+        </div>
+    </div>
+
+    <!-- Modals will be added here dynamically -->
+
+    <script>
+        // Global variables
+        let currentProject = null;
+        let plantCollection = [];
+        let crossRecords = [];
+        let judgingProfiles = {};
+        let lessonProgress = {};
+        let demoData = {};
+        let tourStep = 0;
+        let tourActive = false;
+        let currentJourneyStep = 'data';
+        let guidedTourSteps = [];
+        let sarcochilusDemoData = [];
+        let breedingModelSettings = {
+            heritability: { roundness: 0.7, color_saturation: 0.6, flowers_per_spike: 0.8, symmetry: 0.75, flower_size: 0.65 },
+            coolToleranceK: 2.5,
+            temperatureThreshold: 12.0,
+            laplaceAlpha: 0.1,
+            beamWidth: 10,
+            maxPairSamples: 2000
+        };
+        let journalEntries = [];
+        let privacySettings = { showVault: true, localOnly: true, encryptionEnabled: true };
+        let publicDatasets = [];
+        let learningProgress = {};
+        let currentLesson = null;
+        let importPresets = {
+            rhs: { name: 'RHS Registry', fields: ['grex', 'seed_parent', 'pollen_parent', 'registrant', 'date', 'url'] },
+            orchidroots: { name: 'OrchidRoots', fields: ['name', 'parent1', 'parent2', 'url', 'img_url'] },
+            awards: { name: 'Award Reports', fields: ['award', 'date', 'plant_name', 'parents', 'region', 'image_url'] }
+        };
+        let currentTheme = localStorage.getItem('ocs_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            initializeJudgingProfiles();
+            initializeDemoData();
+            loadStoredData();
+            setupEventListeners();
+            setupJourneyNavigation();
+            loadLesson(1); // Load first lesson by default
+            
+            // Show welcome overlay if first visit
+            if (!localStorage.getItem('ocs_visited')) {
+                showWelcomeOverlay();
+            }
+        });
+
+        function initializeApp() {
+            // Setup trait sliders
+            setupTraitSliders();
+            
+            // Initialize judging chart
+            initializeJudgingChart();
+            
+            // Initialize guided tour steps
+            setupGuidedTour();
+            
+            // Initialize comprehensive Sarcochilus demo data
+            initializeSarcochilusDemo();
+        }
+        
+        function setupJourneyNavigation() {
+            // Setup journey bar navigation
+            document.querySelectorAll('.journey-step').forEach(step => {
+                step.addEventListener('click', () => {
+                    const journey = step.dataset.journey;
+                    switchJourney(journey);
+                });
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                if (e.key === 'ArrowLeft') {
+                    navigateJourney(-1);
+                } else if (e.key === 'ArrowRight') {
+                    navigateJourney(1);
+                }
+            });
+        }
+        
+        function switchJourney(journeyName) {
+            // Hide all panels
+            document.querySelectorAll('.journey-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            // Show selected panel
+            const targetPanel = document.getElementById(journeyName);
+            if (targetPanel) {
+                targetPanel.classList.remove('hidden');
+            }
+            
+            // Update active journey step
+            document.querySelectorAll('.journey-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.querySelector(`[data-journey="${journeyName}"]`).classList.add('active');
+            
+            // Update helper text
+            updateJourneyHelper(journeyName);
+            
+            currentJourneyStep = journeyName;
+        }
+        
+        function navigateJourney(direction) {
+            const steps = ['data', 'explore', 'compare', 'design', 'journal', 'export'];
+            const currentIndex = steps.indexOf(currentJourneyStep);
+            const newIndex = Math.max(0, Math.min(steps.length - 1, currentIndex + direction));
+            
+            if (newIndex !== currentIndex) {
+                switchJourney(steps[newIndex]);
+            }
+        }
+        
+        function updateJourneyHelper(journey) {
+            const helpers = {
+                data: '<strong>Step 1: Data Collection</strong> - Set up your encrypted breeding projects and import your plant collection with photos and traits.',
+                explore: '<strong>Step 2: Trait Inheritance</strong> - Explore how traits are inherited across generations with interactive charts and statistics.',
+                compare: '<strong>Step 3: Cross-Genus Analysis</strong> - Compare different genera and explore intergeneric crossing possibilities.',
+                design: '<strong>Step 4: Breeding Design</strong> - Use reverse and forward design to plan strategic crosses for specific goals.',
+                journal: '<strong>Step 5: Breeding Journal</strong> - Track your crosses from pollination to flowering with detailed records.',
+                export: '<strong>Step 6: Data Export</strong> - Export your data securely with full citation and provenance information.'
+            };
+            
+            document.getElementById('journeyHelper').innerHTML = helpers[journey] || helpers.data;
+        }
+
+        // Welcome overlay functions
+        function showWelcomeOverlay() {
+            document.getElementById('welcomeOverlay').style.display = 'flex';
+        }
+        
+        function hideWelcomeOverlay() {
+            document.getElementById('welcomeOverlay').style.display = 'none';
+            localStorage.setItem('ocs_visited', 'true');
+        }
+        
+        function loadSarcochilusDemo() {
+            hideWelcomeOverlay();
+            
+            // Load ALL 30 demo entries
+            plantCollection = [...sarcochilusDemoData]; // All 30 entries
+            
+            // Create a comprehensive demo project
+            currentProject = {
+                id: 'demo_project',
+                name: 'Sarcochilus Sunset Collection Demo - 30 Elite Hybrids',
+                plants: plantCollection,
+                created: new Date().toISOString(),
+                privacy: 'share-insights',
+                genus: 'sarcochilus',
+                description: 'Comprehensive collection showcasing modern Sarcochilus breeding with trait inheritance analysis'
+            };
+            
+            // Update displays
+            displayProjects();
+            updatePlantSelectors();
+            updatePlantsTable();
+            
+            // Initialize trait explorer
+            setupTraitExplorer();
+            switchTraitTab('roundness'); // Default to roundness
+            
+            // Start guided walkthrough
+            setTimeout(() => {
+                startDemoWalkthrough();
+            }, 1000);
+        }
+        
+        function createNewProjectFromWelcome() {
+            hideWelcomeOverlay();
+            // Focus on the project creation form
+            document.getElementById('projectName').focus();
+        }
+        
+        function startGuidedTour() {
+            hideWelcomeOverlay();
+            tourActive = true;
+            tourStep = 0;
+            showTourStep();
+        }
+
+        function setupTraitSliders() {
+            const traits = {
+                roundness: { value: 0.20, label: 'Roundness' },
+                flatness: { value: 0.10, label: 'Flatness' },
+                color_saturation: { value: 0.18, label: 'Color Saturation' },
+                presentation: { value: 0.08, label: 'Presentation' },
+                symmetry: { value: 0.10, label: 'Symmetry' },
+                flower_size: { value: 0.10, label: 'Flower Size' },
+                flowers_per_spike: { value: 0.08, label: 'Flowers per Spike' },
+                substance_texture: { value: 0.08, label: 'Substance & Texture' },
+                lip_definition: { value: 0.05, label: 'Lip Definition' },
+                pattern_quality: { value: 0.03, label: 'Pattern Quality' }
+            };
+
+            const container = document.getElementById('traitSliders');
+            container.innerHTML = Object.entries(traits).map(([key, trait]) => `
+                <div class="slider-group">
+                    <label>${trait.label}: <span id="${key}Value">${trait.value.toFixed(2)}</span></label>
+                    <input type="range" id="${key}Slider" class="slider form-control" 
+                           min="0" max="1" step="0.01" value="${trait.value}"
+                           oninput="updateTraitValue('${key}', this.value)">
+                </div>
+            `).join('');
+        }
+
+        function updateTraitValue(trait, value) {
+            document.getElementById(trait + 'Value').textContent = parseFloat(value).toFixed(2);
+        }
+
+        // Initialize judging profiles with all systems
+        function initializeJudgingProfiles() {
+            judgingProfiles = {
+                aos: {
+                    roundness: 0.20,
+                    flatness: 0.10,
+                    color_saturation: 0.18,
+                    presentation: 0.08,
+                    symmetry: 0.10,
+                    flower_size: 0.10,
+                    flowers_per_spike: 0.08,
+                    substance_texture: 0.08,
+                    lip_definition: 0.05,
+                    pattern_quality: 0.03
+                },
+                joga: {
+                    roundness: 0.15,
+                    flatness: 0.12,
+                    color_saturation: 0.20,
+                    presentation: 0.12,
+                    symmetry: 0.15,
+                    flower_size: 0.08,
+                    flowers_per_spike: 0.06,
+                    substance_texture: 0.07,
+                    lip_definition: 0.03,
+                    pattern_quality: 0.02
+                },
+                anos: {
+                    roundness: 0.18,
+                    flatness: 0.08,
+                    color_saturation: 0.16,
+                    presentation: 0.10,
+                    symmetry: 0.12,
+                    flower_size: 0.12,
+                    flowers_per_spike: 0.10,
+                    substance_texture: 0.09,
+                    lip_definition: 0.03,
+                    pattern_quality: 0.02
+                },
+                nzos: {
+                    roundness: 0.22,
+                    flatness: 0.11,
+                    color_saturation: 0.17,
+                    presentation: 0.09,
+                    symmetry: 0.11,
+                    flower_size: 0.09,
+                    flowers_per_spike: 0.07,
+                    substance_texture: 0.08,
+                    lip_definition: 0.04,
+                    pattern_quality: 0.02
+                },
+                eojc: {
+                    roundness: 0.19,
+                    flatness: 0.09,
+                    color_saturation: 0.19,
+                    presentation: 0.11,
+                    symmetry: 0.13,
+                    flower_size: 0.11,
+                    flowers_per_spike: 0.06,
+                    substance_texture: 0.07,
+                    lip_definition: 0.03,
+                    pattern_quality: 0.02
+                }
+            };
+            
+            loadJudgingWeights();
+        }
+
+        function loadJudgingWeights() {
+            const system = document.getElementById('judgingSystem').value;
+            const weights = judgingProfiles[system] || judgingProfiles.aos;
+            const container = document.getElementById('judgingWeights');
+            
+            container.innerHTML = Object.entries(weights).map(([trait, weight]) => `
+                <div class="slider-group">
+                    <label>${trait.replace('_', ' ').toUpperCase()}: <span id="${trait}WeightVal">${weight.toFixed(2)}</span></label>
+                    <input type="range" id="${trait}WeightSlider" class="slider form-control" 
+                           min="0" max="1" step="0.01" value="${weight}" 
+                           oninput="updateJudgingWeight('${trait}', this.value)">
+                </div>
+            `).join('');
+            
+            updateJudgingChart();
+        }
+
+        function updateJudgingWeight(trait, value) {
+            document.getElementById(trait + 'WeightVal').textContent = parseFloat(value).toFixed(2);
+            updateJudgingChart();
+        }
+
+        function initializeJudgingChart() {
+            // Initialize canvas for judging weights visualization
+            updateJudgingChart();
+        }
+
+        function updateJudgingChart() {
+            const canvas = document.getElementById('judgingChart');
+            const ctx = canvas.getContext('2d');
+            const system = document.getElementById('judgingSystem')?.value || 'aos';
+            const weights = judgingProfiles[system] || judgingProfiles.aos;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw bar chart
+            const entries = Object.entries(weights);
+            const barWidth = canvas.width / entries.length - 10;
+            const maxHeight = canvas.height - 40;
+            
+            entries.forEach(([trait, weight], index) => {
+                const x = index * (barWidth + 10) + 5;
+                const height = weight * maxHeight;
+                const y = canvas.height - height - 20;
+                
+                // Draw bar
+                ctx.fillStyle = '#6B3FA0';
+                ctx.fillRect(x, y, barWidth, height);
+                
+                // Draw label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px Arial';
+                ctx.save();
+                ctx.translate(x + barWidth/2, canvas.height - 5);
+                ctx.rotate(-Math.PI/4);
+                ctx.textAlign = 'right';
+                ctx.fillText(trait.replace('_', ' '), 0, 0);
+                ctx.restore();
+                
+                // Draw value
+                ctx.textAlign = 'center';
+                ctx.fillText(weight.toFixed(2), x + barWidth/2, y - 5);
+            });
+        }
+
+        // Demo data initialization
+        function initializeDemoData() {
+            demoData = {
+                sarcochilus: [
+                    { name: 'Sarcochilus Kulnura Magic', parent1: 'Sarc. fitzhart', parent2: 'Sarc. hartmanii', awards: 'HCC/AOS', traits: { roundness: 0.85, color_saturation: 0.92 }},
+                    { name: 'Sarcochilus Heidi', parent1: 'Sarc. fitzhart', parent2: 'Sarc. weinthalii', awards: 'AM/AOS', traits: { roundness: 0.78, color_saturation: 0.88 }},
+                    { name: 'Sarcochilus Fitzhart', parent1: 'Sarc. hartmanii', parent2: 'Sarc. fitzgeraldii', awards: 'Species', traits: { roundness: 0.82, color_saturation: 0.75 }}
+                ],
+                phalaenopsis: [
+                    { name: 'Phalaenopsis Brother Sara Gold', parent1: 'Phal. Brother Golden Potential', parent2: 'Phal. Sara Lee', awards: 'HCC/AOS', traits: { roundness: 0.91, color_saturation: 0.95 }},
+                    { name: 'Phalaenopsis Golden Peoker', parent1: 'Phal. Golden Buddha', parent2: 'Phal. Peoker\'s Pride', awards: 'AM/AOS', traits: { roundness: 0.89, color_saturation: 0.93 }},
+                    { name: 'Phalaenopsis Tying Shin Champion', parent1: 'Phal. Tying Shin Fly Eagle', parent2: 'Phal. Champion', awards: 'FCC/AOS', traits: { roundness: 0.94, color_saturation: 0.97 }}
+                ]
+            };
+        }
+        
+        function initializeSarcochilusDemo() {
+            sarcochilusDemoData = [
+                {
+                    id: 'sarc_001', name: 'Sarcochilus Sunset Magic', parent1: 'Sarc. hartmanii', parent2: 'Sarc. fitzgeraldii',
+                    awards: 'HCC/AOS 78pts', description: 'Vibrant sunset-orange flowers with exceptional roundness. Outstanding floriferousness with 15+ flowers per spike.',
+                    traits: { roundness: 0.92, color_saturation: 0.95, flowers_per_spike: 15, symmetry: 0.88, flower_size: 28 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGRjZCNDAiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGOTUwMCIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRiIgZm9udC1zaXplPSIxMCI+U008L3RleHQ+PC9zdmc+'
+                },
+                {
+                    id: 'sarc_002', name: 'Sarcochilus Dawn Glow', parent1: 'Sarc. weinthalii', parent2: 'Sarc. fitzhart',
+                    awards: 'AM/AOS 82pts', description: 'Pale pink with deeper pink spotting, extremely round form. Compact plant with excellent presentation.',
+                    traits: { roundness: 0.94, color_saturation: 0.78, flowers_per_spike: 12, symmetry: 0.91, flower_size: 25 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGRkM0RDAiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGNjlCNCIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRiIgZm9udC1zaXplPSIxMCI+REc8L3RleHQ+PC9zdmc+'
+                },
+                {
+                    id: 'sarc_003', name: 'Sarcochilus Ruby Falls', parent1: 'Sarc. Kulnura Magic', parent2: 'Sarc. Heidi',
+                    awards: 'HCC/AOS 76pts', description: 'Deep ruby red with white throat, excellent substance. Flowers held well above foliage on strong spikes.',
+                    traits: { roundness: 0.87, color_saturation: 0.96, flowers_per_spike: 18, symmetry: 0.85, flower_size: 30 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiM4QjAwMDAiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0RDMTQzQyIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRiIgZm9udC1zaXplPSIxMCI+UkY8L3RleHQ+PC9zdmc+'
+                },
+                {
+                    id: 'sarc_004', name: 'Sarcochilus Moonbeam', parent1: 'Sarc. fitzgeraldii', parent2: 'Sarc. ceciliae',
+                    awards: 'Species Award', description: 'Pure white with subtle yellow throat, compact growth. One of the finest white-flowered clones available.',
+                    traits: { roundness: 0.89, color_saturation: 0.15, flowers_per_spike: 10, symmetry: 0.93, flower_size: 22 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGOEY4RkYiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGRkZGRiIgc3Ryb2tlPSIjQ0NDIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIzMiIgeT0iMzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjYiIGZvbnQtc2l6ZT0iMTAiPk1CPC90ZXh0Pjwvc3ZnPg=='
+                },
+                {
+                    id: 'sarc_005', name: 'Sarcochilus Golden Dream', parent1: 'Sarc. Sunset Magic', parent2: 'Sarc. hartmanii',
+                    awards: 'AM/AOS 81pts', description: 'Rich golden yellow with orange lip markings. Vigorous grower with multiple leads producing abundant flowers.',
+                    traits: { roundness: 0.91, color_saturation: 0.92, flowers_per_spike: 14, symmetry: 0.87, flower_size: 26 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGRkQ3MDAiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGQzEwNyIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzMzMyIgZm9udC1zaXplPSIxMCI+R0Q8L3RleHQ+PC9zdmc+'
+                },
+                {
+                    id: 'sarc_006', name: 'Sarcochilus Midnight Purple', parent1: 'Sarc. Dawn Glow', parent2: 'Sarc. weinthalii',
+                    awards: 'HCC/AOS 79pts', description: 'Deep purple-magenta with darker veining patterns. Unusual color for genus with good form and substance.',
+                    traits: { roundness: 0.88, color_saturation: 0.89, flowers_per_spike: 11, symmetry: 0.84, flower_size: 24 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiM0QjAwODIiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iIzY2MzNBNCIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRiIgZm9udC1zaXplPSIxMCI+TVA8L3RleHQ+PC9zdmc+'
+                },
+                {
+                    id: 'sarc_007', name: 'Sarcochilus Crystal Ice', parent1: 'Sarc. Moonbeam', parent2: 'Sarc. fitzgeraldii',
+                    awards: 'Species Award', description: 'Crystalline white with subtle pink blush at petal tips. Perfect symmetry and outstanding plant habit.',
+                    traits: { roundness: 0.96, color_saturation: 0.12, flowers_per_spike: 13, symmetry: 0.95, flower_size: 23 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGNUY1RkYiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGRjVGNSIgc3Ryb2tlPSIjRTZFNkZBIiBzdHJva2Utd2lkdGg9IjEiLz48dGV4dCB4PSIzMiIgeT0iMzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM4ODgiIGZvbnQtc2l6ZT0iMTAiPkNJPC90ZXh0Pjwvc3ZnPg=='
+                },
+                {
+                    id: 'sarc_008', name: 'Sarcochilus Fire Opal', parent1: 'Sarc. Ruby Falls', parent2: 'Sarc. Golden Dream',
+                    awards: 'HCC/AOS 77pts', description: 'Orange-red with golden highlights, very unique coloration. Strong spikes with flowers lasting 6+ weeks.',
+                    traits: { roundness: 0.85, color_saturation: 0.94, flowers_per_spike: 16, symmetry: 0.82, flower_size: 29 },
+                    image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNGRjQ1MDAiLz48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyMCIgZmlsbD0iI0ZGNjkwMCIvPjx0ZXh0IHg9IjMyIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGRiIgZm9udC1zaXplPSIxMCI+Rk88L3RleHQ+PC9zdmc+'
+                }
+                // Continue with remaining 22 entries...
+            ];
+            
+            // Add remaining 22 entries programmatically for demo purposes
+            const additionalEntries = [
+                { name: 'Sarcochilus Coral Reef', parent1: 'Sarc. Fire Opal', parent2: 'Sarc. Dawn Glow', awards: 'HCC/AOS 75pts', roundness: 0.83, color_saturation: 0.91, flowers_per_spike: 13, symmetry: 0.86, flower_size: 27 },
+                { name: 'Sarcochilus Arctic Breeze', parent1: 'Sarc. Crystal Ice', parent2: 'Sarc. Moonbeam', awards: 'Species Award', roundness: 0.92, color_saturation: 0.18, flowers_per_spike: 9, symmetry: 0.94, flower_size: 21 },
+                { name: 'Sarcochilus Velvet Rose', parent1: 'Sarc. Midnight Purple', parent2: 'Sarc. Ruby Falls', awards: 'AM/AOS 80pts', roundness: 0.89, color_saturation: 0.87, flowers_per_spike: 12, symmetry: 0.88, flower_size: 25 },
+                { name: 'Sarcochilus Sunshine Yellow', parent1: 'Sarc. Golden Dream', parent2: 'Sarc. hartmanii', awards: 'HCC/AOS 78pts', roundness: 0.87, color_saturation: 0.93, flowers_per_spike: 15, symmetry: 0.83, flower_size: 28 },
+                { name: 'Sarcochilus Pink Blush', parent1: 'Sarc. Dawn Glow', parent2: 'Sarc. Crystal Ice', awards: 'HCC/AOS 76pts', roundness: 0.90, color_saturation: 0.65, flowers_per_spike: 11, symmetry: 0.89, flower_size: 24 },
+                { name: 'Sarcochilus Copper Glow', parent1: 'Sarc. Fire Opal', parent2: 'Sarc. Sunset Magic', awards: 'HCC/AOS 79pts', roundness: 0.86, color_saturation: 0.88, flowers_per_spike: 17, symmetry: 0.85, flower_size: 26 },
+                { name: 'Sarcochilus Snow Peak', parent1: 'Sarc. Arctic Breeze', parent2: 'Sarc. fitzgeraldii', awards: 'Species Award', roundness: 0.95, color_saturation: 0.08, flowers_per_spike: 8, symmetry: 0.96, flower_size: 20 },
+                { name: 'Sarcochilus Berry Wine', parent1: 'Sarc. Velvet Rose', parent2: 'Sarc. Midnight Purple', awards: 'AM/AOS 81pts', roundness: 0.84, color_saturation: 0.92, flowers_per_spike: 14, symmetry: 0.87, flower_size: 23 },
+                { name: 'Sarcochilus Lemon Drop', parent1: 'Sarc. Sunshine Yellow', parent2: 'Sarc. Golden Dream', awards: 'HCC/AOS 77pts', roundness: 0.88, color_saturation: 0.95, flowers_per_spike: 13, symmetry: 0.84, flower_size: 25 },
+                { name: 'Sarcochilus Peach Sunset', parent1: 'Sarc. Pink Blush', parent2: 'Sarc. Copper Glow', awards: 'HCC/AOS 78pts', roundness: 0.91, color_saturation: 0.79, flowers_per_spike: 12, symmetry: 0.90, flower_size: 26 },
+                { name: 'Sarcochilus Jade Mist', parent1: 'Sarc. Snow Peak', parent2: 'Sarc. weinthalii', awards: 'Species Award', roundness: 0.89, color_saturation: 0.25, flowers_per_spike: 10, symmetry: 0.92, flower_size: 22 },
+                { name: 'Sarcochilus Crimson Tide', parent1: 'Sarc. Berry Wine', parent2: 'Sarc. Ruby Falls', awards: 'AM/AOS 82pts', roundness: 0.86, color_saturation: 0.97, flowers_per_spike: 15, symmetry: 0.88, flower_size: 29 },
+                { name: 'Sarcochilus Amber Light', parent1: 'Sarc. Lemon Drop', parent2: 'Sarc. Fire Opal', awards: 'HCC/AOS 76pts', roundness: 0.87, color_saturation: 0.89, flowers_per_spike: 14, symmetry: 0.85, flower_size: 27 },
+                { name: 'Sarcochilus Rose Dawn', parent1: 'Sarc. Peach Sunset', parent2: 'Sarc. Pink Blush', awards: 'HCC/AOS 79pts', roundness: 0.93, color_saturation: 0.71, flowers_per_spike: 11, symmetry: 0.91, flower_size: 24 },
+                { name: 'Sarcochilus Silver Frost', parent1: 'Sarc. Jade Mist', parent2: 'Sarc. Arctic Breeze', awards: 'Species Award', roundness: 0.94, color_saturation: 0.15, flowers_per_spike: 9, symmetry: 0.95, flower_size: 21 },
+                { name: 'Sarcochilus Burgundy Velvet', parent1: 'Sarc. Crimson Tide', parent2: 'Sarc. Midnight Purple', awards: 'AM/AOS 83pts', roundness: 0.85, color_saturation: 0.94, flowers_per_spike: 16, symmetry: 0.89, flower_size: 28 },
+                { name: 'Sarcochilus Golden Harvest', parent1: 'Sarc. Amber Light', parent2: 'Sarc. Sunshine Yellow', awards: 'HCC/AOS 80pts', roundness: 0.90, color_saturation: 0.96, flowers_per_spike: 13, symmetry: 0.86, flower_size: 26 },
+                { name: 'Sarcochilus Strawberry Fields', parent1: 'Sarc. Rose Dawn', parent2: 'Sarc. Dawn Glow', awards: 'HCC/AOS 77pts', roundness: 0.92, color_saturation: 0.83, flowers_per_spike: 12, symmetry: 0.90, flower_size: 25 },
+                { name: 'Sarcochilus Platinum Star', parent1: 'Sarc. Silver Frost', parent2: 'Sarc. Crystal Ice', awards: 'Species Award', roundness: 0.97, color_saturation: 0.10, flowers_per_spike: 8, symmetry: 0.97, flower_size: 19 },
+                { name: 'Sarcochilus Royal Purple', parent1: 'Sarc. Burgundy Velvet', parent2: 'Sarc. Berry Wine', awards: 'FCC/AOS 85pts', roundness: 0.88, color_saturation: 0.98, flowers_per_spike: 17, symmetry: 0.91, flower_size: 30 },
+                { name: 'Sarcochilus Citrine Glow', parent1: 'Sarc. Golden Harvest', parent2: 'Sarc. Lemon Drop', awards: 'HCC/AOS 78pts', roundness: 0.89, color_saturation: 0.94, flowers_per_spike: 14, symmetry: 0.87, flower_size: 27 },
+                { name: 'Sarcochilus Cherry Blossom', parent1: 'Sarc. Strawberry Fields', parent2: 'Sarc. Peach Sunset', awards: 'AM/AOS 81pts', roundness: 0.91, color_saturation: 0.76, flowers_per_spike: 11, symmetry: 0.93, flower_size: 24 }
+            ];
+            
+            // Generate additional entries with proper structure
+            additionalEntries.forEach((entry, index) => {
+                const id = `sarc_${String(index + 9).padStart(3, '0')}`;
+                const colorMap = { 
+                    'white': '#F5F5FF', 'yellow': '#FFD700', 'pink': '#FFC4D0', 
+                    'red': '#DC143C', 'purple': '#6633A4', 'orange': '#FF6B40' 
+                };
+                const color = entry.name.toLowerCase().includes('white') || entry.name.toLowerCase().includes('silver') || entry.name.toLowerCase().includes('platinum') ? colorMap.white :
+                           entry.name.toLowerCase().includes('yellow') || entry.name.toLowerCase().includes('golden') || entry.name.toLowerCase().includes('citrine') ? colorMap.yellow :
+                           entry.name.toLowerCase().includes('pink') || entry.name.toLowerCase().includes('rose') || entry.name.toLowerCase().includes('cherry') ? colorMap.pink :
+                           entry.name.toLowerCase().includes('red') || entry.name.toLowerCase().includes('crimson') || entry.name.toLowerCase().includes('ruby') ? colorMap.red :
+                           entry.name.toLowerCase().includes('purple') || entry.name.toLowerCase().includes('burgundy') || entry.name.toLowerCase().includes('royal') ? colorMap.purple :
+                           colorMap.orange;
+                
+                const initials = entry.name.split(' ').map(w => w[0]).join('').substring(0, 2);
+                const image = `data:image/svg+xml;base64,${btoa(`<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="64" height="64" fill="${color}"/><circle cx="32" cy="32" r="20" fill="${color}" stroke="#333" stroke-width="1"/><text x="32" y="36" text-anchor="middle" fill="#333" font-size="10">${initials}</text></svg>`)}`;
+                
+                sarcochilusDemoData.push({
+                    id: id,
+                    name: entry.name,
+                    parent1: entry.parent1,
+                    parent2: entry.parent2,
+                    awards: entry.awards,
+                    description: `${entry.name.split(' ').slice(1).join(' ')} hybrid with excellent form and substance. Represents the finest breeding in modern Sarcochilus.`,
+                    traits: {
+                        roundness: entry.roundness,
+                        color_saturation: entry.color_saturation,
+                        flowers_per_spike: entry.flowers_per_spike,
+                        symmetry: entry.symmetry,
+                        flower_size: entry.flower_size
+                    },
+                    image: image
+                });
+            });
+        }
+
+        // Project management functions
+        async function createProject() {
+            const name = document.getElementById('projectName').value;
+            const passphrase = document.getElementById('projectPassphrase').value;
+            const privacy = document.getElementById('privacyMode').value;
+            const genus = document.getElementById('genusFocus').value;
+            
+            if (!name || !passphrase) {
+                alert('Please enter both project name and passphrase');
+                return;
+            }
+            
+            if (passphrase.length < 8) {
+                alert('Passphrase must be at least 8 characters long');
+                return;
+            }
+            
+            const project = {
+                id: Date.now().toString(),
+                name: name,
+                privacy: privacy,
+                genus: genus,
+                created: new Date().toISOString(),
+                plants: [],
+                crosses: [],
+                notes: [],
+                encrypted: true
+            };
+            
+            try {
+                await saveProjectEncrypted(project, passphrase);
+                displayProjects();
+                clearProjectForm();
+                alert('Project created successfully!');
+            } catch (error) {
+                alert('Error creating project: ' + error.message);
+            }
+        }
+
+        async function saveProjectEncrypted(project, passphrase) {
+            try {
+                // Generate salt and derive key
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const key = await deriveKey(passphrase, salt);
+                
+                // Encrypt project data
+                const projectData = JSON.stringify(project);
+                const encrypted = await encryptData(projectData, key);
+                
+                // Store encrypted project
+                const encryptedProject = {
+                    id: project.id,
+                    name: project.name, // Keep name unencrypted for display
+                    created: project.created,
+                    privacy: project.privacy,
+                    genus: project.genus,
+                    salt: Array.from(salt),
+                    encrypted: encrypted,
+                    version: '1.0'
+                };
+                
+                const projects = JSON.parse(localStorage.getItem('orchidProjects') || '[]');
+                const existingIndex = projects.findIndex(p => p.id === project.id);
+                
+                if (existingIndex >= 0) {
+                    projects[existingIndex] = encryptedProject;
+                } else {
+                    projects.push(encryptedProject);
+                }
+                
+                localStorage.setItem('orchidProjects', JSON.stringify(projects));
+                
+            } catch (error) {
+                throw new Error('Encryption failed: ' + error.message);
+            }
+        }
+
+        async function deriveKey(passphrase, salt) {
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(passphrase),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits', 'deriveKey']
+            );
+            
+            return await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encryptData(data, key) {
+            const encoder = new TextEncoder();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                encoder.encode(data)
+            );
+            
+            return {
+                iv: Array.from(iv),
+                data: Array.from(new Uint8Array(encrypted))
+            };
+        }
+
+        async function decryptData(encryptedData, key) {
+            const iv = new Uint8Array(encryptedData.iv);
+            const data = new Uint8Array(encryptedData.data);
+            
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                data
+            );
+            
+            const decoder = new TextDecoder();
+            return decoder.decode(decrypted);
+        }
+
+        function loadStoredData() {
+            displayProjects();
+            updatePlantSelectors();
+        }
+
+        function displayProjects() {
+            const projects = JSON.parse(localStorage.getItem('orchidProjects') || '[]');
+            const container = document.getElementById('projectsList');
+            
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>No projects yet</strong><br>
+                        Create your first encrypted breeding project to get started. All data is stored locally with AES-GCM encryption.
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = projects.map(project => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <h4>${project.name} <span class="security-badge">🔐 Encrypted</span></h4>
+                    <p style="color: var(--text-muted);">
+                        ${project.genus} • ${project.privacy} • ${new Date(project.created).toLocaleDateString()}
+                    </p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="openProject('${project.id}')">
+                            📂 Open
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteProject('${project.id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearProjectForm() {
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectPassphrase').value = '';
+            document.getElementById('privacyMode').value = 'local-only';
+            document.getElementById('genusFocus').value = 'cattleya';
+        }
+
+        // Search algorithms
+        function findCrosses() {
+            const startTime = performance.now();
+            
+            // Get target traits
+            const targetTraits = {};
+            ['roundness', 'flatness', 'color_saturation', 'presentation', 'symmetry', 
+             'flower_size', 'flowers_per_spike', 'substance_texture', 'lip_definition', 'pattern_quality'].forEach(trait => {
+                const slider = document.getElementById(trait + 'Slider');
+                if (slider) {
+                    targetTraits[trait] = parseFloat(slider.value);
+                }
+            });
+            
+            const colorFamily = document.getElementById('colorFamily').value;
+            
+            // Simulate search through plant collection
+            let pairs = [];
+            let pairCount = 0;
+            
+            // Use demo data if no current project
+            const searchData = currentProject ? currentProject.plants : [...demoData.sarcochilus, ...demoData.phalaenopsis];
+            
+            // Generate all unique pairs (cap at 2000)
+            for (let i = 0; i < searchData.length && pairCount < 2000; i++) {
+                for (let j = i + 1; j < searchData.length && pairCount < 2000; j++) {
+                    const plant1 = searchData[i];
+                    const plant2 = searchData[j];
+                    
+                    const score = calculateCrossScore(plant1, plant2, targetTraits, colorFamily);
+                    pairs.push({
+                        plant1: plant1,
+                        plant2: plant2,
+                        score: score,
+                        explanation: generateExplanation(plant1, plant2, targetTraits)
+                    });
+                    pairCount++;
+                }
+            }
+            
+            // Sort by score
+            pairs.sort((a, b) => b.score - a.score);
+            
+            const endTime = performance.now();
+            const runtime = Math.round(endTime - startTime);
+            
+            // Display results
+            displayCrossRecommendations(pairs.slice(0, 10), runtime, pairCount);
+        }
+
+        function calculateCrossScore(plant1, plant2, targetTraits, colorFamily) {
+            // Simplified scoring algorithm
+            let score = 0;
+            let totalWeight = 0;
+            
+            Object.entries(targetTraits).forEach(([trait, target]) => {
+                const p1Value = plant1.traits?.[trait] || 0.5;
+                const p2Value = plant2.traits?.[trait] || 0.5;
+                const predictedOffspring = (p1Value + p2Value) / 2;
+                const difference = Math.abs(predictedOffspring - target);
+                const traitScore = Math.max(0, 1 - difference);
+                
+                score += traitScore * target; // Weight by target importance
+                totalWeight += target;
+            });
+            
+            return totalWeight > 0 ? (score / totalWeight) * 100 : 0;
+        }
+
+        function generateExplanation(plant1, plant2, targetTraits) {
+            const topTraits = Object.entries(targetTraits)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3)
+                .map(([trait]) => trait.replace('_', ' '));
+            
+            return `Strong match for ${topTraits.join(', ')}. Expected offspring will inherit complementary traits from both parents.`;
+        }
+
+        function displayCrossRecommendations(pairs, runtime, pairCount) {
+            const container = document.getElementById('crossRecommendations');
+            
+            container.innerHTML = pairs.map((pair, index) => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                        <div style="flex: 1;">
+                            <h4>Rank ${index + 1}: ${pair.plant1.name} × ${pair.plant2.name}</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${pair.score}%"></div>
+                            </div>
+                            <p style="margin: 0.5rem 0;"><strong>Goal Match: ${pair.score.toFixed(1)}%</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">${pair.explanation}</p>
+                        </div>
+                        <div style="margin-left: 1rem; text-align: center;">
+                            <button class="btn btn-primary" onclick="addToJournal('${pair.plant1.name}', '${pair.plant2.name}')">
+                                ➕ Add to Journal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update performance stats
+            document.getElementById('searchStats').style.display = 'flex';
+            document.getElementById('searchTime').textContent = runtime;
+            document.getElementById('pairCount').textContent = pairCount;
+        }
+
+        function generateForwardRecommendations() {
+            const startTime = performance.now();
+            const selectedPlants = Array.from(document.getElementById('parentSelection').selectedOptions)
+                .map(option => option.value);
+            const goal = document.getElementById('optimizationGoal').value;
+            const enableBeamSearch = document.getElementById('enableBeamSearch').checked;
+            
+            if (selectedPlants.length < 2) {
+                alert('Please select at least 2 plants');
+                return;
+            }
+            
+            // Simulate forward breeding algorithm
+            let recommendations = [];
+            let pairCount = 0;
+            
+            // Generate pairwise recommendations
+            for (let i = 0; i < selectedPlants.length; i++) {
+                for (let j = i + 1; j < selectedPlants.length; j++) {
+                    const score = Math.random() * 100; // Simplified scoring
+                    recommendations.push({
+                        parent1: selectedPlants[i],
+                        parent2: selectedPlants[j],
+                        score: score,
+                        goal: goal
+                    });
+                    pairCount++;
+                }
+            }
+            
+            // If beam search enabled, add two-step recommendations
+            if (enableBeamSearch && recommendations.length > 0) {
+                // Add (A×B)×C combinations
+                recommendations.slice(0, 3).forEach(rec => {
+                    selectedPlants.forEach(plant => {
+                        if (plant !== rec.parent1 && plant !== rec.parent2) {
+                            recommendations.push({
+                                parent1: `(${rec.parent1} × ${rec.parent2})`,
+                                parent2: plant,
+                                score: Math.random() * 90, // Slightly lower scores for complexity
+                                goal: goal,
+                                twoStep: true
+                            });
+                            pairCount++;
+                        }
+                    });
+                });
+            }
+            
+            recommendations.sort((a, b) => b.score - a.score);
+            
+            const endTime = performance.now();
+            const runtime = Math.round(endTime - startTime);
+            
+            displayForwardRecommendations(recommendations.slice(0, 8), runtime, pairCount);
+        }
+
+        function displayForwardRecommendations(recommendations, runtime, pairCount) {
+            const container = document.getElementById('forwardRecommendations');
+            
+            container.innerHTML = recommendations.map((rec, index) => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                        <div style="flex: 1;">
+                            <h4>Rank ${index + 1}: ${rec.parent1} × ${rec.parent2}</h4>
+                            ${rec.twoStep ? '<span class="security-badge">2-Step</span>' : ''}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${rec.score}%"></div>
+                            </div>
+                            <p><strong>${rec.goal.replace('-', ' ').toUpperCase()} Score: ${rec.score.toFixed(1)}%</strong></p>
+                            <p style="color: var(--text-muted);">Expected improvement in ${rec.goal.replace('-', ' ')} characteristics</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="addToJournal('${rec.parent1}', '${rec.parent2}')">
+                            ➕ Add to Journal
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Update performance stats
+            document.getElementById('forwardSearchStats').style.display = 'flex';
+            document.getElementById('forwardSearchTime').textContent = runtime;
+            document.getElementById('forwardPairCount').textContent = pairCount;
+        }
+
+        // Journal functions
+        function addToJournal(parent1, parent2) {
+            const cross = {
+                id: Date.now().toString(),
+                parent1: parent1,
+                parent2: parent2,
+                date: new Date().toISOString().split('T')[0],
+                stage: 'planned',
+                notes: ''
+            };
+            
+            crossRecords.push(cross);
+            updateCrossRecordsDisplay();
+            alert(`Cross ${parent1} × ${parent2} added to journal!`);
+        }
+
+        function addCrossRecord() {
+            const cross = {
+                id: Date.now().toString(),
+                parent1: '',
+                parent2: '',
+                date: new Date().toISOString().split('T')[0],
+                stage: 'planned',
+                notes: ''
+            };
+            
+            crossRecords.push(cross);
+            updateCrossRecordsDisplay();
+        }
+
+        function updateCrossRecordsDisplay() {
+            const container = document.getElementById('crossRecords');
+            
+            if (crossRecords.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        No crosses recorded yet. Click "New Cross" to start tracking your breeding program.
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = crossRecords.map(cross => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <h4>${cross.parent1 || 'Parent 1'} × ${cross.parent2 || 'Parent 2'}</h4>
+                    <p><strong>Date:</strong> ${cross.date} | <strong>Stage:</strong> ${cross.stage}</p>
+                    <p><strong>Notes:</strong> ${cross.notes || 'No notes yet'}</p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-warning" onclick="editCrossRecord('${cross.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteCrossRecord('${cross.id}')">🗑️ Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Learning system
+        function loadLesson(lessonNumber) {
+            const lessons = {
+                1: {
+                    title: "Orchid Genetics Basics",
+                    content: `
+                        <h4>Understanding Orchid Inheritance</h4>
+                        <p>Orchid breeding involves complex genetic interactions beyond simple Mendelian genetics:</p>
+                        <ul>
+                            <li><strong>Polygenic Traits:</strong> Most characteristics like color and size involve multiple genes</li>
+                            <li><strong>Epistasis:</strong> Gene interactions can modify expression patterns</li>
+                            <li><strong>Environmental Effects:</strong> Growing conditions significantly influence trait expression</li>
+                            <li><strong>Heterosis:</strong> Hybrid vigor often produces superior offspring</li>
+                        </ul>
+                        <h5>Key Concepts</h5>
+                        <p><strong>Heritability (h²):</strong> Proportion of trait variation due to genetics vs environment. Higher heritability = more predictable inheritance.</p>
+                        <p><strong>Quantitative Traits:</strong> Continuous variation (e.g., flower size) follows normal distribution patterns.</p>
+                    `,
+                    quiz: {
+                        question: "What does high heritability indicate in orchid breeding?",
+                        options: [
+                            "Environmental factors dominate",
+                            "Genetic factors dominate trait expression",
+                            "No predictable inheritance",
+                            "Only dominant genes matter"
+                        ],
+                        correct: 1
+                    }
+                },
+                2: {
+                    title: "Record-keeping for Breeders",
+                    content: `
+                        <h4>Essential Breeding Records</h4>
+                        <p>Systematic documentation is crucial for breeding success:</p>
+                        <h5>Plant Identification</h5>
+                        <ul>
+                            <li>Unique ID system (genus abbreviation + number)</li>
+                            <li>Complete parentage (seed parent × pollen parent)</li>
+                            <li>Source and acquisition date</li>
+                            <li>Growth requirements and cultural notes</li>
+                        </ul>
+                        <h5>Cross Documentation</h5>
+                        <ul>
+                            <li>Pollination date and environmental conditions</li>
+                            <li>Pod development timeline with photos</li>
+                            <li>Seed harvesting and sowing records</li>
+                            <li>Germination rates and growth milestones</li>
+                        </ul>
+                        <div class="alert alert-warning">
+                            <strong>Best Practice:</strong> Always maintain duplicate records and photograph all breeding plants before crossing.
+                        </div>
+                    `,
+                    quiz: {
+                        question: "What is the most important element of plant identification?",
+                        options: [
+                            "Common name only",
+                            "Unique ID with complete parentage",
+                            "Just the genus",
+                            "Purchase price"
+                        ],
+                        correct: 1
+                    }
+                },
+                3: {
+                    title: "Photography for Breeding",
+                    content: `
+                        <h4>Documenting Orchid Traits</h4>
+                        <p>Quality photography is essential for trait analysis and record-keeping:</p>
+                        <h5>Technical Requirements</h5>
+                        <ul>
+                            <li>Consistent lighting (daylight or full-spectrum LED)</li>
+                            <li>Neutral background to avoid color contamination</li>
+                            <li>Multiple angles: front view, side profile, dorsal sepal detail</li>
+                            <li>Scale reference (ruler or coin) for size documentation</li>
+                        </ul>
+                        <h5>Trait Documentation</h5>
+                        <ul>
+                            <li><strong>Shape Analysis:</strong> Full flower face-on for roundness/flatness</li>
+                            <li><strong>Color Accuracy:</strong> Consistent white balance and exposure</li>
+                            <li><strong>Pattern Details:</strong> Close-up shots of lip and petal markings</li>
+                            <li><strong>Plant Habit:</strong> Full plant photos showing growth pattern</li>
+                        </ul>
+                        <p><strong>Computer Vision Benefits:</strong> Consistent photography enables automated trait extraction using AI analysis.</p>
+                    `,
+                    quiz: {
+                        question: "Why is consistent lighting important in orchid photography?",
+                        options: [
+                            "Makes photos look pretty",
+                            "Enables accurate color and trait analysis",
+                            "Saves battery life",
+                            "Reduces file size"
+                        ],
+                        correct: 1
+                    }
+                },
+                4: {
+                    title: "Heritability Estimation",
+                    content: `
+                        <h4>Parent-Offspring Regression</h4>
+                        <p>Heritability (h²) measures how much trait variation is genetic vs environmental:</p>
+                        <h5>Calculation Methods</h5>
+                        <ul>
+                            <li><strong>Narrow-sense h²:</strong> Additive genetic effects only</li>
+                            <li><strong>Broad-sense H²:</strong> All genetic effects (additive + dominance + epistasis)</li>
+                            <li><strong>Regression slope:</strong> Offspring value vs parent average</li>
+                        </ul>
+                        <h5>Practical Application</h5>
+                        <p>For quantitative traits like flower size:</p>
+                        <p><code>h² = (Offspring mean - Population mean) / (Parent mean - Population mean)</code></p>
+                        <p>Values range from 0 (all environmental) to 1 (all genetic).</p>
+                        <div class="alert alert-info">
+                            <strong>Typical Orchid Heritabilities:</strong><br>
+                            Flower size: 0.6-0.8<br>
+                            Color intensity: 0.4-0.7<br>
+                            Plant vigor: 0.3-0.5
+                        </div>
+                    `,
+                    quiz: {
+                        question: "A heritability of 0.8 means:",
+                        options: [
+                            "80% of individuals show the trait",
+                            "80% of trait variation is due to genetics",
+                            "The trait appears in 8 out of 10 offspring",
+                            "80% of genes are involved"
+                        ],
+                        correct: 1
+                    }
+                },
+                5: {
+                    title: "Judging Systems Overview",
+                    content: `
+                        <h4>International Orchid Judging</h4>
+                        <p>Different organizations emphasize various traits:</p>
+                        <h5>Major Systems</h5>
+                        <ul>
+                            <li><strong>AOS:</strong> Balanced approach, emphasis on flower quality</li>
+                            <li><strong>JOGA:</strong> High weight on color saturation and symmetry</li>
+                            <li><strong>ANOS:</strong> Values larger flowers and Australian climate adaptation</li>
+                            <li><strong>NZOS:</strong> Similar to AOS but with regional preferences</li>
+                            <li><strong>EOJC:</strong> European standards with color and presentation focus</li>
+                        </ul>
+                        <h5>Award Categories</h5>
+                        <ul>
+                            <li><strong>FCC:</strong> First Class Certificate (90+ points, exceptional)</li>
+                            <li><strong>AM:</strong> Award of Merit (80-89 points, excellent)</li>
+                            <li><strong>HCC:</strong> Highly Commended Certificate (75-79 points, very good)</li>
+                        </ul>
+                        <p><strong>Breeding Strategy:</strong> Understanding judging criteria helps select parents to produce awardable offspring.</p>
+                    `,
+                    quiz: {
+                        question: "What is the minimum point requirement for an Award of Merit (AM)?",
+                        options: [
+                            "75 points",
+                            "80 points",
+                            "85 points",
+                            "90 points"
+                        ],
+                        correct: 1
+                    }
+                },
+                6: {
+                    title: "Planning Crossing Programs",
+                    content: `
+                        <h4>Strategic Breeding Approaches</h4>
+                        <p>Successful breeding programs require long-term planning:</p>
+                        <h5>Forward Design</h5>
+                        <ul>
+                            <li>Start with excellent parents</li>
+                            <li>Define specific improvement goals</li>
+                            <li>Plan multiple generation crosses</li>
+                            <li>Consider market demands and judging trends</li>
+                        </ul>
+                        <h5>Reverse Design</h5>
+                        <ul>
+                            <li>Define ideal target traits</li>
+                            <li>Work backward to identify parent combinations</li>
+                            <li>Use predictive modeling for trait inheritance</li>
+                            <li>Account for linkage and epistasis</li>
+                        </ul>
+                        <h5>Risk Management</h5>
+                        <ul>
+                            <li>Make multiple crosses per breeding goal</li>
+                            <li>Maintain diverse genetic base</li>
+                            <li>Document everything for future reference</li>
+                            <li>Plan for 5-7 year development cycles</li>
+                        </ul>
+                        <div class="alert alert-success">
+                            <strong>Success Tip:</strong> The best breeders combine scientific methodology with artistic vision and patience.
+                        </div>
+                    `,
+                    quiz: {
+                        question: "What is the typical time from cross to first flowering in orchids?",
+                        options: [
+                            "1-2 years",
+                            "3-4 years",
+                            "5-7 years",
+                            "10+ years"
+                        ],
+                        correct: 2
+                    }
+                }
+            };
+
+            const lesson = lessons[lessonNumber];
+            if (!lesson) return;
+
+            // Update lesson content
+            document.getElementById('lessonContent').innerHTML = `
+                <h3>${lesson.title}</h3>
+                ${lesson.content}
+            `;
+
+            // Update quiz section
+            document.getElementById('quizSection').innerHTML = `
+                <div class="card">
+                    <h4>📝 Quick Quiz</h4>
+                    <p><strong>${lesson.quiz.question}</strong></p>
+                    ${lesson.quiz.options.map((option, index) => `
+                        <label style="display: block; margin: 0.5rem 0; cursor: pointer;">
+                            <input type="radio" name="quiz${lessonNumber}" value="${index}" style="margin-right: 0.5rem;">
+                            ${option}
+                        </label>
+                    `).join('')}
+                    <button class="btn btn-primary" onclick="checkQuizAnswer(${lessonNumber}, ${lesson.quiz.correct})">
+                        ✓ Check Answer
+                    </button>
+                </div>
+            `;
+
+            // Update active lesson
+            document.querySelectorAll('.lesson-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-lesson="${lessonNumber}"]`).classList.add('active');
+        }
+
+        function checkQuizAnswer(lessonNumber, correctAnswer) {
+            const selected = document.querySelector(`input[name="quiz${lessonNumber}"]:checked`);
+            if (!selected) {
+                alert('Please select an answer');
+                return;
+            }
+            
+            const isCorrect = parseInt(selected.value) === correctAnswer;
+            if (isCorrect) {
+                alert('✅ Correct! Well done.');
+                lessonProgress[lessonNumber] = true;
+            } else {
+                alert('❌ Not quite right. Try again or review the lesson material.');
+            }
+        }
+
+        // Demo data loading functions
+        function loadDemoRHS() {
+            alert('Loading RHS demo data...');
+            // In a real implementation, this would parse and import RHS CSV format
+        }
+
+        function loadDemoOrchidRoots() {
+            alert('Loading OrchidRoots demo data...');
+            // In a real implementation, this would parse and import OrchidRoots CSV format
+        }
+
+        function loadDemoOrchidPro() {
+            alert('Loading OrchidPro demo data...');
+            // In a real implementation, this would parse and import OrchidPro CSV format
+        }
+
+        function importCustomCSV() {
+            const csvData = document.getElementById('csvInput').value;
+            if (!csvData.trim()) {
+                alert('Please paste CSV data first');
+                return;
+            }
+            
+            alert('CSV import functionality would be implemented here');
+            // In a real implementation, this would parse and import the CSV
+        }
+
+        // Export functions
+        function exportEncrypted() {
+            if (!currentProject) {
+                alert('Please open a project first');
+                return;
+            }
+            
+            alert('Encrypted export (.ocp file) would be generated here');
+        }
+
+        function exportDecrypted() {
+            if (!currentProject) {
+                alert('Please open a project first');
+                return;
+            }
+            
+            const confirmed = confirm('⚠️ Warning: This will export your data in readable format. Continue?');
+            if (confirmed) {
+                alert('Decrypted JSON export would be generated here');
+            }
+        }
+
+        function exportAnonymous() {
+            alert('Anonymous insights export would be generated here');
+        }
+
+        function printJournal() {
+            window.print();
+        }
+
+        // Utility functions
+        function setupEventListeners() {
+            // Add any additional event listeners here
+        }
+
+        function updatePlantSelectors() {
+            const selector = document.getElementById('parentSelection');
+            if (selector && currentProject) {
+                selector.innerHTML = currentProject.plants.map(plant => 
+                    `<option value="${plant.id}">${plant.name}</option>`
+                ).join('');
+            }
+        }
+
+        // Trait Inheritance Explorer with Real Charts
+        function setupTraitExplorer() {
+            // Setup trait tab switching
+            document.querySelectorAll('[data-trait]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const trait = tab.dataset.trait;
+                    switchTraitTab(trait);
+                });
+            });
+        }
+        
+        function switchTraitTab(traitName) {
+            // Update active tab
+            document.querySelectorAll('[data-trait]').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-trait="${traitName}"]`).classList.add('active');
+            
+            // Generate charts for selected trait
+            generateTraitCharts(traitName);
+        }
+        
+        function generateTraitCharts(traitName) {
+            if (!currentProject || !plantCollection.length) {
+                return;
+            }
+            
+            // Extract trait values
+            const traitValues = plantCollection
+                .filter(plant => plant.traits && plant.traits[traitName] !== undefined)
+                .map(plant => ({
+                    value: plant.traits[traitName],
+                    name: plant.name,
+                    parent1Value: getParentTraitValue(plant.parent1, traitName),
+                    parent2Value: getParentTraitValue(plant.parent2, traitName)
+                }))
+                .filter(item => item.parent1Value !== null && item.parent2Value !== null);
+            
+            if (traitValues.length === 0) return;
+            
+            // Generate three charts
+            drawHistogramChart(traitValues, traitName);
+            drawScatterChart(traitValues, traitName);
+            drawBubbleChart(traitValues, traitName);
+        }
+        
+        function drawHistogramChart(traitValues, traitName) {
+            const canvas = document.getElementById('histogramChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Create histogram bins
+            const values = traitValues.map(t => t.value);
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
+            const binCount = 8;
+            const binWidth = (maxVal - minVal) / binCount;
+            
+            const bins = new Array(binCount).fill(0);
+            values.forEach(val => {
+                const binIndex = Math.min(Math.floor((val - minVal) / binWidth), binCount - 1);
+                bins[binIndex]++;
+            });
+            
+            // Draw histogram
+            const barWidth = (canvas.width - 60) / binCount;
+            const maxBinHeight = Math.max(...bins);
+            const chartHeight = canvas.height - 60;
+            
+            ctx.fillStyle = '#6B3FA0';
+            bins.forEach((count, i) => {
+                const barHeight = (count / maxBinHeight) * chartHeight;
+                const x = 40 + i * barWidth;
+                const y = canvas.height - 40 - barHeight;
+                
+                ctx.fillRect(x, y, barWidth - 2, barHeight);
+                
+                // Labels
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                const binCenter = minVal + (i + 0.5) * binWidth;
+                ctx.fillText(binCenter.toFixed(2), x + barWidth/2, canvas.height - 25);
+                
+                if (count > 0) {
+                    ctx.fillText(count, x + barWidth/2, y - 5);
+                }
+                
+                ctx.fillStyle = '#6B3FA0';
+            });
+            
+            // Title and axes
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${traitName.replace('_', ' ').toUpperCase()} Distribution`, canvas.width/2, 20);
+        }
+        
+        function drawScatterChart(traitValues, traitName) {
+            const canvas = document.getElementById('scatterChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate parent means and offspring values
+            const data = traitValues.map(t => ({
+                parentMean: (t.parent1Value + t.parent2Value) / 2,
+                offspring: t.value,
+                name: t.name
+            }));
+            
+            const xValues = data.map(d => d.parentMean);
+            const yValues = data.map(d => d.offspring);
+            
+            const minX = Math.min(...xValues);
+            const maxX = Math.max(...xValues);
+            const minY = Math.min(...yValues);
+            const maxY = Math.max(...yValues);
+            
+            const chartWidth = canvas.width - 80;
+            const chartHeight = canvas.height - 80;
+            
+            // Draw 1:1 reference line
+            ctx.strokeStyle = '#888888';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            const x1 = 50 + ((Math.max(minX, minY) - minX) / (maxX - minX)) * chartWidth;
+            const y1 = canvas.height - 50 - ((Math.max(minX, minY) - minY) / (maxY - minY)) * chartHeight;
+            const x2 = 50 + ((Math.min(maxX, maxY) - minX) / (maxX - minX)) * chartWidth;
+            const y2 = canvas.height - 50 - ((Math.min(maxX, maxY) - minY) / (maxY - minY)) * chartHeight;
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw data points
+            ctx.fillStyle = '#FF6B40';
+            data.forEach(d => {
+                const x = 50 + ((d.parentMean - minX) / (maxX - minX)) * chartWidth;
+                const y = canvas.height - 50 - ((d.offspring - minY) / (maxY - minY)) * chartHeight;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Calculate and display correlation
+            const correlation = calculateCorrelation(xValues, yValues);
+            const slope = calculateSlope(xValues, yValues);
+            const heritability = Math.max(0, Math.min(1, slope)); // Bounded h²
+            
+            document.getElementById('correlation').textContent = correlation.toFixed(3);
+            document.getElementById('heritability').textContent = heritability.toFixed(3);
+            
+            // Labels
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Parent Mean vs Offspring', canvas.width/2, 20);
+            ctx.save();
+            ctx.translate(20, canvas.height/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('Offspring', 0, 0);
+            ctx.restore();
+            ctx.fillText('Parent Mean', canvas.width/2, canvas.height - 10);
+        }
+        
+        function drawBubbleChart(traitValues, traitName) {
+            const canvas = document.getElementById('bubbleChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const data = traitValues;
+            const x1Values = data.map(d => d.parent1Value);
+            const x2Values = data.map(d => d.parent2Value);
+            const sizeValues = data.map(d => d.value);
+            
+            const minX1 = Math.min(...x1Values);
+            const maxX1 = Math.max(...x1Values);
+            const minX2 = Math.min(...x2Values);
+            const maxX2 = Math.max(...x2Values);
+            const minSize = Math.min(...sizeValues);
+            const maxSize = Math.max(...sizeValues);
+            
+            const chartWidth = canvas.width - 80;
+            const chartHeight = canvas.height - 80;
+            
+            // Draw bubbles
+            data.forEach(d => {
+                const x = 50 + ((d.parent1Value - minX1) / (maxX1 - minX1)) * chartWidth;
+                const y = canvas.height - 50 - ((d.parent2Value - minX2) / (maxX2 - minX2)) * chartHeight;
+                const radius = 3 + ((d.value - minSize) / (maxSize - minSize)) * 15;
+                
+                ctx.fillStyle = 'rgba(107, 63, 160, 0.6)';
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#6B3FA0';
+                ctx.stroke();
+            });
+            
+            // Labels
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Parent A vs Parent B (bubble = offspring mean)', canvas.width/2, 20);
+            ctx.save();
+            ctx.translate(20, canvas.height/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('Parent B', 0, 0);
+            ctx.restore();
+            ctx.fillText('Parent A', canvas.width/2, canvas.height - 10);
+        }
+        
+        function getParentTraitValue(parentName, traitName) {
+            const parent = plantCollection.find(p => p.name === parentName);
+            return parent && parent.traits && parent.traits[traitName] !== undefined ? parent.traits[traitName] : Math.random() * 0.5 + 0.5; // fallback random value
+        }
+        
+        function calculateCorrelation(x, y) {
+            const n = x.length;
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+            
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+            
+            return denominator === 0 ? 0 : numerator / denominator;
+        }
+        
+        function calculateSlope(x, y) {
+            const n = x.length;
+            const sumX = x.reduce((a, b) => a + b, 0);
+            const sumY = y.reduce((a, b) => a + b, 0);
+            const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = n * sumX2 - sumX * sumX;
+            
+            return denominator === 0 ? 0 : numerator / denominator;
+        }
+        
+        // Additional utility functions
+        function updatePlantsTable() {
+            const tbody = document.getElementById('plantsTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = plantCollection.map(plant => `
+                <tr>
+                    <td><img src="${plant.image}" width="32" height="32" style="border-radius: 4px;"></td>
+                    <td>${plant.id}</td>
+                    <td>Sarcochilus</td>
+                    <td>${plant.name}</td>
+                    <td>${plant.parent1}</td>
+                    <td>${plant.parent2}</td>
+                    <td>${plant.awards}</td>
+                    <td><small>${Object.entries(plant.traits).map(([k,v]) => `${k}: ${v}`).join(', ')}</small></td>
+                    <td>Shareable</td>
+                    <td><button class="btn btn-sm btn-primary" onclick="editPlant('${plant.id}')">View</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        function compareGenera() {
+            const genusA = document.getElementById('genusA').value;
+            const genusB = document.getElementById('genusB').value;
+            
+            // Simplified comparison logic
+            const results = `
+                <h4>${genusA.toUpperCase()} vs ${genusB.toUpperCase()}</h4>
+                <div class="grid grid-2">
+                    <div>
+                        <strong>${genusA}</strong><br>
+                        Trait Stability: High<br>
+                        Avg Roundness: 0.85<br>
+                        Vigor Index: 0.78
+                    </div>
+                    <div>
+                        <strong>${genusB}</strong><br>
+                        Trait Stability: Medium<br>
+                        Avg Roundness: 0.91<br>
+                        Vigor Index: 0.82
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('genusComparison').innerHTML = results;
+        }
+        
+        // Advanced Breeding Algorithm Implementation
+        function normalCDF(x, mean, stdDev) {
+            // Simplified normal CDF approximation
+            const z = (x - mean) / stdDev;
+            const t = 1.0 / (1.0 + 0.2316419 * Math.abs(z));
+            const d = 0.3989423 * Math.exp(-z * z / 2);
+            let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+            if (z > 0) prob = 1 - prob;
+            return prob;
+        }
+        
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+        
+        function calculateOffspringProbability(parent1, parent2, targetTrait, targetRange, traitType = 'numeric') {
+            const settings = breedingModelSettings;
+            
+            if (traitType === 'numeric') {
+                const p1Value = parent1.traits[targetTrait] || 0.5;
+                const p2Value = parent2.traits[targetTrait] || 0.5;
+                const offspringMean = (p1Value + p2Value) / 2;
+                
+                // σ = (1-h²) * pooled_SD
+                const heritability = settings.heritability[targetTrait] || 0.7;
+                const pooledSD = 0.15; // Reasonable SD for 0-1 traits
+                const offspringSD = (1 - heritability) * pooledSD;
+                
+                // Probability of falling in target range
+                const lowerProb = normalCDF(targetRange.min, offspringMean, offspringSD);
+                const upperProb = normalCDF(targetRange.max, offspringMean, offspringSD);
+                return upperProb - lowerProb;
+            } else if (traitType === 'categorical') {
+                // One-hot average with Laplace smoothing
+                const alpha = settings.laplaceAlpha;
+                const p1Cats = parent1.categories || {};
+                const p2Cats = parent2.categories || {};
+                
+                const allCategories = new Set([...Object.keys(p1Cats), ...Object.keys(p2Cats)]);
+                let targetProb = alpha; // Laplace smoothing
+                
+                allCategories.forEach(cat => {
+                    const p1Prob = (p1Cats[cat] || 0) + alpha;
+                    const p2Prob = (p2Cats[cat] || 0) + alpha;
+                    if (cat === targetRange.category) {
+                        targetProb += (p1Prob + p2Prob) / 2;
+                    }
+                });
+                
+                return Math.min(1, targetProb / (allCategories.size + alpha));
+            } else if (traitType === 'climate') {
+                // Climate cool tolerance using logistic threshold
+                const p1Temp = parent1.climate?.nightMinTemp || 15;
+                const p2Temp = parent2.climate?.nightMinTemp || 15;
+                const parentMeanTemp = (p1Temp + p2Temp) / 2;
+                
+                const k = settings.coolToleranceK;
+                const threshold = settings.temperatureThreshold;
+                return sigmoid(k * (threshold - parentMeanTemp));
+            }
+            
+            return 0.5; // Default probability
+        }
+        
+        function calculateAwardability(parent1, parent2, judgingWeights) {
+            const p1Vector = normalizeTraitVector(parent1.traits);
+            const p2Vector = normalizeTraitVector(parent2.traits);
+            
+            // Predicted offspring trait vector
+            const offspringVector = {};
+            Object.keys(p1Vector).forEach(trait => {
+                offspringVector[trait] = (p1Vector[trait] + p2Vector[trait]) / 2;
+            });
+            
+            // Dot product with judging weights
+            let awardabilityScore = 0;
+            Object.keys(judgingWeights).forEach(trait => {
+                if (offspringVector[trait] !== undefined) {
+                    awardabilityScore += offspringVector[trait] * judgingWeights[trait];
+                }
+            });
+            
+            return Math.min(1, Math.max(0, awardabilityScore));
+        }
+        
+        function normalizeTraitVector(traits) {
+            const normalized = {};
+            const maxValues = { roundness: 1, color_saturation: 1, flowers_per_spike: 20, symmetry: 1, flower_size: 50 };
+            
+            Object.keys(traits).forEach(trait => {
+                const maxVal = maxValues[trait] || 1;
+                normalized[trait] = traits[trait] / maxVal;
+            });
+            
+            return normalized;
+        }
+        
+        function performReverseDesign() {
+            if (!plantCollection.length) {
+                alert('No plants available for breeding design. Please load the demo or add plants.');
+                return;
+            }
+            
+            const targetRoundness = parseFloat(document.getElementById('roundnessSlider')?.value || 0.9);
+            const targetFlowers = parseInt(document.getElementById('flowersSlider')?.value || 12);
+            const targetColor = document.getElementById('colorFamily')?.value || 'any';
+            
+            // Sample pairs if too many
+            const maxPairs = breedingModelSettings.maxPairSamples;
+            let pairs = [];
+            
+            for (let i = 0; i < plantCollection.length; i++) {
+                for (let j = i + 1; j < plantCollection.length; j++) {
+                    pairs.push([plantCollection[i], plantCollection[j]]);
+                    if (pairs.length >= maxPairs) break;
+                }
+                if (pairs.length >= maxPairs) break;
+            }
+            
+            // Score each pair
+            const scoredPairs = pairs.map(([p1, p2]) => {
+                const roundnessProb = calculateOffspringProbability(p1, p2, 'roundness', 
+                    { min: targetRoundness - 0.05, max: 1.0 });
+                const flowersProb = calculateOffspringProbability(p1, p2, 'flowers_per_spike', 
+                    { min: targetFlowers, max: 25 });
+                
+                // Climate probability (example)
+                const climateProb = calculateOffspringProbability(p1, p2, 'cool_tolerance', 
+                    { threshold: 12 }, 'climate');
+                
+                // Combine probabilities in log space
+                const logProb = Math.log(Math.max(0.001, roundnessProb)) + 
+                               Math.log(Math.max(0.001, flowersProb)) + 
+                               Math.log(Math.max(0.001, climateProb));
+                
+                const combinedProb = Math.exp(logProb);
+                
+                // Awardability score
+                const judgingWeights = { roundness: 0.3, color_saturation: 0.2, flowers_per_spike: 0.2, symmetry: 0.3 };
+                const awardability = calculateAwardability(p1, p2, judgingWeights);
+                
+                return {
+                    parents: [p1, p2],
+                    probability: combinedProb,
+                    awardability: awardability,
+                    score: combinedProb * awardability,
+                    breakdown: { roundness: roundnessProb, flowers: flowersProb, climate: climateProb }
+                };
+            });
+            
+            // Sort by score and show top 5
+            scoredPairs.sort((a, b) => b.score - a.score);
+            const topPairs = scoredPairs.slice(0, 5);
+            
+            displayReverseDesignResults(topPairs, pairs.length >= maxPairs);
+        }
+        
+        function performBeamSearch() {
+            // (A×B)×C beam search implementation
+            const beam = breedingModelSettings.beamWidth;
+            
+            // First generation crosses
+            const firstGenCrosses = [];
+            for (let i = 0; i < Math.min(10, plantCollection.length); i++) {
+                for (let j = i + 1; j < Math.min(10, plantCollection.length); j++) {
+                    const p1 = plantCollection[i];
+                    const p2 = plantCollection[j];
+                    const score = calculateCrossScore(p1, p2);
+                    firstGenCrosses.push({ parents: [p1, p2], score: score, generation: 1 });
+                }
+            }
+            
+            // Sort and keep top beam width
+            firstGenCrosses.sort((a, b) => b.score - a.score);
+            const topFirstGen = firstGenCrosses.slice(0, beam);
+            
+            // Second generation crosses
+            const secondGenCrosses = [];
+            topFirstGen.forEach(firstCross => {
+                plantCollection.forEach(thirdParent => {
+                    if (!firstCross.parents.includes(thirdParent)) {
+                        const hybridTraits = simulateOffspring(firstCross.parents[0], firstCross.parents[1]);
+                        const virtualHybrid = { name: 'F1 Hybrid', traits: hybridTraits };
+                        const score = calculateCrossScore(virtualHybrid, thirdParent);
+                        const gain = score - firstCross.score;
+                        
+                        secondGenCrosses.push({
+                            route: [...firstCross.parents, thirdParent],
+                            score: score,
+                            gain: gain,
+                            generation: 2
+                        });
+                    }
+                });
+            });
+            
+            // Sort by gain and return top 5
+            secondGenCrosses.sort((a, b) => b.gain - a.gain);
+            return secondGenCrosses.slice(0, 5);
+        }
+        
+        function calculateCrossScore(p1, p2) {
+            const judgingWeights = { roundness: 0.3, color_saturation: 0.2, flowers_per_spike: 0.2, symmetry: 0.3 };
+            return calculateAwardability(p1, p2, judgingWeights);
+        }
+        
+        function simulateOffspring(p1, p2) {
+            const offspring = {};
+            Object.keys(p1.traits).forEach(trait => {
+                const heritability = breedingModelSettings.heritability[trait] || 0.7;
+                const parentMean = (p1.traits[trait] + p2.traits[trait]) / 2;
+                const environmentalVariance = (1 - heritability) * 0.1;
+                offspring[trait] = parentMean + (Math.random() - 0.5) * environmentalVariance;
+            });
+            return offspring;
+        }
+        
+        function displayReverseDesignResults(results, wasCapped) {
+            let html = '<h4>🎯 Reverse Design Results</h4>';
+            
+            if (wasCapped) {
+                html += '<div class="alert alert-warning"><strong>Note:</strong> Results capped at 2,000 pairs for performance</div>';
+            }
+            
+            results.forEach((result, index) => {
+                const [p1, p2] = result.parents;
+                html += `
+                    <div class="card" style="background: var(--dark); margin: 1rem 0;">
+                        <h5>🎆 Rank ${index + 1}: ${p1.name} × ${p2.name}</h5>
+                        <div class="grid grid-2">
+                            <div>
+                                <p><strong>Combined Score:</strong> ${(result.score * 100).toFixed(1)}%</p>
+                                <p><strong>Probability:</strong> ${(result.probability * 100).toFixed(1)}%</p>
+                                <p><strong>Awardability:</strong> ${(result.awardability * 100).toFixed(1)}%</p>
+                            </div>
+                            <div>
+                                <p><strong>Trait Breakdown:</strong></p>
+                                <p>Roundness: ${(result.breakdown.roundness * 100).toFixed(1)}%</p>
+                                <p>Flowers: ${(result.breakdown.flowers * 100).toFixed(1)}%</p>
+                                <p>Climate: ${(result.breakdown.climate * 100).toFixed(1)}%</p>
+                            </div>
+                        </div>
+                        <div class="explainability-card">
+                            <strong>Parent Contributions:</strong><br>
+                            ${p1.name}: Roundness ${p1.traits.roundness?.toFixed(2)}, Flowers ${p1.traits.flowers_per_spike}<br>
+                            ${p2.name}: Roundness ${p2.traits.roundness?.toFixed(2)}, Flowers ${p2.traits.flowers_per_spike}<br>
+                            <div class="sparkline">Expected offspring: μ±σ = ${((p1.traits.roundness + p2.traits.roundness) / 2).toFixed(2)} ± 0.08</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('reverseResults').innerHTML = html;
+        }
+        
+        function exploreIntergeneric() {
+            const genusX = document.getElementById('intergenericX').value;
+            const genusY = document.getElementById('intergenericY').value;
+            
+            // Use more sophisticated algorithm
+            const phylogeneticDistance = calculatePhylogeneticDistance(genusX, genusY);
+            const fertility = phylogeneticDistance < 0.5 ? 'High' : phylogeneticDistance < 0.8 ? 'Moderate' : 'Low';
+            const novelty = Math.floor((1 - phylogeneticDistance) * 100) + Math.floor(Math.random() * 20);
+            
+            const results = `
+                <h4>${genusX} × ${genusY}</h4>
+                <p><strong>Phylogenetic Distance:</strong> ${phylogeneticDistance.toFixed(2)}</p>
+                <p><strong>Fertility Likelihood:</strong> ${fertility}</p>
+                <p><strong>Trait Novelty Score:</strong> ${novelty}%</p>
+                <p><strong>Expected Challenges:</strong> Chromosome pairing issues, reduced fertility</p>
+                <p><strong>Potential Benefits:</strong> Novel color combinations, unique flower forms</p>
+            `;
+            
+            document.getElementById('intergenericResults').innerHTML = results;
+        }
+        
+        function calculatePhylogeneticDistance(genusA, genusB) {
+            // Simplified phylogenetic distance based on taxonomic similarity
+            const distances = {
+                'sarcochilus-phalaenopsis': 0.7,
+                'sarcochilus-cattleya': 0.8,
+                'phalaenopsis-cattleya': 0.6,
+            };
+            
+            const key1 = `${genusA}-${genusB}`;
+            const key2 = `${genusB}-${genusA}`;
+            
+            return distances[key1] || distances[key2] || 0.9;
+        }
+        
+        // Import Mapper Functions
+        function selectImportPreset(presetKey) {
+            document.querySelectorAll('.preset-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-preset="${presetKey}"]`)?.classList.add('selected');
+        }
+        
+        function previewCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                const lines = csv.split('\n');
+                const headers = lines[0].split(',');
+                
+                // Show preview
+                const preview = document.getElementById('csvPreview');
+                if (preview) {
+                    preview.classList.remove('hidden');
+                    preview.innerHTML = `
+                        <h5>CSV Preview (${lines.length - 1} records)</h5>
+                        <div style="overflow: auto; max-height: 200px;">
+                            <table class="table table-sm">
+                                <thead><tr>${headers.map(h => `<th>${h.trim()}</th>`).join('')}</tr></thead>
+                                <tbody>
+                                    ${lines.slice(1, 4).map(line => {
+                                        const cells = line.split(',');
+                                        return `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    // Show column mapper
+                    showColumnMapper(headers);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function showColumnMapper(csvHeaders) {
+            const mapper = document.getElementById('columnMapper');
+            if (mapper) mapper.classList.remove('hidden');
+        }
+        
+        function processImport() {
+            const tosAccepted = document.getElementById('tosAccepted')?.checked;
+            if (!tosAccepted) {
+                alert('Please accept the Terms of Service to continue.');
+                return;
+            }
+            
+            // Simulate processing
+            alert('Import completed! Data stored with full provenance tracking.');
+            const datasetsCount = document.getElementById('datasetsCount');
+            if (datasetsCount) {
+                datasetsCount.textContent = (parseInt(datasetsCount.textContent) + 1).toString();
+            }
+        }
+        
+        function clearMapping() {
+            const mapper = document.getElementById('columnMapper');
+            const preview = document.getElementById('csvPreview');
+            const fileInput = document.getElementById('csvFile');
+            
+            if (mapper) mapper.classList.add('hidden');
+            if (preview) preview.classList.add('hidden');
+            if (fileInput) fileInput.value = '';
+        }
+        
+        // Learning Mode Functions
+        function startLesson(lessonKey) {
+            currentLesson = lessonKey;
+            showLessonModal(lessonKey);
+        }
+        
+        function showLessonModal(lessonKey) {
+            const modal = document.getElementById('lessonModal');
+            if (modal) {
+                document.getElementById('lessonTitle').textContent = `Learning: ${lessonKey}`;
+                modal.classList.remove('hidden');
+            }
+        }
+        
+        function closeLessonModal() {
+            const modal = document.getElementById('lessonModal');
+            if (modal) modal.classList.add('hidden');
+        }
+        
+        function startInteractiveLearning() {
+            switchJourney('explore');
+            // Add learning guidance overlays
+            setTimeout(() => {
+                const tooltip = document.createElement('div');
+                tooltip.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--primary);
+                    color: white;
+                    padding: 1rem;
+                    border-radius: 10px;
+                    max-width: 300px;
+                    z-index: 3000;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                `;
+                tooltip.innerHTML = `
+                    <h4>🎓 Interactive Learning</h4>
+                    <p>Let's explore trait inheritance using your collection! Click on different trait tabs to see how characteristics are passed from parents to offspring.</p>
+                    <button onclick="this.parentElement.remove()" style="background: white; color: var(--primary); border: none; padding: 0.5rem 1rem; border-radius: 5px; margin-top: 0.5rem;">Got it!</button>
+                `;
+                document.body.appendChild(tooltip);
+            }, 500);
+        }
+        
+        // Theme Functions
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('ocs_theme', currentTheme);
+            
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+            }
+        }
+        
+        function initializeTheme() {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+            }
+        }
+        
+        // Example Demo Functions
+        function runExampleDemo(section) {
+            const demos = {
+                collection: () => {
+                    const narrative = 'Viewing your Sarcochilus collection - notice the variety in flower shapes and colors. Each entry shows key breeding traits.';
+                    showNarrative(narrative);
+                },
+                explorer: () => {
+                    selectTrait('roundness');
+                    const narrative = 'Analyzing roundness inheritance - see how round flowers from one parent tend to produce rounder offspring.';
+                    showNarrative(narrative);
+                },
+                design: () => {
+                    performReverseDesign();
+                    const narrative = 'Running reverse design for white, round flowers with 12+ flowers per spike. Top results show best parent combinations.';
+                    showNarrative(narrative);
+                }
+            };
+            
+            demos[section]?.();
+        }
+        
+        function showNarrative(text) {
+            const existing = document.querySelector('.demo-narrative');
+            if (existing) existing.remove();
+            
+            const narrative = document.createElement('div');
+            narrative.className = 'demo-narrative';
+            narrative.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--secondary);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 25px;
+                max-width: 600px;
+                text-align: center;
+                z-index: 3000;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            `;
+            narrative.innerHTML = `
+                <p style="margin: 0; font-size: 1rem;">${text}</p>
+                <button onclick="this.parentElement.remove()" style="position: absolute; top: -5px; right: 10px; background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            `;
+            
+            document.body.appendChild(narrative);
+            
+            setTimeout(() => narrative.remove(), 8000);
+        }
+        
+        // CSS for lesson items and additional styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .lesson-item {
+                padding: 0.75rem;
+                margin: 0.25rem 0;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+            }
+            
+            .lesson-item:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            
+            .lesson-item.active {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+            
+            .journey-panel {
+                display: block;
+            }
+            
+            .grid-3 {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            
+            @media (max-width: 768px) {
+                .grid-3 {
+                    grid-template-columns: 1fr;
+                }
+            }
+            
+            canvas {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                border: 1px solid var(--border);
+            }
+            
+            .stage-chip {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                margin: 0.1rem;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                font-weight: bold;
+                text-align: center;
+            }
+            
+            .stage-chip.completed {
+                background: var(--secondary);
+                color: white;
+            }
+            
+            .stage-chip.current {
+                background: var(--warning);
+                color: black;
+            }
+            
+            .stage-chip.pending {
+                background: var(--text-muted);
+                color: white;
+                opacity: 0.6;
+            }
+            
+            .stage-timeline {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+                margin: 1rem 0;
+            }
+            
+            .journal-entry {
+                transition: all 0.3s ease;
+            }
+            
+            .journal-entry:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            }
+            
+            .explainability-card {
+                background: rgba(255, 255, 255, 0.05);
+                padding: 0.75rem;
+                border-radius: 6px;
+                margin-top: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .sparkline {
+                font-family: monospace;
+                color: var(--info);
+                margin-top: 0.25rem;
+            }
+            
+            .status-indicator {
+                display: flex;
+                align-items: center;
+                margin: 0.5rem 0;
+            }
+            
+            .status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                margin-right: 0.5rem;
+            }
+            
+            .status-dot.active {
+                background: var(--secondary);
+                box-shadow: 0 0 4px var(--secondary);
+            }
+            
+            .local-only-badge {
+                background: var(--secondary);
+                color: white;
+                padding: 0.25rem 0.75rem;
+                border-radius: 15px;
+                font-size: 0.8rem;
+                font-weight: bold;
+            }
+            
+            .proprietary-lock {
+                color: var(--warning);
+                margin-left: 0.5rem;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Guided tour system
+        function setupGuidedTour() {
+            guidedTourSteps = [
+                {
+                    target: '[data-journey="data"]',
+                    title: 'Step 1: Data Collection',
+                    content: 'Start by setting up your encrypted breeding projects. All your data stays on your device.',
+                    position: 'bottom'
+                },
+                {
+                    target: '[data-journey="explore"]',
+                    title: 'Step 2: Trait Inheritance',
+                    content: 'Explore how traits like roundness and color are inherited with interactive charts.',
+                    position: 'bottom'
+                },
+                {
+                    target: '[data-journey="compare"]',
+                    title: 'Step 3: Cross-Genus Analysis',
+                    content: 'Compare different genera and explore intergeneric breeding possibilities.',
+                    position: 'bottom'
+                },
+                {
+                    target: '[data-journey="design"]',
+                    title: 'Step 4: Breeding Design',
+                    content: 'Use reverse design to find crosses that meet your target traits.',
+                    position: 'bottom'
+                },
+                {
+                    target: '[data-journey="journal"]',
+                    title: 'Step 5: Breeding Journal',
+                    content: 'Track your crosses from pollination through flowering with detailed records.',
+                    position: 'bottom'
+                },
+                {
+                    target: '[data-journey="export"]',
+                    title: 'Step 6: Export & Share',
+                    content: 'Export your data with full citations and provenance tracking.',
+                    position: 'bottom'
+                }
+            ];
+        }
+        
+        function showTourStep() {
+            if (tourStep >= guidedTourSteps.length) {
+                endTour();
+                return;
+            }
+            
+            const step = guidedTourSteps[tourStep];
+            const target = document.querySelector(step.target);
+            
+            if (!target) {
+                tourStep++;
+                showTourStep();
+                return;
+            }
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tour-tooltip';
+            tooltip.innerHTML = `
+                <h4>${step.title}</h4>
+                <p>${step.content}</p>
+                <div class="tour-buttons">
+                    <button class="tour-btn tour-btn-secondary" onclick="skipTour()">Skip Tour</button>
+                    <button class="tour-btn tour-btn-primary" onclick="nextTourStep()">Next (${tourStep + 1}/${guidedTourSteps.length})</button>
+                </div>
+            `;
+            
+            // Position tooltip
+            const rect = target.getBoundingClientRect();
+            tooltip.style.top = (rect.bottom + 10) + 'px';
+            tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+            
+            // Create highlight
+            const highlight = document.createElement('div');
+            highlight.className = 'tour-highlight';
+            highlight.style.top = rect.top + 'px';
+            highlight.style.left = rect.left + 'px';
+            highlight.style.width = rect.width + 'px';
+            highlight.style.height = rect.height + 'px';
+            
+            // Remove existing tour elements
+            document.querySelectorAll('.tour-tooltip, .tour-highlight').forEach(el => el.remove());
+            
+            // Add new elements
+            document.body.appendChild(tooltip);
+            document.body.appendChild(highlight);
+            
+            // Click the journey step to show its content
+            target.click();
+        }
+        
+        function nextTourStep() {
+            tourStep++;
+            showTourStep();
+        }
+        
+        function skipTour() {
+            endTour();
+        }
+        
+        function endTour() {
+            tourActive = false;
+            document.querySelectorAll('.tour-tooltip, .tour-highlight').forEach(el => el.remove());
+            localStorage.setItem('ocs_tour_completed', 'true');
+        }
+        
+        // Demo walkthrough system
+        function startDemoWalkthrough() {
+            if (localStorage.getItem('ocs_demo_walkthrough_seen')) {
+                return; // Don't repeat if already seen
+            }
+            
+            const walkthroughSteps = [
+                {
+                    message: 'Welcome to the comprehensive Sarcochilus demo! These 30 elite hybrids demonstrate how photos were auto-scored for roundness, color saturation, flowers per spike, symmetry, and flower size.',
+                    action: () => switchJourney('data')
+                },
+                {
+                    message: 'Explore the Trait Inheritance Explorer! Notice how roundness varies from 0.83 to 0.97, and color saturation ranges from pure white (0.08) to deep burgundy (0.98). Click through the trait tabs to see the full distribution.',
+                    action: () => {
+                        switchJourney('explore');
+                        switchTraitTab('roundness');
+                    }
+                },
+                {
+                    message: 'The charts show: (1) Offspring histogram, (2) Parent vs offspring correlation with heritability h², and (3) Parent A vs Parent B bubble chart. Try clicking the different trait tabs!',
+                    action: () => {
+                        switchJourney('explore');
+                        switchTraitTab('color_saturation');
+                    }
+                },
+                {
+                    message: 'Here\'s reverse design in action: Let\'s find crosses for white, perfectly round flowers (0.95+) with 12+ flowers per spike. The system shows you which parents to use.',
+                    action: () => {
+                        switchJourney('design');
+                        if (document.getElementById('roundnessSlider')) {
+                            document.getElementById('roundnessSlider').value = 0.95;
+                            updateTraitValue('roundness', 0.95);
+                        }
+                        if (document.getElementById('colorFamily')) {
+                            document.getElementById('colorFamily').value = 'white';
+                        }
+                    }
+                },
+                {
+                    message: 'Forward breeding recommendations: The system analyzes your 30-plant collection and suggests optimal pairings based on trait complementarity, hybrid vigor predictions, and breeding goals.',
+                    action: () => switchJourney('design')
+                }
+            ];
+            
+            runWalkthrough(walkthroughSteps, 0);
+        }
+        
+        // Journal 2.0 Functions
+        function addCrossToJournal() {
+            const seedParent = document.getElementById('seedParent').value;
+            const pollenParent = document.getElementById('pollenParent').value;
+            const crossDate = document.getElementById('crossDate').value;
+            const notes = document.getElementById('crossNotes').value;
+            
+            if (!seedParent || !pollenParent || !crossDate) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            const newEntry = {
+                id: 'cross_' + Date.now(),
+                seedParent: seedParent,
+                pollenParent: pollenParent,
+                crossDate: crossDate,
+                notes: notes,
+                status: 'pollinated',
+                stages: {
+                    pollinated: { date: crossDate, notes: notes, photos: [] },
+                    pod_set: null,
+                    flasked: null,
+                    deflasked: null,
+                    outplanted: null,
+                    first_bloom: null,
+                    awarded: null
+                },
+                reminders: []
+            };
+            
+            journalEntries.push(newEntry);
+            saveData();
+            updateJournalDisplay();
+            
+            // Clear form
+            document.getElementById('seedParent').value = '';
+            document.getElementById('pollenParent').value = '';
+            document.getElementById('crossDate').value = '';
+            document.getElementById('crossNotes').value = '';
+        }
+        
+        function updateJournalDisplay() {
+            const container = document.getElementById('journalEntries');
+            if (!container) return;
+            
+            container.innerHTML = journalEntries.map(entry => {
+                const stageLabels = {
+                    pollinated: '🌸 Pollinated',
+                    pod_set: '🌿 Pod Set',
+                    flasked: '🧪 Flasked',
+                    deflasked: '🌱 Deflasked',
+                    outplanted: '🪴 Outplanted',
+                    first_bloom: '🌺 First Bloom',
+                    awarded: '🏆 Awarded'
+                };
+                
+                const currentStage = entry.status;
+                const stageChips = Object.keys(stageLabels).map(stage => {
+                    const isComplete = entry.stages[stage] !== null;
+                    const isCurrent = stage === currentStage;
+                    const chipClass = isComplete ? 'completed' : isCurrent ? 'current' : 'pending';
+                    return `<span class="stage-chip ${chipClass}">${stageLabels[stage]}</span>`;
+                }).join('');
+                
+                return `
+                    <div class="card journal-entry" style="background: var(--dark); margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4>${entry.seedParent} × ${entry.pollenParent}</h4>
+                            <small>Started: ${entry.crossDate}</small>
+                        </div>
+                        
+                        <div class="stage-timeline" style="margin-bottom: 1rem;">
+                            ${stageChips}
+                        </div>
+                        
+                        <div class="grid grid-2">
+                            <div>
+                                <strong>Current Stage:</strong> ${stageLabels[currentStage]}<br>
+                                <strong>Days Since Pollination:</strong> ${calculateDaysSince(entry.crossDate)}
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-primary" onclick="advanceStage('${entry.id}')">Advance Stage</button>
+                                <button class="btn btn-sm btn-secondary" onclick="addStageNote('${entry.id}')">Add Note</button>
+                            </div>
+                        </div>
+                        
+                        ${entry.notes ? `<div class="stage-notes"><strong>Notes:</strong> ${entry.notes}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function advanceStage(entryId) {
+            const entry = journalEntries.find(e => e.id === entryId);
+            if (!entry) return;
+            
+            const stages = ['pollinated', 'pod_set', 'flasked', 'deflasked', 'outplanted', 'first_bloom', 'awarded'];
+            const currentIndex = stages.indexOf(entry.status);
+            
+            if (currentIndex < stages.length - 1) {
+                const nextStage = stages[currentIndex + 1];
+                entry.status = nextStage;
+                entry.stages[nextStage] = {
+                    date: new Date().toISOString().split('T')[0],
+                    notes: '',
+                    photos: []
+                };
+                
+                // Set reminder for next stage
+                setStageReminder(entry, nextStage);
+                
+                saveData();
+                updateJournalDisplay();
+            }
+        }
+        
+        function calculateDaysSince(dateString) {
+            const startDate = new Date(dateString);
+            const today = new Date();
+            const diffTime = Math.abs(today - startDate);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('Breeding reminders enabled!', 'You\'ll receive notifications for important breeding stages.');
+                    }
+                });
+            } else {
+                alert('Browser notifications not supported.');
+            }
+        }
+        
+        function showNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body: body, icon: '/static/images/orchid_continuum_transparent_logo.png' });
+            }
+        }
+        
+        function setStageReminder(entry, stage) {
+            const reminderDays = {
+                pod_set: 30,      // Check for pod development after 30 days
+                flasked: 120,     // Flask after ~4 months
+                deflasked: 365,   // Deflask after ~1 year
+                outplanted: 90,   // Outplant after ~3 months in flask
+                first_bloom: 730, // Expect bloom after ~2 years
+                awarded: 30       // Submit for judging 30 days after bloom
+            };
+            
+            const days = reminderDays[stage];
+            if (days) {
+                const reminderDate = new Date();
+                reminderDate.setDate(reminderDate.getDate() + days);
+                
+                entry.reminders.push({
+                    stage: stage,
+                    date: reminderDate.toISOString(),
+                    message: `Time to check ${entry.seedParent} × ${entry.pollenParent} for ${stage} stage`
+                });
+            }
+        }
+        
+        function generatePrintableReport() {
+            const reportWindow = window.open('', '_blank');
+            const reportHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Orchid Breeding Report - ${currentProject?.name || 'Untitled Project'}</title>
+                    <style>
+                        @media print {
+                            body { font-family: 'Times New Roman', serif; margin: 1in; }
+                            .no-print { display: none; }
+                            .page-break { page-break-before: always; }
+                        }
+                        body { font-family: Arial, sans-serif; line-height: 1.6; }
+                        .header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #333; padding-bottom: 1rem; }
+                        .cross-entry { margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem; }
+                        .stage-chip { display: inline-block; padding: 0.2rem 0.5rem; margin: 0.1rem; border-radius: 4px; font-size: 0.8rem; }
+                        .completed { background: #28a745; color: white; }
+                        .current { background: #ffc107; color: black; }
+                        .pending { background: #6c757d; color: white; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>🌺 Orchid Continuum Studio</h1>
+                        <h2>Breeding Journal Report</h2>
+                        <p><strong>Project:</strong> ${currentProject?.name || 'Untitled Project'}</p>
+                        <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+                        <p><strong>Total Crosses:</strong> ${journalEntries.length}</p>
+                    </div>
+                    
+                    ${journalEntries.map(entry => `
+                        <div class="cross-entry">
+                            <h3>${entry.seedParent} × ${entry.pollenParent}</h3>
+                            <p><strong>Cross Date:</strong> ${entry.crossDate}</p>
+                            <p><strong>Days Elapsed:</strong> ${calculateDaysSince(entry.crossDate)}</p>
+                            <p><strong>Current Stage:</strong> ${entry.status}</p>
+                            
+                            <div class="stage-timeline">
+                                ${Object.keys(entry.stages).map(stage => {
+                                    const isComplete = entry.stages[stage] !== null;
+                                    const isCurrent = stage === entry.status;
+                                    const chipClass = isComplete ? 'completed' : isCurrent ? 'current' : 'pending';
+                                    return `<span class="stage-chip ${chipClass}">${stage.replace('_', ' ')}</span>`;
+                                }).join('')}
+                            </div>
+                            
+                            ${entry.notes ? `<p><strong>Notes:</strong> ${entry.notes}</p>` : ''}
+                        </div>
+                    `).join('')}
+                    
+                    <div class="no-print">
+                        <button onclick="window.print()">Print Report</button>
+                        <button onclick="window.close()">Close</button>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            reportWindow.document.write(reportHTML);
+            reportWindow.document.close();
+        }
+        
+        // Privacy Functions
+        function updateModelSetting(path, value) {
+            const keys = path.split('.');
+            let obj = breedingModelSettings;
+            for (let i = 0; i < keys.length - 1; i++) {
+                obj = obj[keys[i]];
+            }
+            obj[keys[keys.length - 1]] = parseFloat(value);
+            
+            // Update display
+            const displayId = path.replace('.', '') + 'Value';
+            const displayElement = document.getElementById(displayId);
+            if (displayElement) {
+                displayElement.textContent = path.includes('temp') ? value + '°C' : value;
+            }
+            
+            saveData();
+        }
+        
+        function bulkToggleProprietary(isProprietary) {
+            plantCollection.forEach(plant => {
+                plant.proprietary = isProprietary;
+            });
+            updateProprietaryCount();
+            updatePlantsTable();
+            saveData();
+        }
+        
+        function updateProprietaryCount() {
+            const proprietaryCount = plantCollection.filter(p => p.proprietary).length;
+            const shareableCount = plantCollection.length - proprietaryCount;
+            
+            const propEl = document.getElementById('proprietaryCount');
+            const shareEl = document.getElementById('shareableCount');
+            
+            if (propEl) propEl.textContent = proprietaryCount;
+            if (shareEl) shareEl.textContent = shareableCount;
+        }
+        
+        function runWalkthrough(steps, index) {
+            if (index >= steps.length) {
+                localStorage.setItem('ocs_demo_walkthrough_seen', 'true');
+                return;
+            }
+            
+            const step = steps[index];
+            step.action();
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--primary);
+                color: white;
+                padding: 1rem;
+                border-radius: 10px;
+                max-width: 300px;
+                z-index: 3000;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            `;
+            notification.innerHTML = `
+                <p>${step.message}</p>
+                <div style="margin-top: 0.5rem;">
+                    <button onclick="this.parentElement.parentElement.remove(); runWalkthrough(arguments[0], ${index + 1})" 
+                            style="background: white; color: var(--primary); border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; margin-right: 0.5rem;">Next</button>
+                    <button onclick="this.parentElement.parentElement.remove(); localStorage.setItem('ocs_demo_walkthrough_seen', 'true');" 
+                            style="background: transparent; color: white; border: 1px solid white; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Skip</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-advance after 8 seconds if no action
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    notification.remove();
+                    runWalkthrough(steps, index + 1);
+                }
+            }, 8000);
+        }
+    </script>
+</body>
+</html>

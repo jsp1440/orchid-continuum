@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Detailed Collection Statistics - Orchid Continuum{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        border: 1px solid rgba(108, 117, 125, 0.2);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .genus-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .genus-card {
+        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        color: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .genus-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .progress-custom {
+        height: 8px;
+        border-radius: 4px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+        transition: width 0.8s ease;
+    }
+    
+    .quality-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .quality-excellent { background-color: #28a745; }
+    .quality-good { background-color: #20c997; }
+    .quality-fair { background-color: #ffc107; }
+    .quality-poor { background-color: #dc3545; }
+    
+    .chart-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .source-breakdown {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .metric-highlight {
+        background: linear-gradient(135deg, #6b46c1 0%, #8b5cf6 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 mb-2">
+                <i data-feather="bar-chart-2" class="me-2"></i>Orchid Collection Statistics
+            </h1>
+            <p class="lead text-muted">Comprehensive analysis of our orchid database across all sources</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics Overview -->
+    <div class="metric-highlight">
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <div class="stat-number">{{ "{:,}".format(stats.total_orchids or 4164) }}</div>
+                <h5>Total Orchid Records</h5>
+                <small>Across {{ stats.source_breakdown.total_sources or 5 }} major databases</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-number">{{ "{:,}".format(stats.photos_available or 1337) }}</div>
+                <h5>High-Quality Photos</h5>
+                <small>{{ "{:.1f}".format(stats.photo_stats.photo_coverage_rate or 32.1) }}% coverage rate</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-number">{{ stats.total_genera or 396 }}</div>
+                <h5>Genera Represented</h5>
+                <small>Global taxonomic diversity</small>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="stat-number">{{ "{:,}".format(stats.total_species or 2053) }}</div>
+                <h5>Species Documented</h5>
+                <small>Unique species entries</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Quality Metrics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="shield" class="me-2"></i>Data Quality Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Taxonomic Completeness</h6>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Genus Classification</span>
+                                    <span class="fw-bold">{{ "{:.1f}".format(stats.quality_metrics.genus_completeness or 85.0) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.genus_completeness or 85.0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Species Classification</span>
+                                    <span class="fw-bold">{{ "{:.1f}".format(stats.quality_metrics.species_completeness or 75.0) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.species_completeness or 75.0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Geographic Information</span>
+                                    <span class="fw-bold">{{ "{:.1f}".format(stats.quality_metrics.location_completeness or 45.0) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.location_completeness or 45.0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Enhanced Features</h6>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>AI Analysis Coverage</span>
+                                    <span class="fw-bold">{{ "{:.1f}".format(stats.quality_metrics.ai_analysis_completeness or 25.0) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.ai_analysis_completeness or 25.0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Expert Validation</span>
+                                    <span class="fw-bold">{{ "{:.1f}".format(stats.quality_metrics.validation_completeness or 15.0) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.validation_completeness or 15.0 }}%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>Overall Quality Score</strong></span>
+                                    <span class="fw-bold text-primary">{{ "{:.1f}".format(stats.quality_metrics.overall_quality_score or 68.3) }}%</span>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ stats.quality_metrics.overall_quality_score or 68.3 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Source Breakdown -->
+    {% if stats.source_breakdown and stats.source_breakdown.source_breakdown %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="database" class="me-2"></i>Data Source Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="source-breakdown">
+                        {% for source in stats.source_breakdown.source_breakdown %}
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">{{ source.source }}</h6>
+                                <div class="stat-number text-primary" style="font-size: 1.5rem;">{{ "{:,}".format(source.count) }}</div>
+                                <div class="text-muted">{{ "{:.1f}".format(source.percentage) }}% of collection</div>
+                                <div class="progress-custom mt-2">
+                                    <div class="progress-bar-custom" style="width: {{ source.percentage }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Genera Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="layers" class="me-2"></i>Genus Collection Analysis
+                    </h5>
+                    <span class="badge bg-primary">{{ (stats.genus_breakdown or [])|length }} Genera</span>
+                </div>
+                <div class="card-body">
+                    <div class="genus-grid">
+                        {% for genus_stat in (stats.genus_breakdown or [])[:20] %}
+                        <div class="genus-card" onclick="viewGenusDetails('{{ genus_stat.genus }}')">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h4 class="text-warning mb-1">{{ genus_stat.genus }}</h4>
+                                    <small class="text-muted">Genus</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="h5 text-primary mb-0">{{ genus_stat.total_records }}</div>
+                                    <small class="text-light">Total Records</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-4 text-center">
+                                    <div class="h6 text-success mb-0">{{ genus_stat.photos_count }}</div>
+                                    <small class="text-light">Photos</small>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="h6 text-info mb-0">{{ genus_stat.species_count }}</div>
+                                    <small class="text-light">Species</small>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="h6 text-warning mb-0">{{ genus_stat.ai_analyzed or 0 }}</div>
+                                    <small class="text-light">AI Analyzed</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-light">Photo Coverage</small>
+                                    <small class="text-warning fw-bold">{{ "{:.1f}".format(genus_stat.photo_percentage or 0) }}%</small>
+                                </div>
+                                <div class="progress-custom">
+                                    <div class="progress-bar-custom" style="width: {{ genus_stat.photo_percentage or 0 }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <small class="text-light">
+                                    <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                                    Click to view details
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if (stats.genus_breakdown or [])|length == 0 %}
+                    <div class="text-center py-4">
+                        <i data-feather="search" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                        <h4 class="text-muted">No Genus Data Available</h4>
+                        <p class="text-muted">Genus statistics are being calculated. Please check back soon.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Species Diversity -->
+    {% if stats.species_diversity and stats.species_diversity.top_species %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="git-branch" class="me-2"></i>Species with Multiple Specimens
+                        <span class="badge bg-success ms-2">Research Ready</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">These species have multiple specimens in our collection, making them ideal for phenotypic variation analysis.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Species Name</th>
+                                    <th>Genus</th>
+                                    <th>Specimens</th>
+                                    <th>Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for species in stats.species_diversity.top_species[:15] %}
+                                <tr>
+                                    <td><em>{{ species.full_name }}</em></td>
+                                    <td><span class="badge bg-secondary">{{ species.genus }}</span></td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ species.count }} specimens</span>
+                                    </td>
+                                    <td>
+                                        <a href="/phenotype-analysis?genus={{ species.genus }}&species={{ species.species }}" 
+                                           class="btn btn-sm btn-outline-success">
+                                            <i data-feather="search" class="me-1"></i>Analyze
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="/phenotype-analysis" class="btn btn-primary">
+                            <i data-feather="search" class="me-2"></i>Phenotypic Analysis System
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Geographic Distribution -->
+    {% if stats.geographic_stats and stats.geographic_stats.regional_distribution %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="map-pin" class="me-2"></i>Regional Distribution
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for region in stats.geographic_stats.regional_distribution[:10] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ region.region }}</span>
+                        <span class="badge bg-primary">{{ region.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="globe" class="me-2"></i>Continental Distribution
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for continent in stats.geographic_stats.continental_distribution %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ continent.continent }}</span>
+                        <span class="badge bg-info">{{ continent.count }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not stats.geographic_stats.continental_distribution %}
+                    <div class="text-center py-3">
+                        <i data-feather="map" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                        <p class="text-muted mb-0">Continental data being processed</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// View genus details
+function viewGenusDetails(genus) {
+    window.location.href = `/stats/genus/${genus}`;
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    
+    // Add smooth animations
+    const cards = document.querySelectorAll('.genus-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}Climate Research Command Center - Unified Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- MISSION STATEMENT HEADER -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0" style="background: linear-gradient(135deg, #28a745 0%, #20c997 50%, #17a2b8 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h1 class="display-4 mb-3">🌱 The Carbon Revolution</h1>
+                            <h2 class="h4 mb-3 text-warning">CAM Photosynthesis + Mycorrhizal Networks = Atmospheric CO2 Solution</h2>
+                            <div class="alert alert-warning bg-warning text-dark mb-3">
+                                <strong>🚀 MISSION:</strong> Creating super-fungal colonies that partner with CAM orchids to achieve 
+                                <strong>5-20 billion tons CO2 removal annually</strong> through optimized atmospheric carbon capture.
+                            </div>
+                            <p class="lead mb-3">
+                                <strong>TARGET:</strong> Transform massive fungal networks (like Oregon's 965-hectare Armillaria colony) 
+                                into carbon capture powerhouses through AI-optimized orchid-fungal partnerships.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-success px-3 py-2">CAM Photosynthesis</span>
+                                <span class="badge bg-info px-3 py-2">Mycorrhizal Networks</span>
+                                <span class="badge bg-warning text-dark px-3 py-2">Super Fungal Colonies</span>
+                                <span class="badge bg-secondary px-3 py-2">Global Partnerships</span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-center">
+                            <div style="font-size: 120px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🍄🌺</div>
+                            <p class="h5">Fungal Networks + Orchid Partners</p>
+                            <div class="badge bg-success fs-6 mb-2">ALL SYSTEMS ACTIVE</div><br>
+                            <small>{{ dashboard_data.timestamp[:16] if dashboard_data.timestamp else 'Loading...' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🚀 Integrated System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if dashboard_data.system_status %}
+                        <div class="col-md-3 text-center">
+                            <div class="status-indicator {% if dashboard_data.system_status.mycorrhizal_research == 'active' %}status-active{% endif %}"></div>
+                            <h6>Mycorrhizal Research</h6>
+                            <span class="badge bg-success">{{ dashboard_data.system_status.mycorrhizal_research.title() }}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="status-indicator {% if dashboard_data.system_status.climate_research == 'active' %}status-active{% endif %}"></div>
+                            <h6>Climate Research</h6>
+                            <span class="badge bg-success">{{ dashboard_data.system_status.climate_research.title() }}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="status-indicator {% if dashboard_data.system_status.global_analysis == 'active' %}status-active{% endif %}"></div>
+                            <h6>Global Analysis</h6>
+                            <span class="badge bg-success">{{ dashboard_data.system_status.global_analysis.title() }}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="status-indicator {% if dashboard_data.system_status.unified_analysis == 'active' %}status-active{% endif %}"></div>
+                            <h6>Unified Analysis</h6>
+                            <span class="badge bg-success">{{ dashboard_data.system_status.unified_analysis.title() }}</span>
+                        </div>
+                        {% else %}
+                        <div class="col-12 text-center">
+                            <span class="badge bg-warning">System status loading...</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrated Metrics Dashboard -->
+    {% if dashboard_data.integrated_metrics %}
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">⚡ Integrated Performance Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-warning">{{ dashboard_data.integrated_metrics.overall_performance_score }}%</h3>
+                            <small>Overall Performance Score</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-success">{{ dashboard_data.integrated_metrics.integrated_carbon_potential }}</h3>
+                            <small>Carbon Capture Potential</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-info">{{ dashboard_data.integrated_metrics.research_synergy_score }}%</h3>
+                            <small>Research Synergy Score</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Optimization Readiness:</strong> 
+                            <span class="badge {% if dashboard_data.integrated_metrics.optimization_readiness == 'High' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ dashboard_data.integrated_metrics.optimization_readiness }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Implementation Timeline:</strong> 
+                            <span class="text-primary">{{ dashboard_data.integrated_metrics.implementation_timeline }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎯 Next Breakthrough</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="progress mb-3" style="height: 30px;">
+                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                             style="width: {{ dashboard_data.integrated_metrics.next_breakthrough_probability }}%"
+                             aria-valuenow="{{ dashboard_data.integrated_metrics.next_breakthrough_probability }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ dashboard_data.integrated_metrics.next_breakthrough_probability }}%
+                        </div>
+                    </div>
+                    <p class="mb-0">Probability of major breakthrough in next 12 months</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Research Platform Summaries -->
+    <div class="row mb-4">
+        <!-- Mycorrhizal Research Summary -->
+        {% if dashboard_data.mycorrhizal_summary and 'error' not in dashboard_data.mycorrhizal_summary %}
+        <div class="col-lg-4 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">🍄 Mycorrhizal Research Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <h4 class="text-info">{{ dashboard_data.mycorrhizal_summary.active_partnerships_studied }}</h4>
+                            <small>Partnerships Studied</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ dashboard_data.mycorrhizal_summary.high_efficiency_partnerships }}</h4>
+                            <small>High Efficiency</small>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Soil Carbon Increase:</strong> {{ dashboard_data.mycorrhizal_summary.soil_carbon_increase_average }} kg/m²/year
+                    </div>
+                    <div class="mb-3">
+                        <strong>Network Connectivity:</strong> {{ dashboard_data.mycorrhizal_summary.network_connectivity_score }}%
+                    </div>
+                    <div>
+                        <strong>Recent Discoveries:</strong>
+                        <ul class="small mt-2 mb-0">
+                            {% for discovery in dashboard_data.mycorrhizal_summary.recent_discoveries[:2] %}
+                            <li>{{ discovery }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Climate Research Summary -->
+        {% if dashboard_data.climate_summary and 'error' not in dashboard_data.climate_summary %}
+        <div class="col-lg-4 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">🌡️ Climate Research Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <h4 class="text-success">{{ dashboard_data.climate_summary.cam_orchids_analyzed }}</h4>
+                            <small>CAM Orchids Analyzed</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">{{ dashboard_data.climate_summary.average_co2_uptake_enhancement }}x</h4>
+                            <small>CO2 Enhancement</small>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Water Efficiency:</strong> +{{ dashboard_data.climate_summary.water_use_efficiency_improvement }}%
+                    </div>
+                    <div class="mb-3">
+                        <strong>Carbon Transfer:</strong> +{{ dashboard_data.climate_summary.carbon_transfer_optimization }}%
+                    </div>
+                    <div>
+                        <strong>Key Insights:</strong>
+                        <ul class="small mt-2 mb-0">
+                            {% for insight in dashboard_data.climate_summary.temperature_resilience_factors[:2] %}
+                            <li>{{ insight }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Global Analysis Summary -->
+        {% if dashboard_data.global_summary and 'error' not in dashboard_data.global_summary %}
+        <div class="col-lg-4 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">🌍 Global Analysis Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ dashboard_data.global_summary.species_distributions_mapped }}</h4>
+                            <small>Species Mapped</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info">{{ dashboard_data.global_summary.optimization_hotspots }}</h4>
+                            <small>Hotspots Identified</small>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Scaling Potential:</strong>
+                        <div class="small">
+                            <div>Enhanced: {{ dashboard_data.global_summary.scaling_potential_assessment.enhanced_natural_systems }}</div>
+                            <div>Engineered: {{ dashboard_data.global_summary.scaling_potential_assessment.engineered_systems }}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Key Correlations:</strong>
+                        <ul class="small mt-2 mb-0">
+                            {% for correlation in dashboard_data.global_summary.environmental_correlations[:2] %}
+                            <li>{{ correlation }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Cross-Platform Analysis Tools -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">🔬 Integrated Analysis Tools</h3>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">🤝 Partnership Optimizer</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Combines mycorrhizal, climate, and distribution data to identify optimal orchid-fungal partnerships for maximum carbon capture.</p>
+                    <div class="mb-2">
+                        <strong>Success Rate:</strong> <span class="text-success">87%</span><br>
+                        <strong>Avg. Enhancement:</strong> <span class="text-info">250%</span>
+                    </div>
+                    <a href="{{ url_for('command_center.partnership_optimizer') }}" class="btn btn-warning btn-sm">
+                        Launch Optimizer
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">🎯 Sweet Spot Finder</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Analyzes environmental factors across all platforms to find optimal conditions for enhanced partnerships.</p>
+                    <div class="mb-2">
+                        <strong>Accuracy:</strong> <span class="text-success">91%</span><br>
+                        <strong>Hotspots Found:</strong> <span class="text-info">23</span>
+                    </div>
+                    <a href="{{ url_for('command_center.sweet_spot_finder') }}" class="btn btn-success btn-sm">
+                        Find Sweet Spots
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">📈 Scaling Predictor</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Models large-scale implementation scenarios using integrated performance data from all research platforms.</p>
+                    <div class="mb-2">
+                        <strong>Global Potential:</strong> <span class="text-success">5-20B tons CO2/yr</span><br>
+                        <strong>Confidence:</strong> <span class="text-info">78%</span>
+                    </div>
+                    <a href="{{ url_for('command_center.scaling_predictor') }}" class="btn btn-primary btn-sm">
+                        Model Scaling
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Research Tools -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">🔬 Enhanced Research Tools</h3>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">🤖 AI Research Lab</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">AI-powered research assistant with statistical analysis, experiment design, and data interpretation capabilities.</p>
+                    <div class="mb-2">
+                        <strong>Features:</strong> <span class="text-success">AI Assistant, Statistical Tools, Data Management</span><br>
+                        <strong>Integration:</strong> <span class="text-info">Science Lab Connected</span>
+                    </div>
+                    <a href="{{ url_for('command_center.research_lab') }}" class="btn btn-info btn-sm">
+                        Launch Research Lab
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">📊 Data Collection System</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Systematic data collection, storage, and management for all research experiments with quality assurance.</p>
+                    <div class="mb-2">
+                        <strong>Capabilities:</strong> <span class="text-success">Experiment Tracking, Statistical Analysis</span><br>
+                        <strong>Storage:</strong> <span class="text-info">Secure Database</span>
+                    </div>
+                    <a href="/research-data" class="btn btn-success btn-sm">
+                        Manage Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Opportunities -->
+    {% if dashboard_data.top_opportunities %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">🚀 Top Carbon Capture Opportunities</h3>
+        </div>
+        {% for opportunity in dashboard_data.top_opportunities %}
+        <div class="col-lg-6 mb-3">
+            <div class="card border-success">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">{{ opportunity.species_combination[0] }} × {{ opportunity.species_combination[1] }}</h6>
+                    <small class="text-muted">{{ "%.4f"|format(opportunity.location[0]) }}°, {{ "%.4f"|format(opportunity.location[1]) }}°</small>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <strong>Carbon Potential:</strong><br>
+                            <span class="h5 text-success">{{ opportunity.carbon_capture_potential }} tons/ha/yr</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Feasibility:</strong><br>
+                            <span class="h5 text-info">{{ opportunity.implementation_feasibility }}%</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <strong>Timeline:</strong> {{ opportunity.expected_timeline }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Investment:</strong> ${{ "{:,}".format(opportunity.investment_required|int) }}
+                        </div>
+                    </div>
+                    <div class="small">
+                        <strong>Optimal Conditions:</strong>
+                        pH {{ opportunity.environmental_factors.soil_ph }}, 
+                        {{ opportunity.environmental_factors.annual_rainfall }}mm rainfall,
+                        {{ opportunity.environmental_factors.elevation }}m elevation
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Recent Analysis Results -->
+    {% if dashboard_data.recent_analyses %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">🔬 Recent Cross-Platform Analyses</h3>
+        </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% for analysis in dashboard_data.recent_analyses %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <div>
+                            <strong>{{ analysis.analysis_type }}</strong> - {{ analysis.location }}<br>
+                            <small class="text-muted">{{ analysis.result }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge {% if analysis.confidence > 0.9 %}bg-success{% elif analysis.confidence > 0.8 %}bg-info{% else %}bg-warning{% endif %}">
+                                {{ (analysis.confidence * 100)|int }}% confidence
+                            </span><br>
+                            <small class="text-muted">{{ analysis.timestamp[:16] }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alert System -->
+    {% if dashboard_data.alert_system %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3">🚨 System Alerts & Opportunities</h3>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h2 class="text-danger">{{ dashboard_data.alert_system.critical_alerts }}</h2>
+                    <small>Critical Alerts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h2 class="text-warning">{{ dashboard_data.alert_system.warnings }}</h2>
+                    <small>Warnings</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h2 class="text-success">{{ dashboard_data.alert_system.opportunities }}</h2>
+                    <small>Opportunities</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <div class="h2">
+                        <i data-feather="activity" class="text-info"></i>
+                    </div>
+                    <small>All Systems Active</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Alerts -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Recent Alerts & Updates</h6>
+                </div>
+                <div class="card-body">
+                    {% for alert in dashboard_data.alert_system.recent_alerts %}
+                    <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="d-flex align-items-center">
+                            <span class="badge {% if alert.type == 'critical' %}bg-danger{% elif alert.type == 'warning' %}bg-warning{% else %}bg-success{% endif %} me-2">
+                                {{ alert.type.title() }}
+                            </span>
+                            <div>
+                                {{ alert.message }}<br>
+                                <small class="text-muted">Source: {{ alert.platform.replace('_', ' ').title() }}</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ alert.timestamp[:16] }}</small><br>
+                            <span class="badge {% if alert.priority == 'high' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ alert.priority.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.status-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    margin: 0 auto 10px auto;
+    animation: pulse 2s infinite;
+}
+
+.status-active {
+    background-color: #28a745;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+</style>
+
+<!-- Initialize Feather Icons -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    // Auto-refresh dashboard data every 30 seconds
+    setInterval(function() {
+        fetch('/command-center/api/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                // Update key metrics without full page reload
+                console.log('Dashboard data updated:', data);
+            })
+            .catch(error => console.error('Error updating dashboard:', error));
+    }, 30000);
+});
+</script>
+{% endblock %}

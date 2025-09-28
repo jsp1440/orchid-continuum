@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+
+{% block title %}Care Wheel Generator - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="pie-chart" class="me-2"></i>Care Wheel Generator
+            </h1>
+            <p class="lead text-muted">Generate detailed care wheels for different orchid genera</p>
+        </div>
+    </div>
+    
+    <!-- Care Wheel Generator -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="genusSelect" class="form-label">Select a genus to view its care wheel:</label>
+                            <select class="form-select form-select-lg" id="genusSelect" onchange="generateCareWheel()">
+                                <option value="">-- Select Genus --</option>
+                                <optgroup label="Beginner-Friendly">
+                                    <option value="Phalaenopsis">Phalaenopsis (Moth Orchid)</option>
+                                    <option value="Epidendrum">Epidendrum</option>
+                                    <option value="Oncidium">Oncidium (Dancing Lady)</option>
+                                </optgroup>
+                                <optgroup label="Intermediate Level">
+                                    <option value="Cattleya">Cattleya (Corsage Orchid)</option>
+                                    <option value="Dendrobium">Dendrobium</option>
+                                    <option value="Cymbidium">Cymbidium</option>
+                                    <option value="Miltonia">Miltonia (Pansy Orchid)</option>
+                                    <option value="Brassia">Brassia (Spider Orchid)</option>
+                                    <option value="Zygopetalum">Zygopetalum</option>
+                                    <option value="Bulbophyllum">Bulbophyllum</option>
+                                    <option value="Laelia">Laelia</option>
+                                    <option value="Maxillaria">Maxillaria</option>
+                                </optgroup>
+                                <optgroup label="Advanced Growers">
+                                    <option value="Paphiopedilum">Paphiopedilum (Lady Slipper)</option>
+                                    <option value="Vanda">Vanda</option>
+                                    <option value="Odontoglossum">Odontoglossum (Mountain Orchid)</option>
+                                    <option value="Masdevallia">Masdevallia</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button class="btn btn-outline-primary btn-lg" onclick="downloadCareWheelPDF()" id="downloadBtn" disabled>
+                                <i data-feather="download" class="me-2"></i>Download as PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Care Wheel Display Area -->
+                    <div id="careWheelContainer" style="display: none;">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <!-- Care Wheel Chart -->
+                                <div class="text-center mb-4">
+                                    <h5 id="genusTitle">Care Requirements</h5>
+                                    <canvas id="careWheelChart" width="400" height="400"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <!-- Care Details -->
+                                <div id="careDetails">
+                                    <h5>Detailed Care Information</h5>
+                                    <div id="careRequirements" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Care Information -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i data-feather="calendar" class="me-2"></i>Seasonal Care Calendar
+                                        </h6>
+                                        <div id="seasonalCare"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Source Attribution -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info">
+                                            <i data-feather="book-open" class="me-2"></i>Trusted Sources & Expert References
+                                        </h6>
+                                        <div id="sourcesSection">
+                                            <p class="small text-muted mb-2">This care information is compiled from authoritative orchid growing sources:</p>
+                                            <div id="sourcesList"></div>
+                                            <div id="sourceComparison" class="mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Care Wheel Generator
+let careWheelChart = null;
+
+const careData = {
+    'Phalaenopsis': {
+        light: 70, temperature: 75, humidity: 80, water: 65, fertilizer: 60, air: 85,
+        details: {
+            light: 'Bright indirect light, 1000-1500 foot-candles. East or shaded south windows.',
+            temperature: 'Day 75-85°F (24-29°C), Night 65-75°F (18-24°C). Consistent temperatures.',
+            humidity: '60-80% with good air circulation. Use humidity trays or room humidifier.',
+            water: 'Weekly watering, allow to dry slightly between. Use lukewarm water.',
+            fertilizer: 'Balanced 20-20-20, weekly weak feeding. Reduce in winter.',
+            air: 'Good air movement essential, avoid stagnant air. Gentle fan circulation.'
+        },
+        seasonal: {
+            spring: 'Increase watering and fertilizing as growth resumes. Repot if needed.',
+            summer: 'Regular care routine. Monitor for heat stress in extreme weather.',
+            fall: 'Reduce fertilizing frequency. Prepare for dormancy period.',
+            winter: 'Reduce watering and fertilizing. Provide consistent warmth.'
+        }
+    },
+    'Cattleya': {
+        light: 90, temperature: 70, humidity: 70, water: 50, fertilizer: 75, air: 80,
+        details: {
+            light: 'Bright light, 2000-3000 foot-candles. South or west windows with some protection.',
+            temperature: 'Day 80-85°F (27-29°C), Night 60-65°F (15-18°C). Large temperature swing beneficial.',
+            humidity: '50-70% with excellent drainage. Lower humidity acceptable with good air flow.',
+            water: 'Allow to dry between waterings. Heavy watering when in growth, less when dormant.',
+            fertilizer: 'High nitrogen during growth (30-10-10), balanced during bloom (20-20-20).',
+            air: 'Strong air circulation required. Outdoors in summer if possible.'
+        },
+        seasonal: {
+            spring: 'Resume normal watering and fertilizing. Increase as pseudobulbs swell.',
+            summer: 'Peak growing season. Heavy feeding and watering. Outdoor culture ideal.',
+            fall: 'Reduce watering as growth completes. Prepare for bloom or dormancy.',
+            winter: 'Minimal watering. Allow to dry thoroughly. Maintain bright light.'
+        }
+    },
+    'Paphiopedilum': {
+        light: 50, temperature: 65, humidity: 75, water: 80, air: 70, fertilizer: 55,
+        details: {
+            light: 'Low to medium light, 800-1200 foot-candles. North or shaded east windows.',
+            temperature: 'Day 70-80°F (21-27°C), Night 60-65°F (15-18°C). Cool types prefer lower.',
+            humidity: '60-80% with consistent moisture. Never allow to dry completely.',
+            water: 'Keep evenly moist year-round. Use distilled or rainwater when possible.',
+            fertilizer: 'Low concentration balanced feeding (1/4 strength). Monthly application.',
+            air: 'Gentle air movement, avoid drafts. Good ventilation prevents rot.'
+        },
+        seasonal: {
+            spring: 'Increase fertilizing slightly as growth begins. Monitor for new shoots.',
+            summer: 'Maintain consistent moisture and feeding. Protect from heat.',
+            fall: 'Continue regular care. Many species bloom in fall/winter.',
+            winter: 'Maintain moisture but reduce fertilizing. Enjoy blooms.'
+        }
+    },
+    'Dendrobium': {
+        light: 85, temperature: 75, humidity: 65, water: 45, fertilizer: 70, air: 85,
+        details: {
+            light: 'Bright light, 2000-2500 foot-candles. Similar to Cattleya requirements.',
+            temperature: 'Varies by type. Warm: 75-85°F day, Cool: 65-75°F day. Night drop important.',
+            humidity: '50-70%. Tolerates lower humidity with good air circulation.',
+            water: 'Wet/dry cycle important. Heavy watering in growth, dry rest for some types.',
+            fertilizer: 'High nitrogen in growth, none during dry rest. Varies by species.',
+            air: 'Excellent air circulation crucial. Prevents fungal issues.'
+        },
+        seasonal: {
+            spring: 'Resume watering and fertilizing. New growth appears.',
+            summer: 'Peak growing season. Heavy watering and feeding.',
+            fall: 'Begin reducing water for deciduous types. Evergreen types continue.',
+            winter: 'Dry rest for many species. Bright light, minimal water.'
+        }
+    },
+    'Oncidium': {
+        light: 80, temperature: 70, humidity: 60, water: 55, fertilizer: 65, air: 75,
+        details: {
+            light: 'Bright light, 1500-2500 foot-candles. Morning sun beneficial.',
+            temperature: 'Day 75-85°F (24-29°C), Night 60-70°F (15-21°C). Adaptable to wide range.',
+            humidity: '50-70%. Tolerant of varying conditions.',
+            water: 'Regular watering when in growth, reduce when dormant. Allow partial drying.',
+            fertilizer: 'Balanced feeding during growth. Reduce in winter.',
+            air: 'Good air circulation. Prevents pseudobulb rot.'
+        },
+        seasonal: {
+            spring: 'New growth begins. Increase watering and fertilizing.',
+            summer: 'Active growing season. Regular care routine.',
+            fall: 'Complete growth, some species bloom. Reduce feeding.',
+            winter: 'Rest period. Minimal watering, bright light.'
+        }
+    },
+    'Cymbidium': {
+        light: 75, temperature: 60, humidity: 65, water: 70, fertilizer: 80, air: 70,
+        details: {
+            light: 'Bright light, 1500-2000 foot-candles. Morning sun, afternoon shade.',
+            temperature: 'Cool nights essential: 45-55°F (7-13°C). Day 65-75°F (18-24°C).',
+            humidity: '50-70%. Benefits from outdoor culture in many climates.',
+            water: 'Regular watering year-round. Never completely dry but don\'t overwater.',
+            fertilizer: 'Heavy feeders. Regular balanced fertilizer throughout growing season.',
+            air: 'Good air circulation. Outdoor culture preferred in suitable climates.'
+        },
+        seasonal: {
+            spring: 'Resume heavy feeding. Outdoor culture begins.',
+            summer: 'Outdoor growing season. Regular watering and heavy feeding.',
+            fall: 'Cool nights trigger blooming. Reduce fertilizing.',
+            winter: 'Bloom season for many. Reduce feeding, maintain moisture.'
+        }
+    }
+};
+
+function generateCareWheel() {
+    const genus = document.getElementById('genusSelect').value;
+    const container = document.getElementById('careWheelContainer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const genusTitle = document.getElementById('genusTitle');
+    
+    if (!genus || !careData[genus]) {
+        container.style.display = 'none';
+        downloadBtn.disabled = true;
+        return;
+    }
+    
+    container.style.display = 'block';
+    downloadBtn.disabled = false;
+    genusTitle.textContent = genus + ' Care Requirements';
+    
+    const data = careData[genus];
+    const ctx = document.getElementById('careWheelChart').getContext('2d');
+    
+    // Destroy existing chart
+    if (careWheelChart) {
+        careWheelChart.destroy();
+    }
+    
+    // Create new radar chart
+    careWheelChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Light', 'Temperature', 'Humidity', 'Watering', 'Fertilizer', 'Air Flow'],
+            datasets: [{
+                label: genus + ' Requirements',
+                data: [data.light, data.temperature, data.humidity, data.water, data.fertilizer, data.air],
+                backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 3,
+                pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(13, 110, 253, 1)',
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Update care details
+    const detailsContainer = document.getElementById('careRequirements');
+    let detailsHtml = '';
+    for (const [key, value] of Object.entries(data.details)) {
+        const iconMap = {
+            light: 'sun',
+            temperature: 'thermometer',
+            humidity: 'droplet',
+            water: 'droplet',
+            fertilizer: 'zap',
+            air: 'wind'
+        };
+        
+        detailsHtml += `
+            <div class="mb-3 p-3 border rounded">
+                <div class="d-flex align-items-center mb-2">
+                    <i data-feather="${iconMap[key] || 'circle'}" class="me-2 text-primary"></i>
+                    <strong class="text-capitalize">${key}:</strong>
+                </div>
+                <small class="text-muted">${value}</small>
+            </div>
+        `;
+    }
+    detailsContainer.innerHTML = detailsHtml;
+    
+    // Update seasonal care
+    const seasonalContainer = document.getElementById('seasonalCare');
+    let seasonalHtml = '<div class="row g-2">';
+    for (const [season, info] of Object.entries(data.seasonal)) {
+        seasonalHtml += `
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body p-3">
+                        <h6 class="card-title text-capitalize">${season}</h6>
+                        <p class="card-text small">${info}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    seasonalHtml += '</div>';
+    seasonalContainer.innerHTML = seasonalHtml;
+    
+    // Update sources section
+    updateSourcesSection(genus);
+    
+    // Re-initialize feather icons
+    feather.replace();
+}
+
+function getCareData(genus) {
+    // Convert the simple careData format to the detailed format needed for PDF
+    const data = careData[genus];
+    if (!data) return null;
+    
+    return {
+        common_name: getCommonName(genus),
+        care_level: getCareLevel(genus),
+        light: {
+            requirement: data.details.light.split('.')[0],
+            details: data.details.light
+        },
+        temperature: {
+            day: getTemperatureRange(genus, 'day'),
+            night: getTemperatureRange(genus, 'night'),
+            details: data.details.temperature
+        },
+        humidity: {
+            range: getHumidityRange(genus),
+            details: data.details.humidity
+        },
+        watering: {
+            frequency: getWateringFrequency(genus),
+            details: data.details.water
+        },
+        fertilizer: {
+            schedule: getFertilizerSchedule(genus),
+            details: data.details.fertilizer
+        },
+        potting_media: getPottingMedia(genus),
+        repotting: getRepotting(genus),
+        blooming_season: getBloomingSeason(genus),
+        special_notes: getSpecialNotes(genus)
+    };
+}
+
+function getCommonName(genus) {
+    const names = {
+        'Phalaenopsis': 'Moth Orchid',
+        'Cattleya': 'Corsage Orchid',
+        'Paphiopedilum': 'Lady Slipper Orchid',
+        'Dendrobium': 'Dendrobium Orchid',
+        'Oncidium': 'Dancing Lady Orchid',
+        'Cymbidium': 'Cymbidium Orchid',
+        'Vanda': 'Vanda Orchid',
+        'Miltonia': 'Pansy Orchid'
+    };
+    return names[genus] || genus + ' Orchid';
+}
+
+function getCareLevel(genus) {
+    const levels = {
+        'Phalaenopsis': 'Beginner',
+        'Cattleya': 'Intermediate',
+        'Paphiopedilum': 'Intermediate to Advanced',
+        'Dendrobium': 'Intermediate',
+        'Oncidium': 'Beginner to Intermediate',
+        'Cymbidium': 'Intermediate',
+        'Vanda': 'Advanced',
+        'Miltonia': 'Intermediate'
+    };
+    return levels[genus] || 'Intermediate';
+}
+
+function getTemperatureRange(genus, time) {
+    const ranges = {
+        'Phalaenopsis': { day: '75-85°F (24-29°C)', night: '65-75°F (18-24°C)' },
+        'Cattleya': { day: '80-85°F (27-29°C)', night: '60-65°F (15-18°C)' },
+        'Paphiopedilum': { day: '70-80°F (21-27°C)', night: '60-65°F (15-18°C)' },
+        'Dendrobium': { day: '75-85°F (24-29°C)', night: '55-65°F (13-18°C)' },
+        'Oncidium': { day: '75-85°F (24-29°C)', night: '60-70°F (15-21°C)' },
+        'Cymbidium': { day: '65-75°F (18-24°C)', night: '45-55°F (7-13°C)' },
+        'Vanda': { day: '80-90°F (27-32°C)', night: '65-75°F (18-24°C)' },
+        'Miltonia': { day: '70-80°F (21-27°C)', night: '60-65°F (15-18°C)' }
+    };
+    return ranges[genus] ? ranges[genus][time] : '70-80°F (21-27°C)';
+}
+
+function getHumidityRange(genus) {
+    const ranges = {
+        'Phalaenopsis': '60-80%',
+        'Cattleya': '50-70%',
+        'Paphiopedilum': '60-80%',
+        'Dendrobium': '50-70%',
+        'Oncidium': '50-70%',
+        'Cymbidium': '50-70%',
+        'Vanda': '60-80%',
+        'Miltonia': '60-80%'
+    };
+    return ranges[genus] || '50-70%';
+}
+
+function getWateringFrequency(genus) {
+    const frequencies = {
+        'Phalaenopsis': 'Weekly or when media is dry',
+        'Cattleya': 'Allow to dry between waterings',
+        'Paphiopedilum': 'Keep evenly moist',
+        'Dendrobium': 'Wet/dry cycle important',
+        'Oncidium': 'Regular watering when growing',
+        'Cymbidium': 'Regular watering year-round',
+        'Vanda': 'Daily watering in summer',
+        'Miltonia': 'Keep consistently moist'
+    };
+    return frequencies[genus] || 'Weekly or when dry';
+}
+
+function getFertilizerSchedule(genus) {
+    const schedules = {
+        'Phalaenopsis': 'Weekly weakly',
+        'Cattleya': 'High nitrogen during growth',
+        'Paphiopedilum': 'Low concentration monthly',
+        'Dendrobium': 'High nitrogen in growth',
+        'Oncidium': 'Balanced feeding during growth',
+        'Cymbidium': 'Heavy feeding during growing season',
+        'Vanda': 'Weekly balanced fertilizer',
+        'Miltonia': 'Weekly weak fertilizer'
+    };
+    return schedules[genus] || 'Weekly weakly';
+}
+
+function getPottingMedia(genus) {
+    const media = {
+        'Phalaenopsis': 'Fine to medium bark or sphagnum moss',
+        'Cattleya': 'Coarse bark with perlite',
+        'Paphiopedilum': 'Fine bark mix with perlite and sphagnum',
+        'Dendrobium': 'Coarse bark or mounted',
+        'Oncidium': 'Medium bark with perlite',
+        'Cymbidium': 'Medium bark with perlite and sphagnum',
+        'Vanda': 'Coarse bark or mounted',
+        'Miltonia': 'Fine to medium bark with sphagnum'
+    };
+    return media[genus] || 'Medium bark with perlite';
+}
+
+function getRepotting(genus) {
+    const schedules = {
+        'Phalaenopsis': 'Every 1-2 years or when media breaks down',
+        'Cattleya': 'Every 2-3 years or when overcrowded',
+        'Paphiopedilum': 'Annually or when media breaks down',
+        'Dendrobium': 'Every 2-3 years or when overcrowded',
+        'Oncidium': 'Every 2-3 years or when overcrowded',
+        'Cymbidium': 'Every 2-3 years in spring',
+        'Vanda': 'Rarely needed if mounted',
+        'Miltonia': 'Every 1-2 years'
+    };
+    return schedules[genus] || 'Every 2-3 years';
+}
+
+function getBloomingSeason(genus) {
+    const seasons = {
+        'Phalaenopsis': 'Can bloom any time of year',
+        'Cattleya': 'Spring to fall, varies by species',
+        'Paphiopedilum': 'Winter to spring usually',
+        'Dendrobium': 'Winter to spring for most species',
+        'Oncidium': 'Fall to spring typically',
+        'Cymbidium': 'Winter to spring',
+        'Vanda': 'Multiple times per year',
+        'Miltonia': 'Spring to summer'
+    };
+    return seasons[genus] || 'Varies by species';
+}
+
+function getSpecialNotes(genus) {
+    const notes = {
+        'Phalaenopsis': [
+            'Can rebloom on old flower spikes',
+            'Very sensitive to overwatering',
+            'Enjoys being slightly pot-bound',
+            'Remove yellowing leaves immediately'
+        ],
+        'Cattleya': [
+            'Needs distinct rest period',
+            'Light levels critical for blooming',
+            'Pseudobulbs store water and nutrients',
+            'Many are fragrant'
+        ],
+        'Paphiopedilum': [
+            'Terrestrial orchid - different care needs',
+            'Sensitive to salt buildup - flush regularly',
+            'Some prefer cooler temperatures',
+            'Single flower per spike typically'
+        ],
+        'Dendrobium': [
+            'Many species need distinct dry rest',
+            'High light essential for blooming',
+            'Keikis (plantlets) common on canes',
+            'Wide variety of species and requirements'
+        ],
+        'Oncidium': [
+            'Tolerance to varying conditions',
+            'Watch for accordion-pleated leaves (underwatering)',
+            'Many species fragrant',
+            'Some need cooler nights for blooming'
+        ],
+        'Cymbidium': [
+            'Cool nights essential for blooming',
+            'Benefit from outdoor culture',
+            'Heavy feeders during growing season',
+            'Long-lasting flowers'
+        ]
+    };
+    return notes[genus] || ['Follow general orchid care guidelines'];
+}
+
+function downloadCareWheelPDF() {
+    const genus = document.getElementById('genusSelect').value;
+    if (!genus) return;
+    
+    // Create a form for reliable PDF download
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = `/generate-care-wheel/${genus}`;
+    form.target = '_blank'; // Open in new tab
+    form.style.display = 'none';
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Update sources section with expert references
+function updateSourcesSection(genus) {
+    const sourcesListContainer = document.getElementById('sourcesList');
+    const comparisonContainer = document.getElementById('sourceComparison');
+    
+    // Get care data for this genus from our enhanced system
+    const data = getCareDataFromServer(genus);
+    if (!data || !data.sources) {
+        sourcesListContainer.innerHTML = '<p class="small text-muted">Source information not available for this genus.</p>';
+        comparisonContainer.innerHTML = '';
+        return;
+    }
+    
+    // Display sources as linked list
+    let sourcesHtml = '<ul class="list-unstyled">';
+    data.sources.forEach((source, index) => {
+        const url = data.source_urls && data.source_urls[index] ? data.source_urls[index] : '#';
+        const icon = getSourceIcon(source);
+        sourcesHtml += `
+            <li class="mb-2">
+                <i data-feather="${icon}" class="me-2 text-primary" style="width: 16px; height: 16px;"></i>
+                <a href="${url}" target="_blank" class="text-decoration-none">
+                    <strong>${source}</strong>
+                </a>
+                <small class="text-muted d-block ms-4">${getSourceDescription(source)}</small>
+            </li>
+        `;
+    });
+    sourcesHtml += '</ul>';
+    sourcesListContainer.innerHTML = sourcesHtml;
+    
+    // Display source comparisons/notes if available
+    if (data.source_notes && data.source_notes.length > 0) {
+        let comparisonHtml = `
+            <div class="alert alert-info py-2">
+                <h6 class="mb-2"><i data-feather="info" class="me-1"></i>Expert Comparison Notes:</h6>
+                <ul class="mb-0 small">
+        `;
+        data.source_notes.forEach(note => {
+            comparisonHtml += `<li>${note}</li>`;
+        });
+        comparisonHtml += '</ul></div>';
+        comparisonContainer.innerHTML = comparisonHtml;
+    } else {
+        comparisonContainer.innerHTML = '';
+    }
+}
+
+function getSourceIcon(source) {
+    if (source.includes('Baker')) return 'book';
+    if (source.includes('AOS') || source.includes('American Orchid Society')) return 'award';
+    if (source.includes('Society') || source.includes('Alliance')) return 'users';
+    if (source.includes('University') || source.includes('Research')) return 'search';
+    return 'link-2';
+}
+
+function getSourceDescription(source) {
+    const descriptions = {
+        'American Orchid Society (AOS) Culture Sheets': 'The premier orchid society in North America, providing research-based culture guidelines.',
+        'Charles and Margaret Baker - OrchidCulture.com': 'Renowned orchid experts with decades of experience and extensive habitat research.',
+        'Charles and Margaret Baker Culture Sheets': 'Renowned orchid experts with decades of experience and extensive habitat research.',
+        'Royal Horticultural Society Orchid Care Guide': 'UK-based horticultural authority with comprehensive growing guides.',
+        'Five Cities Orchid Society Growing Guidelines': 'Local expertise from experienced California growers.',
+        'Pleurothallid Alliance Society': 'Specialists in small, cool-growing orchid species.',
+        'Cattleya Alliance Growers': 'Expert growers focused on showy, fragrant orchid species.',
+        'Brazilian Orchid Society Guidelines': 'Native habitat expertise from South American growers.',
+        'Southeast Asian Orchid Growers': 'Regional expertise for tropical orchid species.'
+    };
+    
+    return descriptions[source] || 'Expert orchid growing resource.';
+}
+
+// Enhanced data retrieval with sources - integrates with backend
+function getCareDataFromServer(genus) {
+    // For now, return the enhanced care data with sources
+    // This could be expanded to fetch from the Baker culture system
+    const enhancedCareData = {
+        'Phalaenopsis': {
+            sources: [
+                'American Orchid Society (AOS) Culture Sheets',
+                'Charles and Margaret Baker - OrchidCulture.com',
+                'University of Florida IFAS Extension'
+            ],
+            source_urls: [
+                'https://aos.org/orchids/culture-sheets/',
+                'https://www.orchidculture.com',
+                'https://edis.ifas.ufl.edu'
+            ],
+            source_notes: [
+                'Light requirements vary: AOS suggests 1000-1500 fc; some growers prefer up to 2000 fc',
+                'Watering debates: weekly vs. ice cube method (we recommend weekly)',
+                'Baker emphasizes avoiding crown water; all sources agree on this point'
+            ]
+        },
+        'Cattleya': {
+            sources: [
+                'American Orchid Society (AOS) Culture Sheets',
+                'Charles and Margaret Baker Culture Sheets',
+                'Cattleya Society Publications'
+            ],
+            source_urls: [
+                'https://aos.org/orchids/culture-sheets/',
+                'https://www.orchidculture.com',
+                'https://cattleyasociety.org'
+            ],
+            source_notes: [
+                'Light tolerance varies by species: mini-catts need less, standard catts more',
+                'Baker emphasizes species-specific rest requirements',
+                'All sources agree on high light and good air circulation needs'
+            ]
+        }
+        // Add more genera as needed
+    };
+    
+    return enhancedCareData[genus] || null;
+}
+
+feather.replace();
+</script>
+{% endblock %}

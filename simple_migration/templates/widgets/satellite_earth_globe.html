@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 3D Earth Globe - Orchid Distribution - Five Cities Orchid Society</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0 0 300px 0;
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        #globe-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Control Panel - Below globe as caption */
+        .control-panel {
+            position: absolute;
+            bottom: -80px;
+            left: 0;
+            right: 0;
+            background: rgba(15, 30, 60, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(100, 149, 237, 0.4);
+            border-radius: 15px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            border: 1px solid rgba(100, 149, 237, 0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #2a5298, #4fc3f7);
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            box-shadow: 0 0 20px rgba(79, 195, 247, 0.8);
+        }
+
+        /* Info Panel - As caption below right */
+        .info-panel {
+            position: absolute;
+            bottom: -250px;
+            right: 20px;
+            background: rgba(15, 30, 60, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(100, 149, 237, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            max-width: 320px;
+            display: none;
+            animation: slideIn 0.4s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .info-panel h3 {
+            margin: 0 0 15px 0;
+            color: #4fc3f7;
+            font-size: 18px;
+        }
+
+        .info-panel .orchid-location {
+            background: rgba(79, 195, 247, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 3px solid #4fc3f7;
+        }
+
+        /* Statistics Panel - As caption below left */
+        .stats-panel {
+            position: absolute;
+            bottom: -250px;
+            left: 20px;
+            background: rgba(15, 30, 60, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(100, 149, 237, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            z-index: 1000;
+        }
+
+        .stats-panel h4 {
+            margin: 0 0 15px 0;
+            color: #4fc3f7;
+            font-size: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(100, 149, 237, 0.2);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 2000;
+        }
+
+        .loading-globe {
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(79, 195, 247, 0.2);
+            border-top: 3px solid #4fc3f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .control-panel {
+                bottom: 10px;
+                padding: 12px 18px;
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 90vw;
+            }
+            
+            .control-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .info-panel, .stats-panel {
+                max-width: 280px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-globe"></div>
+        <h2 style="color: #4fc3f7; margin: 0;">🌍 Loading 3D Earth Globe...</h2>
+        <p style="opacity: 0.8; margin: 10px 0 0 0;">Mapping orchid distributions worldwide</p>
+    </div>
+
+    <div id="globe-container"></div>
+
+    <div class="stats-panel">
+        <h4>🌺 Orchid Distribution</h4>
+        <div class="stat-item">
+            <span>Total Species:</span>
+            <span id="totalSpecies">Loading...</span>
+        </div>
+        <div class="stat-item">
+            <span>Continents:</span>
+            <span id="continentCount">Loading...</span>
+        </div>
+        <div class="stat-item">
+            <span>Current View:</span>
+            <span id="currentView">Global</span>
+        </div>
+        <div style="margin-top: 15px;">
+            <input type="text" id="orchidSearch" placeholder="Search genus or species..." 
+                   style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #4fc3f7; background: rgba(79, 195, 247, 0.1); color: white;">
+            <button onclick="searchOrchids()" class="control-btn" style="width: 100%; margin-top: 8px;">🔍 Search Distribution</button>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button class="control-btn active" onclick="setGlobalView()">🌍 Global View</button>
+        <button class="control-btn" onclick="focusContinent('asia')">🏔️ Asia</button>
+        <button class="control-btn" onclick="focusContinent('americas')">🌎 Americas</button>
+        <button class="control-btn" onclick="focusContinent('europe')">🇪🇺 Europe</button>
+        <button class="control-btn" onclick="toggleRotation()">⏸️ Pause</button>
+        <button class="control-btn" onclick="toggleOrchidLabels()">🏷️ Labels</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3 id="orchidTitle">Orchid Distribution</h3>
+        <div id="orchidDetails">Click an orchid marker to see details</div>
+        <button class="control-btn" onclick="closeInfo()" style="margin-top: 15px; float: right;">✕ Close</button>
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer, earth, controls;
+        let orchidMarkers = [];
+        let orchidData = [];
+        let isRotating = true;
+        let labelsVisible = false;
+        let currentViewMode = 'global';
+
+        // Initialize Three.js scene
+        function initThreeJS() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            document.getElementById('globe-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+
+            // Create Earth sphere
+            createEarth();
+            
+            // Position camera
+            camera.position.set(0, 0, 4);
+            
+            // Load orchid data
+            loadOrchidData();
+        }
+
+        function createEarth() {
+            // Earth geometry
+            const geometry = new THREE.SphereGeometry(1, 64, 64);
+            
+            // Earth texture using procedural generation
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient for oceans
+            const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+            gradient.addColorStop(0, '#1e40af');
+            gradient.addColorStop(0.5, '#2563eb');
+            gradient.addColorStop(1, '#1e3a8a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1024, 512);
+            
+            // Add continents (simplified shapes)
+            ctx.fillStyle = '#228B22';
+            
+            // North America
+            ctx.beginPath();
+            ctx.ellipse(150, 150, 80, 60, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // South America
+            ctx.beginPath();
+            ctx.ellipse(200, 350, 40, 80, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Europe
+            ctx.beginPath();
+            ctx.ellipse(400, 120, 50, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Africa
+            ctx.beginPath();
+            ctx.ellipse(450, 280, 60, 100, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Asia
+            ctx.beginPath();
+            ctx.ellipse(650, 150, 120, 80, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Australia
+            ctx.beginPath();
+            ctx.ellipse(750, 380, 60, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const material = new THREE.MeshLambertMaterial({ 
+                map: texture,
+                transparent: false
+            });
+            
+            earth = new THREE.Mesh(geometry, material);
+            scene.add(earth);
+        }
+
+        async function loadOrchidData() {
+            try {
+                const response = await fetch('/api/recent-orchids');
+                orchidData = await response.json();
+                
+                console.log('Loaded orchid data:', orchidData);
+                
+                // Update statistics
+                document.getElementById('totalSpecies').textContent = orchidData.length;
+                
+                // Count unique continents
+                const continents = new Set();
+                orchidData.forEach(orchid => {
+                    if (orchid.decimal_latitude && orchid.decimal_longitude) {
+                        const continent = getContinent(orchid.decimal_latitude, orchid.decimal_longitude);
+                        continents.add(continent);
+                    }
+                });
+                document.getElementById('continentCount').textContent = continents.size;
+                
+                // Create orchid markers
+                createOrchidMarkers();
+                
+            } catch (error) {
+                console.error('Error loading orchid data:', error);
+                // Fallback to sample data
+                createSampleMarkers();
+            }
+        }
+
+        function createOrchidMarkers() {
+            orchidData.forEach((orchid, index) => {
+                if (orchid.decimal_latitude && orchid.decimal_longitude) {
+                    const lat = parseFloat(orchid.decimal_latitude);
+                    const lng = parseFloat(orchid.decimal_longitude);
+                    
+                    // Convert lat/lng to 3D coordinates on sphere - CORRECTED VERSION
+                    // Standard spherical coordinate conversion for Three.js
+                    const phi = (lat) * (Math.PI / 180);  // latitude in radians
+                    const theta = (lng) * (Math.PI / 180); // longitude in radians
+                    
+                    const earthRadius = 1.02; // Slightly above Earth surface
+                    
+                    // Three.js spherical to cartesian (Y-up coordinate system)
+                    const x = earthRadius * Math.cos(phi) * Math.sin(theta + Math.PI/2);
+                    const y = earthRadius * Math.sin(phi);
+                    const z = earthRadius * Math.cos(phi) * Math.cos(theta + Math.PI/2);
+                    
+                    // Create orchid marker - larger and more visible
+                    const markerGeometry = new THREE.SphereGeometry(0.03, 12, 12);
+                    const markerMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0xff4444,  // Brighter red
+                        transparent: true,
+                        opacity: 1.0
+                    });
+                    
+                    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                    marker.position.set(x, y, z);
+                    
+                    // IMPORTANT: Parent marker to Earth so it rotates with the planet
+                    earth.add(marker);
+                    
+                    marker.userData = {
+                        orchid: orchid,
+                        originalPosition: { x, y, z }
+                    };
+                    
+                    orchidMarkers.push(marker);
+                    
+                    // Gentle pulsing - no crazy movement
+                    animateMarkerPulse(marker, index * 0.2);
+                    
+                    console.log(`Orchid ${orchid.display_name} placed at (${lat}, ${lng}) -> 3D (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
+                }
+            });
+        }
+
+        function createSampleMarkers() {
+            // Fallback sample data with corrected coordinates
+            const sampleData = [
+                { lat: 4.0, lng: -74.0, name: "Cattleya trianae", location: "Colombia", scientific_name: "Cattleya trianae", display_name: "Cattleya trianae", decimal_latitude: 4.0, decimal_longitude: -74.0 },
+                { lat: 1.0, lng: 104.0, name: "Phalaenopsis amabilis", location: "Singapore", scientific_name: "Phalaenopsis amabilis", display_name: "Phalaenopsis amabilis", decimal_latitude: 1.0, decimal_longitude: 104.0 },
+                { lat: 27.0, lng: 85.0, name: "Dendrobium nobile", location: "Nepal", scientific_name: "Dendrobium nobile", display_name: "Dendrobium nobile", decimal_latitude: 27.0, decimal_longitude: 85.0 },
+                { lat: 25.0, lng: 95.0, name: "Vanda coerulea", location: "Myanmar", scientific_name: "Vanda coerulea", display_name: "Vanda coerulea", decimal_latitude: 25.0, decimal_longitude: 95.0 }
+            ];
+            
+            sampleData.forEach((data, index) => {
+                // Use same corrected coordinate conversion
+                const phi = (data.lat) * (Math.PI / 180);
+                const theta = (data.lng) * (Math.PI / 180);
+                const earthRadius = 1.02;
+                
+                const x = earthRadius * Math.cos(phi) * Math.sin(theta + Math.PI/2);
+                const y = earthRadius * Math.sin(phi);
+                const z = earthRadius * Math.cos(phi) * Math.cos(theta + Math.PI/2);
+                
+                const markerGeometry = new THREE.SphereGeometry(0.03, 12, 12);
+                const markerMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xff4444,
+                    transparent: true,
+                    opacity: 1.0
+                });
+                
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(x, y, z);
+                
+                // Parent to Earth
+                earth.add(marker);
+                
+                marker.userData = {
+                    orchid: data,
+                    originalPosition: { x, y, z }
+                };
+                
+                orchidMarkers.push(marker);
+                animateMarkerPulse(marker, index * 0.2);
+                
+                console.log(`Sample orchid ${data.name} placed at (${data.lat}, ${data.lng}) -> 3D (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
+            });
+            
+            document.getElementById('totalSpecies').textContent = sampleData.length;
+            document.getElementById('continentCount').textContent = "4";
+        }
+
+        function animateMarkerPulse(marker, delay) {
+            let time = delay;
+            
+            function pulse() {
+                time += 0.02; // Slower pulsing
+                const scale = 1 + 0.2 * Math.sin(time * 1.5); // Gentler pulse
+                marker.scale.setScalar(scale);
+                requestAnimationFrame(pulse);
+            }
+            
+            pulse();
+        }
+
+        function getContinent(lat, lng) {
+            if (lat >= 35 && lat <= 75 && lng >= -30 && lng <= 40) return "Europe";
+            if (lat >= -35 && lat <= 37 && lng >= -20 && lng <= 55) return "Africa";
+            if (lat >= 10 && lat <= 70 && lng >= 40 && lng <= 180) return "Asia";
+            if (lat >= -50 && lat <= -10 && lng >= 110 && lng <= 180) return "Australia";
+            if (lat >= 15 && lat <= 70 && lng >= -170 && lng <= -30) return "North America";
+            if (lat >= -60 && lat <= 15 && lng >= -85 && lng <= -30) return "South America";
+            return "Other";
+        }
+
+        function setGlobalView() {
+            currentViewMode = 'global';
+            camera.position.set(0, 0, 4);
+            controls.target.set(0, 0, 0);
+            document.getElementById('currentView').textContent = 'Global';
+            updateActiveButton(0);
+        }
+
+        function focusContinent(continent) {
+            currentViewMode = continent;
+            
+            let target = { x: 0, y: 0, z: 0 };
+            let position = { x: 0, y: 0, z: 3 };
+            
+            switch(continent) {
+                case 'asia':
+                    target = { x: 0.3, y: 0.2, z: 0 };
+                    position = { x: 1, y: 0.5, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Asia';
+                    updateActiveButton(1);
+                    break;
+                case 'americas':
+                    target = { x: -0.3, y: 0, z: 0 };
+                    position = { x: -1, y: 0, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Americas';
+                    updateActiveButton(2);
+                    break;
+                case 'europe':
+                    target = { x: 0.1, y: 0.3, z: 0 };
+                    position = { x: 0.3, y: 0.8, z: 2.5 };
+                    document.getElementById('currentView').textContent = 'Europe';
+                    updateActiveButton(3);
+                    break;
+            }
+            
+            // Smooth camera transition
+            animateCamera(camera.position, position, controls.target, target);
+        }
+
+        function animateCamera(fromPos, toPos, fromTarget, toTarget) {
+            let progress = 0;
+            const duration = 1000; // 1 second
+            const startTime = Date.now();
+            
+            function animate() {
+                progress = (Date.now() - startTime) / duration;
+                progress = Math.min(progress, 1);
+                
+                // Smooth easing
+                const eased = progress * progress * (3 - 2 * progress);
+                
+                camera.position.lerp(new THREE.Vector3(toPos.x, toPos.y, toPos.z), eased);
+                controls.target.lerp(new THREE.Vector3(toTarget.x, toTarget.y, toTarget.z), eased);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            animate();
+        }
+
+        function updateActiveButton(activeIndex) {
+            const buttons = document.querySelectorAll('.control-btn');
+            buttons.forEach((btn, index) => {
+                if (index === activeIndex) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = event.target;
+            btn.textContent = isRotating ? '⏸️ Pause' : '▶️ Play';
+        }
+
+        function toggleOrchidLabels() {
+            labelsVisible = !labelsVisible;
+            const btn = event.target;
+            btn.textContent = labelsVisible ? '🏷️ Hide Labels' : '🏷️ Labels';
+            // Labels implementation would go here
+        }
+
+        function closeInfo() {
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(orchidMarkers);
+
+            if (intersects.length > 0) {
+                const orchid = intersects[0].object.userData.orchid;
+                showOrchidInfo(orchid);
+            }
+        }
+
+        function showOrchidInfo(orchid) {
+            const panel = document.getElementById('infoPanel');
+            document.getElementById('orchidTitle').textContent = orchid.display_name || orchid.scientific_name || orchid.name;
+            
+            const continent = getContinent(orchid.decimal_latitude || 0, orchid.decimal_longitude || 0);
+            
+            const details = `
+                <div class="orchid-location">
+                    <strong>Scientific Name:</strong> ${orchid.scientific_name || 'N/A'}<br>
+                    <strong>Location:</strong> ${orchid.decimal_latitude?.toFixed(2)}°, ${orchid.decimal_longitude?.toFixed(2)}° (${continent})<br>
+                    <strong>Description:</strong> ${orchid.ai_description || orchid.location || 'Beautiful orchid specimen'}<br>
+                    <strong>Photographer:</strong> ${orchid.photographer || 'FCOS Collection'}
+                </div>
+            `;
+            
+            document.getElementById('orchidDetails').innerHTML = details;
+            panel.style.display = 'block';
+        }
+        
+        function searchOrchids() {
+            const searchTerm = document.getElementById('orchidSearch').value.toLowerCase();
+            if (!searchTerm) return;
+            
+            // Clear previous highlights
+            orchidMarkers.forEach(marker => {
+                marker.material.color.setHex(0xff4444);
+                marker.material.opacity = 1.0;
+                marker.scale.setScalar(1.0);
+            });
+            
+            // Find matching orchids
+            const matches = orchidData.filter(orchid => 
+                (orchid.scientific_name && orchid.scientific_name.toLowerCase().includes(searchTerm)) ||
+                (orchid.display_name && orchid.display_name.toLowerCase().includes(searchTerm)) ||
+                (orchid.genus && orchid.genus.toLowerCase().includes(searchTerm))
+            );
+            
+            if (matches.length === 0) {
+                alert(`No orchids found matching "${searchTerm}"`);
+                return;
+            }
+            
+            // Highlight matching markers
+            let highlightCount = 0;
+            orchidMarkers.forEach((marker, index) => {
+                const orchid = marker.userData.orchid;
+                const isMatch = matches.some(m => m.id === orchid.id);
+                
+                if (isMatch) {
+                    marker.material.color.setHex(0x00ff00); // Green for matches
+                    marker.material.opacity = 1.0;
+                    marker.scale.setScalar(1.5);
+                    highlightCount++;
+                } else {
+                    marker.material.opacity = 0.2; // Dim non-matches
+                }
+            });
+            
+            // Show results
+            alert(`Found ${matches.length} orchid(s) matching "${searchTerm}":\n` + 
+                  matches.map(o => o.display_name || o.scientific_name).join(', '));
+            
+            // Focus on first match if available
+            if (matches.length > 0) {
+                const firstMatch = matches[0];
+                const continent = getContinent(firstMatch.decimal_latitude, firstMatch.decimal_longitude);
+                if (continent !== 'Other') {
+                    focusContinent(continent.toLowerCase().replace(' ', '_'));
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isRotating) {
+                earth.rotation.y += 0.005;
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Initialize everything
+        function init() {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                initThreeJS();
+                animate();
+                
+                // Add event listeners
+                window.addEventListener('resize', onWindowResize);
+                renderer.domElement.addEventListener('click', onMouseClick);
+                
+                console.log('🌍 3D Earth Globe initialized with orchid distribution data');
+            }, 2000);
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

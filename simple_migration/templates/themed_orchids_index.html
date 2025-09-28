@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Themed Orchid Collections - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-4" style="color: #2B6A30;">🎨 Themed Orchid Collections</h1>
+                <a href="{{ url_for('gallery') }}" class="btn btn-outline-success">
+                    <i data-feather="grid"></i> View All Orchids
+                </a>
+            </div>
+            
+            <p class="lead text-muted mb-4">
+                Explore our orchids organized by special themes and characteristics. Each collection showcases the diversity and beauty of orchids in different categories.
+            </p>
+
+            <div class="row">
+                {% for theme_key, theme_data in themes.items() %}
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 shadow-sm theme-card">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title" style="color: #2B6A30;">
+                                {{ theme_data.name }}
+                            </h5>
+                            <p class="card-text text-muted flex-grow-1">
+                                {% if theme_key == 'fragrant' %}
+                                Orchids with beautiful scents and aromatic qualities
+                                {% elif theme_key == 'miniature' %}
+                                Compact orchids perfect for small spaces
+                                {% elif theme_key == 'unusual' %}
+                                Rare and unique orchids with extraordinary characteristics
+                                {% elif theme_key == 'colorful' %}
+                                Vibrant orchids with stunning color displays
+                                {% elif theme_key == 'species' %}
+                                Pure species orchids from nature
+                                {% elif theme_key == 'hybrids' %}
+                                Modern hybrid orchids with enhanced features
+                                {% endif %}
+                            </p>
+                            <div class="mt-auto">
+                                <a href="{{ url_for('themed_orchids', theme=theme_key) }}" 
+                                   class="btn btn-success btn-sm w-100">
+                                    <i data-feather="eye"></i> Explore Collection
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.theme-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(43, 106, 48, 0.15) !important;
+}
+
+.theme-card .card-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Initialize feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

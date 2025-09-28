@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Trefle Ecosystem Enrichment - Admin{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-2">
+                        <i data-feather="leaf" class="me-2 text-success"></i>Trefle Ecosystem Enrichment
+                    </h1>
+                    <p class="lead text-muted">Enrich orchid records with botanical ecosystem data from Trefle.io</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>Back to Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Dashboard -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i data-feather="database" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.total_orchid_records }}</h3>
+                    <p class="mb-0">Total Records</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i data-feather="check-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.enriched_records }}</h3>
+                    <p class="mb-0">Enriched ({{ stats.enrichment_percentage }}%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <i data-feather="target" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.fcos_enriched_records }}</h3>
+                    <p class="mb-0">FCOS Enriched ({{ stats.fcos_enrichment_percentage }}%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i data-feather="search" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3>{{ stats.total_processable_records }}</h3>
+                    <p class="mb-0">Processable Records</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FCOS Priority Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-warning text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="star" class="me-2"></i>FCOS Collection Priority
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Five Cities Orchid Society (FCOS) Records</h6>
+                            <p class="mb-2">Total FCOS Records: <strong>{{ stats.fcos_total_records }}</strong></p>
+                            <p class="mb-0">Enriched: <strong>{{ stats.fcos_enriched_records }}</strong> ({{ stats.fcos_enrichment_percentage }}%)</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ stats.fcos_enrichment_percentage }}%"
+                                     aria-valuenow="{{ stats.fcos_enrichment_percentage }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.fcos_enrichment_percentage }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">Google Drive orchid records from FCOS import get priority processing</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Session Status -->
+    {% if active_session %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i data-feather="activity" class="me-2"></i>Active Session: {{ active_session.session_name }}
+                        </h5>
+                        <span class="badge bg-light text-dark">{{ active_session.status.title() }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ active_session.progress_percent }}%"
+                                     aria-valuenow="{{ active_session.progress_percent }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ active_session.progress_percent }}%
+                                </div>
+                            </div>
+                            <p class="mb-1">
+                                <strong>Progress:</strong> {{ active_session.processed_records }} / {{ active_session.total_records }} records
+                                ({{ active_session.enriched_records }} enriched, {{ active_session.failed_records }} failed)
+                            </p>
+                            {% if active_session.estimated_completion %}
+                            <p class="mb-0 text-muted">
+                                <small>Estimated completion: {{ active_session.estimated_completion }}</small>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if active_session.status in ['pending', 'paused'] %}
+                            <a href="{{ url_for('start_trefle_processing', session_id=active_session.session_id) }}" 
+                               class="btn btn-success me-2">
+                                <i data-feather="play" class="me-1"></i>Continue
+                            </a>
+                            {% endif %}
+                            {% if active_session.status == 'running' %}
+                            <button class="btn btn-warning me-2" onclick="refreshSessionStatus()">
+                                <i data-feather="refresh-cw" class="me-1"></i>Refresh
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('cancel_trefle_session', session_id=active_session.session_id) }}" 
+                               class="btn btn-outline-danger"
+                               onclick="return confirm('Are you sure you want to cancel this session?')">
+                                <i data-feather="x" class="me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Create New Session -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="plus-circle" class="me-2"></i>Create Enrichment Session
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('create_trefle_enrichment_session') }}" method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="session_name" class="form-label">Session Name</label>
+                                    <input type="text" class="form-control" id="session_name" name="session_name" 
+                                           value="Trefle Enrichment {{ 'now' | strftime('%Y-%m-%d %H:%M') }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="batch_size" class="form-label">Batch Size</label>
+                                    <select class="form-select" id="batch_size" name="batch_size">
+                                        <option value="10">10 records (slow, safest)</option>
+                                        <option value="25" selected>25 records (recommended)</option>
+                                        <option value="50">50 records (faster)</option>
+                                        <option value="100">100 records (fastest, risky)</option>
+                                    </select>
+                                    <div class="form-text">Larger batches are faster but may hit rate limits</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="priority_fcos" name="priority_fcos" checked>
+                                        <label class="form-check-label" for="priority_fcos">
+                                            <strong>FCOS Priority Mode</strong>
+                                        </label>
+                                        <div class="form-text">Process 1,591 Google Drive orchid records first</div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="force_update" name="force_update">
+                                        <label class="form-check-label" for="force_update">
+                                            Force Update Existing
+                                        </label>
+                                        <div class="form-text">Re-enrich records that already have Trefle data</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('test_trefle_connection') }}" class="btn btn-outline-info">
+                                    <i data-feather="wifi" class="me-1"></i>Test API Connection
+                                </a>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="play" class="me-1"></i>Create & Start Session
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient-secondary text-white">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>Recent Sessions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session Name</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Records</th>
+                                    <th>Success Rate</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in recent_sessions %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ session.session_name }}</strong>
+                                        {% if session.priority_fcos_only %}
+                                        <span class="badge bg-warning ms-1">FCOS</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if session.status == 'completed' %}
+                                        <span class="badge bg-success">{{ session.status.title() }}</span>
+                                        {% elif session.status == 'running' %}
+                                        <span class="badge bg-primary">{{ session.status.title() }}</span>
+                                        {% elif session.status == 'paused' %}
+                                        <span class="badge bg-warning">{{ session.status.title() }}</span>
+                                        {% elif session.status == 'failed' %}
+                                        <span class="badge bg-danger">{{ session.status.title() }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 15px; min-width: 100px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ session.progress_percent }}%"
+                                                 aria-valuenow="{{ session.progress_percent }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small>{{ session.progress_percent }}%</small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ session.processed_records }} / {{ session.total_records }}<br>
+                                            <span class="text-success">✓{{ session.enriched_records }}</span>
+                                            <span class="text-danger">✗{{ session.failed_records }}</span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if session.processed_records > 0 %}
+                                        {{ ((session.enriched_records / session.processed_records) * 100) | round(1) }}%
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ session.created_at | strftime('%m/%d %H:%M') if session.created_at else '-' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if session.status in ['pending', 'paused'] %}
+                                        <a href="{{ url_for('start_trefle_processing', session_id=session.session_id) }}" 
+                                           class="btn btn-sm btn-outline-success" title="Continue Processing">
+                                            <i data-feather="play" width="12" height="12"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if session.status in ['pending', 'running', 'paused'] %}
+                                        <a href="{{ url_for('auto_process_trefle_session', session_id=session.session_id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="Auto Process">
+                                            <i data-feather="fast-forward" width="12" height="12"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="inbox" class="mb-2" style="width: 48px; height: 48px;" stroke-width="1"></i>
+                        <p class="text-muted mb-0">No enrichment sessions yet. Create your first session above!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for real-time updates -->
+<script>
+// Auto-refresh session status every 30 seconds if there's an active session
+{% if active_session and active_session.status == 'running' %}
+setInterval(function() {
+    refreshSessionStatus();
+}, 30000);
+{% endif %}
+
+function refreshSessionStatus() {
+    // Add your AJAX call here to refresh session status
+    location.reload();
+}
+
+// Initialize Feather icons
+feather.replace();
+</script>
+
+{% endblock %}

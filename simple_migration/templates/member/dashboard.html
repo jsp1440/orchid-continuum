@@ -1,0 +1,822 @@
+{% extends "base.html" %}
+
+{% block title %}Member Dashboard - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" data-theme="{{ settings.theme }}" data-color-scheme="{{ settings.color_scheme }}">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h2 mb-1">Welcome Back!</h1>
+                        <p class="text-muted mb-0">Your personal orchid society dashboard</p>
+                    </div>
+                    <div class="dashboard-actions">
+                        <a href="/member/personalization" class="btn btn-outline-success me-2">
+                            <i data-feather="settings" class="me-2"></i>Customize
+                        </a>
+                        <a href="/admin" class="btn btn-success">
+                            <i data-feather="user-check" class="me-2"></i>Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-primary">
+                <div class="stat-content">
+                    <div class="stat-value">{{ user_stats.total_points }}</div>
+                    <div class="stat-label">Points This Month</div>
+                    <i data-feather="star" class="stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-success">
+                <div class="stat-content">
+                    <div class="stat-value">{{ user_stats.notebook_entries }}</div>
+                    <div class="stat-label">Notebook Entries</div>
+                    <i data-feather="book" class="stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-info">
+                <div class="stat-content">
+                    <div class="stat-value">{{ user_stats.orchid_interactions }}</div>
+                    <div class="stat-label">Orchid Interactions</div>
+                    <i data-feather="flower" class="stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-warning">
+                <div class="stat-content">
+                    <div class="stat-value">{{ user_stats.days_active }}</div>
+                    <div class="stat-label">Active Days</div>
+                    <i data-feather="calendar" class="stat-icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Dashboard Content -->
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Quick Notes Widget -->
+            {% if 'quick_notes' in settings.dashboard_widgets %}
+            <div class="dashboard-widget mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i data-feather="edit" class="me-2"></i>
+                            Quick Notes
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="toggleQuickNotes()">
+                            <i data-feather="plus" class="me-1"></i>Add Note
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="quickNotesEditor" style="display: none;">
+                            <textarea id="quickNoteContent" class="form-control mb-2" rows="3" 
+                                      placeholder="Jot down a quick note..."></textarea>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" onclick="saveQuickNote()">
+                                    <i data-feather="save" class="me-1"></i>Save
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="cancelQuickNote()">Cancel</button>
+                            </div>
+                        </div>
+                        <div id="recentNotes">
+                            {% for note in notebooks.personal_notes[:3] %}
+                            <div class="quick-note">
+                                <div class="note-content">{{ note.content[:150] }}{% if note.content|length > 150 %}...{% endif %}</div>
+                                <small class="text-muted">{{ note.created_at.strftime('%m/%d %H:%M') }}</small>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No notes yet. Add your first quick note!</p>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-2">
+                            <a href="/member/notebook" class="btn btn-sm btn-outline-info">
+                                <i data-feather="book-open" class="me-1"></i>View All Notes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Recent Orchids Widget -->
+            {% if 'recent_orchids' in settings.dashboard_widgets %}
+            <div class="dashboard-widget mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="flower" class="me-2"></i>
+                            Recently Viewed Orchids
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentOrchidsContainer" class="row g-3">
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <p class="mt-2 mb-0">Loading recent orchids...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Care Reminders Widget -->
+            {% if 'care_reminders' in settings.dashboard_widgets %}
+            <div class="dashboard-widget">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i data-feather="bell" class="me-2"></i>
+                            Care Reminders
+                        </h5>
+                        <a href="/member/care-manager" class="btn btn-sm btn-outline-success">
+                            <i data-feather="calendar" class="me-1"></i>Manage
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div id="careRemindersContainer">
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                                <p class="mt-2 mb-0">Loading care reminders...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Points Tracker Widget -->
+            {% if 'points_tracker' in settings.dashboard_widgets %}
+            <div class="dashboard-widget mb-4">
+                <div class="card bg-gradient-primary text-white">
+                    <div class="card-header border-0">
+                        <h5 class="mb-0">
+                            <i data-feather="award" class="me-2"></i>
+                            Achievement Progress
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="achievement-progress">
+                            <div class="progress-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold">Monthly Points</span>
+                                    <span>{{ user_stats.total_points }}/500</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" 
+                                         style="width: {{ (user_stats.total_points / 500 * 100) | round }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="progress-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold">Notebook Goals</span>
+                                    <span>{{ user_stats.notebook_entries }}/20</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" 
+                                         style="width: {{ (user_stats.notebook_entries / 20 * 100) | round }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="progress-item">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold">Active Days</span>
+                                    <span>{{ user_stats.days_active }}/25</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" 
+                                         style="width: {{ (user_stats.days_active / 25 * 100) | round }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Digital Clock Widget -->
+            <div class="dashboard-widget mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="clock" class="me-2"></i>
+                            Orchid Care Clock
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="digital-clock">
+                            <div class="time-display" id="digitalClock">00:00:00</div>
+                            <div class="date-display" id="digitalDate">Loading...</div>
+                        </div>
+                        
+                        <div class="clock-controls mt-3">
+                            <div class="btn-group btn-group-sm w-100">
+                                <button class="btn btn-outline-primary" onclick="setReminder()">
+                                    <i data-feather="bell" class="me-1"></i>Set Reminder
+                                </button>
+                                <button class="btn btn-outline-info" onclick="showWorldClock()">
+                                    <i data-feather="globe" class="me-1"></i>World Time
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Reminders -->
+                        <div class="quick-reminders mt-3" id="activeReminders" style="display: none;">
+                            <h6 class="text-muted">Active Reminders</h6>
+                            <div id="remindersList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Theme Quick Switch -->
+            <div class="dashboard-widget">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="palette" class="me-2"></i>
+                            Quick Theme Switch
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="theme-preview-grid">
+                            {% for theme_id, theme_info in available_themes.items() %}
+                            <div class="theme-preview {{ 'active' if theme_id == settings.theme }}" 
+                                 onclick="switchTheme('{{ theme_id }}')" 
+                                 data-theme="{{ theme_id }}">
+                                <div class="theme-colors">
+                                    {% for color in theme_info.preview_colors %}
+                                    <div class="color-swatch" style="background-color: {{ color }}"></div>
+                                    {% endfor %}
+                                </div>
+                                <div class="theme-name">{{ theme_info.name }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-3">
+                            <a href="/member/personalization" class="btn btn-sm btn-outline-success w-100">
+                                <i data-feather="settings" class="me-1"></i>Full Customization
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-feather="bell" class="me-2"></i>Set Care Reminder
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reminderForm">
+                    <div class="mb-3">
+                        <label for="reminderText" class="form-label">Reminder</label>
+                        <input type="text" class="form-control" id="reminderText" 
+                               placeholder="Water the Phalaenopsis">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label for="reminderTime" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="reminderTime">
+                        </div>
+                        <div class="col-6">
+                            <label for="reminderDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="reminderDate">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveReminder()">
+                    <i data-feather="check" class="me-1"></i>Set Reminder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* Theme and color scheme variables */
+.container-fluid[data-theme="dark_orchid"] {
+    --primary-color: #6f42c1;
+    --secondary-color: #8b7ba8;
+    --accent-color: #4a3c5c;
+    --bg-color: #2d1b3d;
+}
+
+.container-fluid[data-theme="light_botanical"] {
+    --primary-color: #4caf50;
+    --secondary-color: #81c784;
+    --accent-color: #e8f5e8;
+    --bg-color: #f8f9fa;
+}
+
+.welcome-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.1), rgba(var(--bs-info-rgb), 0.1));
+    border-radius: 16px;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.stat-card {
+    color: white;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-content {
+    padding: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 48px;
+    height: 48px;
+    opacity: 0.2;
+}
+
+.dashboard-widget .card {
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.quick-note {
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--bs-primary);
+}
+
+.quick-note:last-child {
+    margin-bottom: 0;
+}
+
+.note-content {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.digital-clock {
+    padding: 1rem 0;
+}
+
+.time-display {
+    font-family: 'Courier New', monospace;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--bs-primary);
+    text-shadow: 0 0 10px rgba(var(--bs-primary-rgb), 0.5);
+}
+
+.date-display {
+    font-size: 1rem;
+    color: var(--bs-text-muted);
+    margin-top: 0.5rem;
+}
+
+.clock-controls {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 1rem;
+}
+
+.theme-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.theme-preview {
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.theme-preview:hover {
+    border-color: var(--bs-primary);
+    transform: scale(1.05);
+}
+
+.theme-preview.active {
+    border-color: var(--bs-success);
+    box-shadow: 0 0 0 2px rgba(var(--bs-success-rgb), 0.25);
+}
+
+.theme-colors {
+    display: flex;
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.color-swatch {
+    flex: 1;
+}
+
+.theme-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.achievement-progress .progress {
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info)) !important;
+}
+
+.reminder-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .dashboard-actions .btn {
+        font-size: 0.875rem;
+    }
+    
+    .time-display {
+        font-size: 2rem;
+    }
+    
+    .theme-preview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Digital Clock
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+    const dateString = now.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    document.getElementById('digitalClock').textContent = timeString;
+    document.getElementById('digitalDate').textContent = dateString;
+}
+
+// Quick Notes Management
+function toggleQuickNotes() {
+    const editor = document.getElementById('quickNotesEditor');
+    const isVisible = editor.style.display !== 'none';
+    
+    if (isVisible) {
+        editor.style.display = 'none';
+    } else {
+        editor.style.display = 'block';
+        document.getElementById('quickNoteContent').focus();
+    }
+}
+
+function saveQuickNote() {
+    const content = document.getElementById('quickNoteContent').value.trim();
+    if (!content) {
+        showMessage('Please enter some content', 'warning');
+        return;
+    }
+    
+    fetch('/api/member/quick-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage(data.message, 'success');
+            document.getElementById('quickNoteContent').value = '';
+            toggleQuickNotes();
+            // Reload recent notes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showMessage('Error saving note', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error saving note', 'error');
+    });
+}
+
+function cancelQuickNote() {
+    document.getElementById('quickNoteContent').value = '';
+    toggleQuickNotes();
+}
+
+// Theme Switching
+function switchTheme(themeId) {
+    // Update UI immediately
+    document.querySelectorAll('.theme-preview').forEach(preview => {
+        preview.classList.remove('active');
+    });
+    document.querySelector(`[data-theme="${themeId}"]`).classList.add('active');
+    
+    // Save theme setting
+    fetch('/api/member/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: themeId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('Theme updated!', 'success');
+            // Reload to apply theme changes
+            setTimeout(() => location.reload(), 500);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Reminders
+function setReminder() {
+    // Set default time to current time + 1 hour
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    
+    document.getElementById('reminderTime').value = now.toTimeString().slice(0, 5);
+    document.getElementById('reminderDate').value = now.toISOString().slice(0, 10);
+    
+    const modal = new bootstrap.Modal(document.getElementById('reminderModal'));
+    modal.show();
+}
+
+function saveReminder() {
+    const text = document.getElementById('reminderText').value.trim();
+    const time = document.getElementById('reminderTime').value;
+    const date = document.getElementById('reminderDate').value;
+    
+    if (!text || !time || !date) {
+        showMessage('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    // Create local reminder (in a real app, this would sync with notifications)
+    const reminderDateTime = new Date(`${date}T${time}`);
+    const reminders = JSON.parse(localStorage.getItem('orchidReminders') || '[]');
+    
+    reminders.push({
+        id: Date.now(),
+        text: text,
+        datetime: reminderDateTime.toISOString(),
+        created: new Date().toISOString()
+    });
+    
+    localStorage.setItem('orchidReminders', JSON.stringify(reminders));
+    
+    showMessage('Reminder set successfully!', 'success');
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('reminderModal'));
+    modal.hide();
+    
+    updateActiveReminders();
+}
+
+function updateActiveReminders() {
+    const reminders = JSON.parse(localStorage.getItem('orchidReminders') || '[]');
+    const now = new Date();
+    
+    const activeReminders = reminders.filter(reminder => 
+        new Date(reminder.datetime) > now
+    ).sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+    
+    if (activeReminders.length > 0) {
+        document.getElementById('activeReminders').style.display = 'block';
+        
+        const remindersList = document.getElementById('remindersList');
+        remindersList.innerHTML = activeReminders.slice(0, 3).map(reminder => {
+            const datetime = new Date(reminder.datetime);
+            return `
+                <div class="reminder-item">
+                    <div class="fw-bold">${reminder.text}</div>
+                    <small class="text-muted">${datetime.toLocaleDateString()} at ${datetime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                </div>
+            `;
+        }).join('');
+    } else {
+        document.getElementById('activeReminders').style.display = 'none';
+    }
+}
+
+function showWorldClock() {
+    alert('World clock feature coming soon! Check back for orchid growing times around the world.');
+}
+
+// Load Dashboard Data
+function loadRecentOrchids() {
+    fetch('/api/recent-orchids')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('recentOrchidsContainer');
+            if (data.orchids && data.orchids.length > 0) {
+                container.innerHTML = data.orchids.slice(0, 4).map(orchid => `
+                    <div class="col-md-6">
+                        <div class="orchid-mini-card">
+                            <img src="${orchid.image_url}" alt="${orchid.display_name}" 
+                                 class="orchid-mini-image" loading="lazy"
+                                 onerror="this.src='/static/images/orchid_placeholder.jpg'">
+                            <div class="orchid-mini-info">
+                                <h6 class="mb-1">${orchid.display_name}</h6>
+                                <small class="text-muted">${orchid.genus || 'Unknown genus'}</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="col-12"><p class="text-center text-muted py-3">No recent orchids to display</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading recent orchids:', error);
+            const container = document.getElementById('recentOrchidsContainer');
+            container.innerHTML = '<div class="col-12"><p class="text-center text-muted py-3">Unable to load recent orchids</p></div>';
+        });
+}
+
+function loadCareReminders() {
+    fetch('/api/care/reminders?days=7')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('careRemindersContainer');
+            if (data.success && data.reminders && data.reminders.length > 0) {
+                container.innerHTML = data.reminders.map(reminder => {
+                    const dueDate = new Date(reminder.next_due);
+                    const isOverdue = reminder.is_overdue;
+                    const statusClass = isOverdue ? 'text-danger' : 'text-warning';
+                    
+                    return `
+                        <div class="reminder-card ${isOverdue ? 'border-danger' : 'border-warning'} mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${reminder.orchid_name}</strong>
+                                    <div class="small text-muted">${reminder.care_type}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="${statusClass} fw-bold">
+                                        ${isOverdue ? 'Overdue' : 'Due Soon'}
+                                    </div>
+                                    <div class="small">${dueDate.toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = '<p class="text-center text-muted py-3">No upcoming care reminders</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading care reminders:', error);
+            const container = document.getElementById('careRemindersContainer');
+            container.innerHTML = '<p class="text-center text-muted py-3">Unable to load care reminders</p>';
+        });
+}
+
+function showMessage(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+    
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Initialize Dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    updateClock();
+    setInterval(updateClock, 1000);
+    updateActiveReminders();
+    
+    // Load dynamic content
+    if (document.getElementById('recentOrchidsContainer')) {
+        loadRecentOrchids();
+    }
+    if (document.getElementById('careRemindersContainer')) {
+        loadCareReminders();
+    }
+});
+</script>
+
+<style>
+.orchid-mini-card {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.orchid-mini-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-right: 0.75rem;
+}
+
+.orchid-mini-info h6 {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.reminder-card {
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+</style>
+{% endblock %}

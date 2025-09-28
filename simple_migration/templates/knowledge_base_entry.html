@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entry.title }} - Knowledge Base - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Navigation Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('index') }}">
+                    <i data-feather="home"></i> Home
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('knowledge_base') }}">Knowledge Base</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ entry.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex align-items-center mb-2">
+                                {% if entry.content_type == 'qa' %}
+                                    <i data-feather="help-circle" class="text-info me-2"></i>
+                                {% else %}
+                                    <i data-feather="file-text" class="text-success me-2"></i>
+                                {% endif %}
+                                
+                                <h1 class="h3 mb-0">{{ entry.title }}</h1>
+                            </div>
+                            
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <!-- Difficulty Badge -->
+                                {% if entry.difficulty_level == 'beginner' %}
+                                    <span class="badge bg-success">
+                                        <i data-feather="star" class="me-1"></i>Beginner
+                                    </span>
+                                {% elif entry.difficulty_level == 'intermediate' %}
+                                    <span class="badge bg-warning">
+                                        <i data-feather="trending-up" class="me-1"></i>Intermediate
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i data-feather="award" class="me-1"></i>Advanced
+                                    </span>
+                                {% endif %}
+                                
+                                <!-- Category Badge -->
+                                <span class="badge bg-secondary">{{ entry.category }}</span>
+                                
+                                <!-- Content Type -->
+                                <span class="badge bg-info">{{ entry.content_type.upper() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if entry.content_type == 'qa' %}
+                        <!-- Q&A Format -->
+                        {% if entry.question %}
+                            <div class="alert alert-primary" role="alert">
+                                <h5 class="alert-heading">
+                                    <i data-feather="help-circle" class="me-2"></i>Question
+                                </h5>
+                                <p class="mb-0">{{ entry.question }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if entry.answer %}
+                            <div class="mt-4">
+                                <h5 class="mb-3">
+                                    <i data-feather="message-circle" class="me-2"></i>Answer
+                                </h5>
+                                <div class="answer-content">
+                                    {{ entry.answer | replace('\n', '<br>') | safe }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Article Format -->
+                        {% if entry.article %}
+                            <div class="article-content">
+                                {{ entry.article | replace('\n', '<br>') | safe }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Keywords Section -->
+                    {% if entry.keywords %}
+                        <div class="mt-4">
+                            <h6 class="mb-3">
+                                <i data-feather="tag" class="me-2"></i>Keywords
+                            </h6>
+                            <div class="keywords">
+                                {% for keyword in entry.keywords %}
+                                    <span class="badge bg-outline-primary me-1 mb-1">{{ keyword }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Related Genera -->
+                    {% if entry.related_genera %}
+                        <div class="mt-4">
+                            <h6 class="mb-3">
+                                <i data-feather="flower" class="me-2"></i>Related Orchid Genera
+                            </h6>
+                            <div class="genera">
+                                {% for genus in entry.related_genera %}
+                                    <span class="badge bg-success me-1 mb-1">
+                                        <em>{{ genus.title() }}</em>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <small class="text-muted">
+                                <i data-feather="calendar" class="me-1"></i>
+                                Created: {{ entry.created_at.strftime('%B %d, %Y') if entry.created_at else 'Recently' }}
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <!-- Action Buttons -->
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyToClipboard()">
+                                    <i data-feather="copy" class="me-1"></i>Copy Link
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="markHelpful()">
+                                    <i data-feather="thumbs-up" class="me-1"></i>Helpful
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Related Entries -->
+            {% if related_entries %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i data-feather="link" class="me-2"></i>Related Topics
+                        </h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for related in related_entries %}
+                            <a href="{{ url_for('knowledge_base_entry', entry_id=related.id) }}" 
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-2 mt-1">
+                                        {% if related.content_type == 'qa' %}
+                                            <i data-feather="help-circle" class="text-info"></i>
+                                        {% else %}
+                                            <i data-feather="file-text" class="text-success"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ related.title }}</h6>
+                                        <small class="text-muted">
+                                            {% if related.difficulty_level == 'beginner' %}
+                                                <span class="badge bg-success badge-sm">Beginner</span>
+                                            {% elif related.difficulty_level == 'intermediate' %}
+                                                <span class="badge bg-warning badge-sm">Intermediate</span>
+                                            {% else %}
+                                                <span class="badge bg-danger badge-sm">Advanced</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('knowledge_base') }}" class="btn btn-outline-primary">
+                            <i data-feather="arrow-left" class="me-2"></i>Back to Knowledge Base
+                        </a>
+                        <a href="{{ url_for('knowledge_base', category=entry.category) }}" class="btn btn-outline-secondary">
+                            <i data-feather="folder" class="me-2"></i>More in {{ entry.category }}
+                        </a>
+                        <a href="{{ url_for('knowledge_base', difficulty=entry.difficulty_level) }}" class="btn btn-outline-info">
+                            <i data-feather="filter" class="me-2"></i>{{ entry.difficulty_level.title() }} Level
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.answer-content, .article-content {
+    line-height: 1.8;
+    font-size: 1.05em;
+}
+
+.keywords .badge, .genera .badge {
+    font-size: 0.8em;
+}
+
+.badge-sm {
+    font-size: 0.7em;
+}
+
+.alert-primary {
+    border-left: 4px solid var(--bs-primary);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
+
+function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href).then(function() {
+        // Show success message
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }, 2000);
+    });
+}
+
+function markHelpful() {
+    // This could be enhanced to send to backend
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i data-feather="check" class="me-1"></i>Thanks!';
+    btn.classList.remove('btn-outline-success');
+    btn.classList.add('btn-success');
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-success');
+        btn.disabled = false;
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

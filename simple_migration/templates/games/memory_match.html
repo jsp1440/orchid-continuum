@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block title %}Memory Match - Five Cities Orchid Society{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-dark">
+                <div class="card-body text-center">
+                    <h1 class="display-5 text-warning mb-3">
+                        <i data-feather="grid" class="me-3"></i>
+                        Orchid Memory Match
+                    </h1>
+                    <p class="lead text-light">Match pairs of orchid photos!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card bg-dark border-warning">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-warning">Memory Match Game</h4>
+                    <div class="text-light">
+                        <strong>Moves: <span id="moves">0</span> | Matches: <span id="matches">0</span>/8</strong>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Loading State -->
+                    <div id="loadingState" class="text-center py-5">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-light mt-3">Loading memory cards...</p>
+                    </div>
+
+                    <!-- Game Grid -->
+                    <div id="gameGrid" class="row g-3" style="display: none;">
+                        <!-- Cards will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Game Complete -->
+                    <div id="gameComplete" class="text-center py-5" style="display: none;">
+                        <i data-feather="award" style="width: 4rem; height: 4rem;" class="text-warning mb-3"></i>
+                        <h3 class="text-warning mb-3">Congratulations!</h3>
+                        <p class="text-light mb-4">
+                            You completed the memory game in <strong id="finalMoves">0</strong> moves!
+                        </p>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button id="playAgainBtn" class="btn btn-warning btn-lg">
+                                <i data-feather="refresh-cw" class="me-2"></i>Play Again
+                            </button>
+                            <a href="{{ url_for('games.games_home') }}" class="btn btn-outline-light btn-lg">
+                                <i data-feather="arrow-left" class="me-2"></i>Back to Games
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('games.games_home') }}" class="btn btn-outline-light">
+                <i data-feather="arrow-left" class="me-2"></i>Back to Games
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+class MemoryMatch {
+    constructor() {
+        this.cards = [];
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.moves = 0;
+        this.isProcessing = false;
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadCards();
+    }
+    
+    bindEvents() {
+        document.getElementById('playAgainBtn').addEventListener('click', () => this.restart());
+    }
+    
+    async loadCards() {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('gameGrid').style.display = 'none';
+        
+        try {
+            const response = await fetch('/games/api/memory-cards');
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            this.cards = data.cards;
+            this.createGameGrid();
+            
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('gameGrid').style.display = 'flex';
+            
+        } catch (error) {
+            console.error('Error loading cards:', error);
+            alert('Error loading memory cards. Please try again.');
+        }
+    }
+    
+    createGameGrid() {
+        const grid = document.getElementById('gameGrid');
+        grid.innerHTML = '';
+        
+        this.cards.forEach((card, index) => {
+            const col = document.createElement('div');
+            col.className = 'col-3 col-md-3 col-lg-3';
+            
+            const cardElement = document.createElement('div');
+            cardElement.className = 'memory-card';
+            cardElement.dataset.cardId = card.id;
+            cardElement.dataset.pairId = card.pair_id;
+            
+            cardElement.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">
+                        <i data-feather="help-circle" style="width: 3rem; height: 3rem;"></i>
+                    </div>
+                    <div class="card-back">
+                        <img src="${card.image_url}" alt="${card.name}" class="card-image">
+                        <div class="card-name">${card.name}</div>
+                    </div>
+                </div>
+            `;
+            
+            cardElement.addEventListener('click', () => this.flipCard(cardElement));
+            
+            col.appendChild(cardElement);
+            grid.appendChild(col);
+        });
+        
+        // Initialize feather icons
+        setTimeout(() => feather.replace(), 100);
+    }
+    
+    flipCard(cardElement) {
+        if (this.isProcessing || 
+            cardElement.classList.contains('flipped') || 
+            cardElement.classList.contains('matched')) {
+            return;
+        }
+        
+        cardElement.classList.add('flipped');
+        this.flippedCards.push(cardElement);
+        
+        if (this.flippedCards.length === 2) {
+            this.checkMatch();
+        }
+    }
+    
+    checkMatch() {
+        this.isProcessing = true;
+        this.moves++;
+        document.getElementById('moves').textContent = this.moves;
+        
+        const [card1, card2] = this.flippedCards;
+        const pair1 = card1.dataset.pairId;
+        const pair2 = card2.dataset.pairId;
+        
+        setTimeout(() => {
+            if (pair1 === pair2) {
+                // Match found
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                this.matchedPairs++;
+                document.getElementById('matches').textContent = this.matchedPairs;
+                
+                if (this.matchedPairs === 8) {
+                    this.gameComplete();
+                }
+            } else {
+                // No match, flip back
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            
+            this.flippedCards = [];
+            this.isProcessing = false;
+        }, 1000);
+    }
+    
+    gameComplete() {
+        setTimeout(() => {
+            document.getElementById('finalMoves').textContent = this.moves;
+            document.getElementById('gameComplete').style.display = 'block';
+            document.getElementById('gameGrid').style.display = 'none';
+            
+            // Calculate and submit score (lower moves = higher score)
+            const maxScore = 100;
+            const score = Math.max(0, maxScore - (this.moves - 16) * 2); // 16 is minimum moves
+            this.submitScore(score);
+            
+            feather.replace();
+        }, 1000);
+    }
+    
+    async submitScore(score) {
+        try {
+            await fetch('/games/api/submit-score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    game_type: 'memory_match',
+                    score: score
+                })
+            });
+        } catch (error) {
+            console.error('Error submitting score:', error);
+        }
+    }
+    
+    restart() {
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.moves = 0;
+        this.isProcessing = false;
+        
+        document.getElementById('moves').textContent = '0';
+        document.getElementById('matches').textContent = '0';
+        document.getElementById('gameComplete').style.display = 'none';
+        
+        this.loadCards();
+    }
+}
+
+// Initialize game when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    new MemoryMatch();
+});
+</script>
+
+<style>
+.memory-card {
+    aspect-ratio: 1;
+    perspective: 1000px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    border-radius: 10px;
+}
+
+.memory-card.flipped .card-inner,
+.memory-card.matched .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border: 2px solid #ffc107;
+}
+
+.card-front {
+    background: linear-gradient(135deg, #495057, #343a40);
+    color: #ffc107;
+}
+
+.card-back {
+    background: linear-gradient(135deg, #198754, #20c997);
+    color: white;
+    transform: rotateY(180deg);
+    padding: 10px;
+}
+
+.card-image {
+    width: 80%;
+    height: 70%;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 5px;
+}
+
+.card-name {
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.memory-card.matched {
+    animation: matchPulse 0.6s ease-in-out;
+}
+
+@keyframes matchPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.memory-card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .card-name {
+        font-size: 0.7rem;
+    }
+    
+    .card-image {
+        height: 65%;
+    }
+}
+</style>
+{% endblock %}

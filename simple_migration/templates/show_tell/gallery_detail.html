@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gallery.title }} - Show & Tell Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+.gallery-detail {
+    padding: 20px;
+}
+
+.gallery-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    border-radius: 15px;
+    margin-bottom: 40px;
+}
+
+.gallery-meta-bar {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+}
+
+.orchid-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.orchid-showcase {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.orchid-showcase:hover {
+    transform: translateY(-3px);
+}
+
+.orchid-image-container {
+    position: relative;
+    height: 250px;
+    background: #f8f9fa;
+    overflow: hidden;
+}
+
+.orchid-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.orchid-info {
+    padding: 20px;
+}
+
+.orchid-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.orchid-scientific {
+    font-style: italic;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.orchid-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.gallery-notes-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.action-bar {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.social-share {
+    display: flex;
+    gap: 10px;
+}
+
+.status-indicator {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-public {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-member {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .gallery-detail {
+        padding: 15px;
+    }
+    
+    .gallery-hero {
+        padding: 40px 20px;
+        margin-bottom: 30px;
+    }
+    
+    .gallery-meta-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .orchid-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .action-bar {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .social-share {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gallery-detail">
+    <!-- Gallery Hero -->
+    <div class="gallery-hero">
+        <div class="container text-center">
+            <h1 class="display-4 mb-3">{{ gallery.title }}</h1>
+            
+            {% if gallery.genus_species %}
+            <p class="lead mb-3">
+                <em>{{ gallery.genus_species }}</em>
+            </p>
+            {% endif %}
+            
+            <div class="status-indicator status-{{ 'public' if gallery.status == 'public_approved' else 'member' }}">
+                <i data-feather="{% if gallery.status == 'public_approved' %}globe{% else %}users{% endif %}" style="width: 16px; height: 16px;"></i>
+                {% if gallery.status == 'public_approved' %}Public Gallery{% else %}Member Gallery{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Gallery Meta Information -->
+        <div class="gallery-meta-bar">
+            <div class="meta-item">
+                <i data-feather="calendar" style="width: 16px; height: 16px;"></i>
+                Created {{ gallery.created_at[:10] }}
+            </div>
+            
+            <div class="meta-item">
+                <i data-feather="image" style="width: 16px; height: 16px;"></i>
+                {{ gallery.selected_orchids|length if gallery.selected_orchids else 0 }} orchids
+            </div>
+            
+            <div class="meta-item">
+                <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                {{ gallery.view_count or 0 }} views
+            </div>
+            
+            {% if gallery.approval_date %}
+            <div class="meta-item">
+                <i data-feather="check-circle" style="width: 16px; height: 16px;"></i>
+                Approved {{ gallery.approval_date[:10] }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Gallery Notes -->
+        {% if gallery.notes %}
+        <div class="gallery-notes-section">
+            <h3 class="mb-3">
+                <i data-feather="message-square" class="me-2"></i>
+                Gallery Notes
+            </h3>
+            <div class="gallery-notes">
+                {{ gallery.notes|nl2br|safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Orchid Showcase -->
+        {% if gallery.selected_orchids %}
+        <div class="section-header mb-4">
+            <h3>
+                <i data-feather="grid" class="me-2"></i>
+                Featured Orchids
+            </h3>
+        </div>
+
+        <div class="orchid-grid">
+            {% for orchid_id in gallery.selected_orchids %}
+            <div class="orchid-showcase">
+                <div class="orchid-image-container">
+                    <img src="/static/images/placeholder.png" 
+                         alt="Orchid {{ orchid_id }}" 
+                         class="orchid-image">
+                </div>
+                <div class="orchid-info">
+                    <div class="orchid-name">Beautiful Orchid #{{ orchid_id }}</div>
+                    <div class="orchid-scientific">Species information</div>
+                    <div class="orchid-description">
+                        Part of this member's personal collection, shared in this Show & Tell gallery.
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i data-feather="image" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+            <h4 class="text-muted">No Orchids Selected</h4>
+            <p class="text-muted">This gallery doesn't have any orchids selected yet.</p>
+        </div>
+        {% endif %}
+
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div>
+                <a href="/show-tell/public" class="btn btn-outline-primary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Galleries
+                </a>
+                <a href="/my-collection/show-tell" class="btn btn-outline-secondary ms-2">
+                    <i data-feather="user" class="me-1"></i>
+                    My Galleries
+                </a>
+            </div>
+            
+            <div class="social-share">
+                <button class="btn btn-outline-success" onclick="shareGallery()">
+                    <i data-feather="share-2" class="me-1"></i>
+                    Share
+                </button>
+                <button class="btn btn-outline-danger" onclick="reportGallery()">
+                    <i data-feather="flag" class="me-1"></i>
+                    Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Notes (if any) -->
+        {% if gallery.admin_notes %}
+        <div class="mt-4 p-3 bg-light border-start border-4 border-info">
+            <h6 class="text-muted mb-2">
+                <i data-feather="shield" class="me-1"></i>
+                Admin Notes
+            </h6>
+            <p class="mb-0">{{ gallery.admin_notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize feather icons
+    feather.replace();
+    
+    // Track gallery view
+    if (window.trackWidgetInteraction) {
+        trackWidgetInteraction('show_tell_gallery', 'view', {
+            gallery_id: '{{ gallery.id }}',
+            title: '{{ gallery.title }}',
+            orchid_count: {{ gallery.selected_orchids|length if gallery.selected_orchids else 0 }}
+        });
+    }
+});
+
+function shareGallery() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ gallery.title }} - Five Cities Orchid Society',
+            text: 'Check out this beautiful orchid gallery from our community!',
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            showOrchidToast('Gallery link copied to clipboard!', 'success');
+        }).catch(() => {
+            showOrchidToast('Unable to copy link', 'error');
+        });
+    }
+}
+
+function reportGallery() {
+    if (confirm('Report this gallery as inappropriate?')) {
+        fetch('/api/show-tell/report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                gallery_id: '{{ gallery.id }}',
+                reason: 'inappropriate_content'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showOrchidToast('Gallery reported. Thank you for helping keep our community safe.', 'info');
+            } else {
+                showOrchidToast('Error submitting report', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showOrchidToast('Network error occurred', 'error');
+        });
+    }
+}
+</script>
+{% endblock %}

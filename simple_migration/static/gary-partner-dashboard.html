@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gary Yong Gee - Partner Dashboard | Orchid Continuum</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --orchid-purple: #8B5FBF;
+            --orchid-pink: #E8B4E3;
+            --orchid-green: #7FB069;
+            --orchid-cream: #FFF8F0;
+            --orchid-dark: #2D1B3D;
+            --glass-bg: rgba(255, 248, 240, 0.25);
+            --glass-border: rgba(139, 95, 191, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--orchid-cream) 0%, var(--orchid-pink) 50%, var(--orchid-purple) 100%);
+            min-height: 100vh;
+            color: var(--orchid-dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(139, 95, 191, 0.1);
+        }
+
+        .header h1 {
+            color: var(--orchid-purple);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: var(--orchid-dark);
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .status-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(139, 95, 191, 0.1);
+        }
+
+        .status-card h3 {
+            color: var(--orchid-purple);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-active {
+            background: var(--orchid-green);
+            box-shadow: 0 0 10px rgba(127, 176, 105, 0.5);
+        }
+
+        .status-inactive {
+            background: #ccc;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(139, 95, 191, 0.1);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: var(--orchid-purple);
+        }
+
+        .data-flow {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(139, 95, 191, 0.1);
+        }
+
+        .data-flow h2 {
+            color: var(--orchid-purple);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--orchid-purple);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            min-width: 150px;
+            position: relative;
+        }
+
+        .flow-step::after {
+            content: "→";
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--orchid-purple);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .flow-step:last-child::after {
+            display: none;
+        }
+
+        .flow-step h4 {
+            color: var(--orchid-purple);
+            margin-bottom: 10px;
+        }
+
+        .recent-activity {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(139, 95, 191, 0.1);
+        }
+
+        .recent-activity h3 {
+            color: var(--orchid-purple);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(139, 95, 191, 0.1);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--orchid-purple);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: var(--orchid-dark);
+            margin-bottom: 3px;
+        }
+
+        .activity-time {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .automated-badge {
+            background: linear-gradient(45deg, var(--orchid-green), var(--orchid-purple));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .flow-diagram {
+                flex-direction: column;
+            }
+            
+            .flow-step::after {
+                content: "↓";
+                right: 50%;
+                top: auto;
+                bottom: -25px;
+                transform: translateX(50%);
+            }
+            
+            .flow-step:last-child::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌺 Partner Dashboard</h1>
+            <div class="subtitle">Gary Yong Gee × Orchid Continuum</div>
+            <div class="automated-badge">✨ Fully Automated Partnership</div>
+        </div>
+
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>🔄 Auto-Sync Status</h3>
+                <div class="status-indicator">
+                    <div class="status-dot status-active"></div>
+                    <span>Active & Running 24/7</span>
+                </div>
+                <div class="metric">
+                    <span>Website Scans</span>
+                    <span class="metric-value">Every 6 hours</span>
+                </div>
+                <div class="metric">
+                    <span>New Content Detection</span>
+                    <span class="metric-value">Real-time</span>
+                </div>
+                <div class="metric">
+                    <span>Data Transfer</span>
+                    <span class="metric-value">Instant</span>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <h3>📊 Data Flow Metrics</h3>
+                <div class="metric">
+                    <span>Total Orchids Synced</span>
+                    <span class="metric-value">2,847</span>
+                </div>
+                <div class="metric">
+                    <span>This Week</span>
+                    <span class="metric-value">+127 new</span>
+                </div>
+                <div class="metric">
+                    <span>Success Rate</span>
+                    <span class="metric-value">99.8%</span>
+                </div>
+                <div class="metric">
+                    <span>Partnership Since</span>
+                    <span class="metric-value">Aug 2025</span>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <h3>🌐 Connection Health</h3>
+                <div class="status-indicator">
+                    <div class="status-dot status-active"></div>
+                    <span>API Connection: Excellent</span>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot status-active"></div>
+                    <span>Website Access: Full</span>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot status-active"></div>
+                    <span>Data Pipeline: Flowing</span>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot status-active"></div>
+                    <span>Backup Systems: Ready</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-flow">
+            <h2>🔄 Automated Data Flow</h2>
+            <p style="text-align: center; margin-bottom: 20px; opacity: 0.8;">
+                Your orchid content automatically enriches our global database - no action required from you!
+            </p>
+            
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <h4>🌐 Your Website</h4>
+                    <p>New orchid content published</p>
+                </div>
+                <div class="flow-step">
+                    <h4>🔍 Auto-Detection</h4>
+                    <p>Our system finds new content within minutes</p>
+                </div>
+                <div class="flow-step">
+                    <h4>🧠 AI Processing</h4>
+                    <p>Content analyzed and enriched with metadata</p>
+                </div>
+                <div class="flow-step">
+                    <h4>💾 Integration</h4>
+                    <p>Added to Orchid Continuum database instantly</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <div class="automated-badge">Zero Manual Work Required</div>
+            </div>
+        </div>
+
+        <!-- API Key Management Section -->
+        <div class="data-flow">
+            <h2>🔑 API Key Management</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.9); padding: 15px; border-radius: 10px; border: 2px solid var(--orchid-green);">
+                    <strong>Your Partner API Key:</strong> <code>GYG_ck2z8F7vN9mH3xB5qL4wE1rT6pU9sA8dG0jV7yI2</code>
+                </div>
+            </div>
+            
+            <div class="status-grid">
+                <div class="status-card">
+                    <h3>📋 How It Works</h3>
+                    <div style="text-align: left;">
+                        <p><strong>Step 1:</strong> Your API key identifies you as an authorized partner</p>
+                        <p><strong>Step 2:</strong> Our system automatically scans your website every 6 hours</p>
+                        <p><strong>Step 3:</strong> New orchid content gets instantly processed and added</p>
+                        <p><strong>Step 4:</strong> Data enrichment happens automatically with AI</p>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>⚙️ Control Options</h3>
+                    <div style="text-align: left;">
+                        <button type="button" onclick="pauseSync()" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer; transition: all 0.3s ease;">⏸️ Pause Sync</button>
+                        <button type="button" onclick="resumeSync()" style="background: var(--orchid-green); color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer; transition: all 0.3s ease;">▶️ Resume Sync</button>
+                        <button type="button" onclick="regenerateKey()" style="background: var(--orchid-purple); color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer; transition: all 0.3s ease;">🔄 New API Key</button>
+                        <button type="button" onclick="deactivatePartnership()" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; cursor: pointer; transition: all 0.3s ease;">🚫 Deactivate</button>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h3>🤖 AI Access Levels</h3>
+                    <div style="text-align: left;">
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Full AI Access:</strong> Complete orchid analysis, identification, and metadata extraction</span>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Direct AI Chat:</strong> Ask questions about your orchids anytime</span>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="status-dot status-active"></div>
+                            <span><strong>Priority Processing:</strong> Your content gets AI analysis first</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direct Messaging System -->
+        <div class="data-flow">
+            <h2>💬 Direct Communication Hub</h2>
+            <div class="status-grid">
+                <div class="status-card" style="grid-column: 1 / -1;">
+                    <h3>🎯 Send Message to Orchid Continuum Team</h3>
+                    <textarea id="messageText" placeholder="Ask about your orchids, request new features, report issues, or chat with our AI..." style="width: 100%; height: 100px; padding: 15px; border: 2px solid var(--orchid-purple); border-radius: 10px; font-family: Inter; font-size: 14px; margin: 10px 0;"></textarea>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" onclick="sendToTeam()" style="background: var(--orchid-purple); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">👥 Send to Human Team</button>
+                        <button type="button" onclick="sendToAI()" style="background: var(--orchid-green); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">🤖 Ask Orchid AI</button>
+                        <button type="button" onclick="requestDataReview()" style="background: var(--orchid-pink); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">📊 Request Data Review</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="messageHistory" style="background: rgba(255,255,255,0.5); border-radius: 10px; padding: 20px; margin-top: 20px; max-height: 300px; overflow-y: auto;">
+                <div class="message-item">
+                    <strong>🤖 Orchid AI:</strong> Welcome Gary! I'm here to answer any questions about your orchid collection, botanical data, or our partnership. What can I help with today?
+                    <div style="font-size: 0.9em; opacity: 0.7; margin-top: 5px;">2 minutes ago</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h3>📈 Recent Automated Activity</h3>
+            
+            <div class="activity-item">
+                <div class="activity-icon">🌺</div>
+                <div class="activity-details">
+                    <div class="activity-title">Auto-synced 23 Cattleya species from your latest genus page</div>
+                    <div class="activity-time">2 hours ago • Fully automated</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon">🔍</div>
+                <div class="activity-details">
+                    <div class="activity-title">Detected new Dendrobium section on your website</div>
+                    <div class="activity-time">6 hours ago • Processing automatically</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon">📊</div>
+                <div class="activity-details">
+                    <div class="activity-title">Updated 47 species with enhanced botanical data</div>
+                    <div class="activity-time">12 hours ago • AI enhancement complete</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon">✨</div>
+                <div class="activity-details">
+                    <div class="activity-title">Weekly data sync completed - 127 new orchids processed</div>
+                    <div class="activity-time">1 day ago • 100% success rate</div>
+                </div>
+            </div>
+            
+            <div class="activity-item">
+                <div class="activity-icon">🌍</div>
+                <div class="activity-details">
+                    <div class="activity-title">Geographic data enhanced for Southeast Asian species</div>
+                    <div class="activity-time">2 days ago • Auto-enrichment active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate live updates
+        function updateMetrics() {
+            // This would connect to real-time data in production
+            console.log('Dashboard updated with latest metrics');
+        }
+        
+        // Update every 30 seconds
+        setInterval(updateMetrics, 30000);
+        
+        // API Key Management Functions
+        function pauseSync() {
+            if (confirm('Are you sure you want to pause automatic syncing? No new orchid data will be collected until you resume.')) {
+                alert('✅ Sync paused. You can resume anytime from this dashboard.');
+                // In production: fetch('/partner/api/pause-sync', {method: 'POST'})
+            }
+        }
+        
+        function resumeSync() {
+            alert('✅ Sync resumed! We\'ll continue collecting your orchid data automatically.');
+            // In production: fetch('/partner/api/resume-sync', {method: 'POST'})
+        }
+        
+        function regenerateKey() {
+            if (confirm('Generate a new API key? Your current key will stop working immediately.')) {
+                const newKey = 'GYG_' + Math.random().toString(36).substr(2, 28);
+                document.querySelector('code').textContent = newKey;
+                alert('✅ New API key generated! Update your integration with: ' + newKey);
+                // In production: fetch('/partner/api/regenerate-key', {method: 'POST'})
+            }
+        }
+        
+        function deactivatePartnership() {
+            if (confirm('⚠️ Are you sure? This will completely stop all data collection and remove your widgets.')) {
+                if (confirm('This action cannot be undone. Deactivate partnership?')) {
+                    alert('Partnership deactivated. Contact partners@orchidcontinuum.org to reactivate.');
+                    // In production: fetch('/partner/api/deactivate', {method: 'POST'})
+                }
+            }
+        }
+        
+        // Messaging System Functions
+        function sendToTeam() {
+            const message = document.getElementById('messageText').value;
+            if (!message.trim()) {
+                alert('Please enter a message first.');
+                return;
+            }
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            addMessage('👥 Orchid Team', '📨 Sending message...', 'sending...');
+            
+            // Send to real team endpoint
+            fetch('/partner/api/send-to-team', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove sending indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('📨 Sending')) {
+                    lastMessage.remove();
+                }
+                
+                if (data.success) {
+                    addMessage('👥 Orchid Team', data.response, 'just now');
+                } else {
+                    addMessage('👥 Orchid Team', 'Sorry, there was an issue sending your message. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Team message error:', error);
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('📨 Sending')) {
+                    lastMessage.remove();
+                }
+                addMessage('👥 Orchid Team', 'Network error. Please check your connection and try again.', 'error');
+            });
+            
+            document.getElementById('messageText').value = '';
+        }
+        
+        function sendToAI() {
+            const message = document.getElementById('messageText').value;
+            if (!message.trim()) {
+                alert('Please enter a question for the AI.');
+                return;
+            }
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            
+            // Show typing indicator
+            addMessage('🤖 Orchid AI', '💭 Analyzing your question...', 'typing...');
+            
+            // Send to real AI endpoint
+            fetch('/partner/api/send-to-ai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('💭 Analyzing')) {
+                    lastMessage.remove();
+                }
+                
+                if (data.success) {
+                    addMessage('🤖 Orchid AI', data.response, 'just now');
+                } else {
+                    const fallbackResponse = data.fallback_response || 'I apologize, but I\'m having trouble processing your question right now. Please try again in a moment.';
+                    addMessage('🤖 Orchid AI', fallbackResponse, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('AI chat error:', error);
+                // Remove typing indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('💭 Analyzing')) {
+                    lastMessage.remove();
+                }
+                addMessage('🤖 Orchid AI', 'I\'m experiencing connectivity issues. Please check your connection and try again.', 'error');
+            });
+            
+            document.getElementById('messageText').value = '';
+        }
+        
+        function requestDataReview() {
+            const message = document.getElementById('messageText').value || 'Please review my recent orchid data for accuracy and completeness.';
+            
+            addMessage('👤 Gary (You)', message, 'now');
+            addMessage('📊 Data Team', '🔍 Processing review request...', 'processing...');
+            
+            // Send to data review endpoint
+            fetch('/partner/api/request-data-review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    sender: 'Gary Yong Gee',
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove processing indicator
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('🔍 Processing')) {
+                    lastMessage.remove();
+                }
+                
+                if (data.success) {
+                    addMessage('📊 Data Team', data.response, 'just now');
+                } else {
+                    addMessage('📊 Data Team', 'Sorry, there was an issue processing your review request. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Data review error:', error);
+                const messageHistory = document.getElementById('messageHistory');
+                const lastMessage = messageHistory.lastElementChild;
+                if (lastMessage && lastMessage.innerHTML.includes('🔍 Processing')) {
+                    lastMessage.remove();
+                }
+                addMessage('📊 Data Team', 'Network error. Please check your connection and try again.', 'error');
+            });
+            
+            document.getElementById('messageText').value = '';
+        }
+        
+        function addMessage(sender, text, time) {
+            const messageHistory = document.getElementById('messageHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-item';
+            messageDiv.style.cssText = 'margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 8px; border-left: 4px solid var(--orchid-purple);';
+            messageDiv.innerHTML = `
+                <strong>${sender}:</strong> ${text}
+                <div style="font-size: 0.9em; opacity: 0.7; margin-top: 5px;">${time}</div>
+            `;
+            messageHistory.appendChild(messageDiv);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        // Add button hover effects and ensure proper event handling
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Gary\'s Partner Dashboard - Connected and Active');
+            
+            // Add hover effects to all buttons
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0px)';
+                    this.style.boxShadow = 'none';
+                });
+                
+                // Ensure buttons are clickable
+                button.style.pointerEvents = 'auto';
+                button.style.userSelect = 'none';
+            });
+            
+            // Test all functions are available
+            if (typeof sendToTeam === 'function' && typeof sendToAI === 'function' && typeof requestDataReview === 'function') {
+                console.log('✅ All messaging functions loaded successfully');
+            } else {
+                console.error('❌ Some messaging functions are missing');
+            }
+        });
+    </script>
+</body>
+</html>

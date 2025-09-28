@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypothesis Stage - Research Lab</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .research-header {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        
+        .stage-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hypothesis-form {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .example-box {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+        
+        .nav-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .stage-nav-btn {
+            padding: 12px 24px;
+            border-radius: 25px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-prev {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-next {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-save {
+            background: #3498db;
+            color: white;
+        }
+        
+        .stage-nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .progress-indicator {
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .step.completed {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .step.active {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .step.pending {
+            background: #7f8c8d;
+            color: white;
+        }
+        
+        .step-line {
+            height: 2px;
+            background: #7f8c8d;
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .step-line.completed {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <!-- Research Stage Header -->
+    <div class="research-header">
+        <div class="container">
+            <div class="stage-content">
+                <div class="d-flex align-items-center">
+                    <div class="stage-icon me-3" style="width: 50px; height: 50px; background: #f39c12; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i data-feather="lightbulb" style="width: 25px; height: 25px;"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-2">Stage 2: Form Hypothesis</h1>
+                        <p class="mb-0">Create testable predictions (H₀ & H₁) based on your observations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mt-4">
+        <div class="stage-content">
+            <!-- Progress Indicator -->
+            <div class="progress-indicator">
+                <div class="progress-steps">
+                    <div class="step completed">1</div>
+                    <div class="step-line completed"></div>
+                    <div class="step active">2</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">3</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">4</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">5</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">6</div>
+                    <div class="step-line pending"></div>
+                    <div class="step pending">7</div>
+                </div>
+                <div class="text-center">
+                    <small>Observation → <strong>Hypothesis</strong> → Methods → Data → Analysis → Conclusions → Paper</small>
+                </div>
+            </div>
+            
+            <!-- Hypothesis Formation -->
+            <div class="hypothesis-form">
+                <h3><i data-feather="help-circle" class="me-2"></i>Research Question</h3>
+                <p class="text-muted">What specific question are you trying to answer?</p>
+                <textarea class="form-control mb-3" id="researchQuestion" rows="3" placeholder="Example: How does geographic location along the 35th parallel affect Cymbidium orchid flowering time?"></textarea>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4><i data-feather="x-circle" class="me-2"></i>Null Hypothesis (H₀)</h4>
+                        <p class="small text-muted">States there is no relationship or effect</p>
+                        <textarea class="form-control" id="nullHypothesis" rows="4" placeholder="There is no significant difference in flowering time for Cymbidium orchids across different regions at 35°N latitude"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <h4><i data-feather="check-circle" class="me-2"></i>Alternative Hypothesis (H₁)</h4>
+                        <p class="small text-muted">States there is a relationship or effect</p>
+                        <textarea class="form-control" id="alternativeHypothesis" rows="4" placeholder="Cymbidium orchids show significantly different flowering times based on their geographic location along the 35th parallel"></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4><i data-feather="list" class="me-2"></i>Variables to Study</h4>
+                    <p class="small text-muted">What will you measure? (e.g., flower size, bloom time, location)</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Independent Variables (what you control/group by)</label>
+                            <textarea class="form-control" id="independentVars" rows="3" placeholder="Geographic location, climate zone, elevation"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Dependent Variables (what you measure)</label>
+                            <textarea class="form-control" id="dependentVars" rows="3" placeholder="Flowering time, flower size, bloom duration"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Educational Guidance -->
+            <div class="example-box">
+                <h5><i data-feather="book-open" class="me-2"></i>Good Hypothesis Example</h5>
+                <p><strong>Research Question:</strong> Do epiphytic orchids have different flower sizes than terrestrial orchids?</p>
+                <p><strong>H₀:</strong> There is no significant difference in average flower size between epiphytic and terrestrial orchids.</p>
+                <p><strong>H₁:</strong> Epiphytic orchids have significantly smaller flowers than terrestrial orchids due to resource limitations in their aerial habitat.</p>
+                <p><strong>Variables:</strong> Growth habit (independent), flower size in mm (dependent)</p>
+            </div>
+            
+            <!-- Data Preview -->
+            <div class="card bg-success">
+                <div class="card-body">
+                    <h5><i data-feather="database" class="me-2"></i>Available Data Preview</h5>
+                    <p class="mb-2">Your research will use data from:</p>
+                    <ul class="mb-0">
+                        <li><strong>230+ orchid specimens</strong> with detailed morphological data</li>
+                        <li><strong>40+ genera</strong> from diverse geographic regions</li>
+                        <li><strong>Multiple growth habits:</strong> epiphytic, terrestrial, lithophytic</li>
+                        <li><strong>Professional photographs</strong> with EXIF data and measurements</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+        <button class="stage-nav-btn btn-prev" onclick="previousStage()">
+            <i data-feather="arrow-left" class="me-2"></i>Previous
+        </button>
+        <button class="stage-nav-btn btn-dashboard" onclick="window.location.href='/'" style="background: rgba(108, 117, 125, 0.8);">
+            <i data-feather="home" class="me-2"></i>Home
+        </button>
+        <button class="stage-nav-btn btn-save" onclick="saveProgress()">
+            <i data-feather="save" class="me-2"></i>Save Progress
+        </button>
+        <button class="stage-nav-btn btn-next" onclick="nextStage()">
+            Next<i data-feather="arrow-right" class="ms-2"></i>
+        </button>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            loadSavedData();
+            console.log('🔬 Hypothesis stage initialized');
+        });
+        
+        // Navigation functions
+        function previousStage() {
+            saveCurrentData();
+            window.location.href = '/research-lab/stage/observation';
+        }
+        
+        function nextStage() {
+            if (validateHypothesis()) {
+                saveCurrentData();
+                window.location.href = '/research-lab/stage/methods';
+            }
+        }
+        
+        function saveProgress() {
+            saveCurrentData();
+            
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 1000;';
+            alert.innerHTML = '<i data-feather="check"></i> Progress saved!';
+            document.body.appendChild(alert);
+            
+            feather.replace();
+            
+            setTimeout(() => alert.remove(), 3000);
+        }
+        
+        // Data management
+        function saveCurrentData() {
+            const hypothesisData = {
+                research_question: document.getElementById('researchQuestion').value,
+                null_hypothesis: document.getElementById('nullHypothesis').value,
+                alternative_hypothesis: document.getElementById('alternativeHypothesis').value,
+                independent_variables: document.getElementById('independentVars').value,
+                dependent_variables: document.getElementById('dependentVars').value,
+                completed_at: new Date().toISOString()
+            };
+            
+            // Save to localStorage (in production this would go to server)
+            let projectData = JSON.parse(localStorage.getItem('currentResearchProject') || '{}');
+            projectData.hypothesis = { data: hypothesisData };
+            localStorage.setItem('currentResearchProject', JSON.stringify(projectData));
+            
+            console.log('💾 Hypothesis data saved');
+        }
+        
+        function loadSavedData() {
+            const projectData = JSON.parse(localStorage.getItem('currentResearchProject') || '{}');
+            
+            if (projectData.hypothesis && projectData.hypothesis.data) {
+                const data = projectData.hypothesis.data;
+                document.getElementById('researchQuestion').value = data.research_question || '';
+                document.getElementById('nullHypothesis').value = data.null_hypothesis || '';
+                document.getElementById('alternativeHypothesis').value = data.alternative_hypothesis || '';
+                document.getElementById('independentVars').value = data.independent_variables || '';
+                document.getElementById('dependentVars').value = data.dependent_variables || '';
+            }
+            
+            // Check if this is an example project
+            if (localStorage.getItem('isExampleProject') === 'true') {
+                loadExampleProject();
+            }
+        }
+        
+        function loadExampleProject() {
+            const projectData = JSON.parse(localStorage.getItem('currentResearchProject') || '{}');
+            
+            if (projectData.research_question) {
+                document.getElementById('researchQuestion').value = projectData.research_question;
+            }
+            if (projectData.null_hypothesis) {
+                document.getElementById('nullHypothesis').value = projectData.null_hypothesis;
+            }
+            if (projectData.alternative_hypothesis) {
+                document.getElementById('alternativeHypothesis').value = projectData.alternative_hypothesis;
+            }
+            if (projectData.variables && Array.isArray(projectData.variables)) {
+                // Split variables into independent and dependent (simplified)
+                const vars = projectData.variables.join(', ');
+                document.getElementById('independentVars').value = vars;
+            }
+        }
+        
+        function validateHypothesis() {
+            const question = document.getElementById('researchQuestion').value.trim();
+            const h0 = document.getElementById('nullHypothesis').value.trim();
+            const h1 = document.getElementById('alternativeHypothesis').value.trim();
+            
+            if (!question || !h0 || !h1) {
+                alert('⚠️ Please complete all required fields:\n• Research Question\n• Null Hypothesis (H₀)\n• Alternative Hypothesis (H₁)');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Auto-save while typing
+        let saveTimeout;
+        ['researchQuestion', 'nullHypothesis', 'alternativeHypothesis', 'independentVars', 'dependentVars'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveCurrentData, 2000); // Auto-save after 2 seconds of inactivity
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveProgress();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        previousStage();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        nextStage();
+                        break;
+                }
+            }
+        });
+        
+        // Help tooltips (could be expanded)
+        function showHelp(topic) {
+            const helpMessages = {
+                h0: "The null hypothesis states that there is no relationship, difference, or effect. It's what you're trying to disprove.",
+                h1: "The alternative hypothesis states that there IS a relationship, difference, or effect. This is what you're trying to support with evidence.",
+                variables: "Independent variables are what you control or group by. Dependent variables are what you measure or observe."
+            };
+            
+            if (helpMessages[topic]) {
+                alert('ℹ️ ' + helpMessages[topic]);
+            }
+        }
+    </script>
+</body>
+</html>

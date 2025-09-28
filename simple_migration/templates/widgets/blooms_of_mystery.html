@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌺 Blooms of Mystery - Five Cities Orchid Society</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .widget-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .mystery-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .mystery-title {
+            font-size: 2.5em;
+            margin: 0;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .mystery-subtitle {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .orchid-carousel {
+            position: relative;
+            height: 400px;
+            overflow: hidden;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .orchid-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .orchid-slide.active {
+            opacity: 1;
+        }
+
+        .orchid-image {
+            width: 50%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .orchid-info {
+            width: 50%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .orchid-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .orchid-scientific {
+            font-style: italic;
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .orchid-mystery {
+            font-size: 1.1em;
+            line-height: 1.6;
+            opacity: 0.85;
+        }
+
+        .mystery-indicator {
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            color: #1a1a2e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .navigation-dots {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 5px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .dot.active {
+            background-color: #4ecdc4;
+        }
+
+        .widget-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .society-link {
+            color: #4ecdc4;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .society-link:hover {
+            color: #96ceb4;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .orchid-slide {
+                flex-direction: column;
+            }
+            
+            .orchid-image {
+                width: 100%;
+                height: 60%;
+                border-radius: 12px 12px 0 0;
+            }
+            
+            .orchid-info {
+                width: 100%;
+                height: 40%;
+                padding: 20px;
+            }
+            
+            .mystery-title {
+                font-size: 2em;
+            }
+        }
+
+        /* Embed mode styling */
+        body.embed-mode {
+            padding: 0;
+            background: transparent;
+            min-height: auto;
+        }
+        
+        .embed-mode .widget-container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .embed-mode .mystery-title {
+            background: linear-gradient(45deg, #e74c3c, #3498db, #9b59b6, #1abc9c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .embed-mode .orchid-name {
+            color: #2c3e50;
+        }
+        
+        .embed-mode .society-link {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body {% if embed_mode %}class="embed-mode"{% endif %}>
+    <div class="widget-container">
+        <div class="mystery-header">
+            <div style="position: absolute; top: 20px; left: 20px;">
+                <a href="/partnership-demo/gary-yong-gee" style="
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 10px 20px;
+                    background: linear-gradient(135deg, #00d4aa, #6B3FA0);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 25px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 212, 170, 0.4)'" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 212, 170, 0.3)'">
+                    ← Back to Demo
+                </a>
+            </div>
+            <h1 class="mystery-title">🌺 Blooms of Mystery</h1>
+            <p class="mystery-subtitle">Discover the enigmatic orchids of the Five Cities Orchid Society</p>
+        </div>
+
+        <div class="orchid-carousel">
+            <div class="orchid-slide active" data-mystery="0">
+                <img src="/api/drive-photo/18SjQMSrxrBZNxbQ1AWOciKJqgwNz6RHK" alt="No More Orchids (1932)" class="orchid-image" onerror="this.src='/static/images/orchid_placeholder.svg'">
+                <div class="orchid-info">
+                    <div class="mystery-indicator">🎬 Classic Hollywood</div>
+                    <div class="orchid-name">No More Orchids (1932)</div>
+                    <div class="orchid-scientific">Starring Carole Lombard</div>
+                    <div class="orchid-mystery">
+                        Carole Lombard plays a rebellious heiress resisting an arranged marriage. 
+                        The orchids of the title reflect the fleeting nature of youth, beauty, and social status — 
+                        treasures too delicate to withstand the pressures of expectation.
+                    </div>
+                </div>
+            </div>
+
+            <div class="orchid-slide" data-mystery="1">
+                <img src="/api/drive-photo/1YRzsrv4_CIQ-uX-29e2QTZzLHlinkYlx" alt="The Big Sleep (1946)" class="orchid-image" onerror="this.src='/static/images/orchid_placeholder.svg'">
+                <div class="orchid-info">
+                    <div class="mystery-indicator">🕵️ Film Noir</div>
+                    <div class="orchid-name">The Big Sleep (1946)</div>
+                    <div class="orchid-scientific">Humphrey Bogart & Lauren Bacall</div>
+                    <div class="orchid-mystery">
+                        Howard Hawks' steamy noir classic uses orchids with calculated purpose. 
+                        General Sternwood's greenhouse is lush, heavy, and rotting under the tropical heat — 
+                        a metaphor for moral corruption hiding beneath high society's glittering surface.
+                    </div>
+                </div>
+            </div>
+
+            <div class="orchid-slide" data-mystery="2">
+                <img src="/api/drive-photo/1XbG3TMwiSKU7Y6DACOjsvEREIfqD52CB" alt="Adaptation (2002)" class="orchid-image" onerror="this.src='/static/images/orchid_placeholder.svg'">
+                <div class="orchid-info">
+                    <div class="mystery-indicator">🏆 Academy Award</div>
+                    <div class="orchid-name">Adaptation (2002)</div>
+                    <div class="orchid-scientific">Nicolas Cage & Meryl Streep</div>
+                    <div class="orchid-mystery">
+                        Perhaps no film captures orchid obsession more intimately than Adaptation. 
+                        Based on Susan Orlean's The Orchid Thief, the movie explores the Ghost Orchid — 
+                        elusive, rare, and nearly mythical.
+                    </div>
+                </div>
+            </div>
+
+            <div class="orchid-slide" data-mystery="3">
+                <img src="/static/images/orchid_placeholder.svg" alt="Wednesday (2022)" class="orchid-image">
+                <div class="orchid-info">
+                    <div class="mystery-indicator">📺 Gothic Mystery</div>
+                    <div class="orchid-name">Wednesday (2022)</div>
+                    <div class="orchid-scientific">Jenna Ortega</div>
+                    <div class="orchid-mystery">
+                        Netflix's hit series uses orchids in a Gothic setting, linked to mystery and the supernatural. 
+                        The flowers appear in Nevermore Academy's conservatory, adding an air of 
+                        elegant menace to the already dark atmosphere.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation-dots">
+            <span class="dot active" onclick="currentSlide(1)"></span>
+            <span class="dot" onclick="currentSlide(2)"></span>
+            <span class="dot" onclick="currentSlide(3)"></span>
+            <span class="dot" onclick="currentSlide(4)"></span>
+        </div>
+
+        <div class="widget-footer">
+            <p>Explore more mysteries at the <a href="/partnership-demo/gary-yong-gee" class="society-link">Five Cities Orchid Society</a></p>
+        </div>
+    </div>
+
+    <script>
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.orchid-slide');
+        const dots = document.querySelectorAll('.dot');
+
+        function showSlide(n) {
+            slides[currentSlideIndex].classList.remove('active');
+            dots[currentSlideIndex].classList.remove('active');
+            
+            currentSlideIndex = (n - 1 + slides.length) % slides.length;
+            
+            slides[currentSlideIndex].classList.add('active');
+            dots[currentSlideIndex].classList.add('active');
+        }
+
+        function currentSlide(n) {
+            showSlide(n);
+        }
+
+        function nextSlide() {
+            showSlide(currentSlideIndex + 2);
+        }
+
+        // Auto-advance slides every 5 seconds
+        setInterval(nextSlide, 5000);
+
+        // Add mysterious hover effects
+        document.querySelectorAll('.orchid-slide').forEach(slide => {
+            slide.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.02)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            slide.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // Mystical particle effect on click
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('dot') || e.target.classList.contains('orchid-slide')) {
+                createMysticEffect(e.clientX, e.clientY);
+            }
+        });
+
+        function createMysticEffect(x, y) {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            particle.style.background = '#4ecdc4';
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '9999';
+            particle.style.animation = 'mysticalFloat 1s ease-out forwards';
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 1000);
+        }
+
+        // Add CSS for mystical effect
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes mysticalFloat {
+                0% {
+                    transform: scale(1) translateY(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(0) translateY(-100px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        console.log('🌺 Blooms of Mystery widget initialized');
+    </script>
+</body>
+</html>

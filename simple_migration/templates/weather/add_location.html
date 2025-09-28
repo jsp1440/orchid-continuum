@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% set title = "Add Weather Location" %}
+
+{% block head %}
+<style>
+.zip-form-card {
+    max-width: 600px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 30px;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.preview-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+}
+
+.growing-type-option {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.growing-type-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.growing-type-option.selected {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: white;
+}
+
+.btn-add-location {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('user_weather.my_weather_dashboard') }}">My Weather</a></li>
+                    <li class="breadcrumb-item active">Add Location</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="zip-form-card">
+                <div class="text-center mb-4">
+                    <i data-feather="map-pin" style="width: 48px; height: 48px;" class="mb-3"></i>
+                    <h2>Add Weather Location</h2>
+                    <p class="lead">Enter your ZIP code to get personalized weather conditions for your orchid growing environment.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('user_weather.add_location') }}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="zip_code" class="form-label">
+                                    <i data-feather="navigation" class="me-2"></i>ZIP Code
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="zip_code" 
+                                       name="zip_code" required placeholder="Enter ZIP code (e.g., 90210)"
+                                       onchange="lookupZipCode()">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="country" class="form-label">
+                                    <i data-feather="globe" class="me-2"></i>Country
+                                </label>
+                                <select class="form-control" id="country" name="country" onchange="lookupZipCode()">
+                                    <option value="US">United States</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AU">Australia</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location_name" class="form-label">
+                            <i data-feather="tag" class="me-2"></i>Location Name (Optional)
+                        </label>
+                        <input type="text" class="form-control" id="location_name" name="location_name"
+                               placeholder="My Garden, Greenhouse, etc. (will auto-fill from ZIP)">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i data-feather="home" class="me-2"></i>Growing Environment
+                        </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="growing-type-option selected" onclick="selectGrowingType(this, 'indoor')">
+                                    <input type="radio" name="growing_type" value="indoor" checked style="display: none;">
+                                    <div class="fw-bold mb-1">
+                                        <i data-feather="home" class="me-2"></i>Indoor
+                                    </div>
+                                    <small>House plants, under lights, windowsill</small>
+                                </div>
+                                <div class="growing-type-option" onclick="selectGrowingType(this, 'greenhouse')">
+                                    <input type="radio" name="growing_type" value="greenhouse" style="display: none;">
+                                    <div class="fw-bold mb-1">
+                                        <i data-feather="grid" class="me-2"></i>Greenhouse
+                                    </div>
+                                    <small>Climate-controlled greenhouse</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="growing-type-option" onclick="selectGrowingType(this, 'outdoor')">
+                                    <input type="radio" name="growing_type" value="outdoor" style="display: none;">
+                                    <div class="fw-bold mb-1">
+                                        <i data-feather="sun" class="me-2"></i>Outdoor
+                                    </div>
+                                    <small>Patio, garden, natural conditions</small>
+                                </div>
+                                <div class="growing-type-option" onclick="selectGrowingType(this, 'shade_house')">
+                                    <input type="radio" name="growing_type" value="shade_house" style="display: none;">
+                                    <div class="fw-bold mb-1">
+                                        <i data-feather="umbrella" class="me-2"></i>Shade House
+                                    </div>
+                                    <small>Protected outdoor growing area</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">
+                            <i data-feather="edit" class="me-2"></i>Notes (Optional)
+                        </label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Special conditions, microclimate details, etc."></textarea>
+                    </div>
+
+                    <div id="location-preview" class="preview-card">
+                        <h5><i data-feather="check-circle" class="me-2"></i>Location Preview</h5>
+                        <div id="preview-content"></div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-add-location btn-lg me-3">
+                            <i data-feather="plus-circle" class="me-2"></i>Add Location
+                        </button>
+                        <a href="{{ url_for('user_weather.my_weather_dashboard') }}" class="btn btn-outline-light btn-lg">
+                            <i data-feather="arrow-left" class="me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectGrowingType(element, type) {
+    // Remove selected class from all options
+    document.querySelectorAll('.growing-type-option').forEach(el => {
+        el.classList.remove('selected');
+        el.querySelector('input').checked = false;
+    });
+    
+    // Add selected class to clicked option
+    element.classList.add('selected');
+    element.querySelector('input').checked = true;
+}
+
+function lookupZipCode() {
+    const zipCode = document.getElementById('zip_code').value;
+    const country = document.getElementById('country').value;
+    
+    if (!zipCode || zipCode.length < 3) {
+        document.getElementById('location-preview').style.display = 'none';
+        return;
+    }
+    
+    fetch(`{{ url_for('user_weather.zip_lookup') }}?zip_code=${zipCode}&country=${country}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('location-preview').style.display = 'none';
+                return;
+            }
+            
+            // Update location name if it's empty
+            const nameField = document.getElementById('location_name');
+            if (!nameField.value) {
+                nameField.value = data.name;
+            }
+            
+            // Show preview
+            document.getElementById('preview-content').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>📍 ${data.name}</strong><br>
+                        <small>${data.city}, ${data.state_province}, ${data.country}</small>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>🌐 Coordinates</strong><br>
+                        <small>${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}</small>
+                    </div>
+                </div>
+            `;
+            document.getElementById('location-preview').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error looking up ZIP code:', error);
+            document.getElementById('location-preview').style.display = 'none';
+        });
+}
+</script>
+{% endblock %}

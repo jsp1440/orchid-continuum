@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Research Dashboard - Orchid Growth Comparison{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>🔬 Orchid Growth Research Dashboard</h1>
+                    <p class="text-muted">Compare how the same orchid species grow under different conditions</p>
+                </div>
+            </div>
+
+            <!-- Research Overview -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h2 class="text-primary">{{ candidates|length }}</h2>
+                            <p class="mb-0">Species Available for Comparison Research</p>
+                            <small class="text-muted">Each has multiple specimens from different growers</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>🎯 Research Benefits:</h5>
+                            <ul class="mb-0">
+                                <li>Study environmental adaptation</li>
+                                <li>Compare cultivation techniques</li>
+                                <li>Analyze regional variations</li>
+                                <li>Document growth differences</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Species Comparison Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="bar-chart-2"></i> Species with Multiple Specimens</h5>
+                    <small class="text-muted">Click any species to compare all its specimens side-by-side</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Species / Genus</th>
+                                    <th class="text-center">Specimens</th>
+                                    <th class="text-center">With Photos</th>
+                                    <th class="text-center">Different Growers</th>
+                                    <th class="text-center">Photo Coverage</th>
+                                    <th class="text-center">Research Value</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for candidate in candidates %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ candidate.species.title() }}</strong>
+                                        {% if candidate.species in ['trichocentrum', 'cattleya', 'laeliacattleya'] %}
+                                            <span class="badge badge-success ml-2">Popular</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-primary">{{ candidate.specimens }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge badge-success">{{ candidate.photos }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if candidate.photographers > 0 %}
+                                            <span class="badge badge-info">{{ candidate.photographers }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="progress" style="width: 100px;">
+                                            <div class="progress-bar 
+                                                {% if candidate.photo_percentage >= 80 %}bg-success
+                                                {% elif candidate.photo_percentage >= 50 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                style="width: {{ candidate.photo_percentage }}%">
+                                                {{ "%.0f"|format(candidate.photo_percentage) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% set research_score = candidate.specimens * 2 + candidate.photos * 3 + candidate.photographers * 5 %}
+                                        {% if research_score >= 50 %}
+                                            <span class="badge badge-success">Excellent</span>
+                                        {% elif research_score >= 20 %}
+                                            <span class="badge badge-warning">Good</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Fair</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ url_for('compare_orchid_specimens', species_name=candidate.species) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="eye"></i> Compare
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i data-feather="lightbulb"></i> Research Tips</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>🌱 Growth Conditions</h6>
+                            <p class="text-muted">Look for differences in leaf shape, pseudobulb development, and overall plant structure between specimens.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>🌡️ Environmental Factors</h6>
+                            <p class="text-muted">Compare how climate preferences (cool, intermediate, warm) affect plant appearance and vigor.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>👥 Cultivation Techniques</h6>
+                            <p class="text-muted">Different growers may use various potting media, watering schedules, and fertilization programs.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

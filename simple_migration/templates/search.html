@@ -1,0 +1,2932 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Orchid Search - Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-3">
+                <i data-feather="search" class="me-2"></i>Advanced Orchid Search
+            </h1>
+            <p class="lead text-muted">Professional botanical search with comprehensive filtering capabilities</p>
+            {% if search_stats %}
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                <span class="badge bg-primary fs-6">{{ search_stats.total_found }} Total Found</span>
+                <span class="badge bg-success">{{ search_stats.has_images }} With Images</span>
+                <span class="badge bg-info">{{ search_stats.species_count }} Species</span>
+                <span class="badge bg-warning text-dark">{{ search_stats.hybrid_count }} Hybrids</span>
+                <span class="badge bg-secondary">{{ search_stats.flowering_count }} Currently Flowering</span>
+                {% if search_stats.featured_count %}
+                <span class="badge bg-danger">{{ search_stats.featured_count }} Featured</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Comprehensive Search Form -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('search') }}" id="searchForm">
+                
+                <!-- Main Search Bar -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-8">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">
+                                <i data-feather="search"></i>
+                            </span>
+                            <input type="text" class="form-control" name="q" 
+                                   placeholder="Search across all orchid data: names, descriptions, locations, parentage, characteristics..." 
+                                   value="{{ query }}" autofocus>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill">
+                                <i data-feather="search" class="me-2"></i>Search
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-lg" onclick="clearAllFilters()">
+                                <i data-feather="x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Action Bar -->
+                <div class="row g-2 mb-4">
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                            <span class="badge bg-info">Quick Actions:</span>
+                            <button type="button" class="btn btn-sm btn-success" onclick="window.open('/orchid-map-locator', '_blank')">
+                                <i data-feather="map" class="me-1"></i>View on Map
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="toggleNurseryDirectory()">
+                                <i data-feather="shopping-cart" class="me-1"></i>Find Nurseries
+                            </button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="toggleSocietyDirectory()">
+                                <i data-feather="users" class="me-1"></i>Orchid Societies
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportSearchResults()">
+                                <i data-feather="download" class="me-1"></i>Export Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Filter Dropdowns -->
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="layers" class="me-2"></i>Taxonomic
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Quick Genus Selection</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('genus', 'Cattleya')" data-genus="Cattleya">
+                                    Cattleya <span class="badge bg-primary ms-auto genus-count" data-genus="Cattleya">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('genus', 'Phalaenopsis')" data-genus="Phalaenopsis">
+                                    Phalaenopsis <span class="badge bg-primary ms-auto genus-count" data-genus="Phalaenopsis">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('genus', 'Dendrobium')" data-genus="Dendrobium">
+                                    Dendrobium <span class="badge bg-primary ms-auto genus-count" data-genus="Dendrobium">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('genus', 'Oncidium')" data-genus="Oncidium">
+                                    Oncidium <span class="badge bg-primary ms-auto genus-count" data-genus="Oncidium">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('genus', 'Paphiopedilum')" data-genus="Paphiopedilum">
+                                    Paphiopedilum <span class="badge bg-primary ms-auto genus-count" data-genus="Paphiopedilum">...</span>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Species Groups</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('type', 'species')">
+                                    Species Only <span class="badge bg-success ms-auto" id="species-count">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('type', 'hybrids')">
+                                    Hybrids Only <span class="badge bg-warning text-dark ms-auto" id="hybrids-count">...</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('type', 'primary_hybrids')">
+                                    Primary Hybrids <span class="badge bg-info ms-auto" id="primary-hybrids-count">...</span>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#taxonomicFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Taxonomic Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="map-pin" class="me-2"></i>Geographic
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Continents</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('region', 'North America')">North America</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('region', 'South America')">South America</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('region', 'Southeast Asia')">Southeast Asia</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('region', 'Australia')">Australia & Oceania</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('region', 'Europe')">Europe</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Climate Zones</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('climate', 'tropical')">Tropical</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('climate', 'temperate')">Temperate</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('climate', 'montane')">Montane/Alpine</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#geographicFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Geographic Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="git-branch" class="me-2"></i>Breeding
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Parentage Types</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('parentage', 'known_parents')">Known Parentage</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('parentage', 'awarded_parents')">Awarded Parents</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('parentage', 'species_cross')">Species Cross</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Generation Filters</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('generation', 'f1')">F1 Hybrids</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('generation', 'line_bred')">Line Bred</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('generation', 'complex')">Complex Hybrids</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#parentageFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Breeding Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="sun" class="me-2"></i>Flowering
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Season Quick Picks</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('bloom_season', 'spring')">Spring Bloomers</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('bloom_season', 'summer')">Summer Bloomers</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('bloom_season', 'fall')">Fall Bloomers</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('bloom_season', 'winter')">Winter Bloomers</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('flowering', 'currently')">Currently Flowering</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Bloom Characteristics</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('flower_size', 'large')">Large Flowers (>10cm)</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('flower_size', 'small')">Miniature Flowers (<3cm)</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('fragrance', 'fragrant')">Fragrant Orchids</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#floweringFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Flowering Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="settings" class="me-2"></i>Growing
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Care Difficulty</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('difficulty', 'beginner')">Beginner Friendly</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('difficulty', 'intermediate')">Intermediate</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('difficulty', 'advanced')">Advanced/Expert</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Growing Medium</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('medium', 'bark')">Bark Mix</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('medium', 'moss')">Sphagnum Moss</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('medium', 'mounted')">Mounted</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Light Requirements</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('light', 'low')">Low Light</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('light', 'medium')">Medium Light</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('light', 'high')">High Light</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#growingFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Growing Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="eye" class="me-2"></i>Morphology
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Plant Type</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('growth', 'epiphyte')">Epiphytic</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('growth', 'terrestrial')">Terrestrial</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('growth', 'lithophyte')">Lithophytic</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Growth Pattern</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('pattern', 'sympodial')">Sympodial</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('pattern', 'monopodial')">Monopodial</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Size Category</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('size', 'miniature')">Miniature</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('size', 'compact')">Compact</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('size', 'standard')">Standard</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('size', 'large')">Large</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#morphologyFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Morphology Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="shield" class="me-2"></i>Conservation
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">CITES Appendix</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('cites', 'appendix_1')">Appendix I (Most Threatened)</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('cites', 'appendix_2')">Appendix II (Regulated)</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Conservation Status</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('status', 'endangered')">Endangered</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('status', 'vulnerable')">Vulnerable</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('status', 'near_threatened')">Near Threatened</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('status', 'least_concern')">Least Concern</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Rarity Level</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('rarity', 'extremely_rare')">Extremely Rare</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('rarity', 'rare')">Rare</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('rarity', 'uncommon')">Uncommon</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('rarity', 'common')">Common</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#conservationFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced Conservation Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="database" class="me-2"></i>System
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Data Sources</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('source', 'local')">Local Database</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('source', 'gbif')">GBIF Occurrences</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('source', 'inaturalist')">iNaturalist</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('source', 'user_upload')">User Uploads</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Quality Filters</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('quality', 'with_images')">With Images</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('quality', 'with_coordinates')">With GPS Coordinates</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('quality', 'validated')">Validated Records</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('quality', 'featured')">Featured Orchids</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Recent Activity</h6></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('recent', 'week')">Added This Week</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickFilter('recent', 'month')">Added This Month</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#systemFilters">
+                                    <i data-feather="settings" class="me-2"></i>Advanced System Filters
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- NEW: EXTERNAL DATABASES SECTION -->
+                <div class="alert alert-primary mb-3">
+                    <i data-feather="globe" class="me-2"></i><strong>External Database Search</strong>
+                    <p class="mb-0 small">Search global biodiversity databases for comprehensive orchid information from EOL.org and GBIF.</p>
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="globe" class="me-2"></i>External Databases
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Quick External Search</h6></li>
+                                <li><a class="dropdown-item" href="javascript:searchExternalDatabases(['EOL', 'GBIF'])">
+                                    <i data-feather="zap" class="me-2"></i>Search All Databases
+                                    <span class="badge bg-primary ms-auto">EOL + GBIF</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:searchExternalDatabases(['EOL'])">
+                                    <i data-feather="book-open" class="me-2"></i>Encyclopedia of Life (EOL)
+                                    <span class="badge bg-success ms-auto">Taxa + Traits</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:searchExternalDatabases(['GBIF'])">
+                                    <i data-feather="map" class="me-2"></i>GBIF Occurrences
+                                    <span class="badge bg-info ms-auto">Images + GPS</span>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Search Options</h6></li>
+                                <li>
+                                    <div class="px-3 py-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="includeEOL" checked>
+                                            <label class="form-check-label small" for="includeEOL">
+                                                Include EOL.org (species descriptions, traits)
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="includeGBIF" checked>
+                                            <label class="form-check-label small" for="includeGBIF">
+                                                Include GBIF (occurrence records, images)
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="crossReferenceLocal">
+                                            <label class="form-check-label small" for="crossReferenceLocal">
+                                                Cross-reference with local collection
+                                            </label>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item text-primary" type="button" onclick="toggleExternalSearchPanel()">
+                                    <i data-feather="settings" class="me-2"></i>Advanced External Search
+                                </button></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-info w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i data-feather="trending-up" class="me-2"></i>Data Sources
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><h6 class="dropdown-header">Global Databases</h6></li>
+                                <li><a class="dropdown-item" href="javascript:showDatabaseInfo('eol')">
+                                    <i data-feather="book" class="me-2"></i>Encyclopedia of Life
+                                    <span class="badge bg-success ms-auto">1.9M+ Species</span>
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:showDatabaseInfo('gbif')">
+                                    <i data-feather="database" class="me-2"></i>GBIF Biodiversity
+                                    <span class="badge bg-info ms-auto">2.2B+ Records</span>
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Research Integration</h6></li>
+                                <li><a class="dropdown-item" href="javascript:showResearchOpportunities()">
+                                    <i data-feather="search" class="me-2"></i>Find Research Gaps
+                                </a></li>
+                                <li><a class="dropdown-item" href="javascript:showDataEnrichment()">
+                                    <i data-feather="plus-circle" class="me-2"></i>Enrich Local Data
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:showCitationGuide()">
+                                    <i data-feather="edit-3" class="me-2"></i>Citation Guidelines
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-warning w-100" type="button" onclick="toggleRecentExternalSearches()">
+                            <i data-feather="clock" class="me-2"></i>Recent External
+                            <span class="badge bg-warning text-dark ms-2" id="recentExternalCount">0</span>
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" onclick="exportExternalResults()">
+                            <i data-feather="download-cloud" class="me-2"></i>Export External Data
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- External Search Results Panel (Hidden by default) -->
+                <div id="externalSearchResults" class="alert alert-secondary d-none mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-2">
+                                <i data-feather="globe" class="me-2"></i>External Database Results
+                                <span class="badge bg-secondary ms-2" id="externalResultsCount">0</span>
+                            </h6>
+                            <div id="externalSearchStatus" class="small text-muted">Ready to search external databases...</div>
+                        </div>
+                        <button type="button" class="btn-close" onclick="hideExternalResults()"></button>
+                    </div>
+                    <div id="externalResultsContent" class="mt-3">
+                        <!-- External results will be loaded here via JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- NEW: BIOLOGICAL ANALYSIS FILTER BUTTONS -->
+                <div class="alert alert-info mb-3">
+                    <i data-feather="zap" class="me-2"></i><strong>NEW: Biological Analysis Filters</strong>
+                    <p class="mb-0 small">Advanced biological search capabilities powered by AI analysis, trait discovery, and ecological relationships.</p>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#aiAnalysisFilters">
+                            <i data-feather="cpu" class="me-2"></i>AI Insights
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#traitDiscoveryFilters">
+                            <i data-feather="trending-up" class="me-2"></i>Traits
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#pollinatorFilters">
+                            <i data-feather="heart" class="me-2"></i>Pollinators
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mycorrhizalFilters">
+                            <i data-feather="link" class="me-2"></i>Mycorrhizal
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#ecologicalFilters">
+                            <i data-feather="globe" class="me-2"></i>Ecological
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#morphTraitFilters">
+                            <i data-feather="maximize" class="me-2"></i>Morphology+
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#behavioralFilters">
+                            <i data-feather="users" class="me-2"></i>Behavior
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button class="btn btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#conservationPlusFilters">
+                            <i data-feather="alert-triangle" class="me-2"></i>Conservation+
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 1. TAXONOMIC FILTERS -->
+                <div class="collapse mt-3" id="taxonomicFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="layers" class="me-2"></i>Taxonomic Classification
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="genus" class="form-label">Genus:</label>
+                                    <select class="form-select" name="genus" id="genus">
+                                        <option value="">-- Any Genus --</option>
+                                        {% for g in filter_options.genera %}
+                                        <option value="{{ g }}" {{ 'selected' if genus == g }}>{{ g }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="species" class="form-label">Species:</label>
+                                    <input type="text" class="form-control" name="species" id="species" 
+                                           placeholder="e.g. amabilis, lobbii" value="{{ species }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="author" class="form-label">Author:</label>
+                                    <input type="text" class="form-control" name="author" id="author" 
+                                           placeholder="e.g. Lindley, Rchb.f." value="{{ author }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 2. GEOGRAPHIC FILTERS -->
+                <div class="collapse mt-3" id="geographicFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="map-pin" class="me-2"></i>Geographic Distribution
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="country" class="form-label">Country:</label>
+                                    <select class="form-select" name="country" id="country">
+                                        <option value="">-- Any Country --</option>
+                                        {% for c in filter_options.countries %}
+                                        <option value="{{ c }}" {{ 'selected' if country == c }}>{{ c }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="state_province" class="form-label">State/Province:</label>
+                                    <input type="text" class="form-control" name="state_province" id="state_province" 
+                                           placeholder="e.g. California, Queensland" value="{{ state_province }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="region" class="form-label">Region:</label>
+                                    <input type="text" class="form-control" name="region" id="region" 
+                                           placeholder="e.g. Southeast Asia, Andes" value="{{ region }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="habitat_type" class="form-label">Habitat Type:</label>
+                                    <input type="text" class="form-control" name="habitat_type" id="habitat_type" 
+                                           placeholder="e.g. rainforest, montane" value="{{ habitat_type }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 3. PARENTAGE/BREEDING FILTERS -->
+                <div class="collapse mt-3" id="parentageFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="git-branch" class="me-2"></i>Breeding & Parentage
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="orchid_type" class="form-label">Type:</label>
+                                    <select class="form-select" name="orchid_type" id="orchid_type">
+                                        <option value="">-- Any Type --</option>
+                                        <option value="species" {{ 'selected' if orchid_type == 'species' }}>Species Only</option>
+                                        <option value="hybrid" {{ 'selected' if orchid_type == 'hybrid' }}>Hybrids Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="has_parentage" class="form-label">Has Parentage:</label>
+                                    <select class="form-select" name="has_parentage" id="has_parentage">
+                                        <option value="">-- Any --</option>
+                                        <option value="yes" {{ 'selected' if has_parentage == 'yes' }}>Yes</option>
+                                        <option value="no" {{ 'selected' if has_parentage == 'no' }}>No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="rhs_registered" class="form-label">RHS Registered:</label>
+                                    <select class="form-select" name="rhs_registered" id="rhs_registered">
+                                        <option value="">-- Any --</option>
+                                        <option value="yes" {{ 'selected' if rhs_registered == 'yes' }}>Yes</option>
+                                        <option value="no" {{ 'selected' if rhs_registered == 'no' }}>No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="generation" class="form-label">Generation:</label>
+                                    <select class="form-select" name="generation" id="generation">
+                                        <option value="">-- Any Generation --</option>
+                                        <option value="1" {{ 'selected' if generation == '1' }}>F1 (First Generation)</option>
+                                        <option value="2" {{ 'selected' if generation == '2' }}>F2 (Second Generation)</option>
+                                        <option value="3" {{ 'selected' if generation == '3' }}>F3 (Third Generation)</option>
+                                        <option value="4" {{ 'selected' if generation == '4' }}>F4+ (Advanced)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="pod_parent" class="form-label">Pod Parent:</label>
+                                    <input type="text" class="form-control" name="pod_parent" id="pod_parent" 
+                                           placeholder="Enter pod parent name" value="{{ pod_parent }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="pollen_parent" class="form-label">Pollen Parent:</label>
+                                    <input type="text" class="form-control" name="pollen_parent" id="pollen_parent" 
+                                           placeholder="Enter pollen parent name" value="{{ pollen_parent }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 4. FLOWERING CHARACTERISTICS -->
+                <div class="collapse mt-3" id="floweringFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="sun" class="me-2"></i>Flowering Characteristics
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="flowering_status" class="form-label">Currently Flowering:</label>
+                                    <select class="form-select" name="flowering_status" id="flowering_status">
+                                        <option value="">-- Any Status --</option>
+                                        <option value="flowering" {{ 'selected' if flowering_status == 'flowering' }}>Yes - In Bloom</option>
+                                        <option value="not_flowering" {{ 'selected' if flowering_status == 'not_flowering' }}>No - Not Flowering</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="flowering_stage" class="form-label">Bloom Stage:</label>
+                                    <select class="form-select" name="flowering_stage" id="flowering_stage">
+                                        <option value="">-- Any Stage --</option>
+                                        <option value="bud" {{ 'selected' if flowering_stage == 'bud' }}>Bud</option>
+                                        <option value="early_bloom" {{ 'selected' if flowering_stage == 'early_bloom' }}>Early Bloom</option>
+                                        <option value="peak_bloom" {{ 'selected' if flowering_stage == 'peak_bloom' }}>Peak Bloom</option>
+                                        <option value="late_bloom" {{ 'selected' if flowering_stage == 'late_bloom' }}>Late Bloom</option>
+                                        <option value="spent" {{ 'selected' if flowering_stage == 'spent' }}>Spent</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="bloom_season" class="form-label">Bloom Season:</label>
+                                    <select class="form-select" name="bloom_season" id="bloom_season">
+                                        <option value="">-- Any Season --</option>
+                                        <option value="spring" {{ 'selected' if bloom_season == 'spring' }}>Spring</option>
+                                        <option value="summer" {{ 'selected' if bloom_season == 'summer' }}>Summer</option>
+                                        <option value="fall" {{ 'selected' if bloom_season == 'fall' }}>Fall</option>
+                                        <option value="winter" {{ 'selected' if bloom_season == 'winter' }}>Winter</option>
+                                        <option value="year_round" {{ 'selected' if bloom_season == 'year_round' }}>Year Round</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="flower_size" class="form-label">Flower Size:</label>
+                                    <select class="form-select" name="flower_size" id="flower_size">
+                                        <option value="">-- Any Size --</option>
+                                        <option value="small" {{ 'selected' if flower_size == 'small' }}>Small (&lt;50mm)</option>
+                                        <option value="medium" {{ 'selected' if flower_size == 'medium' }}>Medium (50-100mm)</option>
+                                        <option value="large" {{ 'selected' if flower_size == 'large' }}>Large (&gt;100mm)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 5. GROWING CHARACTERISTICS -->
+                <div class="collapse mt-3" id="growingFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="settings" class="me-2"></i>Growing Requirements
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="growth_habit" class="form-label">Growth Habit:</label>
+                                    <select class="form-select" name="growth_habit" id="growth_habit">
+                                        <option value="">-- Any Habit --</option>
+                                        {% for gh in filter_options.growth_habits %}
+                                        <option value="{{ gh }}" {{ 'selected' if growth_habit == gh }}>{{ gh|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="climate_preference" class="form-label">Climate:</label>
+                                    <select class="form-select" name="climate_preference" id="climate_preference">
+                                        <option value="">-- Any Climate --</option>
+                                        {% for cp in filter_options.climate_preferences %}
+                                        <option value="{{ cp }}" {{ 'selected' if climate_preference == cp }}>{{ cp|title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="substrate_type" class="form-label">Substrate:</label>
+                                    <select class="form-select" name="substrate_type" id="substrate_type">
+                                        <option value="">-- Any Substrate --</option>
+                                        <option value="tree_bark" {{ 'selected' if substrate_type == 'tree_bark' }}>Tree Bark</option>
+                                        <option value="rock" {{ 'selected' if substrate_type == 'rock' }}>Rock/Stone</option>
+                                        <option value="soil" {{ 'selected' if substrate_type == 'soil' }}>Soil</option>
+                                        <option value="moss" {{ 'selected' if substrate_type == 'moss' }}>Moss</option>
+                                        <option value="artificial_medium" {{ 'selected' if substrate_type == 'artificial_medium' }}>Artificial Medium</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="natural_vs_cultivated" class="form-label">Environment:</label>
+                                    <select class="form-select" name="natural_vs_cultivated" id="natural_vs_cultivated">
+                                        <option value="">-- Any Environment --</option>
+                                        <option value="native_wild" {{ 'selected' if natural_vs_cultivated == 'native_wild' }}>Native Wild</option>
+                                        <option value="naturalized_wild" {{ 'selected' if natural_vs_cultivated == 'naturalized_wild' }}>Naturalized</option>
+                                        <option value="cultivated" {{ 'selected' if natural_vs_cultivated == 'cultivated' }}>Cultivated</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="light_requirements" class="form-label">Light:</label>
+                                    <input type="text" class="form-control" name="light_requirements" id="light_requirements" 
+                                           placeholder="e.g. bright, shade, filtered" value="{{ light_requirements }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="temperature_range" class="form-label">Temperature:</label>
+                                    <input type="text" class="form-control" name="temperature_range" id="temperature_range" 
+                                           placeholder="e.g. cool, intermediate, warm" value="{{ temperature_range }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="water_requirements" class="form-label">Water:</label>
+                                    <input type="text" class="form-control" name="water_requirements" id="water_requirements" 
+                                           placeholder="e.g. high humidity, dry periods" value="{{ water_requirements }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 6. PLANT MORPHOLOGY -->
+                <div class="collapse mt-3" id="morphologyFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="eye" class="me-2"></i>Plant Morphology
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="pseudobulb_presence" class="form-label">Has Pseudobulbs:</label>
+                                    <select class="form-select" name="pseudobulb_presence" id="pseudobulb_presence">
+                                        <option value="">-- Either --</option>
+                                        <option value="yes" {{ 'selected' if pseudobulb_presence == 'yes' }}>Yes</option>
+                                        <option value="no" {{ 'selected' if pseudobulb_presence == 'no' }}>No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="leaf_form" class="form-label">Leaf Form:</label>
+                                    <input type="text" class="form-control" name="leaf_form" id="leaf_form" 
+                                           placeholder="e.g. strap, terete, plicate" value="{{ leaf_form }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="plant_maturity" class="form-label">Plant Maturity:</label>
+                                    <select class="form-select" name="plant_maturity" id="plant_maturity">
+                                        <option value="">-- Any Maturity --</option>
+                                        <option value="juvenile" {{ 'selected' if plant_maturity == 'juvenile' }}>Juvenile</option>
+                                        <option value="mature" {{ 'selected' if plant_maturity == 'mature' }}>Mature</option>
+                                        <option value="specimen_size" {{ 'selected' if plant_maturity == 'specimen_size' }}>Specimen Size</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 7. CONSERVATION & IDENTIFICATION -->
+                <div class="collapse mt-3" id="conservationFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="shield" class="me-2"></i>Conservation & Identification Status
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="identification_status" class="form-label">Identification:</label>
+                                    <select class="form-select" name="identification_status" id="identification_status">
+                                        <option value="">-- Any Status --</option>
+                                        <option value="verified" {{ 'selected' if identification_status == 'verified' }}>Verified</option>
+                                        <option value="pending" {{ 'selected' if identification_status == 'pending' }}>Pending</option>
+                                        <option value="unidentified" {{ 'selected' if identification_status == 'unidentified' }}>Unidentified</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="conservation_concern" class="form-label">Conservation Notes:</label>
+                                    <select class="form-select" name="conservation_concern" id="conservation_concern">
+                                        <option value="">-- Any --</option>
+                                        <option value="yes" {{ 'selected' if conservation_concern == 'yes' }}>Has Conservation Notes</option>
+                                        <option value="no" {{ 'selected' if conservation_concern == 'no' }}>No Conservation Notes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="validation_status" class="form-label">Validation:</label>
+                                    <select class="form-select" name="validation_status" id="validation_status">
+                                        <option value="">-- Any Status --</option>
+                                        <option value="validated" {{ 'selected' if validation_status == 'validated' }}>Validated</option>
+                                        <option value="pending" {{ 'selected' if validation_status == 'pending' }}>Pending</option>
+                                        <option value="rejected" {{ 'selected' if validation_status == 'rejected' }}>Rejected</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 8. SYSTEM FILTERS -->
+                <div class="collapse mt-3" id="systemFilters">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i data-feather="database" class="me-2"></i>System & Media Filters
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="has_image" class="form-label">Has Image:</label>
+                                    <select class="form-select" name="has_image" id="has_image">
+                                        <option value="">-- Any --</option>
+                                        <option value="yes" {{ 'selected' if has_image == 'yes' }}>Yes</option>
+                                        <option value="no" {{ 'selected' if has_image == 'no' }}>No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="is_featured" class="form-label">Featured:</label>
+                                    <select class="form-select" name="is_featured" id="is_featured">
+                                        <option value="">-- Any --</option>
+                                        <option value="yes" {{ 'selected' if is_featured == 'yes' }}>Featured Only</option>
+                                        <option value="no" {{ 'selected' if is_featured == 'no' }}>Non-Featured</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="data_source" class="form-label">Data Source:</label>
+                                    <select class="form-select" name="data_source" id="data_source">
+                                        <option value="">-- Any Source --</option>
+                                        {% for ds in filter_options.data_sources %}
+                                        <option value="{{ ds }}" {{ 'selected' if data_source == ds }}>{{ ds }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="photographer" class="form-label">Photographer:</label>
+                                    <select class="form-select" name="photographer" id="photographer">
+                                        <option value="">-- Any Photographer --</option>
+                                        {% for ph in filter_options.photographers %}
+                                        <option value="{{ ph }}" {{ 'selected' if photographer == ph }}>{{ ph }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SORT AND DISPLAY OPTIONS -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label for="sort_by" class="form-label">Sort Results By:</label>
+                        <select class="form-select" name="sort_by" id="sort_by">
+                            <option value="relevance" {{ 'selected' if sort_by == 'relevance' }}>Relevance (Default)</option>
+                            <option value="alphabetical" {{ 'selected' if sort_by == 'alphabetical' }}>Alphabetical (A-Z)</option>
+                            <option value="genus_species" {{ 'selected' if sort_by == 'genus_species' }}>Genus → Species</option>
+                            <option value="popularity" {{ 'selected' if sort_by == 'popularity' }}>Popularity (Most Viewed)</option>
+                            <option value="newest" {{ 'selected' if sort_by == 'newest' }}>Newest First</option>
+                            <option value="featured" {{ 'selected' if sort_by == 'featured' }}>Featured First</option>
+                            <option value="flowering" {{ 'selected' if sort_by == 'flowering' }}>Currently Flowering</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="results_per_page" class="form-label">Results Per Page:</label>
+                        <select class="form-select" name="results_per_page" id="results_per_page">
+                            <option value="25" {{ 'selected' if results_per_page == 25 }}>25</option>
+                            <option value="50" {{ 'selected' if results_per_page == 50 }}>50</option>
+                            <option value="100" {{ 'selected' if results_per_page == 100 }}>100</option>
+                            <option value="200" {{ 'selected' if results_per_page == 200 }}>200</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SEARCH ACTIONS -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="search" class="me-2"></i>Search Orchids
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="clearAllFilters()">
+                                <i data-feather="refresh-cw" class="me-2"></i>Clear All Filters
+                            </button>
+                            {% if query or genus or country or orchid_type %}
+                            <a href="{{ url_for('search') }}" class="btn btn-outline-danger btn-lg">
+                                <i data-feather="x" class="me-2"></i>Reset Search
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Current Search Info -->
+                {% if query or genus or country or orchid_type or flowering_status %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i data-feather="info" class="me-1"></i>
+                        Comprehensive search across {{ search_stats.total_found or 'all' }} orchid records including names, descriptions, locations, parentage, morphology, and cultural information
+                    </small>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <!-- ENHANCED MAPPING INTEGRATION PANEL -->
+    {% if search_stats.total_found > 0 and (orchid_coordinates or regional_distribution) %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #00d4aa, #007ba7);">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white">
+                    <i data-feather="map" class="me-2"></i>Geographic Distribution of Search Results
+                </h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="toggleMapView('regional')" id="regional-btn">
+                        <i data-feather="pie-chart" class="me-1"></i>Regional
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="toggleMapView('coordinates')" id="coordinates-btn">
+                        <i data-feather="navigation" class="me-1"></i>Coordinates
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-light" onclick="openGlobeView()">
+                        <i data-feather="globe" class="me-1"></i>3D Globe
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Mapping Statistics -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-primary me-2">{{ mapping_stats.total_with_coordinates }}</div>
+                        <span class="text-muted">With Precise Coordinates</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-success me-2">{{ mapping_stats.total_regions }}</div>
+                        <span class="text-muted">Different Regions</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-info me-2">{{ "%.1f"|format(mapping_stats.coordinate_coverage) }}%</div>
+                        <span class="text-muted">Coordinate Coverage</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regional Distribution View -->
+            <div id="regional-view" class="mapping-view">
+                {% if regional_distribution %}
+                <h6 class="text-primary mb-3">Regional Distribution</h6>
+                <div class="row">
+                    {% for region, data in regional_distribution.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title text-truncate">{{ region }}</h6>
+                                <div class="small text-muted">
+                                    <div><strong>{{ data.count }}</strong> orchids</div>
+                                    <div>{{ data.genera }} genera</div>
+                                    <div>{{ data.species }} species</div>
+                                    {% if data.flowering > 0 %}
+                                    <div class="text-warning">{{ data.flowering }} flowering</div>
+                                    {% endif %}
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="filterByRegion('{{ region }}')">
+                                    <i data-feather="filter" class="me-1"></i>Filter to {{ region }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-feather="info" class="me-2"></i>
+                    No regional distribution data available for current search results.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Coordinate-based Map View -->
+            <div id="coordinates-view" class="mapping-view" style="display: none;">
+                {% if orchid_coordinates %}
+                <h6 class="text-primary mb-3">Precise Coordinate Locations</h6>
+                <!-- Interactive Map Container -->
+                <div id="search-map" style="height: 400px; border-radius: 8px;" class="border"></div>
+                
+                <!-- Coordinate List -->
+                <div class="mt-3">
+                    <h6 class="text-secondary">Orchids with Coordinates ({{ orchid_coordinates|length }})</h6>
+                    <div class="row">
+                        {% for coord in orchid_coordinates[:8] %}
+                        <div class="col-md-6 col-lg-3 mb-2">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body p-2">
+                                    <div class="small">
+                                        <strong class="text-truncate d-block">{{ coord.name }}</strong>
+                                        <div class="text-muted">{{ coord.location }}</div>
+                                        <div class="text-info">{{ coord.genus }}</div>
+                                        <button class="btn btn-outline-primary btn-sm mt-1" onclick="focusOnOrchid({{ coord.lat }}, {{ coord.lng }})">
+                                            <i data-feather="crosshair" class="me-1"></i>View
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if orchid_coordinates|length > 8 %}
+                    <div class="text-center mt-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showAllCoordinates()">
+                            <i data-feather="eye" class="me-1"></i>Show All {{ orchid_coordinates|length }} Locations
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-feather="map-pin" class="me-2"></i>
+                    No precise coordinate data available for current search results. 
+                    Try searching for orchids with location information.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Quick Geographic Filters -->
+            <div class="border-top pt-3 mt-3">
+                <h6 class="text-secondary mb-2">Quick Geographic Filters</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for country in filter_options.countries[:8] %}
+                    <a href="{{ url_for('search', 
+                        q=query or '', 
+                        genus=genus or '', 
+                        species=species or '', 
+                        author=author or '',
+                        orchid_type=orchid_type or '',
+                        flowering_status=flowering_status or '',
+                        growth_habit=growth_habit or '',
+                        climate_preference=climate_preference or '',
+                        has_image=has_image or '',
+                        is_featured=is_featured or '',
+                        country=country) }}" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="map-pin" class="me-1"></i>{{ country }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- NEW: COMPREHENSIVE BIOLOGICAL ANALYSIS FILTER SECTIONS -->
+    {% if filter_options %}
+    <div class="container-fluid mb-4">
+        <div class="row">
+            <div class="col-12">
+                <form method="GET" id="biologicalFiltersForm" class="biological-filters">
+                    <!-- Hidden inputs to preserve existing filters -->
+                    <input type="hidden" name="q" value="{{ query or '' }}">
+                    <input type="hidden" name="genus" value="{{ genus or '' }}">
+                    <input type="hidden" name="species" value="{{ species or '' }}">
+                    
+                    <!-- 1. AI ANALYSIS FILTERS -->
+                    <div class="collapse mt-3" id="aiAnalysisFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="cpu" class="me-2"></i>AI-Generated Insights
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_ai_description" class="form-label">Has AI Description:</label>
+                                        <select class="form-select" name="has_ai_description" id="has_ai_description">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_ai_description == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_ai_description == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_confidence_min" class="form-label">Min AI Confidence:</label>
+                                        <input type="number" class="form-control" name="ai_confidence_min" id="ai_confidence_min"
+                                               placeholder="0.0" min="0" max="1" step="0.1" value="{{ ai_confidence_min }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_confidence_max" class="form-label">Max AI Confidence:</label>
+                                        <input type="number" class="form-control" name="ai_confidence_max" id="ai_confidence_max"
+                                               placeholder="1.0" min="0" max="1" step="0.1" value="{{ ai_confidence_max }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ai_metadata_category" class="form-label">AI Metadata Category:</label>
+                                        <select class="form-select" name="ai_metadata_category" id="ai_metadata_category">
+                                            <option value="">-- Any Category --</option>
+                                            <option value="morphology" {{ 'selected' if ai_metadata_category == 'morphology' }}>Morphological Analysis</option>
+                                            <option value="flowering" {{ 'selected' if ai_metadata_category == 'flowering' }}>Flowering Patterns</option>
+                                            <option value="habitat" {{ 'selected' if ai_metadata_category == 'habitat' }}>Habitat Analysis</option>
+                                            <option value="taxonomy" {{ 'selected' if ai_metadata_category == 'taxonomy' }}>Taxonomic Identification</option>
+                                            <option value="cultural" {{ 'selected' if ai_metadata_category == 'cultural' }}>Cultural Requirements</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. TRAIT DISCOVERY FILTERS -->
+                    <div class="collapse mt-3" id="traitDiscoveryFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="trending-up" class="me-2"></i>Trait Discovery & Inheritance
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_predicted_traits" class="form-label">Has Predicted Traits:</label>
+                                        <select class="form-select" name="has_predicted_traits" id="has_predicted_traits">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_predicted_traits == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_predicted_traits == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="has_observed_traits" class="form-label">Has Observed Traits:</label>
+                                        <select class="form-select" name="has_observed_traits" id="has_observed_traits">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_observed_traits == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_observed_traits == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="trait_inheritance_pattern" class="form-label">Inheritance Pattern:</label>
+                                        <select class="form-select" name="trait_inheritance_pattern" id="trait_inheritance_pattern">
+                                            <option value="">-- Any Pattern --</option>
+                                            <option value="dominant" {{ 'selected' if trait_inheritance_pattern == 'dominant' }}>Dominant</option>
+                                            <option value="recessive" {{ 'selected' if trait_inheritance_pattern == 'recessive' }}>Recessive</option>
+                                            <option value="codominant" {{ 'selected' if trait_inheritance_pattern == 'codominant' }}>Co-dominant</option>
+                                            <option value="polygenic" {{ 'selected' if trait_inheritance_pattern == 'polygenic' }}>Polygenic</option>
+                                            <option value="maternal" {{ 'selected' if trait_inheritance_pattern == 'maternal' }}>Maternal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="breeding_value_min" class="form-label">Min Breeding Value:</label>
+                                        <input type="number" class="form-control" name="breeding_value_min" id="breeding_value_min"
+                                               placeholder="0.0" min="0" max="1" step="0.1" value="{{ breeding_value_min }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3. POLLINATOR RELATIONSHIP FILTERS -->
+                    <div class="collapse mt-3" id="pollinatorFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="heart" class="me-2"></i>Pollinator Relationships
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="pollination_method_filter" class="form-label">Pollination Method:</label>
+                                        <select class="form-select" name="pollination_method_filter" id="pollination_method_filter">
+                                            <option value="">-- Any Method --</option>
+                                            <option value="hand_pollination" {{ 'selected' if pollination_method_filter == 'hand_pollination' }}>Hand Pollination</option>
+                                            <option value="natural" {{ 'selected' if pollination_method_filter == 'natural' }}>Natural</option>
+                                            <option value="assisted" {{ 'selected' if pollination_method_filter == 'assisted' }}>Assisted</option>
+                                            <option value="self_pollination" {{ 'selected' if pollination_method_filter == 'self_pollination' }}>Self-Pollination</option>
+                                            <option value="cross_pollination" {{ 'selected' if pollination_method_filter == 'cross_pollination' }}>Cross-Pollination</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="pollinator_type" class="form-label">Pollinator Type:</label>
+                                        <select class="form-select" name="pollinator_type" id="pollinator_type">
+                                            <option value="">-- Any Pollinator --</option>
+                                            <option value="bee" {{ 'selected' if pollinator_type == 'bee' }}>Bees</option>
+                                            <option value="fly" {{ 'selected' if pollinator_type == 'fly' }}>Flies</option>
+                                            <option value="wasp" {{ 'selected' if pollinator_type == 'wasp' }}>Wasps</option>
+                                            <option value="beetle" {{ 'selected' if pollinator_type == 'beetle' }}>Beetles</option>
+                                            <option value="butterfly" {{ 'selected' if pollinator_type == 'butterfly' }}>Butterflies</option>
+                                            <option value="moth" {{ 'selected' if pollinator_type == 'moth' }}>Moths</option>
+                                            <option value="bird" {{ 'selected' if pollinator_type == 'bird' }}>Birds</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="pollination_strategy" class="form-label">Pollination Strategy:</label>
+                                        <select class="form-select" name="pollination_strategy" id="pollination_strategy">
+                                            <option value="">-- Any Strategy --</option>
+                                            <option value="reward" {{ 'selected' if pollination_strategy == 'reward' }}>Reward-based</option>
+                                            <option value="deception" {{ 'selected' if pollination_strategy == 'deception' }}>Deception</option>
+                                            <option value="sexual_deception" {{ 'selected' if pollination_strategy == 'sexual_deception' }}>Sexual Deception</option>
+                                            <option value="food_deception" {{ 'selected' if pollination_strategy == 'food_deception' }}>Food Deception</option>
+                                            <option value="shelter_deception" {{ 'selected' if pollination_strategy == 'shelter_deception' }}>Shelter Deception</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="has_pollinator_data" class="form-label">Has Pollinator Data:</label>
+                                        <select class="form-select" name="has_pollinator_data" id="has_pollinator_data">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_pollinator_data == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_pollinator_data == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 4. MYCORRHIZAL ASSOCIATION FILTERS -->
+                    <div class="collapse mt-3" id="mycorrhizalFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="link" class="me-2"></i>Mycorrhizal Associations
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="fungal_partner_genus" class="form-label">Fungal Partner Genus:</label>
+                                        <select class="form-select" name="fungal_partner_genus" id="fungal_partner_genus">
+                                            <option value="">-- Any Fungal Genus --</option>
+                                            <option value="Rhizoctonia" {{ 'selected' if fungal_partner_genus == 'Rhizoctonia' }}>Rhizoctonia</option>
+                                            <option value="Tulasnella" {{ 'selected' if fungal_partner_genus == 'Tulasnella' }}>Tulasnella</option>
+                                            <option value="Ceratobasidium" {{ 'selected' if fungal_partner_genus == 'Ceratobasidium' }}>Ceratobasidium</option>
+                                            <option value="Sebacina" {{ 'selected' if fungal_partner_genus == 'Sebacina' }}>Sebacina</option>
+                                            <option value="Thanatephorus" {{ 'selected' if fungal_partner_genus == 'Thanatephorus' }}>Thanatephorus</option>
+                                            <option value="Waitea" {{ 'selected' if fungal_partner_genus == 'Waitea' }}>Waitea</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="symbiotic_relationship_type" class="form-label">Symbiotic Type:</label>
+                                        <select class="form-select" name="symbiotic_relationship_type" id="symbiotic_relationship_type">
+                                            <option value="">-- Any Type --</option>
+                                            <option value="mutualistic" {{ 'selected' if symbiotic_relationship_type == 'mutualistic' }}>Mutualistic</option>
+                                            <option value="parasitic" {{ 'selected' if symbiotic_relationship_type == 'parasitic' }}>Parasitic</option>
+                                            <option value="commensalistic" {{ 'selected' if symbiotic_relationship_type == 'commensalistic' }}>Commensalistic</option>
+                                            <option value="protocorm" {{ 'selected' if symbiotic_relationship_type == 'protocorm' }}>Protocorm Stage</option>
+                                            <option value="adult" {{ 'selected' if symbiotic_relationship_type == 'adult' }}>Adult Stage</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="has_mycorrhizal_data" class="form-label">Has Mycorrhizal Data:</label>
+                                        <select class="form-select" name="has_mycorrhizal_data" id="has_mycorrhizal_data">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_mycorrhizal_data == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_mycorrhizal_data == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 5. ECOLOGICAL INTERACTION FILTERS -->
+                    <div class="collapse mt-3" id="ecologicalFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="globe" class="me-2"></i>Ecological Interactions
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="has_companion_plants" class="form-label">Has Companion Plants:</label>
+                                        <select class="form-select" name="has_companion_plants" id="has_companion_plants">
+                                            <option value="">-- Any --</option>
+                                            <option value="yes" {{ 'selected' if has_companion_plants == 'yes' }}>Yes</option>
+                                            <option value="no" {{ 'selected' if has_companion_plants == 'no' }}>No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="environmental_indicator" class="form-label">Environmental Indicator:</label>
+                                        <select class="form-select" name="environmental_indicator" id="environmental_indicator">
+                                            <option value="">-- Any Indicator --</option>
+                                            <option value="high_humidity" {{ 'selected' if environmental_indicator == 'high_humidity' }}>High Humidity</option>
+                                            <option value="low_humidity" {{ 'selected' if environmental_indicator == 'low_humidity' }}>Low Humidity</option>
+                                            <option value="cool_temperature" {{ 'selected' if environmental_indicator == 'cool_temperature' }}>Cool Temperature</option>
+                                            <option value="warm_temperature" {{ 'selected' if environmental_indicator == 'warm_temperature' }}>Warm Temperature</option>
+                                            <option value="bright_light" {{ 'selected' if environmental_indicator == 'bright_light' }}>Bright Light</option>
+                                            <option value="low_light" {{ 'selected' if environmental_indicator == 'low_light' }}>Low Light</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="habitat_complexity" class="form-label">Habitat Complexity:</label>
+                                        <select class="form-select" name="habitat_complexity" id="habitat_complexity">
+                                            <option value="">-- Any Complexity --</option>
+                                            <option value="simple" {{ 'selected' if habitat_complexity == 'simple' }}>Simple</option>
+                                            <option value="moderate" {{ 'selected' if habitat_complexity == 'moderate' }}>Moderate</option>
+                                            <option value="complex" {{ 'selected' if habitat_complexity == 'complex' }}>Complex</option>
+                                            <option value="pristine" {{ 'selected' if habitat_complexity == 'pristine' }}>Pristine</option>
+                                            <option value="disturbed" {{ 'selected' if habitat_complexity == 'disturbed' }}>Disturbed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ecosystem_role" class="form-label">Ecosystem Role:</label>
+                                        <select class="form-select" name="ecosystem_role" id="ecosystem_role">
+                                            <option value="">-- Any Role --</option>
+                                            <option value="pioneer" {{ 'selected' if ecosystem_role == 'pioneer' }}>Pioneer Species</option>
+                                            <option value="climax" {{ 'selected' if ecosystem_role == 'climax' }}>Climax Species</option>
+                                            <option value="indicator" {{ 'selected' if ecosystem_role == 'indicator' }}>Indicator Species</option>
+                                            <option value="keystone" {{ 'selected' if ecosystem_role == 'keystone' }}>Keystone Species</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 6. MORPHOLOGICAL TRAIT FILTERS -->
+                    <div class="collapse mt-3" id="morphTraitFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="maximize" class="me-2"></i>Advanced Morphological Traits
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="root_type" class="form-label">Root Type:</label>
+                                        <select class="form-select" name="root_type" id="root_type">
+                                            <option value="">-- Any Root Type --</option>
+                                            <option value="aerial" {{ 'selected' if root_type == 'aerial' }}>Aerial Roots</option>
+                                            <option value="terrestrial" {{ 'selected' if root_type == 'terrestrial' }}>Terrestrial Roots</option>
+                                            <option value="epiphytic" {{ 'selected' if root_type == 'epiphytic' }}>Epiphytic Roots</option>
+                                            <option value="velamen" {{ 'selected' if root_type == 'velamen' }}>Velamen Present</option>
+                                            <option value="mycorrhizal" {{ 'selected' if root_type == 'mycorrhizal' }}>Mycorrhizal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="maturity_stage" class="form-label">Maturity Stage:</label>
+                                        <select class="form-select" name="maturity_stage" id="maturity_stage">
+                                            <option value="">-- Any Stage --</option>
+                                            <option value="juvenile" {{ 'selected' if maturity_stage == 'juvenile' }}>Juvenile</option>
+                                            <option value="mature" {{ 'selected' if maturity_stage == 'mature' }}>Mature</option>
+                                            <option value="specimen" {{ 'selected' if maturity_stage == 'specimen' }}>Specimen Size</option>
+                                            <option value="blooming" {{ 'selected' if maturity_stage == 'blooming' }}>Blooming Size</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="flower_complexity" class="form-label">Flower Complexity:</label>
+                                        <select class="form-select" name="flower_complexity" id="flower_complexity">
+                                            <option value="">-- Any Complexity --</option>
+                                            <option value="simple" {{ 'selected' if flower_complexity == 'simple' }}>Simple</option>
+                                            <option value="complex" {{ 'selected' if flower_complexity == 'complex' }}>Complex</option>
+                                            <option value="highly_specialized" {{ 'selected' if flower_complexity == 'highly_specialized' }}>Highly Specialized</option>
+                                            <option value="resupinate" {{ 'selected' if flower_complexity == 'resupinate' }}>Resupinate</option>
+                                            <option value="non_resupinate" {{ 'selected' if flower_complexity == 'non_resupinate' }}>Non-resupinate</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="morphological_adaptation" class="form-label">Morphological Adaptation:</label>
+                                        <select class="form-select" name="morphological_adaptation" id="morphological_adaptation">
+                                            <option value="">-- Any Adaptation --</option>
+                                            <option value="drought_tolerance" {{ 'selected' if morphological_adaptation == 'drought_tolerance' }}>Drought Tolerance</option>
+                                            <option value="water_storage" {{ 'selected' if morphological_adaptation == 'water_storage' }}>Water Storage</option>
+                                            <option value="climbing" {{ 'selected' if morphological_adaptation == 'climbing' }}>Climbing Ability</option>
+                                            <option value="miniaturization" {{ 'selected' if morphological_adaptation == 'miniaturization' }}>Miniaturization</option>
+                                            <option value="gigantism" {{ 'selected' if morphological_adaptation == 'gigantism' }}>Gigantism</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 7. BEHAVIORAL MECHANISM FILTERS -->
+                    <div class="collapse mt-3" id="behavioralFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="users" class="me-2"></i>Behavioral Mechanisms
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="mimicry_type" class="form-label">Mimicry Type:</label>
+                                        <select class="form-select" name="mimicry_type" id="mimicry_type">
+                                            <option value="">-- Any Mimicry --</option>
+                                            <option value="batesian" {{ 'selected' if mimicry_type == 'batesian' }}>Batesian Mimicry</option>
+                                            <option value="mullerian" {{ 'selected' if mimicry_type == 'mullerian' }}>Müllerian Mimicry</option>
+                                            <option value="aggressive" {{ 'selected' if mimicry_type == 'aggressive' }}>Aggressive Mimicry</option>
+                                            <option value="sexual" {{ 'selected' if mimicry_type == 'sexual' }}>Sexual Mimicry</option>
+                                            <option value="floral" {{ 'selected' if mimicry_type == 'floral' }}>Floral Mimicry</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="deception_strategy" class="form-label">Deception Strategy:</label>
+                                        <select class="form-select" name="deception_strategy" id="deception_strategy">
+                                            <option value="">-- Any Strategy --</option>
+                                            <option value="pseudocopulation" {{ 'selected' if deception_strategy == 'pseudocopulation' }}>Pseudocopulation</option>
+                                            <option value="false_nectar" {{ 'selected' if deception_strategy == 'false_nectar' }}>False Nectar</option>
+                                            <option value="brood_site" {{ 'selected' if deception_strategy == 'brood_site' }}>Brood Site Mimicry</option>
+                                            <option value="food_source" {{ 'selected' if deception_strategy == 'food_source' }}>Food Source Mimicry</option>
+                                            <option value="shelter" {{ 'selected' if deception_strategy == 'shelter' }}>Shelter Mimicry</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="attraction_mechanism" class="form-label">Attraction Mechanism:</label>
+                                        <select class="form-select" name="attraction_mechanism" id="attraction_mechanism">
+                                            <option value="">-- Any Mechanism --</option>
+                                            <option value="visual" {{ 'selected' if attraction_mechanism == 'visual' }}>Visual Attraction</option>
+                                            <option value="chemical" {{ 'selected' if attraction_mechanism == 'chemical' }}>Chemical Attraction</option>
+                                            <option value="tactile" {{ 'selected' if attraction_mechanism == 'tactile' }}>Tactile Attraction</option>
+                                            <option value="thermal" {{ 'selected' if attraction_mechanism == 'thermal' }}>Thermal Attraction</option>
+                                            <option value="multimodal" {{ 'selected' if attraction_mechanism == 'multimodal' }}>Multimodal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="behavioral_adaptation" class="form-label">Behavioral Adaptation:</label>
+                                        <select class="form-select" name="behavioral_adaptation" id="behavioral_adaptation">
+                                            <option value="">-- Any Adaptation --</option>
+                                            <option value="circadian" {{ 'selected' if behavioral_adaptation == 'circadian' }}>Circadian Flowering</option>
+                                            <option value="seasonal" {{ 'selected' if behavioral_adaptation == 'seasonal' }}>Seasonal Timing</option>
+                                            <option value="trap_lining" {{ 'selected' if behavioral_adaptation == 'trap_lining' }}>Trap-lining</option>
+                                            <option value="specialized_timing" {{ 'selected' if behavioral_adaptation == 'specialized_timing' }}>Specialized Timing</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 8. CONSERVATION STATUS PLUS FILTERS -->
+                    <div class="collapse mt-3" id="conservationPlusFilters">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i data-feather="alert-triangle" class="me-2"></i>Advanced Conservation Status
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="conservation_priority" class="form-label">Conservation Priority:</label>
+                                        <select class="form-select" name="conservation_priority" id="conservation_priority">
+                                            <option value="">-- Any Priority --</option>
+                                            <option value="critical" {{ 'selected' if conservation_priority == 'critical' }}>Critical</option>
+                                            <option value="high" {{ 'selected' if conservation_priority == 'high' }}>High</option>
+                                            <option value="moderate" {{ 'selected' if conservation_priority == 'moderate' }}>Moderate</option>
+                                            <option value="low" {{ 'selected' if conservation_priority == 'low' }}>Low</option>
+                                            <option value="stable" {{ 'selected' if conservation_priority == 'stable' }}>Stable</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="rarity_indicator" class="form-label">Rarity Indicator:</label>
+                                        <select class="form-select" name="rarity_indicator" id="rarity_indicator">
+                                            <option value="">-- Any Rarity --</option>
+                                            <option value="extremely_rare" {{ 'selected' if rarity_indicator == 'extremely_rare' }}>Extremely Rare</option>
+                                            <option value="rare" {{ 'selected' if rarity_indicator == 'rare' }}>Rare</option>
+                                            <option value="uncommon" {{ 'selected' if rarity_indicator == 'uncommon' }}>Uncommon</option>
+                                            <option value="locally_rare" {{ 'selected' if rarity_indicator == 'locally_rare' }}>Locally Rare</option>
+                                            <option value="common" {{ 'selected' if rarity_indicator == 'common' }}>Common</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="threat_level" class="form-label">Threat Level:</label>
+                                        <select class="form-select" name="threat_level" id="threat_level">
+                                            <option value="">-- Any Threat --</option>
+                                            <option value="extinct" {{ 'selected' if threat_level == 'extinct' }}>Extinct</option>
+                                            <option value="critically_endangered" {{ 'selected' if threat_level == 'critically_endangered' }}>Critically Endangered</option>
+                                            <option value="endangered" {{ 'selected' if threat_level == 'endangered' }}>Endangered</option>
+                                            <option value="vulnerable" {{ 'selected' if threat_level == 'vulnerable' }}>Vulnerable</option>
+                                            <option value="near_threatened" {{ 'selected' if threat_level == 'near_threatened' }}>Near Threatened</option>
+                                            <option value="least_concern" {{ 'selected' if threat_level == 'least_concern' }}>Least Concern</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="protection_status" class="form-label">Protection Status:</label>
+                                        <select class="form-select" name="protection_status" id="protection_status">
+                                            <option value="">-- Any Status --</option>
+                                            <option value="cites_i" {{ 'selected' if protection_status == 'cites_i' }}>CITES Appendix I</option>
+                                            <option value="cites_ii" {{ 'selected' if protection_status == 'cites_ii' }}>CITES Appendix II</option>
+                                            <option value="protected" {{ 'selected' if protection_status == 'protected' }}>Legally Protected</option>
+                                            <option value="unprotected" {{ 'selected' if protection_status == 'unprotected' }}>Unprotected</option>
+                                            <option value="endemic" {{ 'selected' if protection_status == 'endemic' }}>Endemic Species</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- SEARCH RESULTS -->
+    {% if orchids is defined and (query or genus or species or country or region or orchid_type or flowering_status or growth_habit or climate_preference or has_image or is_featured) %}
+        <!-- Results Header with Enhanced Statistics -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="mb-0">
+                        {% if query %}
+                        Search Results for "{{ query }}"
+                        {% else %}
+                        Filtered Search Results
+                        {% endif %}
+                    </h3>
+                    <div class="d-flex gap-2">
+                        {% if orchids %}
+                        <a href="#" class="btn btn-outline-primary btn-sm" onclick="exportResults()">
+                            <i data-feather="download" class="me-1"></i>Export
+                        </a>
+                        <a href="{{ url_for('space_earth_globe') }}?search_filters=true" class="btn btn-outline-success btn-sm">
+                            <i data-feather="map" class="me-1"></i>View on Globe
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if search_stats %}
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Search Statistics:</strong><br>
+                            <i data-feather="database" class="me-1"></i>{{ search_stats.total_found }} total orchids found<br>
+                            <i data-feather="image" class="me-1"></i>{{ search_stats.has_images }} with high-quality images
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Composition:</strong><br>
+                            <i data-feather="leaf" class="me-1"></i>{{ search_stats.species_count }} species, {{ search_stats.hybrid_count }} hybrids<br>
+                            <i data-feather="sun" class="me-1"></i>{{ search_stats.flowering_count }} currently flowering
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <hr>
+            </div>
+        </div>
+        
+        {% if orchids %}
+            <!-- Enhanced Search Results Display -->
+            <div class="row g-4">
+                {% for orchid in orchids %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="row g-0 h-100">
+                            <div class="col-4">
+                                {% if orchid.google_drive_id or orchid.image_url or orchid.image_filename %}
+                                    {% set image_url = '/api/drive-photo/' + orchid.google_drive_id if orchid.google_drive_id else orchid.image_url %}
+                                    <div class="position-relative h-100 w-100" style="cursor: pointer;">
+                                        <img src="{{ image_url }}" class="img-fluid h-100 w-100" alt="{{ orchid.display_name }}"
+                                             style="object-fit: cover; border-radius: 0.375rem 0 0 0.375rem;"
+                                             onclick="openImageGallery({{ orchid.id }}, '{{ image_url }}', '{{ orchid.display_name|e }}')"
+                                             onerror="this.onerror=null; this.src='/static/images/orchid_placeholder.svg';">
+                                        <div class="position-absolute top-0 end-0 m-1">
+                                            <span class="badge bg-dark bg-opacity-75">
+                                                <i data-feather="zoom-in" style="width: 12px; height: 12px;"></i>
+                                            </span>
+                                        </div>
+                                        {% if orchid.decimal_latitude and orchid.decimal_longitude %}
+                                        <div class="position-absolute bottom-0 start-0 m-1">
+                                            <span class="badge bg-primary bg-opacity-75" title="Has coordinate data">
+                                                <i data-feather="map-pin" style="width: 12px; height: 12px;"></i>
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="h-100 w-100 bg-light d-flex align-items-center justify-content-center"
+                                         style="border-radius: 0.375rem 0 0 0.375rem;">
+                                        <i data-feather="image" class="text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <div class="card-body d-flex flex-column h-100 p-3">
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">{{ orchid.display_name }}</h6>
+                                        
+                                        {% if orchid.scientific_name and orchid.scientific_name != orchid.display_name %}
+                                            <p class="text-muted small fst-italic mb-2">{{ orchid.scientific_name }}</p>
+                                        {% endif %}
+                                        
+                                        <!-- Enhanced metadata badges -->
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            {% if orchid.genus %}
+                                                <span class="badge bg-secondary" style="font-size: 10px;">{{ orchid.genus }}</span>
+                                            {% endif %}
+                                            {% if orchid.is_species %}
+                                                <span class="badge bg-success" style="font-size: 10px;">Species</span>
+                                            {% elif orchid.is_hybrid %}
+                                                <span class="badge bg-warning text-dark" style="font-size: 10px;">Hybrid</span>
+                                            {% endif %}
+                                            {% if orchid.is_flowering %}
+                                                <span class="badge bg-danger" style="font-size: 10px;">🌸 Flowering</span>
+                                            {% endif %}
+                                            {% if orchid.climate_preference %}
+                                                <span class="badge bg-info" style="font-size: 10px;">{{ orchid.climate_preference|title }}</span>
+                                            {% endif %}
+                                            {% if orchid.is_featured %}
+                                                <span class="badge bg-primary" style="font-size: 10px;">⭐ Featured</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Location info -->
+                                        {% if orchid.country or orchid.region %}
+                                        <div class="text-muted small mb-2">
+                                            <i data-feather="map-pin" class="me-1" style="width: 12px; height: 12px;"></i>
+                                            {% if orchid.country %}{{ orchid.country }}{% endif %}{% if orchid.country and orchid.region %}, {% endif %}{% if orchid.region %}{{ orchid.region }}{% endif %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Parentage info -->
+                                        {% if orchid.pod_parent and orchid.pollen_parent %}
+                                        <div class="text-muted small mb-2">
+                                            <i data-feather="git-branch" class="me-1" style="width: 12px; height: 12px;"></i>
+                                            {{ orchid.pod_parent }} × {{ orchid.pollen_parent }}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Description -->
+                                        {% if orchid.ai_description %}
+                                            <p class="card-text small text-muted">{{ orchid.ai_description[:80] }}{% if orchid.ai_description|length > 80 %}...{% endif %}</p>
+                                        {% elif orchid.cultural_notes %}
+                                            <p class="card-text small text-muted">{{ orchid.cultural_notes[:80] }}{% if orchid.cultural_notes|length > 80 %}...{% endif %}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="mt-auto pt-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-sm btn-primary">
+                                                View Details
+                                            </a>
+                                            <div class="d-flex align-items-center text-muted">
+                                                <i data-feather="eye" class="me-1" style="width: 14px; height: 14px;"></i>
+                                                <small>{{ orchid.view_count or 0 }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Load More / Pagination Info -->
+            <div class="text-center mt-4">
+                {% if orchids|length >= results_per_page %}
+                <div class="alert alert-info">
+                    <i data-feather="info" class="me-2"></i>
+                    Showing {{ orchids|length }} results. For better performance, consider using more specific filters to narrow your search.
+                </div>
+                {% else %}
+                <small class="text-muted">Showing all {{ orchids|length }} matching results</small>
+                {% endif %}
+            </div>
+            
+        {% else %}
+            <!-- No Results Found -->
+            <div class="text-center py-5">
+                <i data-feather="search" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                <h4 class="text-muted">No orchids found with current filters</h4>
+                <p class="text-muted mb-4">Try adjusting your search criteria or clearing some filters.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
+                        <i data-feather="grid" class="me-2"></i>Browse Gallery
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="clearAllFilters(); document.getElementById('searchForm').submit();">
+                        <i data-feather="refresh-cw" class="me-2"></i>Clear Filters & Search
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Search Suggestions and Help -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-4">Professional Orchid Search</h3>
+                
+                <!-- Quick Search Categories -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-3">
+                        <div class="card border-0 bg-primary text-white h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="layers" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>By Genus</h5>
+                                <p class="mb-3">Search popular orchid genera</p>
+                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                    {% for genus in filter_options.genera[:6] %}
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        genus=genus) }}" class="btn btn-light btn-sm">{{ genus }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-0 bg-success text-white h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="map-pin" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>By Location</h5>
+                                <p class="mb-3">Find orchids by origin</p>
+                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                    {% for country in filter_options.countries[:6] %}
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        country=country) }}" class="btn btn-light btn-sm">{{ country }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-0 bg-info text-white h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="git-branch" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>Species vs Hybrids</h5>
+                                <p class="mb-3">Browse by type</p>
+                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        orchid_type='species') }}" class="btn btn-light btn-sm">Species Only</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        orchid_type='hybrid') }}" class="btn btn-light btn-sm">Hybrids Only</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        rhs_registered='yes') }}" class="btn btn-light btn-sm">RHS Registered</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-0 bg-warning text-dark h-100">
+                            <div class="card-body text-center">
+                                <i data-feather="sun" class="mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>Special Features</h5>
+                                <p class="mb-3">Featured & flowering</p>
+                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured=is_featured or '',
+                                        flowering_status='flowering') }}" class="btn btn-dark btn-sm">Currently Flowering</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        has_image=has_image or '',
+                                        is_featured='yes') }}" class="btn btn-dark btn-sm">Featured</a>
+                                    <a href="{{ url_for('search', 
+                                        q=query or '', 
+                                        genus=genus or '', 
+                                        species=species or '', 
+                                        author=author or '',
+                                        country=country or '',
+                                        orchid_type=orchid_type or '',
+                                        flowering_status=flowering_status or '',
+                                        growth_habit=growth_habit or '',
+                                        climate_preference=climate_preference or '',
+                                        is_featured=is_featured or '',
+                                        has_image='yes') }}" class="btn btn-dark btn-sm">With Images</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Capabilities -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i data-feather="help-circle" class="me-2"></i>Advanced Search Capabilities
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">What you can search:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Scientific names, common names, authors</li>
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Geographic locations and native habitats</li>
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Parentage information and breeding data</li>
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Flowering characteristics and bloom seasons</li>
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Growing requirements and cultural notes</li>
+                                    <li><i data-feather="check" class="me-2 text-success" style="width: 14px;"></i>Plant morphology and physical characteristics</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Advanced features:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>Multi-field comprehensive text search</li>
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>Conservation status and identification tracking</li>
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>RHS registration and verification status</li>
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>Image availability and photographer credits</li>
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>Multiple sorting options and result export</li>
+                                    <li><i data-feather="check" class="me-2 text-primary" style="width: 14px;"></i>Integration with mapping and conservation systems</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- External JavaScript for search functionality -->
+<script src="{{ url_for('static', filename='js/search-enhanced.js') }}"></script>
+
+// Toggle between regional and coordinate map views
+function toggleMapView(viewType) {
+    const regionalView = document.getElementById('regional-view');
+    const coordinatesView = document.getElementById('coordinates-view');
+    const regionalBtn = document.getElementById('regional-btn');
+    const coordinatesBtn = document.getElementById('coordinates-btn');
+    
+    // Reset button states
+    regionalBtn.classList.remove('active');
+    coordinatesBtn.classList.remove('active');
+    
+    if (viewType === 'regional') {
+        regionalView.style.display = 'block';
+        coordinatesView.style.display = 'none';
+        regionalBtn.classList.add('active');
+    } else if (viewType === 'coordinates') {
+        regionalView.style.display = 'none';
+        coordinatesView.style.display = 'block';
+        coordinatesBtn.classList.add('active');
+        
+        // Initialize coordinate map if not already done
+        initializeCoordinateMap();
+    }
+    
+    feather.replace();
+}
+
+// Initialize interactive coordinate map
+function initializeCoordinateMap() {
+    if (searchMap || !window.L) {
+        return; // Map already exists or Leaflet not loaded
+    }
+    
+    const mapContainer = document.getElementById('search-map');
+    if (!mapContainer) return;
+    
+    // Initialize map
+    searchMap = L.map('search-map').setView([20, 0], 2);
+    
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(searchMap);
+    
+    // Add orchid coordinates if available
+    {% if orchid_coordinates %}
+    const orchidCoordinates = {{ orchid_coordinates|tojson }};
+    
+    orchidCoordinates.forEach(coord => {
+        const marker = L.marker([coord.lat, coord.lng])
+            .addTo(searchMap)
+            .bindPopup(`
+                <div class="p-2">
+                    <h6 class="mb-1">${coord.name}</h6>
+                    <div class="small text-muted">
+                        <div><strong>Genus:</strong> ${coord.genus}</div>
+                        <div><strong>Location:</strong> ${coord.location}</div>
+                        <div><strong>Region:</strong> ${coord.region}</div>
+                    </div>
+                    <a href="/orchid/${coord.id}" class="btn btn-sm btn-primary mt-2">View Details</a>
+                </div>
+            `);
+        
+        currentMapMarkers.push(marker);
+    });
+    
+    // Fit map to show all markers
+    if (currentMapMarkers.length > 0) {
+        const group = new L.featureGroup(currentMapMarkers);
+        searchMap.fitBounds(group.getBounds().pad(0.1));
+    }
+    {% endif %}
+}
+
+// Focus map on specific orchid coordinates
+function focusOnOrchid(lat, lng) {
+    if (searchMap) {
+        searchMap.setView([lat, lng], 8);
+        
+        // Find and open popup for this coordinate
+        currentMapMarkers.forEach(marker => {
+            const pos = marker.getLatLng();
+            if (Math.abs(pos.lat - lat) < 0.001 && Math.abs(pos.lng - lng) < 0.001) {
+                marker.openPopup();
+            }
+        });
+    }
+}
+
+// Show all coordinates in expanded view
+function showAllCoordinates() {
+    toggleMapView('coordinates');
+    if (searchMap && currentMapMarkers.length > 0) {
+        const group = new L.featureGroup(currentMapMarkers);
+        searchMap.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Filter search results by region
+function filterByRegion(region) {
+    const form = document.getElementById('searchForm');
+    const regionInput = form.querySelector('input[name="region"]');
+    
+    if (regionInput) {
+        regionInput.value = region;
+    } else {
+        // Create hidden input for region filter
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'region';
+        hiddenInput.value = region;
+        form.appendChild(hiddenInput);
+    }
+    
+    form.submit();
+}
+
+// Open 3D Globe view with current search filters
+function openGlobeView() {
+    const form = document.getElementById('searchForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    // Build URL with search parameters for 3D globe
+    let globeUrl = '/space-earth-globe';
+    
+    // Add genus filter if specified
+    const genus = params.get('genus');
+    if (genus && genus !== '') {
+        globeUrl += '?genus=' + encodeURIComponent(genus);
+    }
+    
+    // Open 3D globe in new window/tab
+    window.open(globeUrl, '_blank', 'width=1200,height=800');
+}
+
+// Enhanced image gallery viewing
+function openImageGallery(orchidId, imageSrc, orchidName) {
+    // Create modal for full-size image viewing
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'imageGalleryModal';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${orchidName}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="${imageSrc}" class="img-fluid" alt="${orchidName}" style="max-height: 70vh;">
+                </div>
+                <div class="modal-footer">
+                    <a href="/orchid/${orchidId}" class="btn btn-primary">View Full Details</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Clean up modal after hiding
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+<!-- AI Chat interface removed for cleaner interface -->
+
+<style>
+/* Cleaned up styles - chat interface removed */
+
+.chat-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #28a745;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    border: 2px solid white;
+}
+
+.ai-chat-window {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 380px;
+    height: 500px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    z-index: 1055;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #212529, #343a40);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #495057;
+}
+
+.chat-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.chat-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chat-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    max-height: 350px;
+    scroll-behavior: smooth;
+}
+
+.chat-message {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.assistant-message {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.user-message .message-content {
+    background: #007bff;
+    color: white;
+    border-bottom-right-radius: 6px;
+}
+
+.assistant-message .message-content {
+    background: white;
+    color: #333;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 6px;
+}
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 11px;
+    opacity: 0.7;
+    text-align: right;
+}
+
+.user-message .message-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.assistant-message .message-time {
+    color: #6c757d;
+}
+
+.typing-dots {
+    display: flex;
+    align-items: center;
+    space-between: 4px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background: #6c757d;
+    border-radius: 50%;
+    margin-right: 4px;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+    30% { transform: scale(1.2); opacity: 1; }
+}
+
+.chat-input-area {
+    padding: 16px;
+    border-top: 1px solid #e9ecef;
+    background: white;
+    border-radius: 0 0 16px 16px;
+}
+
+.chat-input {
+    border-radius: 20px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+    resize: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.chat-send-btn {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    align-self: flex-end;
+}
+
+.chat-hints {
+    margin-top: 8px;
+    padding: 0 4px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .ai-chat-window {
+        width: 90vw;
+        right: 5vw;
+        bottom: 20px;
+        height: 70vh;
+    }
+    
+    .chat-toggle-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .chat-toggle-btn .chat-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Dark theme compatibility */
+@media (prefers-color-scheme: dark) {
+    .ai-chat-window {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .chat-messages {
+        background: #1a202c;
+    }
+    
+    .assistant-message .message-content {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .chat-input-area {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .chat-input {
+        background: #1a202c;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .chat-hints {
+        color: #a0aec0 !important;
+    }
+}
+</style>
+
+// Auto-submit on some filter changes for better UX
+document.addEventListener('DOMContentLoaded', function() {
+    const autoSubmitSelects = ['genus', 'country', 'orchid_type', 'flowering_status', 'sort_by'];
+    
+    autoSubmitSelects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.addEventListener('change', function() {
+                // Optional: Add a small delay for better UX
+                setTimeout(() => {
+                    document.getElementById('searchForm').submit();
+                }, 100);
+            });
+        }
+    });
+    
+    // Initialize mapping functionality
+    {% if search_stats.total_found > 0 and (orchid_coordinates or regional_distribution) %}
+    // Set default map view to regional
+    toggleMapView('regional');
+    
+    // Load Leaflet CSS and JS for coordinate maps
+    if (!window.L) {
+        const leafletCSS = document.createElement('link');
+        leafletCSS.rel = 'stylesheet';
+        leafletCSS.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+        document.head.appendChild(leafletCSS);
+        
+        const leafletJS = document.createElement('script');
+        leafletJS.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+        leafletJS.onload = function() {
+            console.log('🗺️ Leaflet loaded for search maps');
+        };
+        document.head.appendChild(leafletJS);
+    }
+    {% endif %}
+    
+    // Initialize feather icons
+    feather.replace();
+    
+    // Initialize AI Chat
+    initializeSearchAIChat();
+});
+
+// Quick Filter Functions for Enhanced Dropdowns
+function quickFilter(filterType, filterValue) {
+    console.log(`🔍 Quick filter applied: ${filterType} = ${filterValue}`);
+    
+    // Get current URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Apply the quick filter based on type
+    switch(filterType) {
+        case 'genus':
+            urlParams.set('genus', filterValue);
+            break;
+        case 'type':
+            if (filterValue === 'species') {
+                urlParams.set('orchid_type', 'species');
+                urlParams.delete('is_hybrid');
+            } else if (filterValue === 'hybrids') {
+                urlParams.set('is_hybrid', 'true');
+                urlParams.delete('orchid_type');
+            } else if (filterValue === 'primary_hybrids') {
+                urlParams.set('is_hybrid', 'true');
+                urlParams.set('parentage_type', 'primary');
+            }
+            break;
+        case 'region':
+            urlParams.set('region', filterValue);
+            break;
+        case 'climate':
+            urlParams.set('habitat_type', filterValue);
+            break;
+        case 'parentage':
+            if (filterValue === 'known_parents') {
+                urlParams.set('has_parentage', 'true');
+            } else if (filterValue === 'awarded_parents') {
+                urlParams.set('parent_awards', 'true');
+            } else if (filterValue === 'species_cross') {
+                urlParams.set('parentage_type', 'species_cross');
+            }
+            break;
+        case 'generation':
+            urlParams.set('generation', filterValue);
+            break;
+        case 'bloom_season':
+            urlParams.set('flowering_season', filterValue);
+            break;
+        case 'flowering':
+            if (filterValue === 'currently') {
+                urlParams.set('flowering_status', 'currently_flowering');
+            }
+            break;
+        case 'flower_size':
+            if (filterValue === 'large') {
+                urlParams.set('min_flower_size', '10');
+            } else if (filterValue === 'small') {
+                urlParams.set('max_flower_size', '3');
+            }
+            break;
+        case 'fragrance':
+            if (filterValue === 'fragrant') {
+                urlParams.set('fragrant', 'true');
+            }
+            break;
+        case 'difficulty':
+            urlParams.set('care_difficulty', filterValue);
+            break;
+        case 'medium':
+            urlParams.set('growing_medium', filterValue);
+            break;
+        case 'light':
+            urlParams.set('light_requirements', filterValue);
+            break;
+        case 'growth':
+            urlParams.set('growth_habit', filterValue);
+            break;
+        case 'pattern':
+            urlParams.set('growth_pattern', filterValue);
+            break;
+        case 'size':
+            urlParams.set('plant_size', filterValue);
+            break;
+        case 'cites':
+            urlParams.set('cites_appendix', filterValue);
+            break;
+        case 'status':
+            urlParams.set('conservation_status', filterValue);
+            break;
+        case 'rarity':
+            urlParams.set('rarity_level', filterValue);
+            break;
+        case 'source':
+            urlParams.set('ingestion_source', filterValue);
+            break;
+        case 'quality':
+            if (filterValue === 'with_images') {
+                urlParams.set('has_images', 'true');
+            } else if (filterValue === 'with_coordinates') {
+                urlParams.set('has_coordinates', 'true');
+            } else if (filterValue === 'validated') {
+                urlParams.set('validation_status', 'validated');
+            } else if (filterValue === 'featured') {
+                urlParams.set('is_featured', 'true');
+            }
+            break;
+        case 'recent':
+            const days = filterValue === 'week' ? 7 : 30;
+            const dateThreshold = new Date();
+            dateThreshold.setDate(dateThreshold.getDate() - days);
+            urlParams.set('created_after', dateThreshold.toISOString().split('T')[0]);
+            break;
+    }
+    
+    // Redirect to apply the filter
+    window.location.search = urlParams.toString();
+}
+
+// Nursery Directory Toggle
+function toggleNurseryDirectory() {
+    // Check if nursery directory panel exists
+    let nurseryPanel = document.getElementById('nurseryDirectoryPanel');
+    
+    if (!nurseryPanel) {
+        // Create nursery directory panel
+        nurseryPanel = createNurseryDirectoryPanel();
+        document.querySelector('.container').appendChild(nurseryPanel);
+    }
+    
+    // Toggle visibility
+    const isVisible = nurseryPanel.style.display !== 'none';
+    nurseryPanel.style.display = isVisible ? 'none' : 'block';
+    
+    if (!isVisible) {
+        // Load nursery data
+        loadNurseryData();
+        nurseryPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Orchid Society Directory Toggle
+function toggleSocietyDirectory() {
+    // Check if society directory panel exists
+    let societyPanel = document.getElementById('societyDirectoryPanel');
+    
+    if (!societyPanel) {
+        // Create society directory panel
+        societyPanel = createSocietyDirectoryPanel();
+        document.querySelector('.container').appendChild(societyPanel);
+    }
+    
+    // Toggle visibility
+    const isVisible = societyPanel.style.display !== 'none';
+    societyPanel.style.display = isVisible ? 'none' : 'block';
+    
+    if (!isVisible) {
+        // Load society data
+        loadSocietyData();
+        societyPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Create Nursery Directory Panel
+function createNurseryDirectoryPanel() {
+    const panel = document.createElement('div');
+    panel.id = 'nurseryDirectoryPanel';
+    panel.className = 'card border-0 shadow-sm mt-4';
+    panel.style.display = 'none';
+    
+    panel.innerHTML = `
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i data-feather="shopping-cart" class="me-2"></i>Orchid Nursery Directory
+                <button type="button" class="btn btn-sm btn-outline-light float-end" onclick="toggleNurseryDirectory()">
+                    <i data-feather="x"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="nurserySearch" placeholder="Search nurseries...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="nurseryRegion">
+                        <option value="">All Regions</option>
+                        <option value="North America">North America</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Asia">Asia</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="nurserySpecialty">
+                        <option value="">All Specialties</option>
+                        <option value="Cattleya">Cattleya Specialists</option>
+                        <option value="Phalaenopsis">Phalaenopsis</option>
+                        <option value="Species">Species Orchids</option>
+                        <option value="Miniatures">Miniatures</option>
+                    </select>
+                </div>
+            </div>
+            <div id="nurseryResults">
+                <div class="text-center">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading nurseries...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return panel;
+}
+
+// Create Society Directory Panel
+function createSocietyDirectoryPanel() {
+    const panel = document.createElement('div');
+    panel.id = 'societyDirectoryPanel';
+    panel.className = 'card border-0 shadow-sm mt-4';
+    panel.style.display = 'none';
+    
+    panel.innerHTML = `
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i data-feather="users" class="me-2"></i>Orchid Society Directory
+                <button type="button" class="btn btn-sm btn-outline-dark float-end" onclick="toggleSocietyDirectory()">
+                    <i data-feather="x"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="societySearch" placeholder="Search societies...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="societyRegion">
+                        <option value="">All Regions</option>
+                        <option value="North America">North America</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Asia">Asia</option>
+                        <option value="Australia">Australia</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="societyType">
+                        <option value="">All Types</option>
+                        <option value="National">National Organizations</option>
+                        <option value="Regional">Regional Societies</option>
+                        <option value="Local">Local Clubs</option>
+                        <option value="Specialty">Specialty Groups</option>
+                    </select>
+                </div>
+            </div>
+            <div id="societyResults">
+                <div class="text-center">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading societies...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return panel;
+}
+
+// Export Search Results
+function exportSearchResults() {
+    const currentUrl = new URL(window.location);
+    const exportUrl = '/api/export-search-results' + currentUrl.search;
+    
+    // Open export URL in new tab
+    window.open(exportUrl, '_blank');
+}
+
+// Load Nursery Data (placeholder - will be implemented with actual API)
+async function loadNurseryData() {
+    try {
+        const response = await fetch('/api/nursery-directory');
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('nurseryResults');
+        if (data.nurseries && data.nurseries.length > 0) {
+            resultsDiv.innerHTML = data.nurseries.map(nursery => `
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">${nursery.name}</h6>
+                            <p class="card-text small">
+                                <i data-feather="map-pin" class="me-1"></i>${nursery.location}<br>
+                                <i data-feather="star" class="me-1"></i>Specialty: ${nursery.specialty || 'General'}
+                            </p>
+                            <div class="d-flex gap-2">
+                                ${nursery.website ? `<a href="${nursery.website}" target="_blank" class="btn btn-sm btn-outline-primary">Website</a>` : ''}
+                                ${nursery.phone ? `<a href="tel:${nursery.phone}" class="btn btn-sm btn-outline-secondary">Call</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = '<div class="text-center text-muted">No nurseries found. API coming soon!</div>';
+        }
+    } catch (error) {
+        console.error('Error loading nursery data:', error);
+        document.getElementById('nurseryResults').innerHTML = `
+            <div class="alert alert-info">
+                <h6>Nursery Directory Coming Soon!</h6>
+                <p class="mb-0">We're building a comprehensive directory of orchid nurseries worldwide. This feature will include:</p>
+                <ul class="mt-2 mb-0">
+                    <li>Major US nurseries (R.F. Orchids, Carter & Holmes, Akatsuka)</li>
+                    <li>International suppliers and specialists</li>
+                    <li>Regional nursery networks</li>
+                    <li>Specialty growers by genus</li>
+                </ul>
+            </div>
+        `;
+    }
+}
+
+// Load Society Data (placeholder - will be implemented with actual API)
+async function loadSocietyData() {
+    try {
+        const response = await fetch('/api/society-directory');
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('societyResults');
+        if (data.societies && data.societies.length > 0) {
+            resultsDiv.innerHTML = data.societies.map(society => `
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">${society.name}</h6>
+                            <p class="card-text small">
+                                <i data-feather="map-pin" class="me-1"></i>${society.location}<br>
+                                <i data-feather="users" class="me-1"></i>Type: ${society.type || 'Local Society'}
+                            </p>
+                            <div class="d-flex gap-2">
+                                ${society.website ? `<a href="${society.website}" target="_blank" class="btn btn-sm btn-outline-primary">Website</a>` : ''}
+                                ${society.email ? `<a href="mailto:${society.email}" class="btn btn-sm btn-outline-secondary">Contact</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = '<div class="text-center text-muted">No societies found. API coming soon!</div>';
+        }
+    } catch (error) {
+        console.error('Error loading society data:', error);
+        document.getElementById('societyResults').innerHTML = `
+            <div class="alert alert-info">
+                <h6>Orchid Society Directory Coming Soon!</h6>
+                <p class="mb-0">We're building a comprehensive directory of orchid societies worldwide. This feature will include:</p>
+                <ul class="mt-2 mb-0">
+                    <li>American Orchid Society (AOS) affiliated societies</li>
+                    <li>European Orchid Council member organizations</li>
+                    <li>Regional and local orchid clubs</li>
+                    <li>Specialty society groups</li>
+                </ul>
+            </div>
+        `;
+    }
+}
+
+// AI Search Chat Functionality
+function initializeSearchAIChat() {
+    let chatHistory = [];
+    let isChatOpen = false;
+    
+    // Create chat elements
+    createChatElements();
+    
+    // Chat interface removed - event listeners cleaned up
+    
+    function createChatElements() {
+        // Chat elements are created in HTML template - just initialize
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatToggle = document.getElementById('chatToggle');
+        
+        // Initially hidden
+        chatWindow.style.display = 'none';
+    }
+    
+    function toggleChat() {
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatToggle = document.getElementById('chatToggle');
+        
+        isChatOpen = !isChatOpen;
+        
+        if (isChatOpen) {
+            chatWindow.style.display = 'block';
+            chatToggle.style.display = 'none';
+            
+            // Welcome message if first time opening
+            if (chatHistory.length === 0) {
+                addMessage('assistant', "👋 Hi! I'm your AI search assistant. I can help you refine your search, identify orchids, explain biological features, and guide your botanical research. What would you like to know?");
+            }
+        } else {
+            chatWindow.style.display = 'none';
+            chatToggle.style.display = 'block';
+        }
+    }
+    
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Add user message to chat
+        addMessage('user', message);
+        input.value = '';
+        
+        // Show loading indicator
+        showTypingIndicator();
+        
+        // Get current search context
+        const searchContext = getCurrentSearchContext();
+        
+        // Send to AI
+        fetch('/api/chat-search-assist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                search_context: searchContext
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            
+            if (data.success) {
+                addMessage('assistant', data.response);
+                
+                // Apply suggested actions if any
+                if (data.suggested_actions && data.suggested_actions.length > 0) {
+                    applySuggestedActions(data.suggested_actions);
+                }
+            } else {
+                addMessage('assistant', data.fallback_response || 'Sorry, I\'m having trouble right now. Please try again.');
+            }
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            console.error('Chat error:', error);
+            addMessage('assistant', 'I apologize, but I\'m experiencing technical difficulties. Please try again in a moment.');
+        });
+    }
+    
+    function addMessage(sender, text) {
+        const messagesContainer = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}-message`;
+        
+        const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-text">${text}</div>
+                <div class="message-time">${timestamp}</div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        chatHistory.push({sender, text, timestamp});
+    }
+    
+    function showTypingIndicator() {
+        const messagesContainer = document.getElementById('chatMessages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'chat-message assistant-message typing';
+        typingDiv.innerHTML = `
+            <div class="message-content">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+    
+    function getCurrentSearchContext() {
+        // Extract current search filters from the form
+        const form = document.getElementById('searchForm');
+        const formData = new FormData(form);
+        const context = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (value && value.trim()) {
+                context[key] = value.trim();
+            }
+        }
+        
+        return context;
+    }
+    
+    function applySuggestedActions(actions) {
+        actions.forEach(action => {
+            if (action.type === 'filter') {
+                const field = document.getElementById(action.field);
+                if (field) {
+                    field.value = action.value;
+                    addMessage('assistant', `🎯 I've applied the ${action.field} filter: ${action.value}. Click Search to update results.`);
+                }
+            } else if (action.type === 'search') {
+                const searchField = document.querySelector('input[name="q"]');
+                if (searchField) {
+                    searchField.value = action.query;
+                    addMessage('assistant', `🔍 I've updated your search query to: "${action.query}". Click Search to find results.`);
+                }
+            }
+        });
+    }
+    
+    // Load and display image counts on page load
+    async function loadImageCounts() {
+        try {
+            console.log('📊 Loading image counts...');
+            const response = await fetch('/api/image-counts');
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('✅ Image counts loaded:', data);
+                
+                // Update genus counts
+                const genusCounts = data.genus_counts;
+                document.querySelectorAll('.genus-count').forEach(element => {
+                    const genus = element.getAttribute('data-genus');
+                    const count = genusCounts[genus] || 0;
+                    element.textContent = count > 0 ? count : '0';
+                    
+                    // Apply color coding based on count
+                    element.className = element.className.replace(/bg-\w+/, '');
+                    if (count > 50) {
+                        element.classList.add('bg-success');
+                    } else if (count > 10) {
+                        element.classList.add('bg-primary');
+                    } else if (count > 0) {
+                        element.classList.add('bg-secondary');
+                    } else {
+                        element.classList.add('bg-light', 'text-dark');
+                    }
+                });
+                
+                // Update type counts
+                const typeCounts = data.type_counts;
+                const speciesElement = document.getElementById('species-count');
+                const hybridsElement = document.getElementById('hybrids-count');
+                const primaryHybridsElement = document.getElementById('primary-hybrids-count');
+                
+                if (speciesElement) {
+                    speciesElement.textContent = typeCounts.species || 0;
+                }
+                if (hybridsElement) {
+                    hybridsElement.textContent = typeCounts.hybrids || 0;
+                }
+                if (primaryHybridsElement) {
+                    primaryHybridsElement.textContent = typeCounts.primary_hybrids || 0;
+                }
+                
+                // Update total count in search stats if present
+                const totalWithImages = data.total_with_images;
+                console.log(`📊 Total images found: ${totalWithImages}`);
+                
+                // Store counts for caching
+                window.orchidImageCounts = data;
+                
+            } else {
+                console.error('❌ Failed to load image counts:', data.error);
+                // Set all counts to "?" on error
+                document.querySelectorAll('.genus-count, #species-count, #hybrids-count, #primary-hybrids-count').forEach(element => {
+                    element.textContent = '?';
+                });
+            }
+        } catch (error) {
+            console.error('❌ Error loading image counts:', error);
+            // Set all counts to "?" on error
+            document.querySelectorAll('.genus-count, #species-count, #hybrids-count, #primary-hybrids-count').forEach(element => {
+                element.textContent = '?';
+            });
+        }
+    }
+    
+    // Load counts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load image counts after a brief delay to ensure page is fully rendered
+        setTimeout(loadImageCounts, 100);
+    });
+}
+</script>
+
+{% endblock %}

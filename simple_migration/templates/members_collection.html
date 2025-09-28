@@ -1,0 +1,1090 @@
+{% extends "base.html" %}
+
+{% block title %}Members Collection Area - The Orchid Continuum{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark border-success">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="mb-0">
+                            <i data-feather="users" class="me-2"></i>
+                            Members Collection Area
+                        </h1>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchSection('overview')">
+                                <i data-feather="grid" class="me-1"></i>Overview
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchSection('research')">
+                                <i data-feather="search" class="me-1"></i>Research
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchSection('ecology')">
+                                <i data-feather="globe" class="me-1"></i>Ecology
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchSection('literature')">
+                                <i data-feather="book" class="me-1"></i>Literature
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" onclick="switchSection('supplies')">
+                                <i data-feather="shopping-cart" class="me-1"></i>Supplies
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mb-0 mt-2 opacity-75">Professional research hub for comprehensive orchid collection management</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Statistics Dashboard -->
+    <div class="row mb-4" id="stats-dashboard">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card bg-dark border-info h-100">
+                <div class="card-body text-center">
+                    <i data-feather="flower" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                    <h3 class="text-info mb-1">{{ collection_stats.total_orchids }}</h3>
+                    <p class="text-muted mb-0">Total Orchids</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card bg-dark border-warning h-100">
+                <div class="card-body text-center">
+                    <i data-feather="star" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                    <h3 class="text-warning mb-1">{{ collection_stats.flowering_count }}</h3>
+                    <p class="text-muted mb-0">Currently Flowering</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card bg-dark border-success h-100">
+                <div class="card-body text-center">
+                    <i data-feather="layers" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                    <h3 class="text-success mb-1">{{ collection_stats.genera_count }}</h3>
+                    <p class="text-muted mb-0">Unique Genera</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card bg-dark border-danger h-100">
+                <div class="card-body text-center">
+                    <i data-feather="activity" class="text-danger mb-2" style="width: 32px; height: 32px;"></i>
+                    <h3 class="text-danger mb-1">{{ collection_stats.research_ready }}</h3>
+                    <p class="text-muted mb-0">Research Ready</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Sections -->
+    <div id="section-content">
+        
+        <!-- Overview Section -->
+        <div id="overview-section" class="section-content active">
+            <div class="row">
+                <!-- Recent Additions -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="plus-circle" class="me-2"></i>
+                                Recent Additions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_additions %}
+                                {% for addition in recent_additions %}
+                                <div class="d-flex align-items-center mb-3 pb-2 border-bottom border-secondary">
+                                    <div class="flex-shrink-0">
+                                        <i data-feather="image" class="text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="mb-1">{{ addition.orchid_record.display_name if addition.orchid_record else 'Unknown Orchid' }}</h6>
+                                        <small class="text-muted">
+                                            Added {{ addition.created_at.strftime('%B %d, %Y') }}
+                                            {% if addition.acquisition_source %}
+                                                • {{ addition.acquisition_source }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="badge bg-{{ 'success' if addition.health_status == 'healthy' else 'warning' if addition.health_status == 'stressed' else 'danger' }}">
+                                            {{ addition.health_status.title() if addition.health_status else 'Unknown' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="inbox" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                    <p class="mb-0">No collection items yet</p>
+                                    <small>Start building your collection to see insights here</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- External Database Status -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card bg-dark border-warning h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i data-feather="database" class="me-2"></i>
+                                External Database Integration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <div class="text-warning">
+                                        <i data-feather="globe" style="width: 24px; height: 24px;"></i>
+                                        <h4 class="mt-2 mb-1">{{ external_db_status.eol_updated }}</h4>
+                                        <small class="text-muted">EOL Updated</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="text-info">
+                                        <i data-feather="map" style="width: 24px; height: 24px;"></i>
+                                        <h4 class="mt-2 mb-1">{{ external_db_status.gbif_updated }}</h4>
+                                        <small class="text-muted">GBIF Occurrences</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-success">
+                                        <i data-feather="git-branch" style="width: 24px; height: 24px;"></i>
+                                        <h4 class="mt-2 mb-1">{{ external_db_status.ecological_complete }}</h4>
+                                        <small class="text-muted">Ecological Data</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-danger">
+                                        <i data-feather="book-open" style="width: 24px; height: 24px;"></i>
+                                        <h4 class="mt-2 mb-1">{{ external_db_status.literature_citations }}</h4>
+                                        <small class="text-muted">Literature Citations</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-top border-secondary">
+                                <button class="btn btn-warning btn-sm me-2" onclick="enrichAllCollections()">
+                                    <i data-feather="refresh-cw" class="me-1"></i>
+                                    Enrich All Data
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="viewDataGaps()">
+                                    <i data-feather="alert-circle" class="me-1"></i>
+                                    View Gaps
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Opportunities -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-dark border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="trending-up" class="me-2"></i>
+                                Research Opportunities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if research_opportunities %}
+                                <div class="row">
+                                    {% for opportunity in research_opportunities[:6] %}
+                                    <div class="col-md-6 col-lg-4 mb-3">
+                                        <div class="card bg-secondary h-100">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">{{ opportunity.title or 'Research Opportunity' }}</h6>
+                                                    <span class="badge bg-{{ 'danger' if opportunity.priority == 'high' else 'warning' if opportunity.priority == 'medium' else 'info' }}">
+                                                        {{ opportunity.priority.title() if opportunity.priority else 'Low' }}
+                                                    </span>
+                                                </div>
+                                                <p class="card-text small text-muted">{{ opportunity.description or 'Research opportunity available' }}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">{{ opportunity.orchid_name }}</small>
+                                                    <button class="btn btn-outline-success btn-sm" onclick="exploreOpportunity('{{ opportunity.collection_id }}', '{{ opportunity.type }}')">
+                                                        <i data-feather="external-link" style="width: 12px; height: 12px;"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="search" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                    <p class="mb-0">No research opportunities identified</p>
+                                    <small>Add more collection items to discover research possibilities</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collaboration Opportunities -->
+                {% if potential_collaborators %}
+                <div class="col-12 mb-4">
+                    <div class="card bg-dark border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="users" class="me-2"></i>
+                                Potential Collaborators
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for collaborator in potential_collaborators[:4] %}
+                                <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="card bg-secondary h-100">
+                                        <div class="card-body text-center">
+                                            <i data-feather="user" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                                            <h6 class="card-title">{{ collaborator.user.first_name }} {{ collaborator.user.last_name }}</h6>
+                                            <p class="card-text small text-muted">
+                                                {{ collaborator.collection_count }} orchids<br>
+                                                Shared: {{ collaborator.shared_genera | join(', ') }}
+                                            </p>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="initiateCollaboration('{{ collaborator.user.id }}')">
+                                                <i data-feather="mail" class="me-1"></i>
+                                                Connect
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Research Section -->
+        <div id="research-section" class="section-content" style="display: none;">
+            <div class="row">
+                <!-- External Database Search -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="search" class="me-2"></i>
+                                External Database Research
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <input type="text" id="external-search-query" class="form-control" placeholder="Search EOL, GBIF, or enter scientific name...">
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="external-search-db" class="form-select">
+                                        <option value="both">All Databases</option>
+                                        <option value="eol">Encyclopedia of Life</option>
+                                        <option value="gbif">GBIF Occurrences</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-info" onclick="performExternalSearch()">
+                                    <i data-feather="search" class="me-1"></i>
+                                    Search Databases
+                                </button>
+                                <button class="btn btn-outline-info" onclick="searchMyCollection()">
+                                    <i data-feather="folder" class="me-1"></i>
+                                    Search My Collection
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="clearSearchResults()">
+                                    <i data-feather="x" class="me-1"></i>
+                                    Clear
+                                </button>
+                            </div>
+                            <div id="external-search-results" class="border border-secondary rounded p-3" style="min-height: 200px;">
+                                <div class="text-center text-muted">
+                                    <i data-feather="database" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                    <p class="mb-0">Enter a search term to query external databases</p>
+                                    <small>Results will show EOL pages, GBIF occurrences, and enrichment suggestions</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Assistant -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card bg-dark border-success h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="cpu" class="me-2"></i>
+                                Research Assistant
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="text-success">Quick Actions</h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-success btn-sm" onclick="findDataGaps()">
+                                        <i data-feather="alert-triangle" class="me-1"></i>
+                                        Identify Data Gaps
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="generateCollectionReport()">
+                                        <i data-feather="file-text" class="me-1"></i>
+                                        Generate Report
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="findSimilarSpecies()">
+                                        <i data-feather="git-branch" class="me-1"></i>
+                                        Find Similar Species
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="text-info">Data Enrichment</h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-info btn-sm" onclick="syncEOLData()">
+                                        <i data-feather="globe" class="me-1"></i>
+                                        Sync EOL Data
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="syncGBIFData()">
+                                        <i data-feather="map" class="me-1"></i>
+                                        Sync GBIF Occurrences
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="updateConservationStatus()">
+                                        <i data-feather="shield" class="me-1"></i>
+                                        Conservation Status
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="text-warning">Export Options</h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-warning btn-sm" onclick="exportBibTeX()">
+                                        <i data-feather="book" class="me-1"></i>
+                                        Export BibTeX
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm" onclick="exportCSV()">
+                                        <i data-feather="download" class="me-1"></i>
+                                        Export CSV
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ecology Section -->
+        <div id="ecology-section" class="section-content" style="display: none;">
+            <div class="row">
+                <!-- Ecological Network Visualization -->
+                <div class="col-12 mb-4">
+                    <div class="card bg-dark border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="git-branch" class="me-2"></i>
+                                Ecological Relationship Network
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success btn-sm" onclick="loadEcologicalNetwork()">
+                                            <i data-feather="refresh-cw" class="me-1"></i>
+                                            Load Network
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" onclick="filterPollinators()">
+                                            <i data-feather="filter" class="me-1"></i>
+                                            Filter Pollinators
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-end">
+                                        <small class="text-muted">Network Complexity: <span id="network-complexity">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="ecological-network-viz" class="border border-secondary rounded p-3" style="min-height: 400px;">
+                                <div class="text-center text-muted d-flex align-items-center justify-content-center" style="height: 100%;">
+                                    <div>
+                                        <i data-feather="git-branch" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                        <p class="mb-0">Click "Load Network" to visualize ecological relationships</p>
+                                        <small>Interactive network showing orchid-pollinator connections</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ecological Insights -->
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="eye" class="me-2"></i>
+                                Ecological Insights
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="ecological-insights">
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="loader" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                    <p class="mb-0">Load network to view insights</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conservation Status -->
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-dark border-warning h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i data-feather="shield" class="me-2"></i>
+                                Conservation Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="conservation-status">
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="shield-off" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                    <p class="mb-0">Conservation data loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Literature Section -->
+        <div id="literature-section" class="section-content" style="display: none;">
+            <div class="row">
+                <!-- Academic Citations -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card bg-dark border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="book-open" class="me-2"></i>
+                                Academic Literature & Citations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" onclick="generateBibliography()">
+                                            <i data-feather="file-text" class="me-1"></i>
+                                            Generate Bibliography
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="findRelevantPapers()">
+                                            <i data-feather="search" class="me-1"></i>
+                                            Find Papers
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select" id="citation-format">
+                                        <option value="bibtex">BibTeX Format</option>
+                                        <option value="apa">APA Style</option>
+                                        <option value="mla">MLA Style</option>
+                                        <option value="chicago">Chicago Style</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="literature-results" class="border border-secondary rounded p-3" style="min-height: 300px;">
+                                <div class="text-center text-muted">
+                                    <i data-feather="book" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                    <p class="mb-0">Generate bibliography for your collection</p>
+                                    <small>Relevant academic papers and citations will appear here</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card bg-dark border-secondary h-100">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="download" class="me-2"></i>
+                                Export & Download
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="downloadBibTeX()">
+                                    <i data-feather="download" class="me-1"></i>
+                                    Download BibTeX
+                                </button>
+                                <button class="btn btn-outline-info" onclick="downloadCSV()">
+                                    <i data-feather="file" class="me-1"></i>
+                                    Download CSV
+                                </button>
+                                <button class="btn btn-outline-success" onclick="downloadJSON()">
+                                    <i data-feather="code" class="me-1"></i>
+                                    Download JSON
+                                </button>
+                                <hr class="my-3">
+                                <h6 class="text-muted">Research Tools</h6>
+                                <button class="btn btn-outline-warning" onclick="generateResearchReport()">
+                                    <i data-feather="clipboard" class="me-1"></i>
+                                    Research Report
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="identifyResearchGaps()">
+                                    <i data-feather="alert-triangle" class="me-1"></i>
+                                    Research Gaps
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplies Section -->
+        <div id="supplies-section" class="section-content" style="display: none;">
+            <div class="row">
+                <!-- Nursery Directory -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card bg-dark border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i data-feather="home" class="me-2"></i>
+                                Orchid Nurseries & Suppliers
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if nursery_recommendations %}
+                                <div class="row">
+                                    {% for nursery in nursery_recommendations %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card bg-secondary">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ nursery.name }}</h6>
+                                                <p class="card-text small text-muted">{{ nursery.description or 'Professional orchid supplier' }}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="text-muted">{{ nursery.location or 'Location TBD' }}</small>
+                                                    {% if nursery.website %}
+                                                    <a href="{{ nursery.website }}" target="_blank" class="btn btn-outline-warning btn-sm">
+                                                        <i data-feather="external-link" style="width: 12px; height: 12px;"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="home" class="mb-2" style="width: 48px; height: 48px;"></i>
+                                    <p class="mb-0">Nursery directory loading...</p>
+                                    <small>Check back for supplier recommendations</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Society Recommendations -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card bg-dark border-info h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i data-feather="users" class="me-2"></i>
+                                Orchid Societies
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if society_recommendations %}
+                                {% for society in society_recommendations %}
+                                <div class="mb-3 pb-2 border-bottom border-secondary">
+                                    <h6 class="mb-1">{{ society.name }}</h6>
+                                    <p class="small text-muted mb-2">{{ society.description or 'Professional orchid society' }}</p>
+                                    {% if society.website %}
+                                    <a href="{{ society.website }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                        <i data-feather="external-link" class="me-1"></i>
+                                        Visit
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <i data-feather="users" class="mb-2" style="width: 32px; height: 32px;"></i>
+                                    <p class="mb-0">Society directory loading...</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-info">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-info mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="text-info mb-2">Processing Request</h5>
+                <p class="text-muted mb-0" id="loading-message">Please wait while we process your request...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentSection = 'overview';
+let loadingModal;
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modal
+    loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    // Initialize feather icons
+    safeFeatherReplace();
+    
+    // Set initial section
+    switchSection('overview');
+    
+    // Load initial data
+    loadCollectionStats();
+});
+
+// Section switching functionality
+function switchSection(section) {
+    currentSection = section;
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+    
+    // Hide all sections
+    document.querySelectorAll('.section-content').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show selected section
+    document.getElementById(section + '-section').style.display = 'block';
+    
+    // Load section-specific data
+    loadSectionData(section);
+}
+
+// Load data specific to each section
+function loadSectionData(section) {
+    switch(section) {
+        case 'overview':
+            // Overview data is already loaded from server
+            break;
+        case 'research':
+            // Research section is ready for interaction
+            break;
+        case 'ecology':
+            loadEcologicalInsights();
+            break;
+        case 'literature':
+            // Literature section is ready for interaction
+            break;
+        case 'supplies':
+            // Supplies data is already loaded from server
+            break;
+    }
+}
+
+// Collection statistics functions
+function loadCollectionStats() {
+    fetch('/api/member-collection-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatsDisplay(data.analytics);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading collection stats:', error);
+        });
+}
+
+function updateStatsDisplay(analytics) {
+    // Update any dynamic stats displays if needed
+    console.log('Collection analytics loaded:', analytics);
+}
+
+// External database search functions
+function performExternalSearch() {
+    const query = document.getElementById('external-search-query').value.trim();
+    const database = document.getElementById('external-search-db').value;
+    
+    if (!query) {
+        alert('Please enter a search term');
+        return;
+    }
+    
+    showLoading('Searching external databases...');
+    
+    fetch(`/api/member-external-search?q=${encodeURIComponent(query)}&db=${database}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            displaySearchResults(data);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('External search error:', error);
+            displaySearchError();
+        });
+}
+
+function displaySearchResults(data) {
+    const resultsDiv = document.getElementById('external-search-results');
+    
+    if (!data.success) {
+        resultsDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i data-feather="alert-circle" class="me-2"></i>
+                Error: ${data.error}
+            </div>
+        `;
+        safeFeatherReplace();
+        return;
+    }
+    
+    let html = '';
+    
+    // EOL Results
+    if (data.results.eol) {
+        html += `
+            <div class="mb-3">
+                <h6 class="text-warning">
+                    <i data-feather="globe" class="me-2"></i>
+                    Encyclopedia of Life Results
+                </h6>
+                <div class="text-muted small mb-2">${data.results.eol.length} results found</div>
+            </div>
+        `;
+    }
+    
+    // GBIF Results
+    if (data.results.gbif) {
+        html += `
+            <div class="mb-3">
+                <h6 class="text-info">
+                    <i data-feather="map" class="me-2"></i>
+                    GBIF Occurrence Results
+                </h6>
+                <div class="text-muted small mb-2">${data.results.gbif.length} occurrences found</div>
+            </div>
+        `;
+    }
+    
+    // Enrichment Suggestions
+    if (data.enrichment_suggestions && data.enrichment_suggestions.length > 0) {
+        html += `
+            <div class="mt-3 pt-3 border-top border-secondary">
+                <h6 class="text-success">
+                    <i data-feather="lightbulb" class="me-2"></i>
+                    Enrichment Suggestions for Your Collection
+                </h6>
+        `;
+        
+        data.enrichment_suggestions.forEach(suggestion => {
+            html += `
+                <div class="card bg-secondary mb-2">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${suggestion.orchid_name}</strong><br>
+                                <small class="text-muted">${suggestion.suggestions.join(', ')}</small>
+                            </div>
+                            <button class="btn btn-outline-success btn-sm" onclick="enrichCollection('${suggestion.collection_id}')">
+                                <i data-feather="plus" style="width: 12px; height: 12px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    }
+    
+    if (!html) {
+        html = `
+            <div class="text-center text-muted py-4">
+                <i data-feather="search" class="mb-2" style="width: 48px; height: 48px;"></i>
+                <p class="mb-0">No results found</p>
+                <small>Try different search terms or databases</small>
+            </div>
+        `;
+    }
+    
+    resultsDiv.innerHTML = html;
+    safeFeatherReplace();
+}
+
+function displaySearchError() {
+    document.getElementById('external-search-results').innerHTML = `
+        <div class="alert alert-danger">
+            <i data-feather="alert-circle" class="me-2"></i>
+            Error performing search. Please try again.
+        </div>
+    `;
+    safeFeatherReplace();
+}
+
+function clearSearchResults() {
+    document.getElementById('external-search-query').value = '';
+    document.getElementById('external-search-results').innerHTML = `
+        <div class="text-center text-muted">
+            <i data-feather="database" class="mb-2" style="width: 48px; height: 48px;"></i>
+            <p class="mb-0">Enter a search term to query external databases</p>
+            <small>Results will show EOL pages, GBIF occurrences, and enrichment suggestions</small>
+        </div>
+    `;
+    safeFeatherReplace();
+}
+
+// Ecological network functions
+function loadEcologicalNetwork() {
+    showLoading('Loading ecological network...');
+    
+    fetch('/api/member-ecological-network')
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            displayEcologicalNetwork(data);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading ecological network:', error);
+            displayNetworkError();
+        });
+}
+
+function displayEcologicalNetwork(data) {
+    const networkDiv = document.getElementById('ecological-network-viz');
+    
+    if (!data.success) {
+        networkDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i data-feather="alert-circle" class="me-2"></i>
+                Error: ${data.error}
+            </div>
+        `;
+        safeFeatherReplace();
+        return;
+    }
+    
+    // Update network complexity
+    document.getElementById('network-complexity').textContent = data.summary.network_complexity.toFixed(2);
+    
+    // Simple network visualization (could be enhanced with D3.js or similar)
+    let html = `
+        <div class="text-center mb-3">
+            <div class="row">
+                <div class="col-4">
+                    <div class="text-info">
+                        <strong>${data.network.nodes.length}</strong><br>
+                        <small>Network Nodes</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-success">
+                        <strong>${data.network.edges.length}</strong><br>
+                        <small>Relationships</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-warning">
+                        <strong>${data.summary.unique_pollinators}</strong><br>
+                        <small>Pollinators</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (data.network.nodes.length > 0) {
+        html += '<div class="row">';
+        
+        // Show some key relationships
+        data.network.edges.slice(0, 6).forEach(edge => {
+            const orchidNode = data.network.nodes.find(n => n.id === edge.source);
+            const pollinatorNode = data.network.nodes.find(n => n.id === edge.target);
+            
+            if (orchidNode && pollinatorNode) {
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <div class="card bg-secondary">
+                            <div class="card-body py-2">
+                                <div class="d-flex align-items-center">
+                                    <i data-feather="flower" class="text-info me-2" style="width: 16px; height: 16px;"></i>
+                                    <span class="small">${orchidNode.name}</span>
+                                </div>
+                                <div class="d-flex align-items-center mt-1">
+                                    <i data-feather="hexagon" class="text-warning me-2" style="width: 16px; height: 16px;"></i>
+                                    <span class="small text-muted">${pollinatorNode.name}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div>';
+    } else {
+        html += `
+            <div class="text-center text-muted py-4">
+                <i data-feather="info" class="mb-2" style="width: 48px; height: 48px;"></i>
+                <p class="mb-0">No ecological relationships found</p>
+                <small>Add more orchids to your collection to discover ecological connections</small>
+            </div>
+        `;
+    }
+    
+    networkDiv.innerHTML = html;
+    safeFeatherReplace();
+}
+
+function displayNetworkError() {
+    document.getElementById('ecological-network-viz').innerHTML = `
+        <div class="alert alert-danger">
+            <i data-feather="alert-circle" class="me-2"></i>
+            Error loading ecological network. Please try again.
+        </div>
+    `;
+    safeFeatherReplace();
+}
+
+function loadEcologicalInsights() {
+    // Load ecological insights if needed
+}
+
+// Literature functions
+function generateBibliography() {
+    const format = document.getElementById('citation-format').value;
+    showLoading('Generating bibliography...');
+    
+    fetch(`/api/member-literature-export?format=${format}`)
+        .then(response => {
+            hideLoading();
+            if (response.ok) {
+                return response.text();
+            }
+            throw new Error('Failed to generate bibliography');
+        })
+        .then(data => {
+            displayLiteratureResults(data, format);
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error generating bibliography:', error);
+            displayLiteratureError();
+        });
+}
+
+function displayLiteratureResults(data, format) {
+    const resultsDiv = document.getElementById('literature-results');
+    
+    resultsDiv.innerHTML = `
+        <div class="mb-3">
+            <h6 class="text-primary">Generated Bibliography (${format.toUpperCase()})</h6>
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('${data.replace(/'/g, "\\'")}')">
+                    <i data-feather="copy" class="me-1"></i>
+                    Copy
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="downloadBibliography('${format}')">
+                    <i data-feather="download" class="me-1"></i>
+                    Download
+                </button>
+            </div>
+        </div>
+        <pre class="bg-secondary p-3 rounded small" style="max-height: 300px; overflow-y: auto;">${data}</pre>
+    `;
+    safeFeatherReplace();
+}
+
+function displayLiteratureError() {
+    document.getElementById('literature-results').innerHTML = `
+        <div class="alert alert-danger">
+            <i data-feather="alert-circle" class="me-2"></i>
+            Error generating bibliography. Please try again.
+        </div>
+    `;
+    safeFeatherReplace();
+}
+
+// Utility functions
+function showLoading(message) {
+    document.getElementById('loading-message').textContent = message;
+    loadingModal.show();
+}
+
+function hideLoading() {
+    loadingModal.hide();
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success position-fixed top-0 end-0 m-3';
+        alert.style.zIndex = '9999';
+        alert.innerHTML = '<i data-feather="check"></i> Copied to clipboard!';
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            document.body.removeChild(alert);
+        }, 2000);
+    });
+}
+
+// Placeholder functions for future implementation
+function enrichAllCollections() { showLoading('Enriching collection data...'); setTimeout(hideLoading, 2000); }
+function viewDataGaps() { alert('Data gaps analysis coming soon!'); }
+function exploreOpportunity(collectionId, type) { alert(`Exploring ${type} opportunity for collection ${collectionId}`); }
+function initiateCollaboration(userId) { alert(`Initiating collaboration with user ${userId}`); }
+function searchMyCollection() { alert('Collection search coming soon!'); }
+function findDataGaps() { alert('Data gap analysis coming soon!'); }
+function generateCollectionReport() { alert('Collection report generation coming soon!'); }
+function findSimilarSpecies() { alert('Similar species finder coming soon!'); }
+function syncEOLData() { showLoading('Syncing EOL data...'); setTimeout(hideLoading, 2000); }
+function syncGBIFData() { showLoading('Syncing GBIF data...'); setTimeout(hideLoading, 2000); }
+function updateConservationStatus() { showLoading('Updating conservation status...'); setTimeout(hideLoading, 2000); }
+function exportBibTeX() { generateBibliography(); }
+function exportCSV() { window.location.href = '/api/member-literature-export?format=csv'; }
+function filterPollinators() { alert('Pollinator filter coming soon!'); }
+function findRelevantPapers() { alert('Paper search coming soon!'); }
+function downloadBibTeX() { window.location.href = '/api/member-literature-export?format=bibtex'; }
+function downloadCSV() { window.location.href = '/api/member-literature-export?format=csv'; }
+function downloadJSON() { window.location.href = '/api/member-literature-export?format=json'; }
+function downloadBibliography(format) { window.location.href = `/api/member-literature-export?format=${format}`; }
+function generateResearchReport() { alert('Research report generation coming soon!'); }
+function identifyResearchGaps() { alert('Research gap identification coming soon!'); }
+function enrichCollection(collectionId) { alert(`Enriching collection ${collectionId}`); }
+</script>
+
+{% endblock %}

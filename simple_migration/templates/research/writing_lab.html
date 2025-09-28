@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writing Lab - Orchid Research Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #2d1b69 0%, #11998e 50%, #38ef7d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tool-section {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .writing-editor {
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            min-height: 300px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .writing-editor:focus {
+            outline: none;
+            border-color: rgba(66, 153, 225, 0.5);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .analysis-panel {
+            background: rgba(26, 32, 44, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .score-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        
+        .score-excellent { background: rgba(72, 187, 120, 0.8); }
+        .score-good { background: rgba(66, 153, 225, 0.8); }
+        .score-fair { background: rgba(245, 158, 11, 0.8); }
+        .score-poor { background: rgba(245, 101, 101, 0.8); }
+        
+        .suggestion-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .suggestion-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+        
+        .paraphrase-option {
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .paraphrase-option:hover {
+            background: rgba(66, 153, 225, 0.2);
+            border-color: rgba(66, 153, 225, 0.3);
+        }
+        
+        .paraphrase-option.selected {
+            background: rgba(66, 153, 225, 0.3);
+            border-color: rgba(66, 153, 225, 0.5);
+        }
+        
+        .highlight-tool {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .keyword-tag {
+            display: inline-block;
+            background: rgba(142, 68, 173, 0.6);
+            color: white;
+            padding: 4px 10px;
+            margin: 3px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        
+        .keyword-tag:hover {
+            background: rgba(142, 68, 173, 0.8);
+        }
+        
+        .plagiarism-result {
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .plagiarism-low { background: rgba(72, 187, 120, 0.2); border: 1px solid rgba(72, 187, 120, 0.3); }
+        .plagiarism-medium { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .plagiarism-high { background: rgba(245, 101, 101, 0.2); border: 1px solid rgba(245, 101, 101, 0.3); }
+        
+        .action-btn {
+            background: rgba(66, 153, 225, 0.6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(66, 153, 225, 0.8);
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.primary { background: rgba(72, 187, 120, 0.6); }
+        .action-btn.primary:hover { background: rgba(72, 187, 120, 0.8); }
+        
+        .action-btn.warning { background: rgba(245, 158, 11, 0.6); }
+        .action-btn.warning:hover { background: rgba(245, 158, 11, 0.8); }
+        
+        .tool-tabs {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .tab-btn {
+            background: rgba(45, 55, 72, 0.8);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            background: rgba(66, 153, 225, 0.8);
+            border-color: rgba(66, 153, 225, 1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .nav-buttons {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .nav-btn {
+            background: rgba(108, 117, 125, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(108, 117, 125, 1);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i data-feather="edit-3" class="me-3"></i>Writing Lab</h1>
+            <p class="lead">AI-powered writing tools for academic research and scientific communication</p>
+        </div>
+        
+        <!-- Tool Tabs -->
+        <div class="tool-tabs">
+            <div class="text-center">
+                <button class="tab-btn active" onclick="switchTab('writing-analysis')">
+                    <i data-feather="file-text" class="me-2"></i>Writing Analysis
+                </button>
+                <button class="tab-btn" onclick="switchTab('paraphrasing')">
+                    <i data-feather="refresh-cw" class="me-2"></i>Paraphrasing Tool
+                </button>
+                <button class="tab-btn" onclick="switchTab('highlighting')">
+                    <i data-feather="highlight" class="me-2"></i>PDF Highlighting
+                </button>
+                <button class="tab-btn" onclick="switchTab('plagiarism')">
+                    <i data-feather="shield" class="me-2"></i>Plagiarism Check
+                </button>
+                <button class="tab-btn" onclick="switchTab('outline')">
+                    <i data-feather="list" class="me-2"></i>Paper Outline
+                </button>
+            </div>
+        </div>
+        
+        <!-- Writing Analysis Tab -->
+        <div id="writing-analysis" class="tab-content active">
+            <div class="tool-section">
+                <h3><i data-feather="file-text" class="me-2"></i>Writing Analysis & Improvement</h3>
+                <p>Paste your academic writing below for comprehensive analysis and suggestions.</p>
+                
+                <textarea class="form-control writing-editor" id="analysis-text" 
+                          placeholder="Paste your academic writing here for analysis..."></textarea>
+                
+                <div class="text-center mt-3">
+                    <button class="action-btn primary" onclick="analyzeWriting()">
+                        <i data-feather="cpu"></i>Analyze Writing
+                    </button>
+                    <button class="action-btn" onclick="clearText('analysis-text')">
+                        <i data-feather="x"></i>Clear Text
+                    </button>
+                </div>
+                
+                <div id="analysis-results" class="analysis-panel" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Paraphrasing Tab -->
+        <div id="paraphrasing" class="tab-content">
+            <div class="tool-section">
+                <h3><i data-feather="refresh-cw" class="me-2"></i>AI-Powered Paraphrasing</h3>
+                <p>Improve clarity and academic tone while maintaining original meaning.</p>
+                
+                <textarea class="form-control writing-editor" id="paraphrase-text" 
+                          placeholder="Enter text you want to paraphrase..."></textarea>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label for="paraphrase-style" class="form-label">Writing Style:</label>
+                        <select class="form-select bg-dark border-secondary text-light" id="paraphrase-style">
+                            <option value="academic">Academic</option>
+                            <option value="formal">Formal</option>
+                            <option value="concise">Concise</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button class="action-btn primary w-100" onclick="paraphraseText()">
+                            <i data-feather="refresh-cw"></i>Generate Paraphrases
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="paraphrase-results" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <!-- PDF Highlighting Tab -->
+        <div id="highlighting" class="tab-content">
+            <div class="tool-section">
+                <h3><i data-feather="highlight" class="me-2"></i>PDF Text Extraction & Highlighting</h3>
+                <p>Extract relevant sections from academic papers and highlight key information.</p>
+                
+                <div class="highlight-tool">
+                    <h5>Research Keywords:</h5>
+                    <input type="text" class="form-control bg-dark border-secondary text-light mb-3" 
+                           id="research-keywords" placeholder="Enter keywords separated by commas (e.g., orchid, pollination, taxonomy)">
+                    
+                    <h5>PDF Content:</h5>
+                    <textarea class="form-control writing-editor" id="pdf-content" 
+                              placeholder="Paste PDF text content here..."></textarea>
+                    
+                    <div class="text-center mt-3">
+                        <button class="action-btn primary" onclick="extractAndHighlight()">
+                            <i data-feather="search"></i>Extract Relevant Sections
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="highlight-results" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <!-- Plagiarism Check Tab -->
+        <div id="plagiarism" class="tab-content">
+            <div class="tool-section">
+                <h3><i data-feather="shield" class="me-2"></i>Plagiarism Detection</h3>
+                <p class="text-warning">Educational tool for learning. Use professional checkers for final verification.</p>
+                
+                <textarea class="form-control writing-editor" id="plagiarism-text" 
+                          placeholder="Paste your writing here to check for potential plagiarism..."></textarea>
+                
+                <div class="text-center mt-3">
+                    <button class="action-btn warning" onclick="checkPlagiarism()">
+                        <i data-feather="shield"></i>Check for Plagiarism
+                    </button>
+                </div>
+                
+                <div id="plagiarism-results" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <!-- Outline Generator Tab -->
+        <div id="outline" class="tab-content">
+            <div class="tool-section">
+                <h3><i data-feather="list" class="me-2"></i>Academic Paper Outline Generator</h3>
+                <p>Generate structured outlines for your research papers with AI assistance.</p>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <label for="outline-topic" class="form-label">Research Topic:</label>
+                        <input type="text" class="form-control bg-dark border-secondary text-light" 
+                               id="outline-topic" placeholder="Enter your research topic (e.g., 'Mycorrhizal relationships in Phalaenopsis orchids')">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="paper-type" class="form-label">Paper Type:</label>
+                        <select class="form-select bg-dark border-secondary text-light" id="paper-type">
+                            <option value="research">Research Paper</option>
+                            <option value="review">Literature Review</option>
+                            <option value="case-study">Case Study</option>
+                            <option value="thesis">Thesis Chapter</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="action-btn primary" onclick="generateOutline()">
+                        <i data-feather="layout"></i>Generate Outline
+                    </button>
+                </div>
+                
+                <div id="outline-results" style="display: none; margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-buttons">
+            <a href="/research-lab/" class="nav-btn">
+                <i data-feather="arrow-left"></i>Back to Research Lab
+            </a>
+            <a href="/research-lab/literature-review" class="nav-btn">
+                <i data-feather="search"></i>Literature Review
+            </a>
+            <a href="/" class="nav-btn">
+                <i data-feather="home"></i>Homepage
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Tab switching
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        // Writing analysis
+        function analyzeWriting() {
+            const text = document.getElementById('analysis-text').value.trim();
+            if (!text) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+            
+            // Show loading
+            const resultsDiv = document.getElementById('analysis-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Analyzing...</span>
+                    </div>
+                    <p class="mt-3">Analyzing your writing...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/writing/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    type: 'academic'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayAnalysisResults(data);
+            })
+            .catch(error => {
+                console.error('Analysis error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Analysis failed. Please try again.</div>';
+            });
+        }
+        
+        // Display analysis results
+        function displayAnalysisResults(data) {
+            const resultsDiv = document.getElementById('analysis-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let html = `
+                <h4><i data-feather="cpu" class="me-2"></i>Writing Analysis Results</h4>
+                
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="score-badge ${getScoreClass(data.readability_score)}">
+                                Readability: ${data.readability_score || 'N/A'}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="score-badge ${getScoreClass(data.academic_tone_score)}">
+                                Academic Tone: ${data.academic_tone_score || 'N/A'}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="score-badge score-good">
+                                Word Count: ${data.word_count || 0}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="score-badge score-good">
+                                Level: ${data.reading_level || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (data.strengths && data.strengths.length > 0) {
+                html += `
+                    <div class="suggestion-list">
+                        <h5><i data-feather="check-circle" class="me-2 text-success"></i>Strengths</h5>
+                        ${data.strengths.map(strength => `
+                            <div class="suggestion-item">
+                                <i data-feather="plus" class="me-2 text-success" style="min-width: 20px;"></i>
+                                <span>${strength}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            if (data.priority_fixes && data.priority_fixes.length > 0) {
+                html += `
+                    <div class="suggestion-list">
+                        <h5><i data-feather="alert-triangle" class="me-2 text-warning"></i>Priority Improvements</h5>
+                        ${data.priority_fixes.map(fix => `
+                            <div class="suggestion-item">
+                                <i data-feather="arrow-right" class="me-2 text-warning" style="min-width: 20px;"></i>
+                                <span>${fix}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            if (data.style_suggestions && data.style_suggestions.length > 0) {
+                html += `
+                    <div class="suggestion-list">
+                        <h5><i data-feather="edit" class="me-2 text-info"></i>Style Suggestions</h5>
+                        ${data.style_suggestions.map(suggestion => `
+                            <div class="suggestion-item">
+                                <i data-feather="edit-2" class="me-2 text-info" style="min-width: 20px;"></i>
+                                <span>${suggestion}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Get score class for color coding
+        function getScoreClass(score) {
+            if (score >= 80) return 'score-excellent';
+            if (score >= 70) return 'score-good';
+            if (score >= 60) return 'score-fair';
+            return 'score-poor';
+        }
+        
+        // Paraphrasing
+        function paraphraseText() {
+            const text = document.getElementById('paraphrase-text').value.trim();
+            const style = document.getElementById('paraphrase-style').value;
+            
+            if (!text) {
+                alert('Please enter text to paraphrase');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('paraphrase-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Generating paraphrases...</span>
+                    </div>
+                    <p class="mt-3">Creating paraphrase options...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/writing/paraphrase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    style: style
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayParaphraseResults(data);
+            })
+            .catch(error => {
+                console.error('Paraphrase error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Paraphrasing failed. Please try again.</div>';
+            });
+        }
+        
+        // Display paraphrase results
+        function displayParaphraseResults(data) {
+            const resultsDiv = document.getElementById('paraphrase-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let html = `
+                <h4><i data-feather="refresh-cw" class="me-2"></i>Paraphrase Options</h4>
+                <p class="text-muted">${data.explanation || 'Choose from the improved versions below:'}</p>
+            `;
+            
+            if (data.paraphrases && data.paraphrases.length > 0) {
+                data.paraphrases.forEach((option, index) => {
+                    html += `
+                        <div class="paraphrase-option" onclick="selectParaphrase(${index})">
+                            <h6><i data-feather="edit" class="me-2"></i>Option ${index + 1}: ${option.style || 'Standard'}</h6>
+                            <p>${option.text}</p>
+                            <button class="action-btn" onclick="copyParaphrase('${option.text.replace(/'/g, "\\'")}')">
+                                <i data-feather="copy"></i>Copy
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Extract and highlight
+        function extractAndHighlight() {
+            const content = document.getElementById('pdf-content').value.trim();
+            const keywords = document.getElementById('research-keywords').value.trim();
+            
+            if (!content || !keywords) {
+                alert('Please enter both PDF content and research keywords');
+                return;
+            }
+            
+            const keywordList = keywords.split(',').map(k => k.trim()).filter(k => k);
+            const resultsDiv = document.getElementById('highlight-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <p class="mt-3">Extracting relevant sections...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/writing/extract-highlight', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: content,
+                    keywords: keywordList
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayHighlightResults(data);
+            })
+            .catch(error => {
+                console.error('Highlight error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Text extraction failed. Please try again.</div>';
+            });
+        }
+        
+        // Display highlight results
+        function displayHighlightResults(data) {
+            const resultsDiv = document.getElementById('highlight-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let html = `
+                <h4><i data-feather="highlight" class="me-2"></i>Relevant Sections Found</h4>
+                <p>${data.extraction_summary}</p>
+            `;
+            
+            if (data.relevant_sections && data.relevant_sections.length > 0) {
+                data.relevant_sections.forEach(section => {
+                    html += `
+                        <div class="highlight-tool">
+                            <h6>Section ${section.section_number} (Relevance: ${section.relevance_score})</h6>
+                            <div class="mb-2">
+                                ${section.keywords_found.map(kw => `<span class="keyword-tag">${kw}</span>`).join('')}
+                            </div>
+                            <p>${section.text}</p>
+                            <button class="action-btn" onclick="copyText('${section.text.replace(/'/g, "\\'")}')">
+                                <i data-feather="copy"></i>Copy Section
+                            </button>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<div class="alert alert-info">No relevant sections found. Try different keywords.</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Check plagiarism
+        function checkPlagiarism() {
+            const text = document.getElementById('plagiarism-text').value.trim();
+            if (!text) {
+                alert('Please enter text to check for plagiarism');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('plagiarism-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Checking...</span>
+                    </div>
+                    <p class="mt-3">Analyzing text for potential plagiarism...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/writing/plagiarism-check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayPlagiarismResults(data);
+            })
+            .catch(error => {
+                console.error('Plagiarism check error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Plagiarism check failed. Please try again.</div>';
+            });
+        }
+        
+        // Display plagiarism results
+        function displayPlagiarismResults(data) {
+            const resultsDiv = document.getElementById('plagiarism-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            const riskClass = `plagiarism-${data.risk_level}`;
+            let html = `
+                <div class="plagiarism-result ${riskClass}">
+                    <h4><i data-feather="shield" class="me-2"></i>Plagiarism Check Results</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Similarity Score: ${data.similarity_score}%</h5>
+                            <p><strong>Risk Level:</strong> ${data.risk_level.toUpperCase()}</p>
+                            <p><strong>Recommendation:</strong> ${data.recommendation}</p>
+                        </div>
+                        <div class="col-md-6">
+                            ${data.flagged_phrases && data.flagged_phrases.length > 0 ? `
+                                <h6>Common Phrases Found:</h6>
+                                <ul>
+                                    ${data.flagged_phrases.map(phrase => `<li>${phrase}</li>`).join('')}
+                                </ul>
+                            ` : '<p>No common academic phrases detected.</p>'}
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <small><i data-feather="info" class="me-1"></i>${data.note}</small>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Generate outline
+        function generateOutline() {
+            const topic = document.getElementById('outline-topic').value.trim();
+            const paperType = document.getElementById('paper-type').value;
+            
+            if (!topic) {
+                alert('Please enter a research topic');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('outline-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Generating...</span>
+                    </div>
+                    <p class="mt-3">Creating paper outline...</p>
+                </div>
+            `;
+            
+            fetch('/research-lab/api/writing/generate-outline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic: topic,
+                    type: paperType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayOutlineResults(data);
+            })
+            .catch(error => {
+                console.error('Outline error:', error);
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Outline generation failed. Please try again.</div>';
+            });
+        }
+        
+        // Display outline results
+        function displayOutlineResults(data) {
+            const resultsDiv = document.getElementById('outline-results');
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let html = `
+                <h4><i data-feather="list" class="me-2"></i>Paper Outline</h4>
+            `;
+            
+            if (data.title_suggestions && data.title_suggestions.length > 0) {
+                html += `
+                    <div class="suggestion-list">
+                        <h5>Suggested Titles:</h5>
+                        ${data.title_suggestions.map(title => `
+                            <div class="suggestion-item">
+                                <i data-feather="file-text" class="me-2" style="min-width: 20px;"></i>
+                                <span>${title}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            if (data.outline && data.outline.length > 0) {
+                html += `
+                    <div class="suggestion-list">
+                        <h5>Outline Structure:</h5>
+                        ${data.outline.map(section => `
+                            <div class="suggestion-item">
+                                <div>
+                                    <h6>${section.section} ${section.estimated_length ? `(${section.estimated_length})` : ''}</h6>
+                                    ${section.subsections ? `
+                                        <ul>
+                                            ${section.subsections.map(sub => `<li>${sub}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                    ${section.key_points ? `
+                                        <p><strong>Key Points:</strong> ${section.key_points.join(', ')}</p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+            feather.replace();
+        }
+        
+        // Utility functions
+        function clearText(elementId) {
+            document.getElementById(elementId).value = '';
+        }
+        
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success message
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-feather="check" class="me-1"></i>Copied!';
+                feather.replace();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    feather.replace();
+                }, 2000);
+            });
+        }
+        
+        function copyParaphrase(text) {
+            copyText(text);
+        }
+        
+        function selectParaphrase(index) {
+            document.querySelectorAll('.paraphrase-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% set title = "Collect GBIF Data" %}
+
+{% block extra_head %}
+<style>
+.gbif-collect {
+    background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.collect-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.form-control::placeholder {
+    color: #ccc;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #00d4aa 0%, #00a085 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 2rem;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+}
+
+.gbif-logo {
+    color: #00d4aa;
+    font-size: 2rem;
+    text-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gbif-collect">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <div class="gbif-logo mb-3">🌍 <strong>Collect GBIF Data</strong></div>
+            <p class="text-muted">Start collecting orchid occurrence records from the Global Biodiversity Information Facility</p>
+        </div>
+
+        <!-- Collection Form -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="collect-card">
+                    <h3 class="mb-4"><i data-feather="download"></i> Collection Parameters</h3>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert">
+                                        <span>&times;</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('gbif.collect_orchids') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="max_records">Maximum Records</label>
+                                    <select class="form-control" name="max_records" required>
+                                        <option value="100">100 records (Quick test)</option>
+                                        <option value="500" selected>500 records (Recommended)</option>
+                                        <option value="1000">1,000 records</option>
+                                        <option value="2500">2,500 records</option>
+                                        <option value="5000">5,000 records</option>
+                                        <option value="10000">10,000 records (Maximum)</option>
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        Start with 500 records to test the system
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="country">Filter by Country (Optional)</label>
+                                    <select class="form-control" name="country">
+                                        <option value="">All countries worldwide</option>
+                                        {% for code, name in countries.items() %}
+                                        <option value="{{ code }}">{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        Leave blank for global collection
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <h5>What you'll get:</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> Scientific names and taxonomic classification</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> Geographic coordinates and location data</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> Collection dates and collector information</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> Institution codes and catalog numbers</li>
+                                <li class="mb-2"><i data-feather="check" class="text-success mr-2"></i> Common names where available</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="play"></i> Start Collection
+                            </button>
+                            <a href="{{ url_for('gbif.gbif_dashboard') }}" class="btn btn-outline-light ml-3">
+                                <i data-feather="arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Information Cards -->
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="collect-card text-center">
+                    <h5><i data-feather="globe"></i> Global Coverage</h5>
+                    <p class="text-muted">Records from museums, herbaria, and research institutions worldwide</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="collect-card text-center">
+                    <h5><i data-feather="shield"></i> Quality Data</h5>
+                    <p class="text-muted">Verified specimens from authoritative scientific sources</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="collect-card text-center">
+                    <h5><i data-feather="zap"></i> Fast Processing</h5>
+                    <p class="text-muted">Automated data processing and duplicate detection</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

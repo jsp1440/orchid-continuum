@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+{% set page_title = "Database Maintenance" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-light">
+                    <i data-feather="tool" class="me-2"></i>
+                    Database Maintenance
+                </h1>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-light">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if info %}
+    <div class="row">
+        <!-- Maintenance Overview -->
+        <div class="col-md-8">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="alert-triangle" class="me-2"></i>System Health Check
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border border-warning rounded">
+                                <h4 class="text-warning">{{ info.orphaned_images }}</h4>
+                                <p class="mb-0 small">Orphaned Images</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border border-info rounded">
+                                <h4 class="text-info">{{ info.duplicate_records }}</h4>
+                                <p class="mb-0 small">Duplicate Records</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border border-secondary rounded">
+                                <h4 class="text-secondary">{{ info.empty_descriptions }}</h4>
+                                <p class="mb-0 small">Missing Descriptions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border border-primary rounded">
+                                <h4 class="text-primary">{{ info.unprocessed_uploads }}</h4>
+                                <p class="mb-0 small">Pending Uploads</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Actions -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>Available Maintenance Operations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Data Cleanup</h6>
+                            <div class="list-group list-group-flush">
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="image" class="me-1"></i>Clean Orphaned Images
+                                    <br><small class="text-muted">Remove images without corresponding records</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="copy" class="me-1"></i>Remove Duplicate Records
+                                    <br><small class="text-muted">Identify and merge duplicate entries</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="file-text" class="me-1"></i>Fill Missing Descriptions
+                                    <br><small class="text-muted">Trigger AI analysis for incomplete records</small>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Database Optimization</h6>
+                            <div class="list-group list-group-flush">
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="database" class="me-1"></i>Optimize Database
+                                    <br><small class="text-muted">Rebuild indexes and analyze tables</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="trash-2" class="me-1"></i>Clean Old Logs
+                                    <br><small class="text-muted">Remove scraping logs older than 30 days</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light border-secondary" disabled>
+                                    <i data-feather="upload" class="me-1"></i>Process Pending Uploads
+                                    <br><small class="text-muted">Complete processing of uploaded files</small>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <h6><i data-feather="alert-triangle" class="me-1"></i>Maintenance Notice</h6>
+                        Automated maintenance operations are currently disabled for safety. Use the SQL Console for direct database operations.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Database Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="maintenanceChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin_database_query') }}" class="btn btn-outline-primary">
+                            <i data-feather="terminal" class="me-1"></i>SQL Console
+                        </a>
+                        <a href="{{ url_for('export_complete_database') }}" class="btn btn-outline-success">
+                            <i data-feather="download" class="me-1"></i>Backup Database
+                        </a>
+                        <button class="btn btn-outline-warning" onclick="refreshStats()">
+                            <i data-feather="refresh-cw" class="me-1"></i>Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                <h5><i data-feather="alert-triangle" class="me-1"></i>Maintenance Information Unavailable</h5>
+                Unable to load maintenance statistics. Please check database connectivity.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function refreshStats() {
+    window.location.reload();
+}
+
+// Simple maintenance chart if Chart.js is available
+if (typeof Chart !== 'undefined' && document.getElementById('maintenanceChart')) {
+    const ctx = document.getElementById('maintenanceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Orphaned Images', 'Duplicates', 'Missing Descriptions', 'Pending Uploads'],
+            datasets: [{
+                data: [
+                    {{ info.orphaned_images if info else 0 }},
+                    {{ info.duplicate_records if info else 0 }},
+                    {{ info.empty_descriptions if info else 0 }},
+                    {{ info.unprocessed_uploads if info else 0 }}
+                ],
+                backgroundColor: ['#ffc107', '#17a2b8', '#6c757d', '#007bff'],
+                borderColor: '#343a40',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

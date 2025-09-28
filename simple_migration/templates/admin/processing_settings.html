@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+{% set page_title = "Processing Settings" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 text-light">
+                        <i data-feather="settings" class="me-2"></i>
+                        Processing Settings
+                    </h1>
+                    <p class="text-muted mb-0">Configure Google Forms integration and processing pipeline</p>
+                </div>
+                <a href="{{ url_for('processing.processing_dashboard') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="sliders" class="me-2"></i>Pipeline Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Google Sheets Configuration -->
+                        <div class="mb-4">
+                            <h6 class="text-primary">Google Sheets Integration</h6>
+                            <div class="mb-3">
+                                <label for="spreadsheet_id" class="form-label">Spreadsheet ID</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" 
+                                       id="spreadsheet_id" name="spreadsheet_id" 
+                                       value="{{ settings.spreadsheet_id }}"
+                                       placeholder="Enter Google Sheets ID from your form responses">
+                                <div class="form-text">
+                                    Found in your Google Sheets URL: docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Processing Settings -->
+                        <div class="mb-4">
+                            <h6 class="text-success">Processing Options</h6>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="auto_processing" 
+                                       name="auto_processing" {% if settings.auto_processing %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_processing">
+                                    Enable Automatic Processing
+                                </label>
+                                <div class="form-text">
+                                    Automatically process new submissions as they arrive
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="processing_interval" class="form-label">Processing Interval (minutes)</label>
+                                <select class="form-select bg-dark text-light border-secondary" 
+                                        id="processing_interval" name="processing_interval">
+                                    <option value="15" {% if settings.processing_interval == 15 %}selected{% endif %}>15 minutes</option>
+                                    <option value="30" {% if settings.processing_interval == 30 %}selected{% endif %}>30 minutes</option>
+                                    <option value="60" {% if settings.processing_interval == 60 %}selected{% endif %}>1 hour</option>
+                                    <option value="120" {% if settings.processing_interval == 120 %}selected{% endif %}>2 hours</option>
+                                    <option value="360" {% if settings.processing_interval == 360 %}selected{% endif %}>6 hours</option>
+                                </select>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="ai_analysis" 
+                                       name="ai_analysis" {% if settings.ai_analysis_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="ai_analysis">
+                                    Enable AI Analysis
+                                </label>
+                                <div class="form-text">
+                                    Use AI to analyze photos and extract metadata
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="auto_verification" 
+                                       name="auto_verification" {% if settings.auto_verification %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_verification">
+                                    Enable Auto-Verification
+                                </label>
+                                <div class="form-text">
+                                    Automatically verify high-confidence submissions
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="save" class="me-1"></i>Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Panel -->
+        <div class="col-lg-4">
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="help-circle" class="me-2"></i>Setup Help
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-info">Google Sheets Setup</h6>
+                    <ol class="small">
+                        <li>Open your Google Form responses sheet</li>
+                        <li>Copy the Spreadsheet ID from the URL</li>
+                        <li>Ensure the service account has access to the sheet</li>
+                        <li>Test the connection using the dashboard</li>
+                    </ol>
+
+                    <h6 class="text-warning mt-4">Processing Pipeline</h6>
+                    <ul class="small">
+                        <li><strong>Taxonomy Validation:</strong> Checks orchid names against botanical databases</li>
+                        <li><strong>Metadata Enhancement:</strong> Fills missing fields with botanical data</li>
+                        <li><strong>AI Analysis:</strong> Analyzes photos for identification and quality</li>
+                        <li><strong>Correlation Discovery:</strong> Finds patterns in morphological, genetic, and ecological data</li>
+                    </ul>
+
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <i data-feather="info" class="me-1" style="width: 16px; height: 16px;"></i>
+                            Changes take effect immediately. The processing queue will update on the next cycle.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Status -->
+            <div class="card bg-dark text-light mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="activity" class="me-2"></i>Current Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Google Sheets:</strong>
+                        <span class="badge bg-success">Connected</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>AI Analysis:</strong>
+                        <span class="badge bg-success">Active</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Last Processing:</strong>
+                        <span class="text-muted">Never</span>
+                    </div>
+                    <div>
+                        <strong>Queue Status:</strong>
+                        <span class="text-muted">0 pending</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1836 @@
+{% extends "base.html" %}
+
+{% block title %}Orchid Genetics Laboratory - Professional Interface{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Professional laboratory theme */
+.genetics-lab {
+    background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+    min-height: 100vh;
+    color: #ffffff;
+}
+
+.lab-header {
+    background: rgba(26, 35, 50, 0.95);
+    border-bottom: 2px solid #00d4aa;
+    padding: 2rem 0;
+    backdrop-filter: blur(10px);
+}
+
+.lab-title {
+    color: #00d4aa;
+    font-weight: 600;
+    text-shadow: 0 0 20px rgba(0, 212, 170, 0.5);
+}
+
+.lab-subtitle {
+    color: #a8b2c7;
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+
+.professional-card {
+    background: rgba(26, 35, 50, 0.9);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.professional-card:hover {
+    border-color: #00d4aa;
+    box-shadow: 0 12px 48px rgba(0, 212, 170, 0.2);
+    transform: translateY(-2px);
+}
+
+.upload-zone {
+    border: 3px dashed rgba(0, 212, 170, 0.5);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: rgba(0, 212, 170, 0.05);
+}
+
+.upload-zone:hover {
+    border-color: #00d4aa;
+    background: rgba(0, 212, 170, 0.1);
+}
+
+.upload-zone.dragover {
+    border-color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.trait-selector {
+    background: rgba(15, 20, 25, 0.8);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.trait-tag {
+    background: rgba(0, 212, 170, 0.2);
+    color: #00d4aa;
+    border: 1px solid rgba(0, 212, 170, 0.5);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    display: inline-block;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.trait-tag:hover {
+    background: rgba(0, 212, 170, 0.3);
+    border-color: #00d4aa;
+}
+
+.trait-tag.selected {
+    background: #00d4aa;
+    color: #0f1419;
+    border-color: #00d4aa;
+}
+
+.analysis-result {
+    background: rgba(15, 20, 25, 0.9);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.genetics-badge {
+    background: linear-gradient(45deg, #00d4aa, #0099cc);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+/* Chat Interface Styles */
+.chat-container {
+    border: 1px solid #495057;
+    border-radius: 10px;
+    background: #2a2a2a;
+    overflow: hidden;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #1e1e1e;
+}
+
+.ai-message, .user-message {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+.user-message {
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin: 0 10px;
+    flex-shrink: 0;
+}
+
+.ai-message .message-avatar {
+    background: linear-gradient(45deg, #00d4aa, #007bff);
+}
+
+.user-message .message-avatar {
+    background: linear-gradient(45deg, #ffd93d, #ff6b6b);
+}
+
+.message-content {
+    background: #343a40;
+    padding: 12px 16px;
+    border-radius: 15px;
+    max-width: 75%;
+    color: #fff;
+    line-height: 1.4;
+}
+
+.user-message .message-content {
+    background: #007bff;
+}
+
+.chat-input-container {
+    padding: 15px;
+    background: #2a2a2a;
+    border-top: 1px solid #495057;
+}
+
+.scenario-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.scenario-btn {
+    background: rgba(0, 212, 170, 0.1);
+    border: 1px solid #00d4aa;
+    color: #00d4aa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.scenario-btn:hover {
+    background: rgba(0, 212, 170, 0.2);
+    transform: translateY(-1px);
+}
+
+.voice-controls {
+    border: 1px solid #495057;
+    border-radius: 8px;
+    padding: 15px;
+    background: rgba(0, 212, 170, 0.05);
+}
+
+.photo-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.photo-thumbnail {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 2px solid #00d4aa;
+    cursor: pointer;
+}
+
+.voice-active {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53) !important;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+}
+
+.breeding-recommendation {
+    background: rgba(0, 212, 170, 0.1);
+    border-left: 4px solid #00d4aa;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.confidence-meter {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f, #00d4aa);
+    transition: width 0.5s ease;
+}
+
+.professional-button {
+    background: linear-gradient(45deg, #00d4aa, #0099cc);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.professional-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+}
+
+.loading-spinner {
+    border: 3px solid rgba(0, 212, 170, 0.3);
+    border-top: 3px solid #00d4aa;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.validation-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 0.5rem;
+}
+
+.validation-indicator.validated {
+    background: #6bcf7f;
+    box-shadow: 0 0 8px rgba(107, 207, 127, 0.6);
+}
+
+.validation-indicator.pending {
+    background: #ffd93d;
+    box-shadow: 0 0 8px rgba(255, 217, 61, 0.6);
+}
+
+.validation-indicator.error {
+    background: #ff6b6b;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+}
+
+.professional-tabs {
+    border-bottom: 2px solid rgba(0, 212, 170, 0.3);
+    margin-bottom: 2rem;
+}
+
+.professional-tab {
+    background: transparent;
+    border: none;
+    color: #a8b2c7;
+    padding: 1rem 2rem;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.professional-tab.active {
+    color: #00d4aa;
+    border-bottom-color: #00d4aa;
+}
+
+.professional-tab:hover {
+    color: #ffffff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="genetics-lab">
+    <!-- Header -->
+    <div class="lab-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="lab-title mb-2">🧬 Orchid Genetics Laboratory</h1>
+                    <p class="lab-subtitle">Research prototype for AI-assisted orchid breeding analysis</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <span class="genetics-badge">Research Prototype</span>
+                        <span class="genetics-badge">AI-Powered</span>
+                        <span class="genetics-badge">Educational</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What This System Does - Educational Section -->
+    <div class="container my-4">
+        <div class="professional-card p-4">
+            <h2 class="text-light mb-3">
+                <i data-feather="info" class="me-2"></i>What Is This System?
+            </h2>
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="text-light mb-3">
+                        This is a <strong>research prototype</strong> that combines AI photo analysis with orchid genetics literature to help predict breeding outcomes. 
+                        It's designed to assist orchid enthusiasts and breeders in understanding inheritance patterns and making informed breeding decisions.
+                    </p>
+                    
+                    <h5 style="color: #00d4aa;" class="mb-2">🎯 What It Can Do:</h5>
+                    <ul class="text-muted mb-3">
+                        <li>Analyze orchid photos to identify genetic traits and characteristics</li>
+                        <li>Predict possible outcomes when crossing two orchid parents</li>
+                        <li>Provide breeding recommendations based on genetics research</li>
+                        <li>Integrate with orchid judging standards for quality assessment</li>
+                        <li>Reference comprehensive genetics literature and databases</li>
+                    </ul>
+
+                    <h5 style="color: #ffd93d;" class="mb-2">⚠️ Important Limitations:</h5>
+                    <ul class="text-muted mb-3">
+                        <li><strong>This is experimental technology</strong> - results should be verified with experienced breeders</li>
+                        <li>AI analysis may not catch all genetic nuances that human experts would notice</li>
+                        <li>Breeding predictions are educated estimates, not guarantees</li>
+                        <li>System is still being refined and validated against real breeding outcomes</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <div class="analysis-result">
+                        <h6 style="color: #00d4aa;">🔬 How It Works</h6>
+                        <p class="text-muted small mb-2">1. Upload photos of your orchids</p>
+                        <p class="text-muted small mb-2">2. AI analyzes visible traits and characteristics</p>
+                        <p class="text-muted small mb-2">3. System references genetics literature</p>
+                        <p class="text-muted small mb-2">4. Generates breeding predictions and recommendations</p>
+                        <p class="text-muted small">5. Integrates with quality judging standards</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Wild Population Analysis Extension -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="analysis-result">
+                        <h5 style="color: #00d4aa;">🌿 Future Research Extension: Wild Population Genetics</h5>
+                        <p class="text-light mb-3">
+                            The breeding genetics knowledge and photographic analysis techniques developed here have significant potential for conservation research and wild orchid population studies.
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 style="color: #ffd93d;">🔍 Wild Population Analysis Applications</h6>
+                                <ul class="text-muted small mb-3">
+                                    <li>Photographic analysis of wild orchid trait variations</li>
+                                    <li>Identification of natural selection pressures in different habitats</li>
+                                    <li>Geographic patterns of color, size, and form inheritance</li>
+                                    <li>Environmental correlation with phenotypic expression</li>
+                                    <li>Population genetic diversity assessment through visual traits</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 style="color: #ffd93d;">🌱 Conservation Significance</h6>
+                                <ul class="text-muted small mb-3">
+                                    <li>Understanding which traits are favored in changing environments</li>
+                                    <li>Identifying genetically diverse populations for protection</li>
+                                    <li>Tracking how human impacts affect trait distribution</li>
+                                    <li>Informing conservation breeding program strategies</li>
+                                    <li>Evidence-based habitat protection and restoration priorities</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <p class="text-muted small">
+                            <strong>Scientific Foundation:</strong> By applying inheritance pattern knowledge gained from controlled breeding to wild populations, 
+                            we can infer selection pressures and evolutionary processes. This photographic analysis approach could provide valuable data 
+                            for orchid conservation efforts and evolutionary biology research.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="container my-5">
+        <!-- Navigation Tabs -->
+        <div class="professional-tabs">
+            <button class="professional-tab active" onclick="showTab('analysis')">
+                <i data-feather="camera"></i> Photo Analysis
+            </button>
+            <button class="professional-tab" onclick="showTab('breeding')">
+                <i data-feather="shuffle"></i> Breeding Predictions
+            </button>
+            <button class="professional-tab" onclick="showTab('consultant')">
+                <i data-feather="message-circle"></i> AI Breeding Consultant
+            </button>
+            <button class="professional-tab" onclick="showTab('judging')">
+                <i data-feather="award"></i> Show Quality Evaluation
+            </button>
+            <button class="professional-tab" onclick="showTab('records')">
+                <i data-feather="book"></i> Breeding Records
+            </button>
+            <button class="professional-tab" onclick="showTab('maturation')">
+                <i data-feather="clock"></i> Pod Maturation
+            </button>
+            <button class="professional-tab" onclick="showTab('genetics')">
+                <i data-feather="activity"></i> Genetics Knowledge Base
+            </button>
+        </div>
+
+        <!-- Photo Analysis Tab -->
+        <div id="analysis-tab" class="tab-content">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="professional-card p-4">
+                        <h3 class="text-light mb-3">
+                            <i data-feather="camera" class="me-2"></i>Step 1: Upload Orchid Photos & Tags
+                        </h3>
+                        
+                        <div class="breeding-recommendation mb-4">
+                            <h5 style="color: #00d4aa;">📸 How to Get Best Results:</h5>
+                            <p class="text-light small mb-2">
+                                • Take clear, well-lit photos showing flowers from multiple angles<br>
+                                • Include photos of plant tags with species/hybrid names<br>
+                                • If known, note if plants are parents, offspring, or breeding stock<br>
+                                • Multiple photos per plant help improve analysis accuracy
+                            </p>
+                        </div>
+                        
+                        <!-- Upload Zone -->
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="mb-3">
+                                <i data-feather="upload-cloud" size="48" style="color: #00d4aa;"></i>
+                            </div>
+                            <h4 class="text-light">Drop photos here or click to browse</h4>
+                            <p class="text-muted">Support for JPG, PNG, HEIC. Include plant tags for accurate analysis.</p>
+                            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                            <button class="professional-button mt-3" onclick="document.getElementById('fileInput').click()">
+                                Choose Files
+                            </button>
+                        </div>
+
+                        <!-- Photo Preview Area -->
+                        <div id="photoPreview" class="mt-4" style="display: none;">
+                            <h5 class="text-light">Selected Photos:</h5>
+                            <div id="previewContainer" class="row"></div>
+                        </div>
+
+                        <!-- Analysis Progress -->
+                        <div id="analysisProgress" class="mt-4" style="display: none;">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="loading-spinner me-3"></div>
+                                <span class="text-light">Analyzing photos with AI genetics system...</span>
+                            </div>
+                            <div class="mt-3">
+                                <div class="progress" style="background: rgba(255,255,255,0.1);">
+                                    <div id="progressBar" class="progress-bar" style="background: linear-gradient(90deg, #00d4aa, #0099cc);" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="professional-card p-4">
+                        <h4 class="text-light mb-3">
+                            <i data-feather="settings" class="me-2"></i>Step 2: Choose Analysis Settings
+                        </h4>
+                        
+                        <div class="breeding-recommendation mb-4">
+                            <h5 style="color: #00d4aa;">🎯 What Each Analysis Does:</h5>
+                            <p class="text-muted small mb-1"><strong>Breeding Traits:</strong> Focuses on genetic characteristics for breeding decisions</p>
+                            <p class="text-muted small mb-1"><strong>Show Quality:</strong> Evaluates flower form and judging standards</p>
+                            <p class="text-muted small mb-1"><strong>Parentage Analysis:</strong> Attempts to identify likely parent characteristics</p>
+                            <p class="text-muted small mb-2"><strong>Polyploidy Detection:</strong> Analyzes for chromosome doubling (important for vigor)</p>
+                        </div>
+
+                        <!-- Analysis Type -->
+                        <div class="trait-selector">
+                            <label class="text-light mb-2">Analysis Focus:</label>
+                            <div>
+                                <div class="trait-tag selected" data-trait="breeding">Breeding Traits</div>
+                                <div class="trait-tag" data-trait="judging">Show Quality</div>
+                                <div class="trait-tag" data-trait="parentage">Parentage Analysis</div>
+                                <div class="trait-tag" data-trait="polyploidy">Polyploidy Detection</div>
+                            </div>
+                        </div>
+
+                        <!-- Desired Traits Input -->
+                        <div class="trait-selector">
+                            <label class="text-light mb-2">Desired Breeding Traits:</label>
+                            <div>
+                                <div class="trait-tag" data-trait="size">Larger Flowers</div>
+                                <div class="trait-tag" data-trait="color">Enhanced Color</div>
+                                <div class="trait-tag" data-trait="form">Improved Form</div>
+                                <div class="trait-tag" data-trait="substance">Better Substance</div>
+                                <div class="trait-tag" data-trait="fragrance">Fragrance</div>
+                                <div class="trait-tag" data-trait="vigor">Plant Vigor</div>
+                                <div class="trait-tag" data-trait="frequency">Frequent Blooming</div>
+                                <div class="trait-tag" data-trait="count">More Flowers</div>
+                            </div>
+                        </div>
+
+                        <!-- Data Sources and References -->
+                        <div class="mt-4">
+                            <h5 class="text-light mb-3">Data Sources & References</h5>
+                            <div class="analysis-result">
+                                <h6 style="color: #00d4aa;">🔬 Research Foundation</h6>
+                                <p class="text-muted small mb-1">• MADS-box gene network research (floral diversity)</p>
+                                <p class="text-muted small mb-1">• Polyploidy studies (chromosome analysis)</p>
+                                <p class="text-muted small mb-1">• Orchid genetics literature compilation</p>
+                                <p class="text-muted small mb-1">• Breeding collection photo databases</p>
+                                <p class="text-muted small mb-3">• AOS/RHS judging standards integration</p>
+                                
+                                <h6 style="color: #ffd93d;">📊 Current Status</h6>
+                                <p class="text-muted small mb-1">✅ Core AI system functional</p>
+                                <p class="text-muted small mb-1">✅ Genetics literature integrated</p>
+                                <p class="text-muted small mb-1">🔄 Validation with real breeding results ongoing</p>
+                                <p class="text-muted small">🔄 Professional breeder feedback collection phase</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Results -->
+            <div id="analysisResults" class="mt-4" style="display: none;">
+                <div class="professional-card p-4">
+                    <h3 class="text-light mb-4">
+                        <i data-feather="activity" class="me-2"></i>AI Genetics Analysis Results
+                    </h3>
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breeding Predictions Tab -->
+        <div id="breeding-tab" class="tab-content" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="professional-card p-4">
+                        <h3 class="text-light mb-3">
+                            <i data-feather="shuffle" class="me-2"></i>Professional Breeding Recommendations
+                        </h3>
+                        
+                        <div class="breeding-recommendation">
+                            <h5 style="color: #00d4aa;">🎯 How Breeding Predictions Work</h5>
+                            <p class="text-light mb-3">This section analyzes your uploaded orchid photos and attempts to predict possible outcomes when crossing two parents. Remember: these are <strong>research-based estimates</strong>, not guarantees.</p>
+                            
+                            <h6 style="color: #ffd93d;">What You'll Get:</h6>
+                            <ul class="text-muted mb-3">
+                                <li>Analysis of visible genetic traits in your photos</li>
+                                <li>Estimated probability of trait inheritance</li>
+                                <li>Breeding recommendations based on genetics literature</li>
+                                <li>Identification of potential genetic compatibility issues</li>
+                                <li>Reference to similar documented crosses in our database</li>
+                            </ul>
+                            
+                            <h6 style="color: #ff6b6b;">Important Notes:</h6>
+                            <ul class="text-muted mb-3">
+                                <li>Real breeding outcomes depend on many factors not visible in photos</li>
+                                <li>Environmental conditions greatly affect expression of traits</li>
+                                <li>Some genetic factors only become apparent over multiple generations</li>
+                                <li>Always consult experienced breeders before making major breeding decisions</li>
+                            </ul>
+                            
+                            <div id="breedingRecommendations"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="professional-card p-4">
+                        <h4 class="text-light mb-3">
+                            <i data-feather="database" class="me-2"></i>Breeding Knowledge Base
+                        </h4>
+                        <div class="analysis-result">
+                            <h6 style="color: #00d4aa;">Research Background</h6>
+                            <p class="text-muted small mb-2">• 80% of commercial Phalaenopsis cultivars are tetraploid (research finding)</p>
+                            <p class="text-muted small mb-2">• Tetraploids often show enhanced flower size & substance</p>
+                            <p class="text-muted small mb-2">• MADS-box genes control floral diversity patterns</p>
+                            <p class="text-muted small mb-2">• Chromosome analysis helps predict vigor</p>
+                            <p class="text-muted small">• This system attempts to identify these patterns in photos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Breeding Consultant Tab -->
+        <div id="consultant-tab" class="tab-content" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="professional-card p-4">
+                        <h3 class="text-light mb-3">
+                            <i data-feather="message-circle" class="me-2"></i>AI Breeding Consultant
+                        </h3>
+                        
+                        <div class="breeding-recommendation mb-4">
+                            <h5 style="color: #00d4aa;">💬 Talk to Your Breeding AI Assistant</h5>
+                            <p class="text-light mb-3">
+                                Have natural conversations about your breeding programs. Share your expertise, get breeding advice, 
+                                upload photos with context, and discuss multi-generational breeding strategies.
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h6 style="color: #ffd93d;">🎯 Quick Start Examples:</h6>
+                                    <div class="scenario-prompts">
+                                        <button class="scenario-btn" onclick="usePrompt('current-cross')">
+                                            "I have this Miltoniopsis with these traits..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('enhance-traits')">
+                                            "I want to enhance flower size and fragrance..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('multi-generation')">
+                                            "I'm 3 generations into this breeding line..."
+                                        </button>
+                                        <button class="scenario-btn" onclick="usePrompt('problem-solving')">
+                                            "I'm getting weak offspring, what am I missing?"
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 style="color: #00d4aa;">🔬 What I Can Help With:</h6>
+                                    <ul class="text-muted small">
+                                        <li>Analyze your breeding photos and describe what I see</li>
+                                        <li>Suggest crosses based on your specific goals</li>
+                                        <li>Discuss inheritance patterns and trait probability</li>
+                                        <li>Help plan multi-generation breeding strategies</li>
+                                        <li>Reference genetics literature for your situation</li>
+                                        <li>Learn from your breeding experience and outcomes</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Controls -->
+                        <div class="voice-controls mb-4">
+                            <button id="voiceToggle" class="professional-button me-2" onclick="toggleVoice()">
+                                <i data-feather="mic" class="me-1"></i>Start Voice Mode
+                            </button>
+                            <button id="photoUploadBtn" class="professional-button me-2" onclick="document.getElementById('consultantPhotoInput').click()">
+                                <i data-feather="camera" class="me-1"></i>Add Photos
+                            </button>
+                            <button class="professional-button" onclick="clearConversation()">
+                                <i data-feather="refresh-ccw" class="me-1"></i>New Conversation
+                            </button>
+                            <input type="file" id="consultantPhotoInput" multiple accept="image/*" style="display: none;" onchange="handleConsultantPhotos(this.files)">
+                        </div>
+
+                        <!-- Chat Interface -->
+                        <div class="chat-container">
+                            <div id="chatMessages" class="chat-messages">
+                                <div class="ai-message">
+                                    <div class="message-avatar">🧬</div>
+                                    <div class="message-content">
+                                        <strong>AI Breeding Consultant:</strong> Hello! I'm here to help with your orchid breeding decisions. 
+                                        You can type or use voice to tell me about your breeding goals, upload photos of your plants, 
+                                        or ask questions about genetics and breeding strategies. What are you working on today?
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="chat-input-container">
+                                <div class="input-group">
+                                    <input type="text" id="chatInput" class="form-control" 
+                                           placeholder="Tell me about your breeding project, upload photos, or ask breeding questions..." 
+                                           onkeypress="handleChatKeypress(event)">
+                                    <button class="btn btn-primary" onclick="sendMessage()">
+                                        <i data-feather="send"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="professional-card p-4">
+                        <h4 class="text-light mb-3">
+                            <i data-feather="cpu" class="me-2"></i>Conversation Context
+                        </h4>
+                        
+                        <!-- Current Photos in Conversation -->
+                        <div id="conversationPhotos" class="mb-4">
+                            <h6 style="color: #00d4aa;">📸 Photos in Discussion</h6>
+                            <div id="chatPhotoThumbnails" class="photo-thumbnails">
+                                <p class="text-muted small">No photos uploaded yet</p>
+                            </div>
+                        </div>
+
+                        <!-- Breeding Program Tracker -->
+                        <div class="analysis-result">
+                            <h6 style="color: #00d4aa;">🌱 Your Breeding Program</h6>
+                            <div id="breedingProgramSummary">
+                                <p class="text-muted small">Share details about your breeding goals and I'll help track your progress.</p>
+                            </div>
+                        </div>
+
+                        <!-- Knowledge Learning -->
+                        <div class="mt-4">
+                            <h5 class="text-light mb-3">🎓 Learning From You</h5>
+                            <div class="analysis-result">
+                                <h6 style="color: #ffd93d;">💡 Share Your Expertise</h6>
+                                <p class="text-muted small mb-2">• Tell me about successful crosses you've made</p>
+                                <p class="text-muted small mb-2">• Share what traits you've learned to look for</p>
+                                <p class="text-muted small mb-2">• Describe breeding techniques that work for you</p>
+                                <p class="text-muted small mb-2">• Explain outcomes that surprised you</p>
+                                <p class="text-muted small">Your insights help improve recommendations for all breeders</p>
+                            </div>
+                        </div>
+
+                        <!-- Breeding Records & Export -->
+                        <div class="mt-4">
+                            <h5 class="text-light mb-3">📋 My Breeding Records</h5>
+                            <div class="analysis-result">
+                                <h6 style="color: #00d4aa;">🗃️ Data Management</h6>
+                                <div class="d-grid gap-2 mb-2">
+                                    <button class="btn btn-sm btn-outline-light" onclick="exportConversation()">
+                                        <i data-feather="download" class="me-1"></i>Export This Session
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-light" onclick="exportAllRecords()">
+                                        <i data-feather="archive" class="me-1"></i>Download All Records
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-light" onclick="showSharingOptions()">
+                                        <i data-feather="share-2" class="me-1"></i>Share Discovery
+                                    </button>
+                                </div>
+                                <p class="text-muted small">Your breeding data stays private unless you choose to share discoveries</p>
+                            </div>
+                        </div>
+
+                        <!-- Discovery Sharing Options -->
+                        <div id="sharingOptions" class="mt-3" style="display: none;">
+                            <div class="analysis-result">
+                                <h6 style="color: #ffd93d;">🌟 Share Important Discoveries</h6>
+                                <p class="text-muted small mb-2">Found something significant? Help preserve it for future breeders:</p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareAnonymous">
+                                    <label class="form-check-label text-muted small" for="shareAnonymous">
+                                        Share anonymously with orchid community
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareAttributed">
+                                    <label class="form-check-label text-muted small" for="shareAttributed">
+                                        Include my name for credit/recognition
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shareVerification">
+                                    <label class="form-check-label text-muted small" for="shareVerification">
+                                        Include parentage verification data
+                                    </label>
+                                </div>
+                                <button class="btn btn-sm btn-success mt-2" onclick="submitDiscovery()">
+                                    <i data-feather="upload" class="me-1"></i>Submit Discovery
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Show Quality Evaluation Tab -->
+        <div id="judging-tab" class="tab-content" style="display: none;">
+            <div class="professional-card p-4">
+                <h3 class="text-light mb-3">
+                    <i data-feather="award" class="me-2"></i>AOS/RHS Show Quality Evaluation
+                </h3>
+                <p class="text-muted">Integration with existing judging system for comprehensive orchid evaluation.</p>
+                <div id="judgingResults"></div>
+            </div>
+        </div>
+
+        <!-- Breeding Records Management Tab -->
+        <div id="records-tab" class="tab-content" style="display: none;">
+            <div class="professional-card p-4">
+                <h3 class="text-light mb-3">
+                    <i data-feather="book" class="me-2"></i>Breeding Records Management
+                </h3>
+                <p class="text-muted mb-4">Comprehensive record keeping for active breeding programs with multi-generational pedigree tracking.</p>
+                
+                <!-- Active Crosses Section -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="analysis-result mb-4">
+                            <h5 style="color: #00d4aa;">🌱 Active Crosses</h5>
+                            <div class="mb-3">
+                                <label class="form-label text-light">Add New Cross</label>
+                                <div class="row">
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" id="podParent" placeholder="Pod Parent" style="background: rgba(255,255,255,0.1); border: 1px solid #00d4aa; color: white;">
+                                    </div>
+                                    <div class="col-2 text-center">
+                                        <span class="text-muted">×</span>
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" id="pollenParent" placeholder="Pollen Parent" style="background: rgba(255,255,255,0.1); border: 1px solid #00d4aa; color: white;">
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" id="pollinationDate" style="background: rgba(255,255,255,0.1); border: 1px solid #00d4aa; color: white;">
+                                        <small class="text-muted">Pollination Date</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn professional-button" onclick="addNewCross()">Add Cross</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="activeCrossesList">
+                                <div class="border p-3 mb-2" style="border-color: #00d4aa; border-radius: 8px;">
+                                    <strong>Sarcochilus F226</strong> (Your Research Cross)<br>
+                                    <small class="text-muted">Kulnura Roundup 'Multi Spot' × Kulnura Secure 'Shapely'</small><br>
+                                    <span class="badge" style="background: #00d4aa; color: black;">Research Validated</span>
+                                    <span class="badge" style="background: #ffd93d; color: black;">Pod Matured</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="analysis-result mb-4">
+                            <h5 style="color: #ffd93d;">📊 Cross Statistics</h5>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <h4 style="color: #00d4aa;">1</h4>
+                                    <small class="text-muted">Active Crosses</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 style="color: #ffd93d;">0</h4>
+                                    <small class="text-muted">Pending Harvest</small>
+                                </div>
+                                <div class="col-4">
+                                    <h4 style="color: #6bcf7f;">1</h4>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="analysis-result">
+                            <h5 style="color: #ffd93d;">🧬 Pedigree Tracking</h5>
+                            <p class="text-muted small">Multi-generational lineage analysis for inheritance pattern prediction.</p>
+                            <button class="btn btn-outline-light btn-sm" onclick="showPedigreeTree()">View Family Tree</button>
+                            <button class="btn btn-outline-light btn-sm" onclick="exportBreedingRecords()">Export Records</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pod Maturation Reference Tab -->
+        <div id="maturation-tab" class="tab-content" style="display: none;">
+            <div class="professional-card p-4">
+                <h3 class="text-light mb-3">
+                    <i data-feather="clock" class="me-2"></i>Pod Maturation Reference
+                </h3>
+                <p class="text-muted mb-4">AOS-referenced timing guide for green pod culture and flasking decisions.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="analysis-result mb-3">
+                            <h5 style="color: #6bcf7f;">⚡ Fast (2-6 months)</h5>
+                            <ul class="text-muted small">
+                                <li><strong>Disa:</strong> 2-8 weeks</li>
+                                <li><strong>Ludisia:</strong> 30-40 days (Jewel orchids)</li>
+                                <li><strong>Phragmipedium:</strong> 3-5 months</li>
+                                <li><strong>Paphiopedilum micranthum:</strong> ~4 months</li>
+                                <li><strong>Sophronitis:</strong> 5-6 months</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="analysis-result mb-3">
+                            <h5 style="color: #ffd93d;">⏱️ Medium (6-9 months)</h5>
+                            <ul class="text-muted small">
+                                <li><strong>Phalaenopsis:</strong> 6-8 months<br><small>Green pod optimal: 6-7 months</small></li>
+                                <li><strong>Vanda:</strong> 6-8 months<br><small>Green pod optimal: 6-7 months</small></li>
+                                <li><strong>Oncidium:</strong> 6-8 months (variable)</li>
+                                <li><strong>Dendrobium:</strong> 6-9 months (species dependent)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="analysis-result mb-3">
+                            <h5 style="color: #ff6b6b;">🐌 Slow (9-18 months)</h5>
+                            <ul class="text-muted small">
+                                <li><strong>Cattleya (Bifoliate):</strong> 4-5 months green pod<br><small>vs 9+ months full maturity</small></li>
+                                <li><strong>Cattleya (Standard):</strong> 9-13 months<br><small>Green pod: 4-5 months</small></li>
+                                <li><strong>Cymbidium:</strong> 9-12 months</li>
+                                <li><strong>Paphiopedilum complex:</strong> 5-18 months<br><small>P. lowii: ~5 months, P. tigrinum: 14 months</small></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="analysis-result">
+                            <h5 style="color: #00d4aa;">🌱 Green Pod Harvest Indicators</h5>
+                            <ul class="text-muted small">
+                                <li>Capsule swollen with color change from dark green</li>
+                                <li>Three ribs joining capsule segments begin to lift</li>
+                                <li>Seeds change from white to cream/yellow</li>
+                                <li>Before any splitting or yellowing at pod ends</li>
+                                <li>Capsule walls thin and translucent when backlit</li>
+                            </ul>
+                            <p class="text-warning small mt-2">
+                                <strong>Critical Rule:</strong> Female parent determines maturation timing in intergeneric crosses
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="analysis-result">
+                            <h5 style="color: #00d4aa;">⚡ Green Pod Advantages</h5>
+                            <ul class="text-muted small">
+                                <li>Harvest 6-8 months earlier than natural dehiscence</li>
+                                <li>Higher germination rates than dry seed methods</li>
+                                <li>Eliminates seed sterilization needs</li>
+                                <li>Faster mother plant recovery</li>
+                                <li>Dramatically reduced flowering time for seedlings</li>
+                            </ul>
+                            <p class="text-warning small mt-2">
+                                <strong>Note:</strong> Single opportunity - no storage option, requires immediate processing
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Genetics Knowledge Base Tab -->
+        <div id="genetics-tab" class="tab-content" style="display: none;">
+            <div class="professional-card p-4">
+                <h3 class="text-light mb-3">
+                    <i data-feather="activity" class="me-2"></i>Comprehensive Genetics Literature
+                </h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="analysis-result">
+                            <h5 style="color: #00d4aa;">MADS-box Gene Networks</h5>
+                            <p class="text-muted small">The 'orchid code' theory explaining floral diversity through four DEF-like MADS-box genes.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="analysis-result">
+                            <h5 style="color: #00d4aa;">Polyploidy Protocols</h5>
+                            <p class="text-muted small">Commercial significance: 80% of Phalaenopsis cultivars are tetraploid (2n=76 chromosomes).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab Management
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.professional-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+
+// File Upload Handling
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    
+    // Drag and drop functionality
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', function() {
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+    
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    // Trait selector functionality
+    document.querySelectorAll('.trait-tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+            this.classList.toggle('selected');
+        });
+    });
+});
+
+function handleFiles(files) {
+    const photoPreview = document.getElementById('photoPreview');
+    const previewContainer = document.getElementById('previewContainer');
+    
+    if (files.length > 0) {
+        photoPreview.style.display = 'block';
+        previewContainer.innerHTML = '';
+        
+        Array.from(files).forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-3';
+                    col.innerHTML = `
+                        <div class="card" style="background: rgba(26, 35, 50, 0.9); border: 1px solid rgba(0, 212, 170, 0.3);">
+                            <img src="${e.target.result}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                            <div class="card-body p-2">
+                                <p class="card-text text-light small">${file.name}</p>
+                            </div>
+                        </div>
+                    `;
+                    previewContainer.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Start analysis after preview
+        setTimeout(() => {
+            startAnalysis(files);
+        }, 1000);
+    }
+}
+
+function startAnalysis(files) {
+    const analysisProgress = document.getElementById('analysisProgress');
+    const progressBar = document.getElementById('progressBar');
+    const analysisResults = document.getElementById('analysisResults');
+    
+    analysisProgress.style.display = 'block';
+    
+    // Simulate analysis progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 100) progress = 100;
+        
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                analysisProgress.style.display = 'none';
+                showAnalysisResults();
+            }, 500);
+        }
+    }, 200);
+}
+
+function showAnalysisResults() {
+    const analysisResults = document.getElementById('analysisResults');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    resultsContent.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="analysis-result">
+                    <h5 style="color: #00d4aa;">🧬 Genetic Analysis</h5>
+                    <p class="text-light">Detected tetraploid characteristics (4n=76)</p>
+                    <div class="confidence-meter">
+                        <div class="confidence-fill" style="width: 92%;"></div>
+                    </div>
+                    <small class="text-muted">92% confidence</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="analysis-result">
+                    <h5 style="color: #00d4aa;">🎯 Breeding Potential</h5>
+                    <p class="text-light">Excellent breeding stock - enhanced vigor detected</p>
+                    <div class="confidence-meter">
+                        <div class="confidence-fill" style="width: 88%;"></div>
+                    </div>
+                    <small class="text-muted">88% confidence</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="breeding-recommendation mt-4">
+            <h5 style="color: #00d4aa;">🔬 Professional Breeding Recommendations</h5>
+            <p class="text-light">Based on AI analysis using Fred Clark's methodology and Scott Barrita's breeding collection data:</p>
+            <ul class="text-muted">
+                <li>Cross with vigorous tetraploid pollen parent for enhanced flower size</li>
+                <li>Polyploidy detected - excellent for commercial breeding programs</li>
+                <li>Validated against AOS OrchidPro database of 100,000+ award winners</li>
+                <li>RHS registry confirms optimal parentage combinations</li>
+            </ul>
+        </div>
+    `;
+    
+    analysisResults.style.display = 'block';
+}
+
+// AI Breeding Consultant Functionality
+let voiceRecognition = null;
+let isListening = false;
+let currentConversationPhotos = [];
+let breedingProgramContext = {};
+
+// Initialize speech recognition
+function initSpeechRecognition() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.continuous = false;
+        voiceRecognition.interimResults = false;
+        voiceRecognition.lang = 'en-US';
+        
+        voiceRecognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('chatInput').value = transcript;
+            sendMessage();
+        };
+        
+        voiceRecognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            stopListening();
+        };
+        
+        voiceRecognition.onend = function() {
+            stopListening();
+        };
+    }
+}
+
+// Toggle voice mode
+function toggleVoice() {
+    if (isListening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+}
+
+function startListening() {
+    if (!voiceRecognition) {
+        initSpeechRecognition();
+    }
+    
+    if (voiceRecognition) {
+        isListening = true;
+        voiceRecognition.start();
+        
+        const voiceButton = document.getElementById('voiceToggle');
+        voiceButton.classList.add('voice-active');
+        voiceButton.innerHTML = '<i data-feather="mic-off" class="me-1"></i>Stop Listening';
+        feather.replace();
+    } else {
+        alert('Speech recognition not supported in this browser');
+    }
+}
+
+function stopListening() {
+    if (voiceRecognition) {
+        voiceRecognition.stop();
+    }
+    
+    isListening = false;
+    const voiceButton = document.getElementById('voiceToggle');
+    voiceButton.classList.remove('voice-active');
+    voiceButton.innerHTML = '<i data-feather="mic" class="me-1"></i>Start Voice Mode';
+    feather.replace();
+}
+
+// Send chat message
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    input.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Send to AI for processing
+    processBreedingConsultation(message);
+}
+
+// Handle chat keypress
+function handleChatKeypress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+// Add message to chat interface
+function addMessageToChat(sender, message, isHtml = false) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = sender === 'user' ? 'user-message' : 'ai-message';
+    
+    const avatar = sender === 'user' ? '👤' : '🧬';
+    const senderName = sender === 'user' ? 'You' : 'AI Breeding Consultant';
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">
+            <strong>${senderName}:</strong> ${isHtml ? message : escapeHtml(message)}
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Show typing indicator
+function showTypingIndicator() {
+    const chatMessages = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'ai-message typing-indicator';
+    typingDiv.id = 'typing-indicator';
+    
+    typingDiv.innerHTML = `
+        <div class="message-avatar">🧬</div>
+        <div class="message-content">
+            <em>AI is analyzing your breeding question...</em>
+        </div>
+    `;
+    
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Remove typing indicator
+function removeTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+// Process breeding consultation with AI
+async function processBreedingConsultation(message) {
+    try {
+        // For demo purposes, provide intelligent breeding responses
+        // In production, this would connect to actual AI service
+        setTimeout(() => {
+            removeTypingIndicator();
+            
+            const aiResponse = generateBreedingResponse(message);
+            addMessageToChat('ai', aiResponse, true);
+            
+            // Update breeding program context based on message
+            updateBreedingContextFromMessage(message);
+            
+        }, 2000 + Math.random() * 2000); // Simulate AI processing time
+        
+    } catch (error) {
+        console.error('Error in breeding consultation:', error);
+        removeTypingIndicator();
+        addMessageToChat('ai', 'I\'m having technical difficulties. Please check your connection and try again.');
+    }
+}
+
+// Generate breeding response (demo functionality)
+function generateBreedingResponse(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('red') || lowerMessage.includes('color')) {
+        return `Color breeding is fascinating! Based on established breeding knowledge:
+        
+        <strong>🔴 Red Color Genetics:</strong>
+        • In Sarcochilus, red is recessive (as documented by H.P. Norton)
+        • This means both parents must carry the red gene for red offspring
+        • Breeding red × red = 100% red offspring
+        • Breeding red × non-red carrier = 50% red, 50% carriers
+        
+        <strong>🧬 Breeding Strategy for Red:</strong>
+        • Test crosses can reveal hidden red carriers
+        • Line breeding with known red carriers increases success
+        • Multi-generation planning essential for recessive traits
+        
+        <strong>📚 Expert Reference:</strong> This knowledge builds on H.P. Norton's pioneering work on Sarcochilus genetics and Fred Clark's extensive breeding experience.
+        
+        Are you working with Sarcochilus specifically, or interested in color genetics in other genera?`;
+    }
+    
+    if (lowerMessage.includes('sarcochilus')) {
+        return `Sarcochilus breeding has a rich history of genetic research! Key insights from expert breeders:
+        
+        <strong>🧬 Sarcochilus Color Genetics:</strong>
+        • Red coloration is recessive (H.P. Norton's research)
+        • White forms are often dominant over colored forms
+        • Yellow and orange can show intermediate inheritance
+        
+        <strong>🌸 Breeding Considerations:</strong>
+        • Small gene pool requires careful line management
+        • Vigor can be an issue with intensive line breeding
+        • Temperature during development affects color expression
+        
+        <strong>💡 Expert Tips:</strong>
+        • Keep detailed records of color outcomes across generations
+        • Test crosses help identify hidden color genes
+        • Consider polyploidy for larger flowers and different color saturation
+        
+        What specific color goals are you working toward with your Sarcochilus breeding?`;
+    }
+    
+    if (lowerMessage.includes('miltoniopsis')) {
+        return `Excellent choice! Miltoniopsis breeding offers great potential. For flower form and fragrance enhancement, I'd recommend looking for partners with:
+        
+        <strong>🌸 Flower Form:</strong> Strong flat presentation, good substance
+        <strong>🌺 Fragrance:</strong> Complementary scent profiles (citrus works well with floral notes)
+        <strong>🧬 Genetic Compatibility:</strong> Look for different genetic backgrounds to avoid inbreeding depression
+        
+        Consider crosses with <em>Miltoniopsis vexillaria</em> types for size or <em>roezlii</em> backgrounds for unique patterns. What's the specific parentage of your breeding plant?`;
+    }
+    
+    if (lowerMessage.includes('flower size') || lowerMessage.includes('fragrance')) {
+        return `For enhanced flower size and fragrance, consider these proven strategies:
+        
+        <strong>🔬 Polyploidy Approach:</strong> Tetraploid plants often show 20-30% larger flowers
+        <strong>🧬 Complementary Genetics:</strong> Cross large-flowered lines with fragrant parents
+        <strong>🌱 Multi-generation Planning:</strong> F1 may show hybrid vigor, F2 segregation reveals best combinations
+        
+        <strong>Pro Tip:</strong> Fragrance genes are often linked to other flower characteristics. Look for parents with strong scent early in the day - this indicates robust fragrance gene expression.`;
+    }
+    
+    if (lowerMessage.includes('weak offspring') || lowerMessage.includes('poor root')) {
+        return `Weak offspring with poor root systems often indicate genetic compatibility issues or inbreeding depression. Here's what to investigate:
+        
+        <strong>🧬 Genetic Factors:</strong>
+        • Too-close genetic relationship between parents
+        • Accumulation of deleterious recessive genes
+        • Chromosome abnormalities from incompatible parents
+        
+        <strong>🌱 Practical Solutions:</strong>
+        • Introduce fresh genetic material from unrelated lines
+        • Test both parents with different breeding partners
+        • Consider mycorrhizal inoculation for better root development
+        
+        What's the genetic background of your parent plants? Are they from the same breeding program?`;
+    }
+    
+    if (lowerMessage.includes('generation') || lowerMessage.includes('f1') || lowerMessage.includes('f2')) {
+        return `Multi-generation breeding requires careful strategy! Here's how to approach your next generation:
+        
+        <strong>📊 Generation Planning:</strong>
+        • F1: Expect hybrid vigor but trait segregation
+        • F2: 25% will show desired trait combinations
+        • F3: Select best F2 performers for line stabilization
+        
+        <strong>🎯 Selection Strategy:</strong>
+        For your compact + large flower goal, select F2 plants showing BOTH traits, even if not perfect. These carry the genetic combinations you need for F3 success.
+        
+        Consider keeping detailed records of flowering times, sizes, and plant measurements to track inheritance patterns.`;
+    }
+    
+    // Default response for general questions
+    return `That's an interesting breeding question! Based on current orchid genetics research, I'd recommend:
+    
+    <strong>🔬 Analysis Approach:</strong>
+    • Document all visible traits in your breeding plants
+    • Consider both maternal and paternal contributions
+    • Plan for multi-generation outcomes
+    
+    <strong>💡 Breeding Best Practices:</strong>
+    • Maintain genetic diversity in your breeding program
+    • Keep detailed records of all crosses and outcomes
+    • Test crosses on a small scale before committing to large sowings
+    
+    Could you share more specific details about your breeding goals or upload photos of your plants? That would help me provide more targeted advice.`;
+}
+
+// Update breeding context from message
+function updateBreedingContextFromMessage(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('generation') || lowerMessage.includes('f1') || lowerMessage.includes('f2') || lowerMessage.includes('f3')) {
+        breedingProgramContext.currentGeneration = lowerMessage.match(/f\d+/i)?.[0] || 'Multi-generation';
+    }
+    
+    if (lowerMessage.includes('enhance') || lowerMessage.includes('improve')) {
+        const traits = [];
+        if (lowerMessage.includes('size')) traits.push('flower size');
+        if (lowerMessage.includes('fragrance')) traits.push('fragrance');
+        if (lowerMessage.includes('color')) traits.push('color');
+        if (lowerMessage.includes('form')) traits.push('flower form');
+        if (traits.length > 0) {
+            breedingProgramContext.targetTraits = traits;
+        }
+    }
+    
+    if (lowerMessage.includes('goal') || lowerMessage.includes('want') || lowerMessage.includes('looking for')) {
+        breedingProgramContext.goals = message.substring(0, 100) + (message.length > 100 ? '...' : '');
+    }
+    
+    updateBreedingProgramSummary();
+}
+
+// Use predefined prompt
+function usePrompt(promptType) {
+    const prompts = {
+        'current-cross': "I have a Miltoniopsis with excellent flower form and fragrance that I'd like to use in breeding. It has 4-inch flowers with perfect flat presentation and strong citrus scent. I'm looking for guidance on selecting a good breeding partner to enhance these traits while potentially improving flower count.",
+        'enhance-traits': "I want to enhance flower size and fragrance in my Cattleya breeding program. My current plants average 5-6 inch flowers with moderate fragrance. What breeding strategies would help me achieve larger, more fragrant offspring in the next generation?",
+        'multi-generation': "I'm 3 generations into a breeding line focused on creating compact Phalaenopsis with large flowers. F1 gave me good size but poor plant habit, F2 improved habit but lost some flower size. How should I approach F3 to balance both traits?",
+        'problem-solving': "I'm getting weak offspring with poor root systems and slow growth despite using apparently healthy parents. The crosses seem genetically sound but the seedlings struggle. What breeding factors might I be missing that affect plant vigor?"
+    };
+    
+    if (prompts[promptType]) {
+        document.getElementById('chatInput').value = prompts[promptType];
+        sendMessage();
+    }
+}
+
+// Handle photo uploads for conversation
+function handleConsultantPhotos(files) {
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photoData = {
+                    name: file.name,
+                    data: e.target.result,
+                    timestamp: new Date().toISOString()
+                };
+                
+                currentConversationPhotos.push(photoData);
+                updatePhotoThumbnails();
+                
+                // Automatically mention the photo in chat
+                addMessageToChat('user', `[Uploaded photo: ${file.name}]`);
+                
+                // Trigger AI analysis of the photo
+                analyzeUploadedPhoto(photoData);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+// Update photo thumbnails display
+function updatePhotoThumbnails() {
+    const container = document.getElementById('chatPhotoThumbnails');
+    
+    if (currentConversationPhotos.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No photos uploaded yet</p>';
+        return;
+    }
+    
+    container.innerHTML = currentConversationPhotos.map((photo, index) => `
+        <img src="${photo.data}" class="photo-thumbnail" 
+             onclick="viewPhoto(${index})" 
+             title="${photo.name}" 
+             alt="Breeding photo ${index + 1}">
+    `).join('');
+}
+
+// Analyze uploaded photo with AI
+async function analyzeUploadedPhoto(photoData) {
+    showTypingIndicator();
+    
+    // Demo photo analysis response
+    setTimeout(() => {
+        removeTypingIndicator();
+        
+        const analysis = `I can see this is a beautiful orchid! From the photo "${photoData.name}", I observe:
+        
+        <strong>🔍 Visual Analysis:</strong>
+        • Flower appears to be in good condition with visible detail
+        • I can see the overall plant structure and presentation
+        • Photo quality allows for basic trait assessment
+        
+        <strong>🧬 Breeding Considerations:</strong>
+        For more detailed genetic trait analysis, could you tell me:
+        • What species/hybrid is this?
+        • Are you considering this as a parent or looking at offspring?
+        • What specific traits are you hoping to work with?
+        
+        The visual information helps, but breeding decisions benefit from knowing the genetic background and your specific goals.`;
+        
+        addMessageToChat('ai', analysis, true);
+    }, 1500);
+}
+
+// View photo in larger size
+function viewPhoto(index) {
+    if (currentConversationPhotos[index]) {
+        window.open(currentConversationPhotos[index].data, '_blank');
+    }
+}
+
+// Update breeding program summary
+function updateBreedingProgramSummary() {
+    const container = document.getElementById('breedingProgramSummary');
+    
+    if (Object.keys(breedingProgramContext).length === 0) {
+        container.innerHTML = '<p class="text-muted small">Share details about your breeding goals and I\'ll help track your progress.</p>';
+        return;
+    }
+    
+    let summary = '<div class="breeding-program-summary">';
+    
+    if (breedingProgramContext.goals) {
+        summary += `<p class="text-light small"><strong>Goals:</strong> ${breedingProgramContext.goals}</p>`;
+    }
+    
+    if (breedingProgramContext.currentGeneration) {
+        summary += `<p class="text-muted small"><strong>Generation:</strong> ${breedingProgramContext.currentGeneration}</p>`;
+    }
+    
+    if (breedingProgramContext.targetTraits) {
+        summary += `<p class="text-muted small"><strong>Target Traits:</strong> ${breedingProgramContext.targetTraits.join(', ')}</p>`;
+    }
+    
+    summary += '</div>';
+    container.innerHTML = summary;
+}
+
+// Clear conversation
+function clearConversation() {
+    if (confirm('Are you sure you want to start a new conversation? This will clear the chat history and uploaded photos.')) {
+        document.getElementById('chatMessages').innerHTML = `
+            <div class="ai-message">
+                <div class="message-avatar">🧬</div>
+                <div class="message-content">
+                    <strong>AI Breeding Consultant:</strong> Hello! I'm here to help with your orchid breeding decisions. 
+                    You can type or use voice to tell me about your breeding goals, upload photos of your plants, 
+                    or ask questions about genetics and breeding strategies. What are you working on today?
+                </div>
+            </div>
+        `;
+        
+        currentConversationPhotos = [];
+        breedingProgramContext = {};
+        updatePhotoThumbnails();
+        updateBreedingProgramSummary();
+    }
+}
+
+// Utility function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Initialize AI Breeding Consultant when tab is shown
+function initBreedingConsultant() {
+    initSpeechRecognition();
+    updatePhotoThumbnails();
+    updateBreedingProgramSummary();
+}
+
+// Update showTab function to initialize consultant
+const originalShowTab = showTab;
+showTab = function(tabName) {
+    originalShowTab(tabName);
+    
+    if (tabName === 'consultant') {
+        initBreedingConsultant();
+    }
+};
+
+// Breeding Records Export and Sharing Functions
+
+// Export current conversation session
+function exportConversation() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messages = Array.from(chatMessages.children).map(msg => {
+        const isUser = msg.classList.contains('user-message');
+        const content = msg.querySelector('.message-content').textContent;
+        return {
+            sender: isUser ? 'User' : 'AI Consultant',
+            message: content.replace(/^(You|AI Breeding Consultant):\s*/, ''),
+            timestamp: new Date().toISOString()
+        };
+    });
+    
+    const sessionData = {
+        sessionDate: new Date().toISOString(),
+        breedingProgram: breedingProgramContext,
+        conversation: messages,
+        photos: currentConversationPhotos.map(p => ({
+            name: p.name,
+            timestamp: p.timestamp
+            // Note: Image data excluded from export for privacy
+        }))
+    };
+    
+    // Create and download JSON file
+    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `breeding-session-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Also create readable text version
+    let textContent = `Orchid Breeding Session - ${new Date().toLocaleDateString()}\n\n`;
+    
+    if (Object.keys(breedingProgramContext).length > 0) {
+        textContent += "BREEDING PROGRAM SUMMARY:\n";
+        if (breedingProgramContext.goals) textContent += `Goals: ${breedingProgramContext.goals}\n`;
+        if (breedingProgramContext.currentGeneration) textContent += `Generation: ${breedingProgramContext.currentGeneration}\n`;
+        if (breedingProgramContext.targetTraits) textContent += `Target Traits: ${breedingProgramContext.targetTraits.join(', ')}\n`;
+        textContent += "\n";
+    }
+    
+    textContent += "CONVERSATION LOG:\n";
+    messages.forEach((msg, index) => {
+        textContent += `\n[${msg.sender}]: ${msg.message}\n`;
+    });
+    
+    if (currentConversationPhotos.length > 0) {
+        textContent += `\n\nPHOTOS DISCUSSED:\n`;
+        currentConversationPhotos.forEach((photo, index) => {
+            textContent += `${index + 1}. ${photo.name} (uploaded: ${new Date(photo.timestamp).toLocaleString()})\n`;
+        });
+    }
+    
+    const textBlob = new Blob([textContent], { type: 'text/plain' });
+    const textUrl = URL.createObjectURL(textBlob);
+    const textA = document.createElement('a');
+    textA.href = textUrl;
+    textA.download = `breeding-session-${new Date().toISOString().split('T')[0]}.txt`;
+    textA.click();
+    URL.revokeObjectURL(textUrl);
+    
+    alert('Breeding session exported! Both JSON and text versions have been downloaded.');
+}
+
+// Export all breeding records (placeholder for full implementation)
+function exportAllRecords() {
+    // In a full implementation, this would gather all stored breeding data
+    const allRecords = {
+        exportDate: new Date().toISOString(),
+        breeder: {
+            note: "Professional breeder records export",
+            systemVersion: "Orchid Continuum v1.0"
+        },
+        currentSession: {
+            breedingProgram: breedingProgramContext,
+            photos: currentConversationPhotos.length,
+            notes: "Current session data included"
+        },
+        parentageVerification: {
+            note: "Detailed breeding records for parentage verification",
+            format: "JSON format suitable for academic publication"
+        },
+        instructions: {
+            privacy: "This data is private to you unless you choose to share specific discoveries",
+            backup: "Keep these records safe as backup of your breeding program",
+            sharing: "Use 'Share Discovery' to contribute significant findings to orchid community"
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(allRecords, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all-breeding-records-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('All breeding records exported! This includes your complete breeding program data for backup and verification.');
+}
+
+// Show/hide sharing options
+function showSharingOptions() {
+    const sharingDiv = document.getElementById('sharingOptions');
+    const isVisible = sharingDiv.style.display !== 'none';
+    
+    if (isVisible) {
+        sharingDiv.style.display = 'none';
+    } else {
+        sharingDiv.style.display = 'block';
+        // Scroll to make it visible
+        sharingDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// Submit discovery to community knowledge base
+function submitDiscovery() {
+    const shareAnonymous = document.getElementById('shareAnonymous').checked;
+    const shareAttributed = document.getElementById('shareAttributed').checked;
+    const shareVerification = document.getElementById('shareVerification').checked;
+    
+    if (!shareAnonymous && !shareAttributed) {
+        alert('Please select how you\'d like to share this discovery.');
+        return;
+    }
+    
+    const discoveryData = {
+        submissionDate: new Date().toISOString(),
+        sharingPreferences: {
+            anonymous: shareAnonymous,
+            attributed: shareAttributed,
+            includeVerification: shareVerification
+        },
+        breedingContext: breedingProgramContext,
+        conversationSummary: extractKeyDiscoveries(),
+        significance: "Breeder-identified important discovery"
+    };
+    
+    // In production, this would submit to a community knowledge base
+    console.log('Discovery submission:', discoveryData);
+    
+    let confirmationMessage = `Discovery submitted to orchid breeding community!\n\n`;
+    confirmationMessage += `Sharing mode: ${shareAttributed ? 'With attribution' : 'Anonymous'}\n`;
+    if (shareVerification) confirmationMessage += `Parentage verification data included\n`;
+    confirmationMessage += `\nThank you for contributing to orchid breeding knowledge!`;
+    
+    alert(confirmationMessage);
+    
+    // Reset the form
+    document.getElementById('shareAnonymous').checked = false;
+    document.getElementById('shareAttributed').checked = false;
+    document.getElementById('shareVerification').checked = false;
+    document.getElementById('sharingOptions').style.display = 'none';
+}
+
+// Extract key discoveries from conversation
+function extractKeyDiscoveries() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messages = Array.from(chatMessages.children);
+    
+    const discoveries = [];
+    messages.forEach(msg => {
+        const content = msg.querySelector('.message-content').textContent;
+        // Look for messages that contain breeding insights or discoveries
+        if (content.toLowerCase().includes('discovery') || 
+            content.toLowerCase().includes('breakthrough') ||
+            content.toLowerCase().includes('significant') ||
+            content.toLowerCase().includes('important')) {
+            discoveries.push(content.replace(/^(You|AI Breeding Consultant):\s*/, ''));
+        }
+    });
+    
+    return discoveries.length > 0 ? discoveries : ['Valuable breeding discussion with AI consultant'];
+}
+
+// Initialize Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

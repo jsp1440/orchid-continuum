@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Philosophy Quiz - Member Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        /* Iframe optimization */
+        .iframe-optimized {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .quiz-header {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .question-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .question-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .form-check-input {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #8b5cf6;
+            margin-right: 0.5rem;
+        }
+        
+        .form-check-input:checked {
+            background: #8b5cf6;
+            border-color: #8b5cf6;
+        }
+        
+        .form-check-label {
+            color: #e5e7eb;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .form-check-label:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: #fff;
+        }
+        
+        .btn-discover {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-discover:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+            color: white;
+        }
+        
+        .existing-badge {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .progress-indicator {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            height: 4px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+        
+        .widget-compact {
+            font-size: 0.9rem;
+        }
+        
+        .widget-compact h1 {
+            font-size: 1.8rem;
+        }
+        
+        .widget-compact h2 {
+            font-size: 1.2rem;
+        }
+        
+        /* Mobile responsive for widget */
+        @media (max-width: 576px) {
+            body {
+                padding: 0.5rem;
+            }
+            .quiz-header {
+                padding: 1rem;
+            }
+            .question-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="iframe-optimized widget-compact">
+    <div class="container-fluid">
+        {% if existing_philosophy %}
+        <div class="existing-badge">
+            <h4>🌺 Your Philosophy: {{ existing_philosophy.badge_name }}</h4>
+            <p class="mb-2">{{ existing_philosophy.description }}</p>
+            <small class="text-muted">Earned: {{ existing_philosophy.earned_date[:10] }}</small>
+            <div class="mt-2">
+                <small>Retake the quiz to explore different perspectives!</small>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="quiz-header">
+            <h1 class="mb-2">🌿 Orchid Philosophy Quiz</h1>
+            <h2 class="h5 mb-2">Discover Your Growing Style</h2>
+            <p class="small mb-0" style="color: #e5e7eb;">Member exclusive widget</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-warning text-center">
+            <p>{{ error }}</p>
+            <small>Please try again later or contact support.</small>
+        </div>
+        {% else %}
+        <form action="{{ url_for('submit_philosophy_quiz_widget') }}" method="POST" id="widgetQuizForm">
+            <div class="progress-indicator">
+                <div class="progress-bar" style="width: 0%" id="progressBar"></div>
+            </div>
+            
+            {% for question in questions %}
+            <div class="question-card" data-question="{{ loop.index }}">
+                <h5 class="mb-3">{{ loop.index }}. {{ question.question }}</h5>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="q{{ question.id }}" value="A" id="q{{ question.id }}A" required>
+                    <label class="form-check-label" for="q{{ question.id }}A">
+                        {{ question.option_a }}
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="q{{ question.id }}" value="B" id="q{{ question.id }}B">
+                    <label class="form-check-label" for="q{{ question.id }}B">
+                        {{ question.option_b }}
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="q{{ question.id }}" value="C" id="q{{ question.id }}C">
+                    <label class="form-check-label" for="q{{ question.id }}C">
+                        {{ question.option_c }}
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q{{ question.id }}" value="D" id="q{{ question.id }}D">
+                    <label class="form-check-label" for="q{{ question.id }}D">
+                        {{ question.option_d }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-discover" id="submitBtn">
+                    <i data-feather="compass"></i> Discover My Philosophy
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        feather.replace();
+        
+        // Progress tracking
+        const totalQuestions = {{ questions|length if questions else 0 }};
+        let answeredQuestions = 0;
+        
+        function updateProgress() {
+            const progress = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        // Track answered questions
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const questionName = this.name;
+                const questionAnswered = document.querySelector(`input[name="${questionName}"]:checked`);
+                
+                if (questionAnswered) {
+                    // Count unique answered questions
+                    const answered = new Set();
+                    document.querySelectorAll('input[type="radio"]:checked').forEach(checked => {
+                        answered.add(checked.name);
+                    });
+                    answeredQuestions = answered.size;
+                    updateProgress();
+                }
+                
+                // Enable submit button when all questions answered
+                if (answeredQuestions === totalQuestions) {
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            });
+        });
+        
+        // Form submission
+        document.getElementById('widgetQuizForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<i data-feather="loader"></i> Processing...';
+            btn.disabled = true;
+        });
+        
+        // Initial state
+        document.getElementById('submitBtn').disabled = totalQuestions > 0;
+    </script>
+</body>
+</html>

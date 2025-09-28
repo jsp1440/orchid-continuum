@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}{{ current_user.lab_name }} - OrchidStein Lab{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Lab Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">🧬 {{ current_user.lab_name }}</h2>
+                            <p class="mb-0">
+                                Established {{ current_user.lab_established_date.strftime('%B %Y') }} • 
+                                {{ current_user.breeding_specialization or 'Mixed Genera' }} Focus
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="d-flex gap-3">
+                                <div>
+                                    <div class="h4 mb-0">{{ active_projects|length }}</div>
+                                    <small>Active Projects</small>
+                                </div>
+                                <div>
+                                    <div class="h4 mb-0">{{ lab_collection|length }}</div>
+                                    <small>Plants</small>
+                                </div>
+                                <div>
+                                    <div class="h4 mb-0">{{ total_crosses }}</div>
+                                    <small>Crosses</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('lab.new_project') }}" class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i data-feather="plus-circle" class="text-primary mb-2" style="width: 32px; height: 32px;"></i>
+                    <h6>New Breeding Project</h6>
+                    <small class="text-muted">Start a new research project</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('lab.plan_cross') }}" class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i data-feather="shuffle" class="text-success mb-2" style="width: 32px; height: 32px;"></i>
+                    <h6>Plan Cross</h6>
+                    <small class="text-muted">AI-powered breeding prediction</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('lab.collection') }}" class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i data-feather="database" class="text-info mb-2" style="width: 32px; height: 32px;"></i>
+                    <h6>My Collection</h6>
+                    <small class="text-muted">Manage breeding stock</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('lab.analysis') }}" class="card h-100 text-decoration-none">
+                <div class="card-body text-center">
+                    <i data-feather="trending-up" class="text-warning mb-2" style="width: 32px; height: 32px;"></i>
+                    <h6>Statistical Analysis</h6>
+                    <small class="text-muted">Trait segregation patterns</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Active Projects -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i data-feather="folder"></i> Active Projects</h5>
+                    <a href="{{ url_for('lab.projects') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if active_projects %}
+                        {% for project in active_projects[:3] %}
+                        <div class="d-flex align-items-center mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ project.project_name }}</h6>
+                                <small class="text-muted">{{ project.project_code }}</small>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar" style="width: {{ project.progress_percentage }}%"></div>
+                                </div>
+                            </div>
+                            <div class="ms-3 text-end">
+                                <small class="text-muted">{{ project.progress_percentage }}%</small><br>
+                                <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' }}">
+                                    {{ project.status.title() }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="folder-plus" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">No active projects yet. Start your first breeding project!</p>
+                            <a href="{{ url_for('lab.new_project') }}" class="btn btn-primary">Create Project</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="activity"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activity %}
+                        {% for activity in recent_activity[:5] %}
+                        <div class="d-flex mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
+                            <div class="flex-shrink-0">
+                                <i data-feather="{{ activity.icon }}" class="text-muted"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="mb-1">{{ activity.description|safe }}</div>
+                                <small class="text-muted">{{ activity.timestamp.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="clock" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">No recent activity. Start breeding to see updates here!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breeding Calendar & Statistics -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="calendar"></i> Breeding Calendar</h5>
+                </div>
+                <div class="card-body">
+                    <div id="breedingCalendar">
+                        <!-- Calendar will be loaded here -->
+                        <div class="text-center py-5">
+                            <i data-feather="calendar" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">Loading breeding schedule...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="bar-chart-2"></i> Lab Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 text-primary mb-1">{{ success_rate }}%</div>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 text-success mb-1">{{ flowering_plants }}</div>
+                                <small class="text-muted">Flowering</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 text-info mb-1">{{ pending_analysis }}</div>
+                                <small class="text-muted">Pending Analysis</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 text-warning mb-1">{{ awards_potential }}</div>
+                                <small class="text-muted">Award Potential</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="zap"></i> AI Breeding Insights</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Recommended Next Crosses</h6>
+                            <div id="recommendedCrosses">
+                                {% if ai_recommendations %}
+                                    {% for rec in ai_recommendations[:3] %}
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-primary rounded-circle me-3" style="width: 8px; height: 8px;"></div>
+                                        <div>
+                                            <strong>{{ rec.pod_parent }}</strong> × <strong>{{ rec.pollen_parent }}</strong>
+                                            <small class="text-success ms-2">({{ rec.success_probability }}% success)</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">Add more breeding data to get AI recommendations</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Trait Patterns Discovered</h6>
+                            <div id="traitPatterns">
+                                {% if trait_insights %}
+                                    {% for insight in trait_insights[:3] %}
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-success rounded-circle me-3" style="width: 8px; height: 8px;"></div>
+                                        <div>{{ insight.description }}</div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">Complete more crosses to discover trait patterns</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    feather.replace();
+    
+    // Load breeding calendar
+    loadBreedingCalendar();
+    
+    // Auto-refresh statistics every 5 minutes
+    setInterval(refreshStats, 300000);
+});
+
+function loadBreedingCalendar() {
+    // Placeholder for calendar loading
+    // This would connect to the backend to get upcoming breeding events
+    setTimeout(() => {
+        document.getElementById('breedingCalendar').innerHTML = `
+            <div class="text-center text-muted py-3">
+                <p>Breeding calendar integration coming soon!</p>
+                <small>Track pollination dates, pod harvests, and flowering schedules</small>
+            </div>
+        `;
+    }, 1000);
+}
+
+function refreshStats() {
+    // Refresh statistics without full page reload
+    fetch('{{ url_for("lab.stats_api") }}')
+        .then(response => response.json())
+        .then(data => {
+            // Update statistics display
+            console.log('Stats refreshed:', data);
+        })
+        .catch(error => console.log('Stats refresh failed:', error));
+}
+</script>
+
+{% endblock %}

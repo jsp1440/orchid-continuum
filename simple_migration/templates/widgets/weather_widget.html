@@ -1,0 +1,569 @@
+<!-- Orchid Weather Comparison Widget -->
+<div id="orchid-weather-widget-{{ widget_data.widget_id }}" class="orchid-weather-widget">
+    <div class="widget-header">
+        <h3>
+            <span class="orchid-icon">🌺</span>
+            ORCHID WEATHER
+        </h3>
+        <p class="widget-subtitle">Compare Your Climate to the Origins of Your Orchids</p>
+        <div class="fcos-badge">FCOS</div>
+        <div class="baker-indicator">
+            <span class="baker-count">{{ widget_data.orchids|selectattr('has_baker_data')|list|length }}</span>
+            Expert Culture Sheets Available
+        </div>
+    </div>
+
+    <!-- Location & Current Weather -->
+    <div class="local-weather-section">
+        <div class="location-selector">
+            <select id="location-select-{{ widget_data.widget_id }}" class="location-dropdown">
+                <option value="auto">📍 Detect Location</option>
+                <option value="zip">🏠 Enter ZIP Code</option>
+            </select>
+        </div>
+        
+        <div id="zip-input-{{ widget_data.widget_id }}" class="zip-input-section" style="display: none;">
+            <input type="text" placeholder="Enter ZIP Code" class="zip-input">
+            <button onclick="lookupWeather('{{ widget_data.widget_id }}')">Get Weather</button>
+        </div>
+
+        <div class="current-weather" id="current-weather-{{ widget_data.widget_id }}">
+            <div class="temperature-display">
+                <span class="temp-large">58°</span>
+                <div class="weather-condition">Partly Cloudy</div>
+                <div class="temp-range">H: 63° L: 50°</div>
+            </div>
+        </div>
+
+        <!-- 5-Day Forecast -->
+        <div class="forecast-strip">
+            <div class="forecast-label">Grower's Forecast 🌱</div>
+            <div class="forecast-days">
+                <div class="day-forecast">
+                    <div class="day-name">Tue</div>
+                    <div class="day-icon">☀️</div>
+                    <div class="day-temp">53°</div>
+                </div>
+                <div class="day-forecast">
+                    <div class="day-name">Wed</div>
+                    <div class="day-icon">⛅</div>
+                    <div class="day-temp">55°</div>
+                </div>
+                <div class="day-forecast">
+                    <div class="day-name">Thu</div>
+                    <div class="day-icon">⛅</div>
+                    <div class="day-temp">53°</div>
+                </div>
+                <div class="day-forecast">
+                    <div class="day-name">Fri</div>
+                    <div class="day-icon">⛅</div>
+                    <div class="day-temp">53°</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orchid Collection Comparison -->
+    <div class="orchid-comparison-section">
+        {% for orchid in widget_data.orchids[:3] %}
+        <div class="orchid-comparison-card">
+            <div class="orchid-header">
+                <select class="orchid-selector">
+                    <option selected>{{ orchid.display_name }}</option>
+                    {% for other_orchid in widget_data.orchids %}
+                    {% if other_orchid.id != orchid.id %}
+                    <option value="{{ other_orchid.id }}">{{ other_orchid.display_name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="orchid-content">
+                <div class="orchid-image-section">
+                    {% if orchid.image_url %}
+                    <img src="{{ orchid.image_url }}" alt="{{ orchid.display_name }}" class="orchid-image">
+                    {% else %}
+                    <div class="orchid-placeholder">🌺</div>
+                    {% endif %}
+                    {% if orchid.region and orchid.region != 'Unknown' %}
+                    <div class="native-location">{{ orchid.region }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="climate-comparison">
+                    {% if orchid.climate_preference %}
+                    <div class="climate-match">
+                        <div class="climate-indicator ideal">🌱</div>
+                        <div class="climate-details">
+                            <div class="native-climate">
+                                {% if orchid.temperature_range %}
+                                Temp: {{ orchid.temperature_range }}
+                                {% else %}
+                                Temp: {{ orchid.climate_data.temp_range }}
+                                {% endif %}
+                            </div>
+                            <div class="humidity-info">Humidity: {{ orchid.climate_data.humidity }}</div>
+                            {% if orchid.light_requirements %}
+                            <div class="light-info">Light: {{ orchid.light_requirements }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Care Advice -->
+            <div class="care-advice">
+                <div class="advice-icon">💡</div>
+                <div class="advice-text">
+                    {% if orchid.has_baker_data %}
+                    <div class="baker-advice">
+                        <span class="baker-badge">👨‍🌾 Baker Expert</span>
+                        <div id="baker-advice-{{ orchid.id }}" class="loading">Loading expert advice...</div>
+                    </div>
+                    {% else %}
+                    {% if orchid.climate_preference == 'cool' %}
+                    Keep cool & ventilated. Protect from heat.
+                    {% elif orchid.climate_preference == 'warm' %}
+                    Increase humidity. Warm conditions ideal.
+                    {% else %}
+                    Perfect growing conditions. Monitor humidity.
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Widget Footer -->
+    <div class="widget-footer">
+        <div class="text-center mb-2">
+            <a href="/" class="btn btn-sm btn-outline-light">
+                <i data-feather="home" style="width: 14px; height: 14px;"></i> Homepage
+            </a>
+        </div>
+        <div class="last-updated">Updated: <span id="last-update-{{ widget_data.widget_id }}">now</span></div>
+        <div class="powered-by">Five Cities Orchid Society</div>
+        <div class="copyright-notice" style="font-size: 9px; color: #999999; text-align: center; margin-top: 4px;">
+            <span class="copyright-full d-none d-md-inline">Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.</span>
+            <span class="copyright-short d-md-none" 
+                  title="Orchid Continuum © 2025 Jeffery S. Parham. All rights reserved. Licensed for use by the Five Cities Orchid Society.">
+                © 2025 Jeffery S. Parham — Licensed to FCOS
+            </span>
+        </div>
+    </div>
+</div>
+
+<script>
+// Widget JavaScript for {{ widget_data.widget_id }}
+(function() {
+    const widgetId = '{{ widget_data.widget_id }}';
+    
+    function initializeWidget() {
+        // Auto-detect location on load
+        const locationSelect = document.getElementById(`location-select-${widgetId}`);
+        if (locationSelect) {
+            locationSelect.addEventListener('change', handleLocationChange);
+        }
+        
+        // Check if geolocation is available
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    updateWeatherForLocation(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.log('Geolocation not available, showing default weather');
+                    showDefaultWeather();
+                }
+            );
+        } else {
+            showDefaultWeather();
+        }
+        
+        updateTimestamp();
+    }
+    
+    function handleLocationChange() {
+        const select = document.getElementById(`location-select-${widgetId}`);
+        const zipInput = document.getElementById(`zip-input-${widgetId}`);
+        
+        if (select.value === 'zip') {
+            zipInput.style.display = 'block';
+        } else {
+            zipInput.style.display = 'none';
+            if (select.value === 'auto' && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    updateWeatherForLocation(position.coords.latitude, position.coords.longitude);
+                });
+            }
+        }
+    }
+    
+    function updateWeatherForLocation(lat, lon) {
+        // This would integrate with your weather API
+        console.log(`Updating weather for ${lat}, ${lon}`);
+        updateClimateComparisons();
+    }
+    
+    function updateClimateComparisons() {
+        // Update climate indicators based on current weather vs orchid preferences
+        const indicators = document.querySelectorAll('.climate-indicator');
+        indicators.forEach(indicator => {
+            // This would contain the actual comparison logic
+            // For now, rotating through different states for demo
+        });
+    }
+    
+    function showDefaultWeather() {
+        // Show default weather when location detection fails
+        console.log('Showing default weather for Los Angeles area');
+    }
+    
+    function updateTimestamp() {
+        const timeElement = document.getElementById(`last-update-${widgetId}`);
+        if (timeElement) {
+            const now = new Date();
+            timeElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWidget);
+    } else {
+        initializeWidget();
+    }
+    
+    // Global function for ZIP lookup
+    window.lookupWeather = function(widgetId) {
+        const zipInput = document.querySelector(`#zip-input-${widgetId} .zip-input`);
+        if (zipInput && zipInput.value) {
+            // This would call your ZIP lookup API
+            fetch(`/api/weather/zip/${zipInput.value}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateWeatherDisplay(data);
+                    updateClimateComparisons();
+                });
+        }
+    };
+})();
+</script>
+
+<style>
+.orchid-weather-widget {
+    width: 280px;
+    max-width: 300px;
+    background: linear-gradient(135deg, #4a7c59 0%, #6fa16c 100%);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.widget-header {
+    text-align: center;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.orchid-icon {
+    margin-right: 5px;
+}
+
+.widget-subtitle {
+    margin: 5px 0 0 0;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.fcos-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+/* Local Weather Section */
+.local-weather-section {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.location-dropdown {
+    width: 100%;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.zip-input-section {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.zip-input {
+    flex: 1;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.current-weather {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.temp-large {
+    font-size: 36px;
+    font-weight: bold;
+    display: block;
+    line-height: 1;
+}
+
+.weather-condition {
+    font-size: 12px;
+    margin: 2px 0;
+}
+
+.temp-range {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+.forecast-strip {
+    margin-top: 10px;
+}
+
+.forecast-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.forecast-days {
+    display: flex;
+    justify-content: space-between;
+    gap: 2px;
+}
+
+.day-forecast {
+    flex: 1;
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 4px 2px;
+}
+
+.day-name {
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.day-icon {
+    font-size: 14px;
+    margin: 2px 0;
+}
+
+.day-temp {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Orchid Comparison Section */
+.orchid-comparison-section {
+    margin-top: 12px;
+}
+
+.orchid-comparison-card {
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.orchid-header {
+    background: #2c5530;
+    color: white;
+    padding: 6px 10px;
+}
+
+.orchid-selector {
+    width: 100%;
+    background: transparent;
+    color: white;
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.orchid-content {
+    display: flex;
+    padding: 10px;
+    gap: 10px;
+}
+
+.orchid-image-section {
+    width: 80px;
+    text-align: center;
+}
+
+.orchid-image {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+}
+
+.orchid-placeholder {
+    width: 70px;
+    height: 70px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 2px solid #e0e0e0;
+}
+
+.native-location {
+    font-size: 9px;
+    margin-top: 4px;
+    color: #666;
+    font-weight: 500;
+}
+
+.climate-comparison {
+    flex: 1;
+}
+
+.climate-match {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.climate-indicator {
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+.climate-indicator.ideal { color: #4CAF50; }
+.climate-indicator.warning { color: #FF9800; }
+.climate-indicator.stress { color: #F44336; }
+
+.climate-details {
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.native-climate, .humidity-info, .light-info {
+    margin-bottom: 2px;
+    color: #555;
+}
+
+.care-advice {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.advice-icon {
+    font-size: 14px;
+}
+
+.advice-text {
+    font-size: 10px;
+    color: #666;
+    line-height: 1.2;
+}
+
+/* Widget Footer */
+.widget-footer {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 9px;
+    opacity: 0.7;
+}
+
+.last-updated {
+    margin-bottom: 3px;
+}
+
+.powered-by {
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 300px) {
+    .orchid-weather-widget {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .orchid-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .orchid-image-section {
+        width: 100%;
+    }
+    
+    .forecast-days {
+        gap: 1px;
+    }
+    
+    .day-forecast {
+        padding: 3px 1px;
+    }
+}
+
+/* Animation for loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.climate-indicator {
+    transition: all 0.3s ease;
+}
+
+/* Weather condition icons mapping */
+.weather-clear::before { content: '☀️'; }
+.weather-cloudy::before { content: '⛅'; }
+.weather-overcast::before { content: '☁️'; }
+.weather-rain::before { content: '🌧️'; }
+.weather-snow::before { content: '❄️'; }
+</style>

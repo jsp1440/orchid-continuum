@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchid Crossword Puzzle Widget</title>
+    <style>
+        .orchid-crossword-widget {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 2px solid #7A4B8E;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .crossword-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .crossword-header h3 {
+            color: #7A4B8E;
+            margin: 0 0 10px 0;
+        }
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: #7A4B8E;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #6a3d7a;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .crossword-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .crossword-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border: 2px solid #7A4B8E;
+            border-radius: 8px;
+            padding: 10px;
+            aspect-ratio: 1;
+            max-width: 450px;
+        }
+        .crossword-cell {
+            background: white;
+            border: 1px solid #ccc;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            position: relative;
+            cursor: pointer;
+        }
+        .crossword-cell.blocked {
+            background: #333;
+        }
+        .crossword-cell.active {
+            background: #e7f3ff;
+            border-color: #7A4B8E;
+        }
+        .crossword-cell.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        .crossword-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: transparent;
+        }
+        .crossword-cell input:focus {
+            outline: none;
+            background: #e7f3ff;
+        }
+        .cell-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 8px;
+            color: #666;
+        }
+        .clues-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        .clues-section {
+            margin-bottom: 15px;
+        }
+        .clues-section h4 {
+            color: #7A4B8E;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .clue {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .clue:hover {
+            background: #f8f9fa;
+        }
+        .clue.active {
+            background: #e7f3ff;
+            border-left: 3px solid #7A4B8E;
+        }
+        .clue-number {
+            font-weight: bold;
+            color: #7A4B8E;
+        }
+        .score-display {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #7A4B8E;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        .completion-message {
+            text-align: center;
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .crossword-container {
+                grid-template-columns: 1fr;
+            }
+            .crossword-grid {
+                max-width: 100%;
+                font-size: 10px;
+            }
+            .crossword-cell {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="orchid-crossword-widget">
+        <div class="crossword-header">
+            <h3>🧩 Orchid Crossword Puzzle</h3>
+            <div class="score-display">
+                Completed: <span id="completed-words">0</span>/<span id="total-words">0</span>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <select id="difficulty-select" class="btn btn-secondary">
+                <option value="mixed">Mixed Difficulty</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadPuzzle()">New Puzzle</button>
+            <button class="btn btn-secondary" onclick="checkAnswers()">Check Answers</button>
+            <button class="btn btn-secondary" onclick="showSolution()">Show Solution</button>
+        </div>
+        
+        <div id="crossword-content">
+            <div class="loading">Loading crossword puzzle...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentPuzzle = null;
+        let completedWords = 0;
+        let currentCell = null;
+        let currentDirection = 'across';
+
+        async function loadPuzzle() {
+            const difficulty = document.getElementById('difficulty-select').value;
+            document.getElementById('crossword-content').innerHTML = '<div class="loading">Loading crossword puzzle...</div>';
+            
+            try {
+                const response = await fetch(`/games/api/crossword-puzzle?difficulty=${difficulty}&size=medium`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentPuzzle = data.puzzle;
+                    completedWords = 0;
+                    renderPuzzle();
+                    updateScore();
+                } else {
+                    document.getElementById('crossword-content').innerHTML = '<div class="loading">Error loading puzzle</div>';
+                }
+            } catch (error) {
+                document.getElementById('crossword-content').innerHTML = '<div class="loading">Error loading puzzle</div>';
+            }
+        }
+
+        function renderPuzzle() {
+            const html = `
+                <div class="crossword-container">
+                    <div class="crossword-grid" id="crossword-grid">
+                        ${renderGrid()}
+                    </div>
+                    <div class="clues-panel">
+                        ${renderClues()}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('crossword-content').innerHTML = html;
+            setupEventListeners();
+        }
+
+        function renderGrid() {
+            const gridSize = currentPuzzle.grid_size;
+            let grid = '';
+            
+            // Create empty grid
+            const cellGrid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+            
+            // Fill in words
+            currentPuzzle.words.forEach(wordData => {
+                const { word, row, col, direction, number } = wordData;
+                
+                for (let i = 0; i < word.length; i++) {
+                    const cellRow = direction === 'across' ? row : row + i;
+                    const cellCol = direction === 'across' ? col + i : col;
+                    
+                    if (cellRow < gridSize && cellCol < gridSize) {
+                        if (!cellGrid[cellRow][cellCol]) {
+                            cellGrid[cellRow][cellCol] = {
+                                letter: word[i],
+                                number: i === 0 ? number : null,
+                                words: []
+                            };
+                        }
+                        cellGrid[cellRow][cellCol].words.push({
+                            word: word,
+                            direction: direction,
+                            number: number
+                        });
+                    }
+                }
+            });
+            
+            // Render grid
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cell = cellGrid[r][c];
+                    if (cell) {
+                        grid += `
+                            <div class="crossword-cell" data-row="${r}" data-col="${c}" data-letter="${cell.letter}">
+                                ${cell.number ? `<div class="cell-number">${cell.number}</div>` : ''}
+                                <input type="text" maxlength="1" data-row="${r}" data-col="${c}">
+                            </div>
+                        `;
+                    } else {
+                        grid += '<div class="crossword-cell blocked"></div>';
+                    }
+                }
+            }
+            
+            return grid;
+        }
+
+        function renderClues() {
+            let html = '';
+            
+            if (Object.keys(currentPuzzle.clues.across).length > 0) {
+                html += '<div class="clues-section"><h4>Across</h4>';
+                for (const [number, clue] of Object.entries(currentPuzzle.clues.across)) {
+                    html += `<div class="clue" data-number="${number}" data-direction="across">
+                        <span class="clue-number">${number}.</span> ${clue}
+                    </div>`;
+                }
+                html += '</div>';
+            }
+            
+            if (Object.keys(currentPuzzle.clues.down).length > 0) {
+                html += '<div class="clues-section"><h4>Down</h4>';
+                for (const [number, clue] of Object.entries(currentPuzzle.clues.down)) {
+                    html += `<div class="clue" data-number="${number}" data-direction="down">
+                        <span class="clue-number">${number}.</span> ${clue}
+                    </div>`;
+                }
+                html += '</div>';
+            }
+            
+            return html;
+        }
+
+        function setupEventListeners() {
+            // Input event listeners
+            document.querySelectorAll('.crossword-cell input').forEach(input => {
+                input.addEventListener('input', handleInput);
+                input.addEventListener('click', handleCellClick);
+                input.addEventListener('keydown', handleKeyDown);
+            });
+            
+            // Clue click listeners
+            document.querySelectorAll('.clue').forEach(clue => {
+                clue.addEventListener('click', handleClueClick);
+            });
+        }
+
+        function handleInput(event) {
+            const input = event.target;
+            input.value = input.value.toUpperCase();
+            
+            // Move to next cell
+            if (input.value && currentDirection) {
+                moveToNextCell(input);
+            }
+            
+            checkWordCompletion();
+        }
+
+        function handleCellClick(event) {
+            currentCell = event.target;
+            highlightCurrentWord();
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Backspace' && !event.target.value) {
+                moveToPreviousCell(event.target);
+            }
+        }
+
+        function handleClueClick(event) {
+            const clue = event.target.closest('.clue');
+            const number = clue.dataset.number;
+            const direction = clue.dataset.direction;
+            
+            // Find first cell of this word
+            const wordData = currentPuzzle.words.find(w => w.number == number && w.direction === direction);
+            if (wordData) {
+                const firstCell = document.querySelector(`input[data-row="${wordData.row}"][data-col="${wordData.col}"]`);
+                if (firstCell) {
+                    firstCell.focus();
+                    currentCell = firstCell;
+                    currentDirection = direction;
+                    highlightCurrentWord();
+                }
+            }
+        }
+
+        function moveToNextCell(input) {
+            // Implementation for moving to next cell based on direction
+            // This is simplified - a full implementation would follow word paths
+        }
+
+        function moveToPreviousCell(input) {
+            // Implementation for moving to previous cell
+        }
+
+        function highlightCurrentWord() {
+            // Remove previous highlights
+            document.querySelectorAll('.crossword-cell').forEach(cell => {
+                cell.classList.remove('active');
+            });
+            document.querySelectorAll('.clue').forEach(clue => {
+                clue.classList.remove('active');
+            });
+            
+            // Add new highlights
+            if (currentCell) {
+                currentCell.closest('.crossword-cell').classList.add('active');
+            }
+        }
+
+        function checkWordCompletion() {
+            let completed = 0;
+            
+            currentPuzzle.words.forEach(wordData => {
+                let wordComplete = true;
+                const { word, row, col, direction } = wordData;
+                
+                for (let i = 0; i < word.length; i++) {
+                    const cellRow = direction === 'across' ? row : row + i;
+                    const cellCol = direction === 'across' ? col + i : col;
+                    const input = document.querySelector(`input[data-row="${cellRow}"][data-col="${cellCol}"]`);
+                    
+                    if (!input || input.value !== word[i]) {
+                        wordComplete = false;
+                        break;
+                    }
+                }
+                
+                if (wordComplete) {
+                    completed++;
+                }
+            });
+            
+            completedWords = completed;
+            updateScore();
+            
+            if (completedWords === currentPuzzle.words.length) {
+                showCompletionMessage();
+            }
+        }
+
+        function checkAnswers() {
+            currentPuzzle.words.forEach(wordData => {
+                const { word, row, col, direction } = wordData;
+                
+                for (let i = 0; i < word.length; i++) {
+                    const cellRow = direction === 'across' ? row : row + i;
+                    const cellCol = direction === 'across' ? col + i : col;
+                    const cell = document.querySelector(`.crossword-cell[data-row="${cellRow}"][data-col="${cellCol}"]`);
+                    const input = document.querySelector(`input[data-row="${cellRow}"][data-col="${cellCol}"]`);
+                    
+                    if (input && input.value === word[i]) {
+                        cell.classList.add('correct');
+                    }
+                }
+            });
+        }
+
+        function showSolution() {
+            currentPuzzle.words.forEach(wordData => {
+                const { word, row, col, direction } = wordData;
+                
+                for (let i = 0; i < word.length; i++) {
+                    const cellRow = direction === 'across' ? row : row + i;
+                    const cellCol = direction === 'across' ? col + i : col;
+                    const input = document.querySelector(`input[data-row="${cellRow}"][data-col="${cellCol}"]`);
+                    
+                    if (input) {
+                        input.value = word[i];
+                    }
+                }
+            });
+            
+            checkWordCompletion();
+        }
+
+        function updateScore() {
+            document.getElementById('completed-words').textContent = completedWords;
+            document.getElementById('total-words').textContent = currentPuzzle ? currentPuzzle.words.length : 0;
+        }
+
+        function showCompletionMessage() {
+            const message = document.createElement('div');
+            message.className = 'completion-message';
+            message.innerHTML = '🎉 Congratulations! You completed the crossword puzzle!';
+            document.getElementById('crossword-content').prepend(message);
+        }
+
+        // Load first puzzle
+        loadPuzzle();
+    </script>
+</body>
+</html>

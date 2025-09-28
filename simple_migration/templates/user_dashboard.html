@@ -1,0 +1,303 @@
+{% extends "layout.html" %}
+{% set page_title = "My Orchid Dashboard" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 text-light">
+                        <i data-feather="layout" class="me-2"></i>
+                        Welcome Back, {{ current_user.get_full_name() }}!
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Your Orchid ID: <strong class="text-primary">{{ current_user.user_id }}</strong>
+                        {% if current_user.experience_level %}
+                        | Experience: <span class="text-capitalize">{{ current_user.experience_level }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i data-feather="upload" class="me-1"></i>Upload New Orchid
+                    </a>
+                    <a href="{{ url_for('user_profile') }}" class="btn btn-outline-light">
+                        <i data-feather="user" class="me-1"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.total_contributions or 0 }}</h4>
+                            <p class="card-text">Total Orchids</p>
+                        </div>
+                        <i data-feather="star" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.ai_analyzed or 0 }}</h4>
+                            <p class="card-text">AI Analyzed</p>
+                        </div>
+                        <i data-feather="cpu" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.featured_orchids or 0 }}</h4>
+                            <p class="card-text">Featured</p>
+                        </div>
+                        <i data-feather="star" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ stats.total_views or 0 }}</h4>
+                            <p class="card-text">Total Views</p>
+                        </div>
+                        <i data-feather="eye" style="width: 48px; height: 48px; opacity: 0.7;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- My Orchids -->
+        <div class="col-lg-8">
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="grid" class="me-2"></i>My Orchid Collection
+                    </h5>
+                    <a href="{{ url_for('upload') }}" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="plus" class="me-1"></i>Add Orchid
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if user_orchids %}
+                        <div class="row g-3">
+                            {% for orchid in user_orchids[:12] %}
+                            <div class="col-md-4 col-lg-3">
+                                <div class="card bg-secondary text-light">
+                                    {% if orchid.image_url %}
+                                    <div class="card-img-top-container" style="height: 150px; overflow: hidden;">
+                                        <img src="{{ orchid.image_url }}" 
+                                             class="card-img-top" 
+                                             alt="{{ orchid.display_name }}"
+                                             style="height: 100%; width: 100%; object-fit: cover;">
+                                    </div>
+                                    {% endif %}
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title small mb-1">{{ orchid.display_name or orchid.scientific_name }}</h6>
+                                        {% if orchid.ai_confidence %}
+                                        <div class="mb-1">
+                                            <span class="badge bg-success small">{{ "%.0f"|format(orchid.ai_confidence * 100) }}% AI Match</span>
+                                        </div>
+                                        {% endif %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{{ url_for('orchid_detail', id=orchid.id) }}" class="btn btn-outline-light btn-sm">View</a>
+                                            {% if orchid.is_featured %}
+                                            <i data-feather="star" class="text-warning"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if user_orchids|length > 12 %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('gallery') }}?user={{ current_user.user_id }}" class="btn btn-outline-primary">
+                                View All {{ user_orchids|length }} Orchids
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="image" class="mb-3 text-muted" style="width: 64px; height: 64px;"></i>
+                            <h6 class="text-muted">No Orchids Yet</h6>
+                            <p class="text-muted mb-3">Upload your first orchid to get started with AI analysis!</p>
+                            <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                                <i data-feather="upload" class="me-2"></i>Upload First Orchid
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_uploads %}
+                        <div class="list-group list-group-flush">
+                            {% for upload in user_uploads %}
+                            <div class="list-group-item list-group-item-dark">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ upload.original_filename or upload.filename }}</h6>
+                                        <p class="mb-1 small text-muted">
+                                            Uploaded {{ upload.created_at.strftime('%Y-%m-%d %H:%M') if upload.created_at else 'Unknown' }}
+                                        </p>
+                                    </div>
+                                    <span class="badge {% if upload.processed %}bg-success{% else %}bg-warning{% endif %}">
+                                        {% if upload.processed %}Processed{% else %}Processing{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Philosophy Quiz Widget -->
+            <div class="card bg-dark text-light mb-3" style="border: 2px solid #8b5cf6;">
+                <div class="card-header" style="background: rgba(139, 92, 246, 0.2);">
+                    <h5 class="mb-0">
+                        <i data-feather="compass" class="me-2"></i>Your Orchid Philosophy
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    {% set philosophy_badge = current_user.badges|selectattr('badge_type', 'eq', 'philosophy_quiz')|first %}
+                    {% if philosophy_badge %}
+                        <div class="mb-3">
+                            <div style="font-size: 3rem;">{{ philosophy_badge.badge_data.badge_emoji }}</div>
+                            <h4 style="color: #8b5cf6;">{{ philosophy_badge.badge_data.badge_name }}</h4>
+                            <p class="text-muted small">{{ philosophy_badge.badge_data.philosophy }}</p>
+                            <p class="small">{{ philosophy_badge.badge_data.growing_style }}</p>
+                        </div>
+                        <p class="small">{{ philosophy_badge.badge_data.description }}</p>
+                        <a href="{{ url_for('philosophy_quiz') }}" class="btn btn-outline-light btn-sm">
+                            <i data-feather="refresh-cw" class="me-1"></i>Retake Quiz
+                        </a>
+                    {% else %}
+                        <div class="mb-3">
+                            <div style="font-size: 3rem;">🌺</div>
+                            <h5 style="color: #8b5cf6;">Discover Your Philosophy</h5>
+                        </div>
+                        <p>Are you a Stoic grower? Epicurean? Skeptic? Take our 2-minute quiz to find out!</p>
+                        <a href="{{ url_for('philosophy_quiz') }}" class="btn btn-lg" style="background: #8b5cf6; border: none; color: white;">
+                            <i data-feather="help-circle" class="me-1"></i>Take Philosophy Quiz
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Achievements -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="award" class="me-2"></i>Your Achievements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if achievements %}
+                        <div class="d-grid gap-2">
+                            {% for achievement in achievements %}
+                            <div class="d-flex align-items-center p-2 border border-secondary rounded">
+                                <i data-feather="{{ achievement.icon }}" class="me-2 text-{{ achievement.class.split('-')[1] }}" style="width: 24px; height: 24px;"></i>
+                                <div>
+                                    <h6 class="mb-0 small">{{ achievement.name }}</h6>
+                                    <small class="text-muted">{{ achievement.description }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0 small">Upload your first orchid to start earning achievements!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card bg-dark text-light mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bar-chart" class="me-2"></i>Your Impact
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ stats.rhs_verified or 0 }}</h4>
+                            <small class="text-muted">RHS Verified</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ stats.total_contributions or 0 }}</h4>
+                            <small class="text-muted">Contributions</small>
+                        </div>
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="text-center">
+                        <small class="text-muted">
+                            You've contributed to the world's largest collaborative orchid database!
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card bg-dark text-light">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="zap" class="me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                            <i data-feather="upload" class="me-1"></i>Upload New Orchid
+                        </a>
+                        <a href="{{ url_for('gallery') }}" class="btn btn-outline-secondary">
+                            <i data-feather="grid" class="me-1"></i>Browse Gallery
+                        </a>
+                        <a href="{{ url_for('how_it_works') }}" class="btn btn-outline-info">
+                            <i data-feather="info" class="me-1"></i>How It Works
+                        </a>
+                        <a href="{{ url_for('user_profile') }}" class="btn btn-outline-light">
+                            <i data-feather="user" class="me-1"></i>Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
