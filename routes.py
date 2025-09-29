@@ -1136,7 +1136,7 @@ Respond helpfully about orchids, weather, navigation, or emergency preparedness.
 
         # Make API call to OpenAI
         from openai import OpenAI
-        client = OpenAI()
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
