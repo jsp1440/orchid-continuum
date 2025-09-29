@@ -28,8 +28,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # Configure CSP headers for iframe embedding (NeonOne compatibility)
 @app.after_request
 def add_security_headers(response):
-    # Allow NeonOne iframe embedding
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # REMOVE X-Frame-Options to allow Neon One iframe embedding
+    # Only use CSP frame-ancestors for iframe control
     response.headers['Content-Security-Policy'] = "frame-ancestors 'self' *.neoncrm.com *.app.neoncrm.com https://fivecitiesorchidsociety.app.neoncrm.com"
     return response
 
