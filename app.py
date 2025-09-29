@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf.csrf import CSRFProtect
+from flask_cors import CORS
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,6 +17,29 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
+
+# Configure CORS for Neon One widget embedding
+CORS(app, 
+     origins=[
+         "https://*.neoncrm.com",
+         "https://*.app.neoncrm.com", 
+         "https://fivecitiesorchidsociety.app.neoncrm.com",
+         "http://localhost:*",  # For testing
+         "https://localhost:*"  # For testing
+     ],
+     supports_credentials=False,  # Avoid cookies in widgets
+     resources={
+         r"/widgets/*": {"origins": [
+             "https://*.neoncrm.com",
+             "https://*.app.neoncrm.com",
+             "https://fivecitiesorchidsociety.app.neoncrm.com"
+         ]},
+         r"/api/*": {"origins": [
+             "https://*.neoncrm.com", 
+             "https://*.app.neoncrm.com",
+             "https://fivecitiesorchidsociety.app.neoncrm.com"
+         ]}
+     })
 
 # Critical security: No fallback value for secret key
 app.secret_key = os.environ.get("SESSION_SECRET")

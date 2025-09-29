@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: orchid-continuum
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: SESSION_SECRET
+        generateValue: true  # Auto-generate secure secret
+      - key: DATABASE_URL
+        sync: false  # Set manually or use Render's PostgreSQL add-on
