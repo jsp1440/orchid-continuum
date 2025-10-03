@@ -97,12 +97,15 @@ with app.app_context():
     except ImportError as e:
         logging.warning(f"Auth routes not available: {e}")
     
-    # Register Replit Auth blueprint
+    # Register Replit Auth blueprint (optional - only on Replit)
     try:
         from replit_auth import make_replit_blueprint
         replit_bp = make_replit_blueprint()
-        app.register_blueprint(replit_bp, url_prefix="/auth")
-        logging.info("✅ Replit Auth initialized successfully")
+        if replit_bp:
+            app.register_blueprint(replit_bp, url_prefix="/auth")
+            logging.info("✅ Replit Auth initialized successfully")
+        else:
+            logging.info("⚠️ Replit Auth skipped (REPL_ID not set - running on external platform)")
     except ImportError as e:
         logging.warning(f"⚠️ Replit Auth not available: {e}")
     except Exception as e:

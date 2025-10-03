@@ -62,7 +62,7 @@ def make_replit_blueprint():
     try:
         repl_id = os.environ['REPL_ID']
     except KeyError:
-        raise SystemExit("the REPL_ID environment variable must be set")
+        return None
 
     issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
 
