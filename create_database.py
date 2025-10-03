@@ -32,11 +32,27 @@ def create_database_if_not_exists():
         port = host_port[1] if len(host_port) > 1 else "5432"
         target_db = host_port_db[1] if len(host_port_db) > 1 else "orchid_continuum"
         
-        # Connect to default 'postgres' database to create our database
-        logger.info(f"Connecting to postgres database to create {target_db}...")
+        # Try multiple default databases to connect
+        logger.info(f"Attempting to connect to create {target_db}...")
         
-        conn_string = f"postgresql://{user}:{password}@{host}:{port}/postgres"
-        conn = psycopg2.connect(conn_string)
+        # Try these databases in order: postgres, template1, user's default
+        default_dbs = ["postgres", "template1", user]
+        conn = None
+        
+        for default_db in default_dbs:
+            try:
+                conn_string = f"postgresql://{user}:{password}@{host}:{port}/{default_db}"
+                logger.info(f"Trying to connect to {default_db}...")
+                conn = psycopg2.connect(conn_string)
+                logger.info(f"✅ Connected to {default_db}")
+                break
+            except Exception as e:
+                logger.warning(f"Could not connect to {default_db}: {e}")
+                continue
+        
+        if not conn:
+            logger.error("Could not connect to any default database")
+            return False
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         
         cursor = conn.cursor()
