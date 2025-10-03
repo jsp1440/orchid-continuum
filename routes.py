@@ -21,7 +21,12 @@ from enhanced_judging import analyze_orchid_with_genetics
 # from genetic_analysis import analyze_orchid_genetics, compare_hybrid_to_parents  # Temporarily disabled
 from enhanced_metadata_analyzer import analyze_orchid_with_botanical_databases
 from rhs_integration import get_rhs_orchid_data, analyze_hybrid_parentage
-from export_utils import export_orchid_data, get_export_filename
+try:
+    from export_utils import export_orchid_data, get_export_filename
+except ImportError as e:
+    print(f"Warning: Could not import export_utils: {e}")
+    export_orchid_data = None
+    get_export_filename = None
 from certificate_generator import generate_award_certificate, get_certificate_pdf
 from filename_parser import parse_orchid_filename
 from processing_routes import processing_bp
