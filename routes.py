@@ -30,7 +30,11 @@ except ImportError as e:
 from certificate_generator import generate_award_certificate, get_certificate_pdf
 from filename_parser import parse_orchid_filename
 from processing_routes import processing_bp
-from photo_editor_routes import photo_editor_bp
+try:
+    from photo_editor_routes import photo_editor_bp
+except ImportError as e:
+    print(f"Warning: Could not import photo_editor_routes: {e}")
+    photo_editor_bp = None
 from weather_service import WeatherService, get_coordinates_from_location
 from orchid_atlas import atlas_bp
 from darwin_core_exporter import DarwinCoreExporter
