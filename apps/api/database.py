@@ -4,7 +4,9 @@ from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables (only in development, not on Render)
+if not os.getenv("RENDER"):
+    load_dotenv()
 
 # Database URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/orchid_continuum")

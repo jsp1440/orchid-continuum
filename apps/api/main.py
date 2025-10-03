@@ -5,8 +5,9 @@ from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (only in development, not on Render)
+if not os.getenv("RENDER"):
+    load_dotenv()
 
 # Import route modules
 from routers import orchids, auth, admin, widgets, search, ingest, legacy_adapter
