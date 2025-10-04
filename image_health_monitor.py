@@ -391,7 +391,10 @@ image_monitor = ImageHealthMonitor()
 
 def start_image_monitoring():
     """Start the image monitoring system"""
-    return image_monitor.start_monitoring()
+    # PERMANENTLY DISABLED - causes localhost errors on Render
+    import logging
+    logging.getLogger(__name__).info("🔇 Image monitoring disabled")
+    return None
 
 def get_image_health_report():
     """Get current image health report"""

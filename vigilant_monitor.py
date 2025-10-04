@@ -384,3 +384,11 @@ class VigilantMonitor:
 
 # Global vigilant monitor instance
 vigilant_monitor = VigilantMonitor()
+
+# Override start method to disable in production
+_original_start = vigilant_monitor.start_vigilant_monitoring
+def _disabled_start():
+    import logging
+    logging.getLogger(__name__).info("🔇 Vigilant monitoring disabled")
+    return False
+vigilant_monitor.start_vigilant_monitoring = _disabled_start

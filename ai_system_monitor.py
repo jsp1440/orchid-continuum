@@ -736,9 +736,10 @@ def get_ai_monitor() -> AISystemMonitor:
 
 def start_ai_monitoring(interval_seconds: int = 60):
     """Start AI monitoring with specified interval"""
-    monitor = get_ai_monitor()
-    monitor.start_monitoring(interval_seconds)
-    return monitor
+    # PERMANENTLY DISABLED - causes localhost errors on Render
+    import logging
+    logging.getLogger(__name__).info("🔇 AI monitoring disabled")
+    return None
 
 def get_monitoring_status() -> Dict[str, Any]:
     """Get current monitoring status"""
