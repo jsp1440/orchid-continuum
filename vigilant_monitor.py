@@ -52,8 +52,8 @@ class VigilantMonitor:
     def start_vigilant_monitoring(self):
         """Start ultra-vigilant monitoring"""
         # Disable on Render to prevent connection errors
-        # Render sets RENDER="true" in production
-        if os.getenv('RENDER') == 'true':
+        # Render sets RENDER environment variable in production
+        if os.getenv('RENDER'):
             logger.info("🔇 Vigilant monitoring disabled on Render (production)")
             return False
             
