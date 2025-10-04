@@ -2003,10 +2003,14 @@ except ImportError as e:
     def get_enhanced_widget_data(widget_type, **kwargs):
         return {'widget_type': widget_type, 'data': 'integration_not_available'}
 
-# Start comprehensive image monitoring every 30 seconds
+# Start comprehensive image monitoring every 30 seconds (disabled on Render)
 try:
-    monitoring_thread = start_image_monitoring()
-    logger.info("🔍 Started comprehensive image monitoring every 30 seconds")
+    # Don't start on Render - causes localhost connection errors
+    if not os.environ.get('RENDER_EXTERNAL_URL'):
+        monitoring_thread = start_image_monitoring()
+        logger.info("🔍 Started comprehensive image monitoring every 30 seconds")
+    else:
+        logger.info("🔇 Image health monitoring disabled (production environment)")
 except Exception as e:
     logger.error(f"Failed to start monitoring: {e}")
 
@@ -9656,11 +9660,14 @@ def database_stats_api():
         logger.error(f"Error getting database stats: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Auto-start vigilant monitoring
+# Auto-start vigilant monitoring (disabled on Render)
 try:
-    if vigilant_monitor:
+    # Don't start on Render - causes localhost connection errors
+    if not os.environ.get('RENDER_EXTERNAL_URL') and vigilant_monitor:
         vigilant_monitor.start_vigilant_monitoring()
-    logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
+        logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
+    else:
+        logger.info("🔇 Vigilant monitoring disabled (production environment)")
 except Exception as e:
     logger.error(f"Failed to auto-start vigilant monitor: {e}")
 
