@@ -51,9 +51,9 @@ class ImageHealthMonitor:
     def start_monitoring(self):
         """Start continuous monitoring in background thread"""
         # Disable on Render to prevent connection errors
-        # Render sets RENDER_EXTERNAL_URL in production
+        # Render sets RENDER="true" in production
         import os
-        if os.environ.get('RENDER_EXTERNAL_URL') or os.environ.get('RENDER'):
+        if os.getenv('RENDER') == 'true':
             logger.info("🔇 Image health monitoring disabled on Render (production)")
             return None
             

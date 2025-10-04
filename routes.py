@@ -2006,7 +2006,7 @@ except ImportError as e:
 # Start comprehensive image monitoring every 30 seconds (disabled on Render)
 try:
     # Don't start on Render - causes localhost connection errors
-    if not os.environ.get('RENDER_EXTERNAL_URL'):
+    if os.getenv('RENDER') != 'true':
         monitoring_thread = start_image_monitoring()
         logger.info("🔍 Started comprehensive image monitoring every 30 seconds")
     else:
@@ -9663,7 +9663,7 @@ def database_stats_api():
 # Auto-start vigilant monitoring (disabled on Render)
 try:
     # Don't start on Render - causes localhost connection errors
-    if not os.environ.get('RENDER_EXTERNAL_URL') and vigilant_monitor:
+    if os.getenv('RENDER') != 'true' and vigilant_monitor:
         vigilant_monitor.start_vigilant_monitoring()
         logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
     else:
