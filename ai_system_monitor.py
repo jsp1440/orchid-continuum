@@ -74,6 +74,13 @@ class AISystemMonitor:
     
     def start_monitoring(self, interval_seconds: int = 300):  # Increased to 5 minutes
         """Start continuous AI monitoring with reduced frequency"""
+        # DISABLED: Monitoring causes localhost connection errors in production
+        # Only enable manually for local development testing
+        import os
+        if os.getenv('RENDER') or os.getenv('REPL_ID') is None:
+            logger.info("🔇 AI System monitoring disabled in production")
+            return None
+            
         self.monitoring_active = True
         logger.info("🤖 AI System Monitor STARTED - Continuous platform validation enabled (5min intervals)")
         
