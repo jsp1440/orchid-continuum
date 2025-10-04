@@ -51,6 +51,11 @@ class VigilantMonitor:
         
     def start_vigilant_monitoring(self):
         """Start ultra-vigilant monitoring"""
+        # Disable on Render to prevent connection errors
+        if os.environ.get('RENDER'):
+            logger.info("🔇 Vigilant monitoring disabled on Render (production)")
+            return False
+            
         if self.is_running:
             logger.warning("Vigilant monitoring already running")
             return False
