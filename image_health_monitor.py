@@ -50,11 +50,11 @@ class ImageHealthMonitor:
         
     def start_monitoring(self):
         """Start continuous monitoring in background thread"""
-        # Disable on Render to prevent connection errors
-        # Render sets RENDER environment variable in production
+        # DISABLED: Monitoring causes localhost connection errors in production
+        # Only enable manually for local development testing
         import os
-        if os.getenv('RENDER'):
-            logger.info("🔇 Image health monitoring disabled on Render (production)")
+        if os.getenv('RENDER') or os.getenv('REPL_ID') is None:
+            logger.info("🔇 Image health monitoring disabled in production")
             return None
             
         def monitor_loop():
