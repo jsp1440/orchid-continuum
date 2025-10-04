@@ -202,8 +202,9 @@ except Exception as e:
 try:
     from system_monitor_dashboard import monitor_bp, initialize_monitoring
     app.register_blueprint(monitor_bp)
-    initialize_monitoring()
-    print("System Monitor Dashboard initialized")
+    # Monitoring disabled - can be started manually from dashboard
+    # initialize_monitoring()
+    print("System Monitor Dashboard initialized (monitoring disabled)")
 except Exception as e:
     print(f"System Monitor Dashboard initialization error: {e}")
 
