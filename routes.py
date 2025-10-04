@@ -2003,17 +2003,8 @@ except ImportError as e:
     def get_enhanced_widget_data(widget_type, **kwargs):
         return {'widget_type': widget_type, 'data': 'integration_not_available'}
 
-# Start comprehensive image monitoring every 30 seconds (disabled on Render)
-try:
-    # Don't start on Render - causes localhost connection errors
-    # Render sets RENDER environment variable in production
-    if not os.getenv('RENDER'):
-        monitoring_thread = start_image_monitoring()
-        logger.info("🔍 Started comprehensive image monitoring every 30 seconds")
-    else:
-        logger.info("🔇 Image health monitoring disabled (production environment)")
-except Exception as e:
-    logger.error(f"Failed to start monitoring: {e}")
+# Image monitoring disabled - can be started manually from admin panel if needed
+logger.info("🔇 Automatic image health monitoring disabled")
 
 # Register the Atlas blueprint
 app.register_blueprint(atlas_bp)
@@ -9661,17 +9652,8 @@ def database_stats_api():
         logger.error(f"Error getting database stats: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Auto-start vigilant monitoring (disabled on Render)
-try:
-    # Don't start on Render - causes localhost connection errors
-    # Render sets RENDER environment variable in production
-    if not os.getenv('RENDER') and vigilant_monitor:
-        vigilant_monitor.start_vigilant_monitoring()
-        logger.info("🚨 VIGILANT MONITOR: Auto-started 30-second checks")
-    else:
-        logger.info("🔇 Vigilant monitoring disabled (production environment)")
-except Exception as e:
-    logger.error(f"Failed to auto-start vigilant monitor: {e}")
+# Vigilant monitoring disabled - can be started manually from admin panel if needed
+logger.info("🔇 Automatic vigilant monitoring disabled")
 
 # Auto-start AI system monitoring
 try:
