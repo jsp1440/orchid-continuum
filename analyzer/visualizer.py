@@ -571,6 +571,10 @@ class SVOVisualizer:
             fig_chars = plt.figure(figsize=(14, 8))
             
             cluster_chars = cluster_data['cluster_characteristics']
+            if not cluster_chars:
+                logger.warning("No cluster characteristics available for plotting")
+                plt.close(fig_chars)
+                return figures
             cluster_ids = list(cluster_chars.keys())
             cluster_sizes = [cluster_chars[cid]['size'] for cid in cluster_ids]
             cluster_confidences = [cluster_chars[cid]['avg_confidence'] for cid in cluster_ids]
@@ -584,8 +588,9 @@ class SVOVisualizer:
             plt.grid(axis='y', alpha=0.3)
             
             # Add value labels
+            max_cluster_size = max(cluster_sizes) if cluster_sizes else 0
             for bar, size in zip(bars, cluster_sizes):
-                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(cluster_sizes)*0.01,
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max_cluster_size*0.01,
                         str(size), ha='center', va='bottom', fontweight='bold')
             
             # Create subplot for confidence scores

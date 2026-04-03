@@ -77,6 +77,23 @@ class SVOAnalyzer:
         """Analyze frequency patterns in SVO data"""
         logger.info("Performing frequency analysis")
         
+        if not svo_data:
+            return {
+                'subject_frequencies': {},
+                'verb_frequencies': {},
+                'object_frequencies': {},
+                'subject_rel_frequencies': {},
+                'verb_rel_frequencies': {},
+                'object_rel_frequencies': {},
+                'combination_frequencies': {},
+                'diversity_scores': {
+                    'subject_diversity': 0,
+                    'verb_diversity': 0,
+                    'object_diversity': 0,
+                    'total_combinations': 0
+                }
+            }
+        
         subjects = [entry['subject'] for entry in svo_data]
         verbs = [entry['verb'] for entry in svo_data]
         objects = [entry['object'] for entry in svo_data]
@@ -135,6 +152,8 @@ class SVOAnalyzer:
         # Calculate correlation strengths
         def calculate_correlation_strength(pairs_dict, total_entries):
             correlations = {}
+            if total_entries <= 0:
+                return correlations
             for (item1, item2), count in pairs_dict.items():
                 # Simple correlation based on co-occurrence frequency
                 correlation_strength = count / total_entries
@@ -268,6 +287,17 @@ class SVOAnalyzer:
         """Categorize SVO patterns by care type"""
         logger.info("Categorizing care patterns")
         
+        if not svo_data:
+            return {
+                'categories': {},
+                'category_statistics': {},
+                'coverage': {
+                    'categorized_entries': 0,
+                    'total_entries': 0,
+                    'coverage_rate': 0
+                }
+            }
+        
         categories = defaultdict(list)
         care_categories = self.config['care_categories']
         
@@ -294,7 +324,7 @@ class SVOAnalyzer:
         for category, entries in categories.items():
             category_stats[category] = {
                 'count': len(entries),
-                'percentage': len(entries) / total_entries * 100,
+                'percentage': (len(entries) / total_entries * 100) if total_entries > 0 else 0,
                 'avg_confidence': np.mean([e['confidence'] for e in entries]),
                 'top_subjects': list(Counter([e['subject'] for e in entries]).most_common(3)),
                 'top_verbs': list(Counter([e['verb'] for e in entries]).most_common(3)),
@@ -307,7 +337,7 @@ class SVOAnalyzer:
             'coverage': {
                 'categorized_entries': sum(len(entries) for entries in categories.values()),
                 'total_entries': total_entries,
-                'coverage_rate': sum(len(entries) for entries in categories.values()) / total_entries
+                'coverage_rate': (sum(len(entries) for entries in categories.values()) / total_entries) if total_entries > 0 else 0
             }
         }
     
@@ -319,13 +349,16 @@ class SVOAnalyzer:
         if 'frequency_analysis' in analysis_results:
             freq_data = analysis_results['frequency_analysis']
             
-            most_common_subject = list(freq_data['subject_frequencies'].keys())[0]
-            most_common_verb = list(freq_data['verb_frequencies'].keys())[0]
-            most_common_object = list(freq_data['object_frequencies'].keys())[0]
+            subject_keys = list(freq_data.get('subject_frequencies', {}).keys())
+            verb_keys = list(freq_data.get('verb_frequencies', {}).keys())
+            object_keys = list(freq_data.get('object_frequencies', {}).keys())
             
-            insights.append(f"Most discussed orchid type: '{most_common_subject}'")
-            insights.append(f"Most common care action: '{most_common_verb}'")
-            insights.append(f"Most important care aspect: '{most_common_object}'")
+            if subject_keys:
+                insights.append(f"Most discussed orchid type: '{subject_keys[0]}'")
+            if verb_keys:
+                insights.append(f"Most common care action: '{verb_keys[0]}'")
+            if object_keys:
+                insights.append(f"Most important care aspect: '{object_keys[0]}'")
             
             # Diversity insights
             diversity = freq_data['diversity_scores']
@@ -359,8 +392,9 @@ class SVOAnalyzer:
             cat_data = analysis_results['care_categories']
             cat_stats = cat_data['category_statistics']
             
-            largest_category = max(cat_stats.items(), key=lambda x: x[1]['count'])
-            insights.append(f"Primary care focus: {largest_category[0]} ({largest_category[1]['percentage']:.1f}%)")
+            if cat_stats:
+                largest_category = max(cat_stats.items(), key=lambda x: x[1]['count'])
+                insights.append(f"Primary care focus: {largest_category[0]} ({largest_category[1]['percentage']:.1f}%)")
             
             coverage_rate = cat_data['coverage']['coverage_rate']
             if coverage_rate < 0.8:
