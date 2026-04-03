@@ -568,7 +568,8 @@ class FloweringGeographicScraper:
             logger.info(f"   With flowering dates: {with_bloom}")
             logger.info(f"   With coordinates: {with_coords}")
             logger.info(f"   With BOTH (target data): {with_both}")
-            logger.info(f"   Completion rate: {(with_both/total_records)*100:.1f}%")
+            completion_rate = (with_both / total_records) * 100 if total_records > 0 else 0
+            logger.info(f"   Completion rate: {completion_rate:.1f}%")
         
         logger.info("=" * 70)
 

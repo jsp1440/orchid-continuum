@@ -12,6 +12,19 @@ import sys
 from datetime import datetime
 import json
 
+# Ensure tests do not require a real API key or external OpenAI calls
+os.environ.setdefault("OPENAI_API_KEY", "test-key")
+try:
+    import openai
+
+    class _DummyOpenAI:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    openai.OpenAI = _DummyOpenAI
+except Exception:
+    pass
+
 # Add the project root to Python path
 sys.path.append('/home/runner/workspace')
 

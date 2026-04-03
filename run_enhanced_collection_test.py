@@ -3,6 +3,21 @@
 Quick test runner for enhanced flowering & geographic collection
 """
 
+import os
+
+# Ensure tests do not require a real API key or external OpenAI calls
+os.environ.setdefault("OPENAI_API_KEY", "test-key")
+try:
+    import openai
+
+    class _DummyOpenAI:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    openai.OpenAI = _DummyOpenAI
+except Exception:
+    pass
+
 from app import app
 from enhanced_flowering_geographic_scraper import FloweringGeographicScraper
 from database_metadata_tracker import DatabaseMetadataTracker
