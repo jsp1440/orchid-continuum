@@ -95,7 +95,7 @@ async def get_orchids(
     
     # Base query
     query_builder = db.query(Orchid).options(
-        joinedload(Orchid.photos)
+        selectinload(Orchid.photos)
     )
     
     # Apply filters
@@ -205,7 +205,7 @@ async def get_care_wheel(orchid_id: UUID4, db: Session = Depends(get_db)):
     """Generate care wheel data for an orchid"""
     
     orchid = db.query(Orchid).options(
-        joinedload(Orchid.culture_sheets)
+        selectinload(Orchid.culture_sheets)
     ).filter(Orchid.id == orchid_id).first()
     
     if not orchid:
