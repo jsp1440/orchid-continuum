@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import or_, and_, func
 from typing import List, Optional
 from pydantic import BaseModel, UUID4
@@ -161,11 +161,11 @@ async def get_orchid(orchid_id: UUID4, db: Session = Depends(get_db)):
     """Get detailed orchid information"""
     
     orchid = db.query(Orchid).options(
-        joinedload(Orchid.photos),
-        joinedload(Orchid.culture_sheets),
-        joinedload(Orchid.traits),
-        joinedload(Orchid.occurrences),
-        joinedload(Orchid.citations)
+        selectinload(Orchid.photos),
+        selectinload(Orchid.culture_sheets),
+        selectinload(Orchid.traits),
+        selectinload(Orchid.occurrences),
+        selectinload(Orchid.citations)
     ).filter(Orchid.id == orchid_id).first()
     
     if not orchid:
