@@ -12,8 +12,12 @@ Functions:
 - sentiment_analysis(): Sentiment analysis of care instructions
 """
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:  # Optional dependency for DataFrame input support
+    pd = None
 import numpy as np
+from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Union
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -457,7 +461,7 @@ def analyze_svo(data: Union[List[Dict], pd.DataFrame], config: Optional[Dict] = 
     analyzer = SVOAnalyzer(config)
     
     # Convert DataFrame to list if needed
-    if isinstance(data, pd.DataFrame):
+    if pd is not None and isinstance(data, pd.DataFrame):
         svo_data = data.to_dict('records')
     elif isinstance(data, list):
         svo_data = data
@@ -498,7 +502,7 @@ def analyze_svo(data: Union[List[Dict], pd.DataFrame], config: Optional[Dict] = 
         'avg_confidence': float(avg_confidence),
         'analysis_completeness': float(analysis_completeness),
         'analysis_methods_used': [k for k, v in analyzer.config['analysis_methods'].items() if v],
-        'timestamp': pd.Timestamp.now().isoformat()
+        'timestamp': (pd.Timestamp.now().isoformat() if pd is not None else datetime.utcnow().isoformat())
     }
     
     logger.info(f"Analysis complete: {len(results['insights'])} insights, "

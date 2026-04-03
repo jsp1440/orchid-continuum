@@ -12,7 +12,10 @@ Functions:
 """
 
 import re
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:  # Optional dependency for DataFrame input support
+    pd = None
 import numpy as np
 from typing import Dict, List, Tuple, Union, Optional, Any
 from dataclasses import dataclass
@@ -256,7 +259,7 @@ def clean_svo(data: Union[List[Dict], pd.DataFrame, str, List[Any]], config: Opt
         # Extract SVO from text
         svo_candidates = processor.extract_svo_candidates(data)
         raw_data = svo_candidates
-    elif isinstance(data, pd.DataFrame):
+    elif pd is not None and isinstance(data, pd.DataFrame):
         # Convert DataFrame to list of dicts
         raw_data = data.to_dict('records')
     elif isinstance(data, list):

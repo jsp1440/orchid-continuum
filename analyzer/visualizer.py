@@ -14,7 +14,10 @@ Functions:
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:  # Optional dependency
+    pd = None
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Union
 from collections import Counter
